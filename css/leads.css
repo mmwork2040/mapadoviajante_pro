@@ -1,0 +1,212 @@
+/* ══════════════════════════════════════════════════════════════
+   LEADS — Pipeline View
+   ══════════════════════════════════════════════════════════════ */
+
+/* Filters Bar */
+.filters-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--sp-6);
+  animation: fadeIn var(--transition-fast) ease;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.filter-group label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-500);
+  white-space: nowrap;
+}
+
+/* Pipeline View */
+.pipeline-view {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+  min-height: 500px;
+}
+
+.pipeline-column {
+  background: var(--gray-50);
+  border-radius: var(--radius-lg);
+  padding: var(--sp-4);
+  display: flex;
+  flex-direction: column;
+}
+
+.pipeline-column-header {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-3);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.pipeline-column-header h4 {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gray-700);
+}
+
+.pipeline-count {
+  background: var(--gray-200);
+  color: var(--gray-600);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+}
+
+.pipeline-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  flex: 1;
+  min-height: 100px;
+}
+
+/* Lead Card */
+.lead-card {
+  background: var(--white);
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius-md);
+  padding: var(--sp-4);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  animation: fadeIn var(--transition-base) ease;
+}
+
+.lead-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+  border-color: var(--primary-subtle);
+}
+
+.lead-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-2);
+}
+
+.lead-card-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--gray-900);
+}
+
+.lead-card-value {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--primary);
+}
+
+.lead-card-destination {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+  font-size: 12px;
+  color: var(--gray-500);
+  margin-bottom: var(--sp-3);
+}
+
+.lead-card-destination i {
+  font-size: 10px;
+  color: var(--primary);
+}
+
+.lead-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.lead-card-date {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+.lead-card-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--coffee);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DRAG AND DROP FEEDBACK
+   ══════════════════════════════════════════════════════════════ */
+
+.lead-card[draggable="true"] {
+  cursor: grab;
+}
+
+.lead-card.dragging {
+  opacity: 0.5;
+  box-shadow: var(--shadow-lg);
+  transform: scale(1.02) rotate(1deg);
+  cursor: grabbing;
+  z-index: 100;
+}
+
+.pipeline-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  flex: 1;
+  min-height: 150px;
+  border: 2px dashed transparent;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  padding-bottom: var(--sp-8); /* Espaço extra para facilitar o drop */
+}
+
+.pipeline-cards.drag-over {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: var(--gray-300);
+}
+
+:root[data-theme="dark"] .pipeline-cards.drag-over {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: var(--gray-600);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .pipeline-view {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .filters-bar {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 640px) {
+  .pipeline-view {
+    grid-template-columns: 1fr;
+  }
+}

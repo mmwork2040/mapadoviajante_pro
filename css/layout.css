@@ -1,0 +1,98 @@
+/* ══════════════════════════════════════════════════════════════
+   LAYOUT — App Shell Grid
+   ══════════════════════════════════════════════════════════════ */
+
+.app-layout {
+  min-height: 100vh;
+}
+
+.app-layout .main-content {
+  margin-left: var(--sidebar-width);
+  transition: margin-left var(--transition-base);
+}
+
+.app-layout.sidebar-collapsed .main-content {
+  margin-left: var(--sidebar-collapsed);
+}
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PAGES
+   ══════════════════════════════════════════════════════════════ */
+
+.page {
+  display: none;
+  padding: var(--sp-8);
+  animation: fadeIn var(--transition-base) ease;
+  flex: 1;
+}
+
+.page.active {
+  display: block;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: var(--sp-8);
+  gap: var(--sp-4);
+}
+
+.page-header h1 {
+  margin-bottom: var(--sp-1);
+}
+
+.page-subtitle {
+  color: var(--gray-500);
+  font-size: 14px;
+}
+
+.page-actions {
+  display: flex;
+  gap: var(--sp-3);
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — Tablet
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1024px) {
+  .app-layout .main-content {
+    margin-left: 0;
+  }
+
+  .page {
+    padding: var(--sp-6);
+  }
+
+  .page-header {
+    flex-direction: column;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 640px) {
+  .page {
+    padding: var(--sp-4);
+  }
+
+  .page-header h1 {
+    font-size: 22px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}

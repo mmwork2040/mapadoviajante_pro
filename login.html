@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Login — Mapa do Viajante PRO • CRM Copilot para Agências de Viagem">
+  <title>Login — Mapa do Viajante PRO</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Tokens + Login Styles -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/login.css">
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body class="login-page">
+
+  <div class="login-container">
+    <div class="login-card">
+
+      <!-- Brand -->
+      <div class="login-brand">
+        <div class="login-logo">
+          <div class="login-logo-icon">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <div class="login-logo-text">Mapa<span>PRO</span></div>
+        </div>
+        <p class="login-subtitle">CRM Copilot para Agências de Viagem</p>
+      </div>
+
+      <!-- Error Message -->
+      <div class="login-error" id="login-error">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span id="login-error-text">E-mail ou senha inválidos</span>
+      </div>
+
+      <!-- Login Form -->
+      <form class="login-form" id="login-form" onsubmit="handleLogin(event)">
+
+        <div class="login-field">
+          <label for="login-email">E-mail</label>
+          <i class="fas fa-envelope field-icon"></i>
+          <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" required>
+        </div>
+
+        <div class="login-field">
+          <label for="login-password">Senha</label>
+          <i class="fas fa-lock field-icon"></i>
+          <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
+        </div>
+
+        <!-- Role Selector (Demo) -->
+        <div class="login-role-selector">
+          <label>Perfil de acesso</label>
+          <div class="role-options">
+            <label class="role-option">
+              <input type="radio" name="role" value="admin" checked>
+              <div class="role-card">
+                <div class="role-icon"><i class="fas fa-shield-halved"></i></div>
+                <span class="role-name">Admin</span>
+              </div>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="role" value="gerente">
+              <div class="role-card">
+                <div class="role-icon"><i class="fas fa-briefcase"></i></div>
+                <span class="role-name">Gerente</span>
+              </div>
+            </label>
+            <label class="role-option">
+              <input type="radio" name="role" value="consultor">
+              <div class="role-card">
+                <div class="role-icon"><i class="fas fa-headset"></i></div>
+                <span class="role-name">Consultor</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <button type="submit" class="login-submit" id="login-submit">
+          Entrar no sistema
+          <i class="fas fa-arrow-right"></i>
+        </button>
+
+      </form>
+
+      <!-- Demo Credentials -->
+      <div class="login-footer">
+        <p style="margin-bottom: 8px; color: rgba(255,255,255,0.35); font-size: 11px;">ACESSO DEMO</p>
+        <p>Admin: <a href="#" onclick="fillDemo('admin')">admin@mapapro.com</a></p>
+        <p>Gerente: <a href="#" onclick="fillDemo('gerente')">gerente@mapapro.com</a></p>
+        <p>Consultor: <a href="#" onclick="fillDemo('consultor')">consultor@mapapro.com</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Check if already logged in
+    (function() {
+      const session = getSession();
+      if (session) {
+        window.location.href = 'index.html';
+        return;
+      }
+    })();
+
+    // Pre-fill credentials based on selected role
+    const roleCredentials = {
+      admin:     { email: 'admin@mapapro.com',     password: 'admin123' },
+      gerente:   { email: 'gerente@mapapro.com',   password: 'gerente123' },
+      consultor: { email: 'consultor@mapapro.com', password: 'consultor123' },
+    };
+
+    // When role radio changes, auto-fill credentials
+    document.querySelectorAll('input[name="role"]').forEach(radio => {
+      radio.addEventListener('change', (e) => {
+        const creds = roleCredentials[e.target.value];
+        if (creds) {
+          document.getElementById('login-email').value = creds.email;
+          document.getElementById('login-password').value = creds.password;
+        }
+      });
+    });
+
+    // Auto-fill admin on load
+    document.getElementById('login-email').value = roleCredentials.admin.email;
+    document.getElementById('login-password').value = roleCredentials.admin.password;
+
+    // Fill demo credentials
+    function fillDemo(role) {
+      event.preventDefault();
+      const creds = roleCredentials[role];
+      document.getElementById('login-email').value = creds.email;
+      document.getElementById('login-password').value = creds.password;
+      // Select the matching radio
+      const radio = document.querySelector(`input[name="role"][value="${role}"]`);
+      if (radio) radio.checked = true;
+    }
+
+    // Handle Login (async for Supabase auth)
+    async function handleLogin(e) {
+      e.preventDefault();
+      const email = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errorEl = document.getElementById('login-error');
+      const errorText = document.getElementById('login-error-text');
+      const btn = document.getElementById('login-submit');
+
+      // Hide previous error
+      errorEl.classList.remove('visible');
+
+      if (!email || !password) {
+        errorText.textContent = 'Preencha todos os campos';
+        errorEl.classList.add('visible');
+        return;
+      }
+
+      // Show loading
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Autenticando...';
+      btn.disabled = true;
+
+      // Attempt authentication (Supabase first, then demo fallback)
+      const result = await authenticate(email, password);
+
+      if (result.success) {
+        btn.innerHTML = '<i class="fas fa-check"></i> Entrando...';
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 400);
+      } else {
+        btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+        btn.disabled = false;
+        errorText.textContent = result.error;
+        errorEl.classList.add('visible');
+        // Shake the button
+        btn.style.animation = 'shakeError 0.4s ease';
+        setTimeout(() => btn.style.animation = '', 400);
+      }
+    }
+  </script>
+
+</body>
+</html>

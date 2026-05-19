@@ -1,0 +1,50 @@
+/* ══════════════════════════════════════════════════════════════
+   TRAVELER — PWA View (future page)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Placeholder styles for the traveler PWA view */
+.traveler-header {
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: var(--white);
+  padding: var(--sp-8);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--sp-6);
+  text-align: center;
+}
+
+.traveler-header h2 {
+  color: var(--white);
+  margin-bottom: var(--sp-2);
+}
+
+.traveler-header p {
+  opacity: 0.8;
+  font-size: 14px;
+}
+
+.traveler-countdown {
+  display: flex;
+  gap: var(--sp-4);
+  justify-content: center;
+  margin-top: var(--sp-5);
+}
+
+.countdown-item {
+  text-align: center;
+}
+
+.countdown-value {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--white);
+  display: block;
+}
+
+.countdown-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  opacity: 0.7;
+  letter-spacing: 0.5px;
+}

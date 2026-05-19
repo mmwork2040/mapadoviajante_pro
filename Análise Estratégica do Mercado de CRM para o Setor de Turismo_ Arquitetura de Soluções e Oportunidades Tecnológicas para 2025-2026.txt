@@ -1,0 +1,87 @@
+﻿Análise Estratégica e Arquitetura de Produto: CRM Copilot para Agências de Viagem
+A indústria de turismo global encontra-se em um estágio de metamorfose digital acelerada. No mercado brasileiro, existe uma oportunidade de mercado latente para ferramentas que consigam amalgamar a simplicidade operacional com a sofisticação analítica necessária para o ambiente de negócios de 2025 e 2026, reduzindo o "trabalho invisível" dos agentes.1
+1. Mapeamento Competitivo e Paisagem do Mercado
+O mercado de CRM para turismo é composto por gigantes generalistas (Salesforce, HubSpot), especialistas globais (Travefy, Ezus, Tern Travel) e sistemas brasileiros focados em back-office (Monde, SAGTur, Paxpro).3
+
+
+Plataforma
+	Diferencial Principal
+	Limitação Observada
+	Monde
+	+95 integrações com fornecedores brasileiros 6
+	Interface legada e menos foco em itinerários 4
+	SAGTur
+	Controle de vagas e marcação de assentos 5
+	Focado em nichos específicos de excursão 5
+	Ezus
+	Automação de orçamentos e margens em tempo real
+	Dificuldade em importar bases legadas 8
+	Tern Travel
+	Design moderno e atualizações semanais
+	Falta de recurso de "desfazer" (undo)
+	Roterin
+	Geração de roteiros por IA em segundos 15
+	Engessamento na edição na versão gratuita 15
+	________________
+2. Documento de Arquitetura de Produto (PRD)
+O CRM Copilot servirá como o sistema nervoso central da agência, unindo as pontas de vendas, operações e finanças.
+2.1. Funcionalidades Inspiradas no Roterin (Escala e Engajamento)
+Para atingir o nível de conveniência que o viajante moderno espera, o sistema incorporará:
+* Roteirização por "Constraints" (Restrições): O agente define o horário e o sistema organiza as atividades respeitando o tempo de visitação e a proximidade geográfica.15
+* Planejamento Baseado em Orçamento: O software utiliza o custo como variável ativa. Se o usuário definir um teto de gastos, a IA ajusta as sugestões.15
+* Social Travel & Cloning: Capacidade de importar integralmente roteiros refinados de outros usuários.15
+2.2. O Copilot do Agente
+* IA de Parsing (Importação Inteligente): O agente anexa o voucher e o sistema extrai dados automaticamente .
+* WhatsApp IA Sidebar: Barra lateral que analisa a conversa e sugere feedbacks para vendas e follow-ups .
+* Gestão Preditiva de Tarefas: Alertas automáticos para check-ins e prazos de cancelamento.10
+________________
+3. Plano de Desenvolvimento Modular (Front-end First)
+Este roteiro prioriza a entrega da interface 100% funcional com dados fictícios (dummy) antes de conectar a inteligência e o banco de dados.
+Módulo 1: O "Shell" Interativo (Front-end 100% Funcional)
+Objetivo: Criar toda a interface visual onde botões e navegação funcionam com dados estáticos para validar a UX.
+* Dashboard de Vendas: Telas com gráficos, lista de leads e cards de tarefas (To-Do) sem conexão real.
+* Construtor de Itinerário (Mockup): Interface Drag-and-Drop funcional onde o agente pode arrastar blocos pré-definidos de voos e hotéis.12
+* Visualizador do Viajante (PWA Shell): Versão mobile que o cliente acessa via link, com botões de GPS e Vouchers simulados .
+* Biblioteca de Curadoria Visual: Galeria de fotos e textos de destinos (ex: Aruba e Curaçao) carregados localmente.16
+* Definição de Pronto (DoP): O agente consegue navegar por todo o sistema, criar um roteiro fictício, ver como o PDF seria gerado e clicar em todos os botões de ação.10
+Módulo 2: O Sistema Nervoso (Conexão ao Banco de Dados)
+Objetivo: Substituir os dados estáticos por uma arquitetura real de persistência e segurança.
+* Arquitetura Multi-tenant: Implementação de PostgreSQL com Row-Level Security (RLS) para isolar dados entre agências .
+* Persistência de Itinerários: Os roteiros criados no Módulo 1 agora são salvos no banco de dados e podem ser editados posteriormente.
+* Gestão de Usuários: Ativação real de login (Clerk/Auth0) e permissões de acesso .
+* Integração com Webhooks: Leads reais começam a cair no sistema vindos de formulários externos.1
+* DoP: O agente cria um roteiro real, desloga, volta no dia seguinte e os dados continuam lá de forma segura.
+Módulo 3: O Cérebro & Escala (IA e Integrações Reais)
+Objetivo: Adicionar a inteligência que transforma o CRM em um "Copilot".
+* Ativação do Parsing IA: O sistema passa a ler PDFs reais e preencher os campos que antes eram manuais .
+* Monitoramento de Voos Real: Integração com APIs (AeroDataBox/Amadeus) para atualizar o status dos voos no roteiro .
+* WhatsApp IA Sidebar: A barra lateral começa a analisar as conversas em tempo real e dar feedbacks de venda .
+* Módulo Fiscal e Financeiro Real: Conexão com FocusNFe e APIs de pagamento (Asaas).12
+* DoP: O sistema opera de forma autônoma: importa vouchers via IA, alerta sobre atrasos de voos reais e sugere respostas no WhatsApp.
+________________
+4. Guia Técnico para o Programador (Stack & UX Patterns)
+Para o desenvolvedor junior, as diretrizes de design devem focar na redução da carga cognitiva:
+* Simplicidade Visual: Use menos elementos para que o agente não se sinta sobrecarregado sob pressão.14
+* Hierarquia Clara: As informações críticas (check-ins e voos) devem ter foco visual imediato no dashboard.7
+* Busca Universal: Implementar uma barra de busca que localize qualquer lead ou item de roteiro instantaneamente.7
+* Stack: Front-end em React/Next.js para facilitar o PWA; Back-end em Node.js com PostgreSQL para o banco de dados .
+________________
+5. Conclusões e Recomendações
+Esta estratégia de "Front-end First" permite que você apresente o produto para investidores ou potenciais clientes (agentes) muito mais rápido. Ao finalizar o Módulo 1, você já terá um produto visualmente pronto para demonstração (demo). Recomenda-se o uso de ferramentas como o Figma para o design inicial de alta fidelidade antes mesmo de iniciar o código do Módulo 1.10
+Referências citadas
+1. Como Agências de Viagens Usam CRM para Vender Mais em 2025 ..., acessado em maio 7, 2026, https://blog.inovvatur.com.br/post/agencias-de-viagens-usam-crm-vender-mais-2025
+2. Best CRM for Travel Agencies: Lead Management Made Simple - Nutshell, acessado em maio 7, 2026, https://www.nutshell.com/blog/best-crm-for-travel-agency
+3. Best Travel Agency CRM Software in 2026: 8 Top Solutions Compared - Ezus.io, acessado em maio 7, 2026, https://ezus.io/post/best-crm-for-travel-agents-2026
+4. Preço do Sistema para Agência de Viagens | Monde, acessado em maio 7, 2026, https://monde.com.br/planos/
+5. SAGTur - Sistema para agências de Turismo do Receptivo e Emissivo, acessado em maio 7, 2026, https://www.sagtur.com.br/
+6. Monde: Sistema para Agências de Viagens | Gestão completa, acessado em maio 7, 2026, https://monde.com.br/
+7. How to Design a Travel App UI/UX & Case Study - Fuselab Creative, acessado em maio 7, 2026, https://fuselabcreative.com/how-to-design-a-travel-app-ui-ux/
+8. Streamline your travel agency with Ezus software, acessado em maio 7, 2026, https://ezus.io/
+9. Compare Ezus vs Travefy on TrustRadius | Based on reviews & more, acessado em maio 7, 2026, https://www.trustradius.com/compare-products/ezus-vs-travefy
+10. CRM para agências de viagens com IA: o futuro da gestão e vendas no turismo, acessado em maio 7, 2026, https://ecossistema.elevenmind.com.br/crm-para-agencias-de-viagens-com-ia-o-futuro-da-gestao-e-vendas-no-turismo/
+11. Travel Agency CRM List (with User Reviews), acessado em maio 7, 2026, https://hostagencyreviews.com/travel-agency-software/category/crm
+12. Tern TAS Reviews - Travel Agency Software, acessado em maio 7, 2026, https://hostagencyreviews.com/travel-agency-software/tern/reviews
+13. Paxpro - o mais moderno sistema para agência de viagens, acessado em maio 7, 2026, https://paxpro.com.br/
+14. 10 melhores sistemas de CRM para agências de viagens - Lark, acessado em maio 7, 2026, https://www.larksuite.com/pt_br/blog/crm-for-travel-agency
+15. Análise de Negócio Roterin: Planejamento de Viagens
+16. Aruba + Curaçao

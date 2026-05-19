@@ -1,0 +1,364 @@
+/* ══════════════════════════════════════════════════════════════
+   INTAKE MODAL — Novo Viajante (Multi-step)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Wide modal override */
+.intake-modal {
+  max-width: 680px;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.intake-header {
+  padding: var(--sp-6) var(--sp-8) var(--sp-5);
+  background: linear-gradient(135deg, var(--primary-light), var(--sand));
+  border-bottom: 1px solid var(--gray-100);
+}
+
+.intake-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-5);
+}
+
+.intake-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg);
+  background: var(--primary);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-primary);
+}
+
+.intake-title-row h2 {
+  font-size: 20px;
+  margin-bottom: 2px;
+}
+
+.intake-subtitle {
+  font-size: 12px;
+  color: var(--gray-500);
+}
+
+/* Step Progress */
+.intake-steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.intake-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid var(--gray-300);
+  background: var(--white);
+  color: var(--gray-400);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-base);
+}
+
+.intake-step span {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--gray-400);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  transition: color var(--transition-base);
+}
+
+.intake-step.active .step-dot {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+  box-shadow: 0 0 0 4px rgba(245, 142, 38, 0.2);
+}
+
+.intake-step.active span {
+  color: var(--primary);
+}
+
+.intake-step.done .step-dot {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--white);
+}
+
+.intake-step.done .step-dot::after {
+  content: '✓';
+}
+
+.intake-step.done span {
+  color: var(--success);
+}
+
+.intake-step-line {
+  flex: 1;
+  height: 2px;
+  background: var(--gray-200);
+  margin: 0 var(--sp-2);
+  margin-bottom: 14px;
+  transition: background var(--transition-base);
+}
+
+.intake-step-line.done {
+  background: var(--success);
+}
+
+/* ── Form Panels ─────────────────────────────────────────── */
+.intake-form {
+  padding: var(--sp-6) var(--sp-8);
+}
+
+.intake-panel {
+  display: none;
+  animation: fadeIn var(--transition-base) ease;
+}
+
+.intake-panel.active {
+  display: block;
+}
+
+.intake-section-label {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--primary);
+  margin-bottom: var(--sp-4);
+  padding-bottom: var(--sp-2);
+  border-bottom: 2px solid var(--primary-subtle);
+}
+
+.intake-section-label i {
+  font-size: 13px;
+}
+
+/* ── Pax Counter ─────────────────────────────────────────── */
+.pax-counter {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: 8px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  width: fit-content;
+}
+
+.pax-btn {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--gray-600);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  transition: all var(--transition-fast);
+}
+
+.pax-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-subtle);
+}
+
+#pax-display {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--gray-900);
+  min-width: 32px;
+  text-align: center;
+}
+
+/* ── Card Tag Selector ───────────────────────────────────── */
+.intake-subsection {
+  margin-bottom: var(--sp-5);
+}
+
+.intake-subsection-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--gray-600);
+  margin-bottom: var(--sp-3);
+}
+
+.cards-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+}
+
+.card-tag-item {
+  padding: 6px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.card-tag-item:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-subtle);
+}
+
+.card-tag-item.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+}
+
+.card-tag-item.add-card-tag {
+  border-style: dashed;
+  color: var(--gray-400);
+}
+
+.card-tag-item.add-card-tag:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  border-style: solid;
+  background: var(--primary-subtle);
+}
+
+/* ── Option Pills (accommodation) ────────────────────────── */
+.option-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-2);
+}
+
+.option-pill {
+  padding: 8px 14px;
+  border: 1.5px solid var(--gray-200);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.option-pill:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-subtle);
+}
+
+.option-pill.selected {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--white);
+}
+
+/* ── Nav Footer ──────────────────────────────────────────── */
+.intake-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-5) var(--sp-8) var(--sp-6);
+  border-top: 1px solid var(--gray-100);
+  margin: 0 calc(-1 * var(--sp-8));
+  margin-top: var(--sp-5);
+}
+
+.intake-progress-dots {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+.intake-progress-dots .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--gray-200);
+  transition: all var(--transition-base);
+  display: block;
+}
+
+.intake-progress-dots .dot.active {
+  background: var(--primary);
+  width: 20px;
+  border-radius: var(--radius-full);
+}
+
+/* ── Summary State (Step 4 done) ─────────────────────────── */
+.intake-success {
+  text-align: center;
+  padding: var(--sp-10) var(--sp-8);
+}
+
+.intake-success-icon {
+  font-size: 48px;
+  margin-bottom: var(--sp-4);
+}
+
+.intake-success h3 {
+  font-size: 20px;
+  margin-bottom: var(--sp-2);
+  color: var(--gray-900);
+}
+
+.intake-success p {
+  color: var(--gray-500);
+  font-size: 14px;
+  margin-bottom: var(--sp-6);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .intake-modal {
+    max-width: 100%;
+  }
+
+  .intake-header {
+    padding: var(--sp-5) var(--sp-5) var(--sp-4);
+  }
+
+  .intake-form {
+    padding: var(--sp-5) var(--sp-5);
+  }
+
+  .intake-nav {
+    margin: 0 calc(-1 * var(--sp-5));
+    padding: var(--sp-4) var(--sp-5) var(--sp-5);
+  }
+
+  .intake-step span {
+    display: none;
+  }
+}

@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CRM Copilot para Agências de Viagem — Gerencie leads, crie roteiros e acompanhe vendas em um só lugar.">
+  <title>Mapa do Viajante PRO — CRM Copilot</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/sidebar.css">
+  <link rel="stylesheet" href="css/header.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="stylesheet" href="css/leads.css">
+  <link rel="stylesheet" href="css/itinerary.css">
+  <link rel="stylesheet" href="css/traveler.css">
+  <link rel="stylesheet" href="css/library.css">
+  <link rel="stylesheet" href="css/finances.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/intake.css">
+  <link rel="stylesheet" href="css/drawer.css">
+  <link rel="stylesheet" href="css/admin.css">
+  <link rel="stylesheet" href="css/copilot.css">
+  <link rel="stylesheet" href="css/polish.css">
+</head>
+<body>
+  <div id="app" class="app-layout">
+
+    <!-- ════════════════ SIDEBAR ════════════════ -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <div class="logo-icon">
+            <i class="fas fa-map-marker-alt"></i>
+          </div>
+          <span class="logo-text">Mapa<span class="logo-pro">PRO</span></span>
+        </div>
+        <button id="sidebar-collapse-btn" class="sidebar-collapse-btn" aria-label="Recolher menu">
+          <i class="fas fa-angles-left"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul class="nav-list">
+          <li class="nav-item active" data-page="dashboard">
+            <a href="#dashboard">
+              <i class="fas fa-chart-line"></i>
+              <span>Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-item" data-page="leads">
+            <a href="#leads">
+              <i class="fas fa-users"></i>
+              <span>Leads</span>
+              <span class="nav-badge">12</span>
+            </a>
+          </li>
+          <li class="nav-item" data-page="itinerary">
+            <a href="#itinerary">
+              <i class="fas fa-route"></i>
+              <span>Roteiros</span>
+            </a>
+          </li>
+          <li class="nav-item" data-page="library">
+            <a href="#library">
+              <i class="fas fa-images"></i>
+              <span>Biblioteca</span>
+            </a>
+          </li>
+          <li class="nav-item" data-page="finances">
+            <a href="#finances">
+              <i class="fas fa-wallet"></i>
+              <span>Financeiro</span>
+            </a>
+          </li>
+          <li class="nav-item" data-page="admin">
+            <a href="#admin">
+              <i class="fas fa-shield-halved"></i>
+              <span>Administração</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-ai-widget">
+          <div class="ai-pulse"></div>
+          <i class="fas fa-robot"></i>
+          <span>Thay IA</span>
+        </div>
+        <div class="sidebar-user-row">
+          <div class="sidebar-user">
+            <div class="user-avatar">LF</div>
+            <div class="user-info">
+              <span class="user-name">Lucas Felipe</span>
+              <span class="user-role">Agente</span>
+            </div>
+          </div>
+          <button class="theme-toggle" id="theme-toggle" aria-label="Alternar tema">
+            <i class="fas fa-moon"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ════════════════ MAIN CONTENT ════════════════ -->
+    <main id="main-content" class="main-content">
+
+      <!-- HEADER -->
+      <header id="main-header" class="main-header">
+        <button id="mobile-menu-btn" class="mobile-menu-btn" aria-label="Abrir menu">
+          <i class="fas fa-bars"></i>
+        </button>
+
+        <div class="search-bar" id="search-bar">
+          <i class="fas fa-search search-icon"></i>
+          <input type="text" id="search-input" placeholder="Buscar leads, roteiros, destinos..." autocomplete="off">
+          <kbd class="search-shortcut">/</kbd>
+          <div id="search-results" class="search-results hidden"></div>
+        </div>
+
+        <div class="header-actions">
+          <button id="notif-btn" class="header-btn notif-btn" aria-label="Notificações">
+            <i class="fas fa-bell"></i>
+            <span class="notif-badge">5</span>
+          </button>
+          <div id="notif-dropdown" class="notif-dropdown hidden">
+            <div class="notif-header">
+              <h4>Notificações</h4>
+              <button class="notif-mark-read">Marcar todas como lidas</button>
+            </div>
+            <div class="notif-list">
+              <div class="notif-item unread">
+                <div class="notif-icon notif-urgent"><i class="fas fa-plane-arrival"></i></div>
+                <div class="notif-content">
+                  <p><strong>Check-in amanhã:</strong> Família Santos — Voo LA8045 para Lisboa</p>
+                  <span class="notif-time">Há 15 min</span>
+                </div>
+              </div>
+              <div class="notif-item unread">
+                <div class="notif-icon notif-warning"><i class="fas fa-clock"></i></div>
+                <div class="notif-content">
+                  <p><strong>Prazo de cancelamento:</strong> Hotel Marriott Aruba — vence em 48h</p>
+                  <span class="notif-time">Há 1 hora</span>
+                </div>
+              </div>
+              <div class="notif-item unread">
+                <div class="notif-icon notif-success"><i class="fas fa-check-circle"></i></div>
+                <div class="notif-content">
+                  <p><strong>Venda fechada!</strong> Casal Oliveira — Pacote Curaçao R$ 12.400</p>
+                  <span class="notif-time">Há 3 horas</span>
+                </div>
+              </div>
+              <div class="notif-item">
+                <div class="notif-icon notif-info"><i class="fas fa-user-plus"></i></div>
+                <div class="notif-content">
+                  <p><strong>Novo lead:</strong> Maria Silva — interessada em Fernando de Noronha</p>
+                  <span class="notif-time">Há 5 horas</span>
+                </div>
+              </div>
+              <div class="notif-item">
+                <div class="notif-icon notif-info"><i class="fas fa-comment-dots"></i></div>
+                <div class="notif-content">
+                  <p><strong>Follow-up pendente:</strong> Roberto Almeida — último contato há 3 dias</p>
+                  <span class="notif-time">Há 1 dia</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ════════════════ PAGES ════════════════ -->
+
+      <!-- PAGE: Dashboard -->
+      <div id="page-dashboard" class="page active">
+        <div class="page-header">
+          <div>
+            <h1>Dashboard</h1>
+            <p class="page-subtitle">Visão geral das suas vendas e operações</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" onclick="navigateTo('itinerary')">
+              <i class="fas fa-plus"></i> Novo Roteiro
+            </button>
+          </div>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-icon metric-icon-sales"><i class="fas fa-dollar-sign"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Vendas do Mês</span>
+              <span class="metric-value" id="dash-metric-sales">R$ 47.850</span>
+              <span class="metric-change positive"><i class="fas fa-arrow-up"></i> 12% vs mês anterior</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon metric-icon-leads"><i class="fas fa-users"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Leads Ativos</span>
+              <span class="metric-value" id="dash-metric-leads">34</span>
+              <span class="metric-change positive"><i class="fas fa-arrow-up"></i> 8 novos esta semana</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon metric-icon-routes"><i class="fas fa-route"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Pipeline</span>
+              <span class="metric-value" id="dash-metric-pipeline">R$ 150.000</span>
+              <span class="metric-change neutral"><i class="fas fa-minus"></i> 2 aguardando aprovação</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon metric-icon-conversion"><i class="fas fa-chart-pie"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Taxa de Conversão</span>
+              <span class="metric-value" id="dash-metric-conversion">23%</span>
+              <span class="metric-change positive"><i class="fas fa-arrow-up"></i> 3% vs mês anterior</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart + Tasks Row -->
+        <div class="dashboard-grid">
+          <!-- Sales Chart (hidden for Consultor role) -->
+          <div class="card chart-card financial-data" id="dashboard-chart-card">
+            <div class="card-header">
+              <h3>Vendas — Últimos 6 Meses</h3>
+              <div class="card-actions">
+                <button class="chip chip-active" data-chart="revenue">Receita</button>
+                <button class="chip" data-chart="count">Nº Vendas</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="sales-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Tasks -->
+          <div class="card tasks-card">
+            <div class="card-header">
+              <h3>Tarefas do Dia</h3>
+              <span class="task-count">6 pendentes</span>
+            </div>
+            <div class="card-body">
+              <div class="task-list" id="task-list">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calendar Widget (visible for all users) -->
+        <div class="card calendar-card" id="dashboard-calendar-card">
+          <div class="card-header">
+            <h3><i class="fas fa-calendar-alt" style="color: var(--orange-500); margin-right: 8px;"></i>Agenda da Semana</h3>
+            <div class="card-actions">
+              <button class="chip chip-active" data-cal-view="week">Semana</button>
+              <button class="chip" data-cal-view="month">Mês</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div id="calendar-widget" class="calendar-widget">
+              <!-- Populated by dashboard.js -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Leads -->
+        <div class="card">
+          <div class="card-header">
+            <h3>Leads Recentes</h3>
+            <button class="btn btn-ghost" onclick="navigateTo('leads')">Ver todos <i class="fas fa-arrow-right"></i></button>
+          </div>
+          <div class="card-body">
+            <div class="leads-table-wrapper">
+              <table class="data-table" id="dashboard-leads-table">
+                <thead>
+                  <tr>
+                    <th>Cliente</th>
+                    <th>Destino</th>
+                    <th>Valor</th>
+                    <th>Status</th>
+                    <th>Última Atividade</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-leads-body">
+                  <!-- Populated by JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Leads -->
+      <div id="page-leads" class="page">
+        <div class="page-header">
+          <div>
+            <h1>Leads</h1>
+            <p class="page-subtitle">Gerencie seus contatos e oportunidades</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-outline" id="leads-filter-btn">
+              <i class="fas fa-filter"></i> Filtrar
+            </button>
+            <button class="btn btn-primary" id="add-lead-btn">
+              <i class="fas fa-user-plus"></i> Novo Viajante
+            </button>
+          </div>
+        </div>
+
+        <!-- Lead Filters -->
+        <div id="leads-filters" class="filters-bar hidden">
+          <div class="filter-group">
+            <label>Status:</label>
+            <select id="filter-status" class="filter-select">
+              <option value="all">Todos</option>
+              <option value="new">Novo</option>
+              <option value="negotiating">Em Negociação</option>
+              <option value="closed">Fechado</option>
+              <option value="lost">Perdido</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Destino:</label>
+            <select id="filter-destination" class="filter-select">
+              <option value="all">Todos</option>
+              <option value="Lisboa">Lisboa</option>
+              <option value="Aruba">Aruba</option>
+              <option value="Curaçao">Curaçao</option>
+              <option value="Fernando de Noronha">Noronha</option>
+              <option value="Peru">Peru</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Ordenar:</label>
+            <select id="filter-sort" class="filter-select">
+              <option value="recent">Mais recentes</option>
+              <option value="value-desc">Maior valor</option>
+              <option value="value-asc">Menor valor</option>
+              <option value="name">Nome A-Z</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Leads Pipeline -->
+        <div class="pipeline-view" id="pipeline-view">
+          <div class="pipeline-column" data-status="new">
+            <div class="pipeline-column-header">
+              <span class="status-dot status-new"></span>
+              <h4>Novo</h4>
+              <span class="pipeline-count" id="pipeline-new-count">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipeline-new"></div>
+          </div>
+          <div class="pipeline-column" data-status="negotiating">
+            <div class="pipeline-column-header">
+              <span class="status-dot status-negotiating"></span>
+              <h4>Em Negociação</h4>
+              <span class="pipeline-count" id="pipeline-negotiating-count">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipeline-negotiating"></div>
+          </div>
+          <div class="pipeline-column" data-status="closed">
+            <div class="pipeline-column-header">
+              <span class="status-dot status-closed"></span>
+              <h4>Fechado</h4>
+              <span class="pipeline-count" id="pipeline-closed-count">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipeline-closed"></div>
+          </div>
+          <div class="pipeline-column" data-status="lost">
+            <div class="pipeline-column-header">
+              <span class="status-dot status-lost"></span>
+              <h4>Perdido</h4>
+              <span class="pipeline-count" id="pipeline-lost-count">0</span>
+            </div>
+            <div class="pipeline-cards" id="pipeline-lost"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Itinerary -->
+      <div id="page-itinerary" class="page">
+        <div class="page-header">
+          <div>
+            <h1>Roteiros</h1>
+            <p class="page-subtitle">Construa e gerencie itinerários de viagem</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-primary" id="new-itinerary-btn">
+              <i class="fas fa-plus"></i> Novo Roteiro
+            </button>
+          </div>
+        </div>
+
+        <!-- Itinerary List View -->
+        <div id="itinerary-list-view">
+          <div class="itinerary-grid" id="itinerary-grid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Itinerary Builder View (hidden by default) -->
+        <div id="itinerary-builder-view" class="hidden">
+          <div class="builder-header">
+            <button class="btn btn-ghost" id="back-to-list-btn">
+              <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            <div class="builder-info">
+              <input type="text" id="builder-title" class="builder-title-input" value="Novo Roteiro" placeholder="Nome do roteiro...">
+              <div class="builder-meta">
+                <span class="builder-meta-item"><i class="fas fa-user"></i> <span id="builder-client">Cliente</span></span>
+                <span class="builder-meta-item"><i class="fas fa-map-marker-alt"></i> <span id="builder-destination">Destino</span></span>
+                <span class="builder-meta-item"><i class="fas fa-calendar"></i> <span id="builder-dates">Datas</span></span>
+              </div>
+            </div>
+            <div class="builder-actions">
+              <div class="budget-indicator">
+                <span class="budget-label">Orçamento:</span>
+                <div class="budget-bar">
+                  <div class="budget-fill" id="budget-fill" style="width: 65%"></div>
+                </div>
+                <span class="budget-values"><span id="budget-spent">R$ 8.450</span> / <span id="budget-total">R$ 13.000</span></span>
+              </div>
+              <button class="btn btn-outline" id="preview-pdf-btn">
+                <i class="fas fa-file-pdf"></i> Preview PDF
+              </button>
+              <button class="btn btn-outline" id="share-client-btn" style="border-color: #25D366; color: #25D366;">
+                <i class="fas fa-share-alt"></i> Compartilhar
+              </button>
+              <button class="btn btn-primary" id="save-itinerary-btn">
+                <i class="fas fa-save"></i> Salvar
+              </button>
+            </div>
+          </div>
+
+          <div class="builder-workspace">
+            <!-- Blocks Palette -->
+            <div class="blocks-palette" id="blocks-palette">
+              <h4>Blocos</h4>
+              <div class="palette-blocks">
+                <div class="palette-block" draggable="true" data-type="flight">
+                  <i class="fas fa-plane"></i>
+                  <span>Voo</span>
+                </div>
+                <div class="palette-block" draggable="true" data-type="hotel">
+                  <i class="fas fa-hotel"></i>
+                  <span>Hotel</span>
+                </div>
+                <div class="palette-block" draggable="true" data-type="activity">
+                  <i class="fas fa-map-pin"></i>
+                  <span>Atividade</span>
+                </div>
+                <div class="palette-block" draggable="true" data-type="transfer">
+                  <i class="fas fa-car"></i>
+                  <span>Transfer</span>
+                </div>
+                <div class="palette-block" draggable="true" data-type="restaurant">
+                  <i class="fas fa-utensils"></i>
+                  <span>Restaurante</span>
+                </div>
+                <div class="palette-block" draggable="true" data-type="note">
+                  <i class="fas fa-sticky-note"></i>
+                  <span>Nota</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="builder-timeline" id="builder-timeline">
+              <!-- Populated by JS with day columns -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Library -->
+      <div id="page-library" class="page">
+        <div class="page-header">
+          <div>
+            <h1>Biblioteca</h1>
+            <p class="page-subtitle">Curadoria de destinos para seus clientes</p>
+          </div>
+          <div class="page-actions">
+            <div class="library-filters">
+              <button class="chip chip-active" data-filter="all">Todos</button>
+              <button class="chip" data-filter="praia">🏖️ Praia</button>
+              <button class="chip" data-filter="aventura">⛰️ Aventura</button>
+              <button class="chip" data-filter="cultural">🏛️ Cultural</button>
+              <button class="chip" data-filter="luxo">✨ Luxo</button>
+            </div>
+          </div>
+        </div>
+        <div class="library-grid" id="library-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <!-- Destination Detail Modal -->
+        <div id="destination-modal" class="modal hidden">
+          <div class="modal-overlay" onclick="closeModal('destination-modal')"></div>
+          <div class="modal-content modal-large">
+            <button class="modal-close" onclick="closeModal('destination-modal')"><i class="fas fa-times"></i></button>
+            <div id="destination-detail">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Finances -->
+      <div id="page-finances" class="page">
+        <div class="page-header">
+          <div>
+            <h1>Financeiro</h1>
+            <p class="page-subtitle">Controle de receitas, comissões e despesas</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-outline" id="finance-filter-btn"><i class="fas fa-filter"></i> Filtrar</button>
+            <button class="btn btn-primary" id="add-transaction-btn"><i class="fas fa-plus"></i> Nova Transação</button>
+          </div>
+        </div>
+
+        <!-- Finance Metrics -->
+        <div class="finance-metrics">
+          <div class="metric-card">
+            <div class="metric-icon metric-icon-sales"><i class="fas fa-arrow-trend-up"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Receita Total (Mês)</span>
+              <span class="metric-value" id="fin-revenue">R$ 47.850</span>
+              <span class="metric-change positive">↑ 12% vs mês anterior</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon metric-icon-leads"><i class="fas fa-hand-holding-dollar"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Comissões</span>
+              <span class="metric-value" id="fin-commissions">R$ 5.742</span>
+              <span class="metric-change positive">↑ 8% vs mês anterior</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon metric-icon-routes"><i class="fas fa-receipt"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Despesas Operacionais</span>
+              <span class="metric-value" id="fin-expenses">R$ 2.130</span>
+              <span class="metric-change negative">↑ 5% vs mês anterior</span>
+            </div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-icon metric-icon-conversion"><i class="fas fa-chart-pie"></i></div>
+            <div class="metric-info">
+              <span class="metric-label">Lucro Líquido</span>
+              <span class="metric-value" id="fin-profit">R$ 3.612</span>
+              <span class="metric-change positive">↑ 15% vs mês anterior</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Finance Grid: Chart + Summary -->
+        <div class="dashboard-grid">
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3>Receita x Comissões</h3>
+              <div class="card-actions">
+                <div class="chip chip-active" data-fin-chart="bar">Barras</div>
+                <div class="chip" data-fin-chart="line">Linha</div>
+              </div>
+            </div>
+            <div class="card-body">
+              <canvas id="finance-chart"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>Resumo do Período</h3>
+            </div>
+            <div class="card-body">
+              <div class="finance-summary" id="finance-summary">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transactions Filters -->
+        <div id="finance-filters" class="filters-bar hidden" style="margin-bottom: var(--sp-4);">
+          <div class="filter-group">
+            <label>Tipo:</label>
+            <select id="fin-filter-type" class="filter-select">
+              <option value="all">Todos</option>
+              <option value="income">Receitas</option>
+              <option value="commission">Comissões</option>
+              <option value="expense">Despesas</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>Período:</label>
+            <select id="fin-filter-period" class="filter-select">
+              <option value="all">Todos</option>
+              <option value="30">Últimos 30 dias</option>
+              <option value="60">Últimos 60 dias</option>
+              <option value="90">Últimos 90 dias</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="card" style="margin-top: var(--sp-4);">
+          <div class="card-header">
+            <h3>Todas as Transações</h3>
+            <span style="font-size: 12px; color: var(--gray-400);" id="fin-tx-count">12 transações</span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Tipo</th>
+                  <th>Data</th>
+                  <th style="text-align:right">Valor</th>
+                  <th style="text-align:center; width:60px">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="finance-table-body">
+                <!-- Populated by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAGE: Admin -->
+      <div id="page-admin" class="page">
+        <div class="page-header">
+          <div>
+            <h1>Administração</h1>
+            <p class="page-subtitle">Gerencie usuários, permissões e configurações da agência</p>
+          </div>
+          <div class="page-actions">
+            <button class="btn btn-outline" onclick="showToast('Exportar relatório — em breve', 'info')">
+              <i class="fas fa-file-export"></i> Exportar
+            </button>
+            <button class="btn btn-primary" onclick="showToast('Adicionar usuário — em breve', 'info')">
+              <i class="fas fa-user-plus"></i> Novo Usuário
+            </button>
+          </div>
+        </div>
+
+        <!-- Admin Metrics -->
+        <div class="admin-metrics" id="admin-metrics">
+          <!-- Populated by admin.js -->
+        </div>
+
+        <!-- Users Table -->
+        <div class="admin-grid" style="margin-top: var(--sp-5);">
+          <div class="card admin-users-card">
+            <div class="card-header">
+              <h3><i class="fas fa-users" style="color: var(--orange-500); margin-right: 8px;"></i>Usuários do Sistema</h3>
+              <span style="font-size: 12px; color: var(--gray-400);">Gerencie acessos e papéis</span>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Usuário</th>
+                    <th>Papel</th>
+                    <th>Status</th>
+                    <th>Último Login</th>
+                    <th style="text-align:center; width:60px;">Ações</th>
+                  </tr>
+                </thead>
+                <tbody id="admin-users-body">
+                  <!-- Populated by admin.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Log + Settings -->
+        <div class="admin-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-clock-rotate-left" style="color: var(--orange-500); margin-right: 8px;"></i>Log de Atividades</h3>
+            </div>
+            <div class="card-body">
+              <div class="activity-log" id="admin-activity-log">
+                <!-- Populated by admin.js -->
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-gear" style="color: var(--orange-500); margin-right: 8px;"></i>Configurações da Agência</h3>
+            </div>
+            <div class="card-body">
+              <div class="agency-settings" id="admin-settings">
+                <!-- Populated by admin.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thay IA — Configuration & Token Usage -->
+        <div class="admin-grid" style="margin-top: var(--sp-5);">
+          <div class="card ai-config-card">
+            <div class="card-header">
+              <h3><i class="fas fa-robot" style="color: var(--orange-500); margin-right: 8px;"></i>Thay IA — Configuração</h3>
+              <span class="ai-status-badge" id="ai-status-badge">
+                <span class="ai-status-dot"></span> Desconectada
+              </span>
+            </div>
+            <div class="card-body">
+              <!-- Provider Selector -->
+              <div class="ai-provider-grid" id="ai-provider-grid">
+                <button class="ai-provider-card active" data-provider="openai" onclick="selectAIProvider('openai')">
+                  <div class="ai-provider-icon" style="background: rgba(16,163,127,0.1); color: #10A37F;">
+                    <i class="fas fa-brain"></i>
+                  </div>
+                  <span class="ai-provider-name">OpenAI</span>
+                  <span class="ai-provider-model">GPT-4o</span>
+                </button>
+                <button class="ai-provider-card" data-provider="claude" onclick="selectAIProvider('claude')">
+                  <div class="ai-provider-icon" style="background: rgba(204,120,50,0.1); color: #CC7832;">
+                    <i class="fas fa-comment-dots"></i>
+                  </div>
+                  <span class="ai-provider-name">Claude</span>
+                  <span class="ai-provider-model">Sonnet 4</span>
+                </button>
+                <button class="ai-provider-card" data-provider="gemini" onclick="selectAIProvider('gemini')">
+                  <div class="ai-provider-icon" style="background: rgba(66,133,244,0.1); color: #4285F4;">
+                    <i class="fas fa-gem"></i>
+                  </div>
+                  <span class="ai-provider-name">Gemini</span>
+                  <span class="ai-provider-model">2.5 Pro</span>
+                </button>
+              </div>
+
+              <!-- API Key Input -->
+              <div class="ai-key-form" id="ai-key-form">
+                <div class="form-group">
+                  <label class="form-label">Chave de API — <span id="ai-provider-label">OpenAI</span></label>
+                  <div class="ai-key-input-row">
+                    <div class="ai-key-input-wrap">
+                      <i class="fas fa-key ai-key-icon"></i>
+                      <input type="password" id="ai-api-key" class="form-input" placeholder="sk-..." autocomplete="off">
+                      <button class="ai-key-toggle" onclick="toggleKeyVisibility()" title="Mostrar/Ocultar">
+                        <i class="fas fa-eye" id="ai-key-eye"></i>
+                      </button>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveAIConfig()">
+                      <i class="fas fa-check"></i> Salvar
+                    </button>
+                  </div>
+                  <span class="ai-key-hint" id="ai-key-hint">Sua chave é armazenada de forma segura e nunca exposta ao cliente.</span>
+                </div>
+              </div>
+
+              <!-- Model Config -->
+              <div class="ai-model-config">
+                <div class="ai-config-row">
+                  <span class="ai-config-label">Modelo ativo</span>
+                  <select class="form-input ai-model-select" id="ai-model-select" onchange="updateAIModel()">
+                    <option value="gpt-4o">GPT-4o (Mais inteligente)</option>
+                    <option value="gpt-4o-mini" selected>GPT-4o Mini (Mais rápido)</option>
+                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Econômico)</option>
+                  </select>
+                </div>
+                <div class="ai-config-row">
+                  <span class="ai-config-label">Limite mensal</span>
+                  <div class="ai-limit-control">
+                    <input type="number" class="form-input" id="ai-token-limit" value="500000" min="10000" step="10000" style="width: 120px; text-align: right;">
+                    <span class="ai-limit-unit">tokens</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Token Consumption -->
+          <div class="card ai-usage-card">
+            <div class="card-header">
+              <h3><i class="fas fa-chart-bar" style="color: var(--orange-500); margin-right: 8px;"></i>Consumo de Tokens</h3>
+              <span style="font-size: 12px; color: var(--stone-400);">Ciclo atual: Mai/2026</span>
+            </div>
+            <div class="card-body">
+              <!-- Total usage summary -->
+              <div class="ai-usage-summary" id="ai-usage-summary">
+                <!-- Populated by admin.js -->
+              </div>
+
+              <!-- Per-user breakdown -->
+              <div class="ai-usage-label">Consumo por usuário</div>
+              <div class="ai-usage-users" id="ai-usage-users">
+                <!-- Populated by admin.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thay IA — Knowledge Base -->
+        <div class="card ai-kb-card" style="margin-top: var(--sp-5);">
+          <div class="card-header">
+            <h3><i class="fas fa-graduation-cap" style="color: var(--orange-500); margin-right: 8px;"></i>Base de Conhecimento — Thay IA</h3>
+            <span style="font-size: 12px; color: var(--stone-400);">Treine a Thay com informações da sua agência</span>
+          </div>
+          <div class="card-body">
+
+            <!-- System Prompt / Instructions -->
+            <div class="kb-section">
+              <div class="kb-section-header">
+                <div class="kb-section-icon" style="background: rgba(139,92,246,0.1); color: #8B5CF6;">
+                  <i class="fas fa-message"></i>
+                </div>
+                <div>
+                  <div class="kb-section-title">Orientações para a Thay</div>
+                  <div class="kb-section-desc">Defina a personalidade, tom de voz e regras de negócio que a IA deve seguir</div>
+                </div>
+              </div>
+              <textarea class="kb-prompt-textarea" id="kb-system-prompt" placeholder="Ex: Você é a Thay, assistente de viagens da agência O Segredo do Viajante. Sempre sugira destinos do Caribe e Europa. Use tom amigável e profissional. Mencione os diferenciais da agência: atendimento personalizado, guias exclusivos e suporte 24h durante a viagem..."
+              ></textarea>
+              <div class="kb-prompt-footer">
+                <span class="kb-char-count" id="kb-char-count">0 / 2.000 caracteres</span>
+                <button class="btn btn-primary btn-sm" onclick="saveKBPrompt()">
+                  <i class="fas fa-save"></i> Salvar orientações
+                </button>
+              </div>
+            </div>
+
+            <!-- Knowledge Sources Toggles -->
+            <div class="kb-section">
+              <div class="kb-section-header">
+                <div class="kb-section-icon" style="background: rgba(16,185,129,0.1); color: #10B981;">
+                  <i class="fas fa-database"></i>
+                </div>
+                <div>
+                  <div class="kb-section-title">Fontes de Conhecimento</div>
+                  <div class="kb-section-desc">Escolha quais dados a Thay pode consultar para gerar sugestões</div>
+                </div>
+              </div>
+              <div class="kb-sources-grid">
+                <div class="kb-source-card active" id="kb-source-library">
+                  <div class="kb-source-toggle">
+                    <input type="checkbox" id="kb-toggle-library" checked onchange="toggleKBSource('library')">
+                    <label for="kb-toggle-library"></label>
+                  </div>
+                  <div class="kb-source-info">
+                    <i class="fas fa-book-atlas" style="color: var(--orange-500);"></i>
+                    <div>
+                      <div class="kb-source-name">Biblioteca de Roteiros</div>
+                      <div class="kb-source-detail">7 roteiros • 28 atividades cadastradas</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="kb-source-card active" id="kb-source-leads">
+                  <div class="kb-source-toggle">
+                    <input type="checkbox" id="kb-toggle-leads" checked onchange="toggleKBSource('leads')">
+                    <label for="kb-toggle-leads"></label>
+                  </div>
+                  <div class="kb-source-info">
+                    <i class="fas fa-users" style="color: #3B82F6;"></i>
+                    <div>
+                      <div class="kb-source-name">Base de Leads</div>
+                      <div class="kb-source-detail">34 leads ativos • Contexto do cliente</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="kb-source-card" id="kb-source-finance">
+                  <div class="kb-source-toggle">
+                    <input type="checkbox" id="kb-toggle-finance" onchange="toggleKBSource('finance')">
+                    <label for="kb-toggle-finance"></label>
+                  </div>
+                  <div class="kb-source-info">
+                    <i class="fas fa-chart-pie" style="color: #10B981;"></i>
+                    <div>
+                      <div class="kb-source-name">Dados Financeiros</div>
+                      <div class="kb-source-detail">Comissões, receitas e custos</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- File Upload Area -->
+            <div class="kb-section">
+              <div class="kb-section-header">
+                <div class="kb-section-icon" style="background: rgba(59,130,246,0.1); color: #3B82F6;">
+                  <i class="fas fa-folder-open"></i>
+                </div>
+                <div>
+                  <div class="kb-section-title">Materiais de Referência</div>
+                  <div class="kb-section-desc">Suba PDFs, guias, tabelas de preços e documentos para a Thay consultar</div>
+                </div>
+              </div>
+
+              <!-- Drop zone -->
+              <div class="kb-dropzone" id="kb-dropzone" onclick="document.getElementById('kb-file-input').click()">
+                <input type="file" id="kb-file-input" hidden multiple accept=".pdf,.doc,.docx,.txt,.xlsx,.csv" onchange="handleKBUpload(event)">
+                <div class="kb-dropzone-icon">
+                  <i class="fas fa-cloud-arrow-up"></i>
+                </div>
+                <div class="kb-dropzone-text">
+                  <strong>Arraste arquivos aqui</strong> ou clique para selecionar
+                </div>
+                <div class="kb-dropzone-hint">PDF, DOC, TXT, XLSX, CSV — máx. 10 MB cada</div>
+              </div>
+
+              <!-- Uploaded Files List -->
+              <div class="kb-files-list" id="kb-files-list">
+                <!-- Populated by admin.js -->
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- New Transaction Modal -->
+      <div id="transaction-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('transaction-modal')">
+        <div class="modal" style="max-width: 480px;">
+          <div class="modal-header">
+            <h3><i class="fas fa-plus-circle" style="color: var(--primary);"></i> Nova Transação</h3>
+            <button class="modal-close" onclick="closeModal('transaction-modal')"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+            <form id="transaction-form" onsubmit="submitTransaction(event)">
+              <div class="form-group">
+                <label class="form-label">Tipo</label>
+                <select class="form-input" name="type" required>
+                  <option value="income">Receita</option>
+                  <option value="commission">Comissão</option>
+                  <option value="expense">Despesa</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Descrição</label>
+                <input type="text" class="form-input" name="desc" placeholder="Ex: Pacote Lisboa — João Silva" required>
+              </div>
+              <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
+                <div class="form-group">
+                  <label class="form-label">Valor (R$)</label>
+                  <input type="number" class="form-input" name="amount" placeholder="0,00" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Data</label>
+                  <input type="date" class="form-input" name="date" required>
+                </div>
+              </div>
+              <div style="display: flex; justify-content: flex-end; gap: var(--sp-3); margin-top: var(--sp-4);">
+                <button type="button" class="btn btn-outline" onclick="closeModal('transaction-modal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Salvar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- ════════════════ LEAD DRAWER ════════════════ -->
+  <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
+  <aside id="lead-drawer" class="drawer">
+    <!-- Drawer Header -->
+    <div class="drawer-header">
+      <div class="drawer-header-top">
+        <div class="drawer-identity">
+          <div class="drawer-avatar" id="drawer-avatar">FS</div>
+          <div class="drawer-identity-info">
+            <div class="drawer-name" id="drawer-name">Nome do Lead</div>
+            <div class="drawer-destination" id="drawer-dest-text"><i class="fas fa-map-marker-alt"></i> Destino</div>
+            <div class="drawer-value" id="drawer-value">R$ 0</div>
+          </div>
+        </div>
+        <button class="drawer-close" onclick="closeDrawer()" aria-label="Fechar"><i class="fas fa-times"></i></button>
+      </div>
+
+      <div class="drawer-status-row">
+        <select class="drawer-status-select" id="drawer-status-select" onchange="changeDrawerStatus(this)" data-status="new">
+          <option value="new">Novo</option>
+          <option value="negotiating">Em Negociação</option>
+          <option value="closed">Fechado</option>
+          <option value="lost">Perdido</option>
+        </select>
+        <span class="drawer-created" id="drawer-created">Criado: Hoje</span>
+      </div>
+
+      <div class="drawer-quick-actions">
+        <button class="drawer-quick-btn whatsapp" onclick="drawerWhatsApp()">
+          <i class="fab fa-whatsapp"></i> WhatsApp
+        </button>
+        <button class="drawer-quick-btn" onclick="drawerCreateItinerary()">
+          <i class="fas fa-route"></i> Criar Roteiro
+        </button>
+        <button class="drawer-quick-btn" onclick="closeDrawer(); navigateTo('leads');">
+          <i class="fas fa-columns"></i> Pipeline
+        </button>
+      </div>
+    </div>
+
+    <!-- Drawer Tabs -->
+    <div class="drawer-tabs">
+      <button class="drawer-tab active" data-tab="profile" onclick="switchDrawerTab('profile')">
+        <i class="fas fa-user"></i> Perfil
+      </button>
+      <button class="drawer-tab" data-tab="travel" onclick="switchDrawerTab('travel')">
+        <i class="fas fa-plane"></i> Viagem
+      </button>
+      <button class="drawer-tab" data-tab="activities" onclick="switchDrawerTab('activities')">
+        <i class="fas fa-users-rectangle"></i> Atividades <span id="drawer-activities-badge" class="drawer-tab-badge" style="display:none;">0</span>
+      </button>
+      <button class="drawer-tab" data-tab="checklist" onclick="switchDrawerTab('checklist')">
+        <i class="fas fa-list-check"></i> Checklist <span id="drawer-checklist-badge" style="font-size:10px; color:var(--gray-400); margin-left:2px;">0/0</span>
+      </button>
+      <button class="drawer-tab" data-tab="notes" onclick="switchDrawerTab('notes')">
+        <i class="fas fa-sticky-note"></i> Notas
+      </button>
+    </div>
+
+    <!-- Drawer Body -->
+    <div class="drawer-body">
+      <div class="drawer-tab-panel active" id="drawer-panel-profile"></div>
+      <div class="drawer-tab-panel" id="drawer-panel-travel"></div>
+      <div class="drawer-tab-panel" id="drawer-panel-activities"></div>
+      <div class="drawer-tab-panel" id="drawer-panel-checklist"></div>
+      <div class="drawer-tab-panel" id="drawer-panel-notes"></div>
+    </div>
+
+    <!-- Drawer Footer -->
+    <div class="drawer-footer">
+      <button class="btn btn-outline" onclick="closeDrawer()">
+        <i class="fas fa-times"></i> Fechar
+      </button>
+      <button class="btn btn-primary" onclick="drawerCreateItinerary()">
+        <i class="fas fa-route"></i> Criar Roteiro
+      </button>
+    </div>
+  </aside>
+
+  <!-- PDF Preview Modal -->
+  <div id="pdf-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('pdf-modal')"></div>
+    <div class="modal-content modal-large">
+      <button class="modal-close" onclick="closeModal('pdf-modal')"><i class="fas fa-times"></i></button>
+      <div class="pdf-modal-header">
+        <h2><i class="fas fa-file-pdf" style="color: var(--orange-500); margin-right: 8px;"></i>Preview do Roteiro</h2>
+        <button class="btn btn-primary" id="download-pdf-btn" onclick="downloadPdf()">
+          <i class="fas fa-download"></i> Baixar PDF
+        </button>
+      </div>
+      <div id="pdf-preview-content">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Novo Viajante — Intake Modal (Multi-step) -->
+  <div id="lead-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('lead-modal')"></div>
+    <div class="modal-content intake-modal">
+      <button class="modal-close" onclick="closeModal('lead-modal')"><i class="fas fa-times"></i></button>
+
+      <!-- Progress Header -->
+      <div class="intake-header">
+        <div class="intake-title-row">
+          <div class="intake-icon"><i class="fas fa-user-plus"></i></div>
+          <div>
+            <h2>Novo Viajante</h2>
+            <p class="intake-subtitle">Preencha os dados para criar o perfil completo do cliente</p>
+          </div>
+        </div>
+        <div class="intake-steps">
+          <div class="intake-step active" data-step="1">
+            <div class="step-dot">1</div>
+            <span>Pessoal</span>
+          </div>
+          <div class="intake-step-line"></div>
+          <div class="intake-step" data-step="2">
+            <div class="step-dot">2</div>
+            <span>Viagem</span>
+          </div>
+          <div class="intake-step-line"></div>
+          <div class="intake-step" data-step="3">
+            <div class="step-dot">3</div>
+            <span>Benefícios</span>
+          </div>
+          <div class="intake-step-line"></div>
+          <div class="intake-step" data-step="4">
+            <div class="step-dot">4</div>
+            <span>Voos &amp; Hotel</span>
+          </div>
+        </div>
+      </div>
+
+      <form id="lead-form" class="intake-form" novalidate>
+
+        <!-- ── STEP 1: Dados Pessoais ── -->
+        <div class="intake-panel active" id="intake-step-1">
+          <div class="intake-section-label"><i class="fas fa-user"></i> Dados de Contato</div>
+          <div class="form-group">
+            <label for="lead-name">Nome Completo *</label>
+            <input type="text" id="lead-name" placeholder="Ex: Família Santos" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="lead-email">E-mail</label>
+              <input type="email" id="lead-email" placeholder="email@exemplo.com">
+            </div>
+            <div class="form-group">
+              <label for="lead-phone">WhatsApp *</label>
+              <input type="tel" id="lead-phone" placeholder="(11) 99999-9999" required>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="lead-value">Orçamento Estimado (R$)</label>
+              <input type="number" id="lead-value" placeholder="0">
+            </div>
+            <div class="form-group">
+              <label for="lead-origin">Como nos encontrou?</label>
+              <select id="lead-origin" class="filter-select">
+                <option value="">Selecionar...</option>
+                <option value="instagram">Instagram</option>
+                <option value="indicacao">Indicação</option>
+                <option value="whatsapp">WhatsApp</option>
+                <option value="site">Site</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 2: Dados da Viagem ── -->
+        <div class="intake-panel" id="intake-step-2">
+          <div class="intake-section-label"><i class="fas fa-map-marker-alt"></i> Dados da Viagem</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="lead-destination">Destino *</label>
+              <input type="text" id="lead-destination" placeholder="Ex: Lisboa, Portugal" required>
+            </div>
+            <div class="form-group">
+              <label for="lead-origin-city">Ponto de Partida</label>
+              <input type="text" id="lead-origin-city" placeholder="Ex: Guarulhos (GRU)">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="lead-date">Data Pretendida</label>
+              <input type="text" id="lead-date" placeholder="Ex: Julho 2025 / Flexível">
+            </div>
+            <div class="form-group">
+              <label for="lead-pax">Nº de Pessoas</label>
+              <div class="pax-counter">
+                <button type="button" class="pax-btn" onclick="changePax(-1)"><i class="fas fa-minus"></i></button>
+                <span id="pax-display">2</span>
+                <input type="hidden" id="lead-pax" value="2">
+                <button type="button" class="pax-btn" onclick="changePax(1)"><i class="fas fa-plus"></i></button>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="lead-trip-details">Detalhes e Expectativas</label>
+            <textarea id="lead-trip-details" rows="3" placeholder="Ex: Lua de mel, querem praias tranquilas, não gostam de aventura extrema..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="lead-notes">Observações Extras</label>
+            <textarea id="lead-notes" rows="2" placeholder="Qualquer informação relevante para a consultoria..."></textarea>
+          </div>
+        </div>
+
+        <!-- ── STEP 3: Benefícios ── -->
+        <div class="intake-panel" id="intake-step-3">
+          <div class="intake-section-label"><i class="fas fa-credit-card"></i> Cartões &amp; Milhas</div>
+
+          <!-- Cartões -->
+          <div class="intake-subsection">
+            <div class="intake-subsection-title">Cartões de Crédito</div>
+            <div class="cards-grid" id="cards-grid">
+              <div class="card-tag-item selected" data-card="Nubank">Nubank</div>
+              <div class="card-tag-item" data-card="Itaú">Itaú</div>
+              <div class="card-tag-item" data-card="Bradesco">Bradesco</div>
+              <div class="card-tag-item" data-card="Santander">Santander</div>
+              <div class="card-tag-item" data-card="XP Visa">XP Visa</div>
+              <div class="card-tag-item" data-card="Smiles">Smiles</div>
+              <div class="card-tag-item" data-card="Latam Pass">Latam Pass</div>
+              <div class="card-tag-item" data-card="Azul">Azul</div>
+              <div class="card-tag-item" data-card="Caixa">Caixa</div>
+              <div class="card-tag-item" data-card="Inter">Inter</div>
+              <div class="card-tag-item" data-card="C6 Bank">C6 Bank</div>
+              <div class="card-tag-item add-card-tag" id="add-card-btn"><i class="fas fa-plus"></i> Outro</div>
+            </div>
+          </div>
+
+          <!-- Milhas -->
+          <div class="intake-subsection">
+            <div class="intake-subsection-title">Programas de Milhas</div>
+            <div class="cards-grid">
+              <div class="card-tag-item" data-card="Smiles (Gol)">Smiles (Gol)</div>
+              <div class="card-tag-item" data-card="LATAM Pass">LATAM Pass</div>
+              <div class="card-tag-item" data-card="TudoAzul">TudoAzul</div>
+              <div class="card-tag-item" data-card="Livelo">Livelo</div>
+              <div class="card-tag-item" data-card="Esfera">Esfera</div>
+              <div class="card-tag-item" data-card="Multiplus">Multiplus</div>
+            </div>
+          </div>
+
+          <div class="form-row" style="margin-top: var(--sp-4);">
+            <div class="form-group">
+              <label for="lead-miles-balance">Saldo de Milhas (aproximado)</label>
+              <input type="text" id="lead-miles-balance" placeholder="Ex: 50.000 Smiles">
+            </div>
+            <div class="form-group">
+              <label for="lead-miles-expiry">Vencimento das Milhas</label>
+              <input type="text" id="lead-miles-expiry" placeholder="Ex: Dez/2025 / Não sei">
+            </div>
+          </div>
+        </div>
+
+        <!-- ── STEP 4: Voos & Hospedagem ── -->
+        <div class="intake-panel" id="intake-step-4">
+          <div class="intake-section-label"><i class="fas fa-plane"></i> Preferências de Voo</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="lead-flight-dest">Destino do Voo</label>
+              <input type="text" id="lead-flight-dest" placeholder="Ex: Lisboa (LIS)">
+            </div>
+            <div class="form-group">
+              <label for="lead-flight-days">Dias de Viagem</label>
+              <input type="number" id="lead-flight-days" placeholder="Ex: 10">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="lead-flight-date">Data Pretendida</label>
+              <input type="text" id="lead-flight-date" placeholder="Ex: Jul 2025">
+            </div>
+            <div class="form-group">
+              <label for="lead-flight-flex">Flexibilidade de Datas</label>
+              <select id="lead-flight-flex" class="filter-select">
+                <option value="">Selecionar...</option>
+                <option value="fixa">Data Fixa</option>
+                <option value="1semana">± 1 semana</option>
+                <option value="2semanas">± 2 semanas</option>
+                <option value="flexivel">Totalmente Flexível</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="intake-section-label" style="margin-top: var(--sp-5);"><i class="fas fa-hotel"></i> Hospedagem</div>
+          <div class="form-group">
+            <label>Tipo de Hospedagem</label>
+            <div class="option-pills" id="accommodation-type">
+              <button type="button" class="option-pill" data-val="hotel">🏨 Hotel</button>
+              <button type="button" class="option-pill" data-val="resort">🌴 Resort</button>
+              <button type="button" class="option-pill" data-val="pousada">🏡 Pousada</button>
+              <button type="button" class="option-pill" data-val="allinclusive">🍹 All-Inclusive</button>
+              <button type="button" class="option-pill" data-val="airbnb">🔑 Airbnb</button>
+              <button type="button" class="option-pill" data-val="hostel">🎒 Hostel</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Preferências Gerais</label>
+            <div class="option-pills" id="accommodation-prefs">
+              <button type="button" class="option-pill" data-val="mar">Vista para o mar</button>
+              <button type="button" class="option-pill" data-val="piscina">Piscina privada</button>
+              <button type="button" class="option-pill" data-val="centro">Centro / fácil acesso</button>
+              <button type="button" class="option-pill" data-val="familia">Adequado para família</button>
+              <button type="button" class="option-pill" data-val="romantico">Clima romântico</button>
+              <button type="button" class="option-pill" data-val="luxo">Luxo / 5 estrelas</button>
+              <button type="button" class="option-pill" data-val="custo">Melhor custo-benefício</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="lead-flight-obs">Observações sobre o voo</label>
+            <textarea id="lead-flight-obs" rows="2" placeholder="Ex: prefere janela, necessidade de cadeirante, bebê a bordo..."></textarea>
+          </div>
+        </div>
+
+        <!-- Step Navigation -->
+        <div class="intake-nav">
+          <button type="button" class="btn btn-ghost" id="intake-back-btn" onclick="intakeBack()" style="display:none;">
+            <i class="fas fa-arrow-left"></i> Voltar
+          </button>
+          <div class="intake-progress-dots">
+            <span class="dot active" data-s="1"></span>
+            <span class="dot" data-s="2"></span>
+            <span class="dot" data-s="3"></span>
+            <span class="dot" data-s="4"></span>
+          </div>
+          <button type="button" class="btn btn-primary" id="intake-next-btn" onclick="intakeNext()">
+            Próximo <i class="fas fa-arrow-right"></i>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ════════════════ COPILOT IA PANEL ════════════════ -->
+  <div id="copilot-overlay" class="copilot-overlay"></div>
+  <aside id="copilot-panel" class="copilot-panel">
+    <div class="copilot-header">
+      <div class="copilot-header-left">
+        <div class="copilot-logo"><i class="fas fa-robot"></i></div>
+        <div class="copilot-header-info">
+          <h3>Thay IA</h3>
+          <span>● Online — Analisando dados</span>
+        </div>
+      </div>
+      <button id="copilot-close" class="copilot-close-btn"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div class="copilot-body">
+      <div class="copilot-section-label">Insights inteligentes</div>
+      <div id="copilot-insights" class="copilot-insights">
+        <!-- Populated by copilot.js -->
+      </div>
+
+      <div class="copilot-section-label">Chat com a Thay</div>
+      <div id="copilot-chat" class="copilot-chat">
+        <div class="copilot-welcome">
+          <strong>👋 Olá!</strong> Sou a Thay, sua assistente IA. Pergunte sobre leads, roteiros, financeiro ou peça sugestões de vendas.
+        </div>
+      </div>
+    </div>
+
+    <div class="copilot-input-area">
+      <input type="text" id="copilot-input" placeholder="Pergunte à Thay..." autocomplete="off">
+      <button id="copilot-send" class="copilot-send-btn"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </aside>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+
+  <!-- html2pdf.js (PDF Export) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <!-- App Scripts -->
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/leads.js"></script>
+  <script src="js/itinerary.js"></script>
+  <script src="js/library.js"></script>
+  <script src="js/finances.js"></script>
+  <script src="js/intake.js"></script>
+  <script src="js/drawer.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/copilot.js"></script>
+</body>
+</html>

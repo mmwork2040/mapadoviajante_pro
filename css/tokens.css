@@ -1,0 +1,759 @@
+/* ══════════════════════════════════════════════════════════════
+   DESIGN TOKENS — Mapa do Viajante PRO
+   Orange Travel Design System
+   ══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Orange Scale (Primary) ──────────────────────────────── */
+  --orange-50: #fff7f1;
+  --orange-100: #ffe9d8;
+  --orange-200: #ffd0ad;
+  --orange-300: #ffb378;
+  --orange-400: #ff9447;
+  --orange-500: #ff7a1a;
+  --orange-600: #ea6600;
+  --orange-700: #bf5200;
+  --orange-800: #914000;
+  --orange-900: #5f2a00;
+
+  /* ── Sand Scale ──────────────────────────────────────────── */
+  --sand-50: #fbf8f4;
+  --sand-100: #f6efe6;
+  --sand-200: #ecdece;
+  --sand-300: #dcc6ac;
+  --sand-400: #c6a882;
+
+  /* ── Stone Scale (Neutrals) ──────────────────────────────── */
+  --stone-0: #ffffff;
+  --stone-25: #fcfcfd;
+  --stone-50: #f8f8fa;
+  --stone-100: #f1f2f4;
+  --stone-150: #e8eaee;
+  --stone-200: #dde1e6;
+  --stone-300: #c9cfd8;
+  --stone-400: #99a1ad;
+  --stone-500: #697281;
+  --stone-600: #4e5662;
+  --stone-700: #343a43;
+  --stone-800: #1f242b;
+  --stone-900: #111418;
+
+  /* ── Semantic Aliases (backward compat) ──────────────────── */
+  --primary: var(--orange-500);
+  --primary-hover: var(--orange-600);
+  --primary-light: var(--orange-50);
+  --primary-subtle: rgba(255, 122, 26, 0.1);
+  --primary-surface: #fff3e8;
+
+  --coffee: var(--stone-800);
+  --coffee-light: var(--stone-600);
+  --cream: var(--sand-50);
+  --sand: var(--sand-100);
+  --white: var(--stone-0);
+
+  --gray-50: var(--stone-50);
+  --gray-100: var(--stone-100);
+  --gray-200: var(--stone-200);
+  --gray-300: var(--stone-300);
+  --gray-400: var(--stone-400);
+  --gray-500: var(--stone-500);
+  --gray-600: var(--stone-600);
+  --gray-700: var(--stone-700);
+  --gray-800: var(--stone-800);
+  --gray-900: var(--stone-900);
+
+  /* ── Status Colors ───────────────────────────────────────── */
+  --success: #1f9d55;
+  --success-light: rgba(31, 157, 85, 0.1);
+  --warning: #f4b400;
+  --warning-light: rgba(244, 180, 0, 0.1);
+  --danger: #ee5f52;
+  --danger-light: rgba(238, 95, 82, 0.08);
+  --info: #3178ff;
+  --info-light: rgba(49, 120, 255, 0.09);
+
+  /* ── Surfaces & Overlays ─────────────────────────────────── */
+  --surface-card: var(--stone-0);
+  --surface-alt: var(--stone-50);
+  --surface-warm: var(--sand-50);
+  --border-color: rgba(17, 20, 24, 0.06);
+  --border-color-strong: rgba(17, 20, 24, 0.08);
+  --overlay-dark: linear-gradient(180deg, rgba(17,20,24,0.06), rgba(17,20,24,0.65));
+  --overlay-warm: linear-gradient(135deg, rgba(255,122,26,0.88), rgba(255,186,98,0.5));
+  --hero-bg: radial-gradient(circle at top left, rgba(255,148,71,0.22), transparent 26%),
+             radial-gradient(circle at 78% 14%, rgba(255,122,26,0.12), transparent 24%),
+             linear-gradient(180deg, #fffdfb 0%, #fff7f1 48%, #f7f3ef 100%);
+
+  /* ── Shadows ─────────────────────────────────────────────── */
+  --shadow-xs: 0 4px 10px rgba(17, 20, 24, 0.04);
+  --shadow-sm: 0 10px 20px rgba(17, 20, 24, 0.06);
+  --shadow-md: 0 18px 34px rgba(17, 20, 24, 0.08);
+  --shadow-lg: 0 28px 54px rgba(17, 20, 24, 0.12);
+  --shadow-xl: 0 28px 54px rgba(17, 20, 24, 0.12);
+  --shadow-primary: 0 16px 36px rgba(255, 122, 26, 0.24);
+  --shadow-cta: 0 16px 36px rgba(255, 122, 26, 0.24);
+
+  /* ── Radius ──────────────────────────────────────────────── */
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 30px;
+  --radius-2xl: 36px;
+  --radius-full: 999px;
+
+  /* ── Spacing ─────────────────────────────────────────────── */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-7: 28px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-14: 56px;
+  --sp-16: 64px;
+  --sp-20: 80px;
+
+  /* ── Typography ──────────────────────────────────────────── */
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --display-xl: 56px;
+  --display-lg: 44px;
+  --display-md: 36px;
+  --title-lg: 28px;
+  --title-md: 22px;
+  --title-sm: 18px;
+  --body-lg: 16px;
+  --body-md: 14px;
+  --body-sm: 12px;
+  --label-xs: 11px;
+  --lh-tight: 1.02;
+  --lh-snug: 1.15;
+  --lh-normal: 1.5;
+  --ls-tight: -0.04em;
+  --ls-md: -0.02em;
+  --ls-body: -0.01em;
+
+  /* ── Layout ──────────────────────────────────────────────── */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 72px;
+  --header-height: 64px;
+  --content-max: 1240px;
+
+  /* ── Transitions ─────────────────────────────────────────── */
+  --ease-standard: cubic-bezier(.2,.8,.2,1);
+  --ease-entrance: cubic-bezier(.16,1,.3,1);
+  --duration-fast: 160ms;
+  --duration-base: 240ms;
+  --duration-slow: 420ms;
+  --transition-fast: 160ms cubic-bezier(.2,.8,.2,1);
+  --transition-base: 240ms cubic-bezier(.2,.8,.2,1);
+  --transition-slow: 420ms cubic-bezier(.2,.8,.2,1);
+  --transition-spring: 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --transition-entrance: 420ms cubic-bezier(.16,1,.3,1);
+
+  /* ── Z-Index ─────────────────────────────────────────────── */
+  --z-nav: 100;
+  --z-sticky: 30;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESET & BASE
+   ══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--body-md);
+  line-height: var(--lh-normal);
+  letter-spacing: var(--ls-body);
+  color: var(--stone-900);
+  background: var(--surface-warm);
+  overflow-x: hidden;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  line-height: var(--lh-snug);
+  color: var(--stone-900);
+  letter-spacing: var(--ls-md);
+}
+
+h1 { font-size: var(--title-lg); font-weight: 800; letter-spacing: var(--ls-tight); }
+h2 { font-size: var(--title-md); letter-spacing: var(--ls-tight); }
+h3 { font-size: var(--title-sm); }
+h4 { font-size: var(--body-lg); }
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  max-width: 100%;
+  display: block;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ══════════════════════════════════════════════════════════════ */
+
+.hidden { display: none !important; }
+
+.text-accent { color: var(--orange-500); }
+
+.text-muted { color: var(--stone-500); }
+
+/* ══════════════════════════════════════════════════════════════
+   BUTTONS — Orange Travel System
+   ══════════════════════════════════════════════════════════════ */
+
+.btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-2);
+  padding: 12px 20px;
+  min-height: 44px;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: var(--ls-md);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-base) var(--ease-standard),
+              background var(--duration-fast) var(--ease-standard),
+              color var(--duration-fast) var(--ease-standard),
+              border-color var(--duration-fast) var(--ease-standard);
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.99);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--orange-500), var(--orange-400));
+  color: var(--stone-0);
+  box-shadow: var(--shadow-cta);
+}
+
+.btn-primary:hover {
+  box-shadow: 0 18px 42px rgba(255, 122, 26, 0.28);
+}
+
+.btn-secondary {
+  background: var(--primary-surface);
+  color: var(--orange-700);
+  border: 1px solid rgba(255, 122, 26, 0.14);
+}
+
+.btn-secondary:hover {
+  background: var(--orange-100);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--stone-700);
+  border: 1.5px solid var(--border-color-strong);
+}
+
+.btn-outline:hover {
+  border-color: rgba(255, 122, 26, 0.32);
+  color: var(--orange-700);
+  background: rgba(255, 122, 26, 0.04);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--stone-600);
+  padding: 8px 14px;
+}
+
+.btn-ghost:hover {
+  background: var(--stone-100);
+  color: var(--stone-900);
+}
+
+.btn-dark {
+  background: var(--stone-900);
+  color: var(--stone-0);
+}
+
+.btn-sm {
+  padding: 8px 14px;
+  font-size: 12px;
+  min-height: 36px;
+  border-radius: var(--radius-xs);
+}
+
+.btn-lg {
+  padding: 14px 24px;
+  font-size: 14px;
+  min-height: 52px;
+}
+
+.btn-pill {
+  border-radius: var(--radius-full);
+  padding-inline: 18px;
+}
+
+.btn-icon {
+  width: 44px;
+  padding: 0;
+}
+
+.btn[disabled] {
+  background: var(--stone-200);
+  color: var(--stone-400);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CHIPS / PILLS — Orange Travel System
+   ══════════════════════════════════════════════════════════════ */
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 8px 14px;
+  border-radius: var(--radius-full);
+  font-size: var(--body-sm);
+  font-weight: 600;
+  border: 1px solid var(--border-color-strong);
+  background: var(--stone-0);
+  color: var(--stone-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.chip:hover {
+  border-color: rgba(255, 122, 26, 0.32);
+  color: var(--orange-700);
+  background: rgba(255, 122, 26, 0.04);
+}
+
+.chip-active {
+  background: linear-gradient(135deg, var(--orange-500), var(--orange-400));
+  color: var(--stone-0);
+  border-color: transparent;
+  box-shadow: var(--shadow-cta);
+}
+
+.chip-active:hover {
+  background: linear-gradient(135deg, var(--orange-600), var(--orange-500));
+  color: var(--stone-0);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CARDS — Orange Travel System
+   ══════════════════════════════════════════════════════════════ */
+
+.card {
+  background: var(--stone-0);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  transition: transform var(--duration-base) var(--ease-entrance),
+              box-shadow var(--duration-base) var(--ease-standard);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-5) var(--sp-6);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-header h3 {
+  font-size: var(--body-lg);
+  font-weight: 700;
+  letter-spacing: var(--ls-md);
+}
+
+.card-body {
+  padding: var(--sp-5) var(--sp-6);
+}
+
+.card-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STATUS DOTS & BADGES
+   ══════════════════════════════════════════════════════════════ */
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.status-new { background: var(--info); }
+.status-negotiating { background: var(--warning); }
+.status-closed { background: var(--success); }
+.status-lost { background: var(--danger); }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--label-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.status-badge-new {
+  background: var(--info-light);
+  color: #205dcc;
+}
+
+.status-badge-negotiating {
+  background: var(--warning-light);
+  color: #8a6c00;
+}
+
+.status-badge-closed {
+  background: var(--success-light);
+  color: #11713a;
+}
+
+.status-badge-lost {
+  background: var(--danger-light);
+  color: #cb3f34;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   FORMS — Orange Travel System
+   ══════════════════════════════════════════════════════════════ */
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--stone-700);
+  letter-spacing: var(--ls-body);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  padding: 12px 16px;
+  min-height: 48px;
+  border: 1px solid var(--border-color-strong);
+  border-radius: var(--radius-md);
+  background: var(--stone-50);
+  color: var(--stone-900);
+  transition: border-color var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard);
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--orange-500);
+  box-shadow: 0 0 0 3px rgba(255, 122, 26, 0.12);
+  background: var(--stone-0);
+}
+
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--stone-400);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-4);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  margin-top: var(--sp-6);
+  padding-top: var(--sp-5);
+  border-top: 1px solid var(--border-color);
+}
+
+.filter-select {
+  padding: 10px 14px;
+  min-height: 42px;
+  border: 1px solid var(--border-color-strong);
+  border-radius: var(--radius-sm);
+  background: var(--stone-50);
+  color: var(--stone-700);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-standard);
+}
+
+.filter-select:focus {
+  border-color: var(--orange-500);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MODALS — Orange Travel System
+   ══════════════════════════════════════════════════════════════ */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: modalFadeIn var(--duration-base) var(--ease-standard);
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(17, 20, 24, 0.5);
+  backdrop-filter: blur(8px);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--stone-0);
+  border-radius: var(--radius-2xl);
+  padding: var(--sp-8);
+  max-width: 560px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  animation: modalSlideUp var(--duration-base) var(--ease-entrance);
+}
+
+.modal-content h2 {
+  margin-bottom: var(--sp-6);
+}
+
+.modal-large {
+  max-width: 900px;
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--sp-4);
+  right: var(--sp-4);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color-strong);
+  background: var(--stone-0);
+  color: var(--stone-500);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+  box-shadow: var(--shadow-xs);
+}
+
+.modal-close:hover {
+  background: var(--stone-100);
+  color: var(--stone-800);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DATA TABLE
+   ══════════════════════════════════════════════════════════════ */
+
+.leads-table-wrapper {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  text-align: left;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--label-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--stone-400);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-table td {
+  padding: var(--sp-3) var(--sp-4);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 13px;
+}
+
+.data-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.data-table tbody tr:hover {
+  background: rgba(255, 122, 26, 0.03);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   ANIMATIONS
+   ══════════════════════════════════════════════════════════════ */
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--stone-300);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--stone-400);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   DARK THEME (data-theme="dark")
+   ══════════════════════════════════════════════════════════════ */
+:root[data-theme="dark"] {
+  /* Invertendo Neutrals principais */
+  --stone-0: #111418;
+  --stone-25: #161a1f;
+  --stone-50: #1a1d23;
+  --stone-100: #23272d;
+  --stone-200: #2f343c;
+  --stone-800: #e8eaee;
+  --stone-900: #ffffff;
+
+  /* Surfaces & Backgrounds */
+  --surface-card: var(--stone-50);
+  --surface-alt: var(--stone-100);
+  --surface-warm: var(--stone-0);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-strong: rgba(255, 255, 255, 0.12);
+
+  --cream: var(--stone-0);
+  --sand: var(--stone-50);
+  --white: var(--stone-50);
+
+  /* Override Semantic Aliases */
+  --primary-surface: rgba(255, 122, 26, 0.15);
+  --coffee: var(--stone-800);
+  --coffee-light: var(--stone-400);
+
+  /* Scales Reverse / Override */
+  --gray-50: var(--stone-50);
+  --gray-100: var(--stone-100);
+  --gray-200: var(--stone-200);
+  --gray-800: var(--stone-800);
+  --gray-900: var(--stone-900);
+
+  /* Hero Bg e Overlays adaptados */
+  --hero-bg: radial-gradient(circle at top left, rgba(255,148,71,0.1), transparent 26%),
+             radial-gradient(circle at 78% 14%, rgba(255,122,26,0.05), transparent 24%),
+             linear-gradient(180deg, #111418 0%, #15181d 100%);
+  --overlay-dark: linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.85));
+
+  /* Shadows reduzidas para dark mode */
+  --shadow-xs: 0 4px 10px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 10px 20px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 18px 34px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 28px 54px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 28px 54px rgba(0, 0, 0, 0.5);
+  --shadow-primary: 0 16px 36px rgba(255, 122, 26, 0.15);
+  --shadow-cta: 0 16px 36px rgba(255, 122, 26, 0.15);
+}

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Seu roteiro de viagem personalizado — Mapa do Viajante PRO">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#FF7A1A">
+  <title>Meu Roteiro — Mapa do Viajante</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/traveler-view.css">
+
+  <style>
+    /* Page-level reset since this is standalone */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: #1F2937;
+      background: #FBF8F4;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* Loading Screen */
+    .tv-loading {
+      position: fixed;
+      inset: 0;
+      background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-600) 50%, var(--stone-800) 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      transition: opacity 0.5s ease, visibility 0.5s ease;
+    }
+    .tv-loading.loaded {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .tv-loading-logo {
+      font-family: var(--font-sans);
+      font-size: 28px;
+      font-weight: 800;
+      color: white;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .tv-loading-logo i {
+      font-size: 24px;
+    }
+    .tv-loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: tvSpin 0.8s linear infinite;
+    }
+    @keyframes tvSpin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Share link copied toast */
+    .tv-toast {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-100px);
+      background: var(--stone-900);
+      color: white;
+      padding: 12px 24px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 600;
+      z-index: 200;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tv-toast.visible {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body class="tv-page">
+
+  <!-- Loading Screen -->
+  <div class="tv-loading" id="tv-loading">
+    <div class="tv-loading-logo">
+      <i class="fas fa-map-marker-alt"></i>
+      MapaPRO
+    </div>
+    <div class="tv-loading-spinner"></div>
+  </div>
+
+  <!-- Toast -->
+  <div class="tv-toast" id="tv-toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="tv-toast-text">Copiado!</span>
+  </div>
+
+  <!-- ═══════════════ HERO HEADER ═══════════════ -->
+  <header class="tv-hero" id="tv-hero">
+    <div class="tv-logo">
+      <div class="tv-logo-icon"><i class="fas fa-map-marker-alt"></i></div>
+      <span class="tv-logo-text">Mapa<span class="tv-logo-pro">PRO</span></span>
+    </div>
+    <div class="tv-hero-content">
+      <div class="tv-hero-destination" id="tv-destination">Lisboa & Porto</div>
+      <div class="tv-hero-title" id="tv-trip-title">Roteiro personalizado para Família Santos</div>
+      <div class="tv-hero-chips" id="tv-chips">
+        <!-- Populated by JS -->
+      </div>
+      <div class="tv-countdown" id="tv-countdown">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+  <div class="tv-container">
+
+    <!-- Quick Stats -->
+    <div class="tv-stats" id="tv-stats">
+      <!-- Populated by JS -->
+    </div>
+
+    <!-- Itinerary Days -->
+    <section class="tv-itinerary">
+      <div class="tv-section-title"><i class="fas fa-route"></i> Roteiro Dia a Dia</div>
+      <div id="tv-days">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Vouchers -->
+    <section class="tv-vouchers" id="tv-vouchers-section">
+      <div class="tv-section-title"><i class="fas fa-ticket-alt"></i> Vouchers & Reservas</div>
+      <div id="tv-vouchers">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Budget Summary -->
+    <section class="tv-budget" id="tv-budget-section">
+      <div class="tv-section-title"><i class="fas fa-wallet"></i> Resumo do Investimento</div>
+      <div class="tv-budget-card" id="tv-budget-card">
+        <!-- Populated by JS -->
+      </div>
+    </section>
+
+    <!-- Agent Contact Card -->
+    <section class="tv-agent">
+      <div class="tv-section-title"><i class="fas fa-headset"></i> Seu Consultor</div>
+      <div class="tv-agent-card" id="tv-agent-card">
+        <div class="tv-agent-avatar">LF</div>
+        <div class="tv-agent-info">
+          <div class="tv-agent-name">Lucas Felipe</div>
+          <div class="tv-agent-role">Consultor de Viagens • O Segredo do Viajante</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="tv-footer">
+      <p>Roteiro criado com ❤️ por <a href="#">O Segredo do Viajante</a></p>
+      <p style="margin-top: 4px;">CNPJ: 47.915.163/0001-68</p>
+    </footer>
+  </div>
+
+  <!-- ═══════════════ FAB — FIXED BOTTOM BAR ═══════════════ -->
+  <div class="tv-fab" id="tv-fab">
+    <a class="tv-fab-btn tv-fab-whatsapp" id="tv-whatsapp-btn" href="#" target="_blank" rel="noopener">
+      <i class="fab fa-whatsapp" style="font-size: 20px;"></i>
+      Falar com o Agente
+    </a>
+    <a class="tv-fab-btn tv-fab-call" id="tv-call-btn" href="tel:+5511999999999" aria-label="Ligar">
+      <i class="fas fa-phone" style="font-size: 18px;"></i>
+    </a>
+  </div>
+
+  <!-- Data (shared with CRM) -->
+  <script src="js/data.js"></script>
+  <script src="js/traveler-view.js"></script>
+</body>
+</html>

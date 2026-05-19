@@ -1,0 +1,197 @@
+/* ══════════════════════════════════════════════════════════════
+   FINANCES
+   ══════════════════════════════════════════════════════════════ */
+
+.finance-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-6);
+}
+
+/* ── Finance Summary Card ────────────────────────────────── */
+.finance-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) 0;
+}
+
+.summary-row.highlight {
+  background: var(--primary-surface);
+  margin: 0 calc(-1 * var(--sp-6));
+  padding: var(--sp-3) var(--sp-6);
+  border-radius: var(--radius-md);
+}
+
+.summary-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-500);
+  display: flex;
+  align-items: center;
+}
+
+.summary-value {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--gray-900);
+}
+
+.summary-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: var(--sp-2) 0;
+}
+
+.summary-progress {
+  width: 100%;
+  height: 6px;
+  background: var(--gray-100);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.summary-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--orange-500), var(--orange-400));
+  border-radius: var(--radius-full);
+  transition: width 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* ── Transaction List (legacy compat) ────────────────────── */
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-1);
+  border-bottom: 1px solid var(--gray-50);
+  transition: background var(--transition-fast);
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-item:hover {
+  background: var(--gray-50);
+  border-radius: var(--radius-md);
+}
+
+.transaction-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.transaction-income {
+  background: var(--success-light);
+  color: #15803D;
+}
+
+.transaction-expense {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.transaction-commission {
+  background: var(--info-light);
+  color: var(--info);
+}
+
+.transaction-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.transaction-desc {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gray-800);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.transaction-date {
+  font-size: 11px;
+  color: var(--gray-400);
+}
+
+.transaction-amount {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.transaction-amount.income {
+  color: var(--success);
+}
+
+.transaction-amount.expense {
+  color: var(--danger);
+}
+
+.transaction-amount.commission {
+  color: var(--info);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE
+   ══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 1200px) {
+  .finance-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .finance-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tabela scrollável horizontalmente em mobile */
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .data-table th:nth-child(5),
+  .data-table td:nth-child(5) {
+    display: none; /* Esconde coluna Ações em mobile estreito */
+  }
+
+  .summary-row.highlight {
+    margin: 0 calc(-1 * var(--sp-4));
+    padding: var(--sp-3) var(--sp-4);
+  }
+}

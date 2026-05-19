@@ -1,0 +1,732 @@
+/* ══════════════════════════════════════════════════════════════
+   TRAVELER-VIEW.CSS — Mobile-first Traveler PWA Shell
+   Premium view for the client to see their itinerary
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Reset & Base (standalone page) ────────────────────────── */
+.tv-page {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--stone-800);
+  background: var(--sand-50);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+.tv-page * {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ── Hero Header ───────────────────────────────────────────── */
+.tv-hero {
+  background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-600) 50%, var(--stone-800) 100%);
+  color: white;
+  padding: 48px 24px 36px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tv-hero::before {
+  content: '';
+  position: absolute;
+  top: -40%;
+  right: -30%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.tv-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30%;
+  left: -20%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.tv-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  position: relative;
+  z-index: 1;
+}
+
+.tv-logo-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255,255,255,0.2);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.tv-logo-text {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+
+.tv-logo-pro {
+  font-size: 10px;
+  color: var(--orange-50);
+  vertical-align: super;
+  font-weight: 600;
+}
+
+.tv-hero-content {
+  position: relative;
+  z-index: 1;
+}
+
+.tv-hero-destination {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.tv-hero-title {
+  font-size: 14px;
+  opacity: 0.85;
+  margin-bottom: 20px;
+}
+
+.tv-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.tv-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+.tv-chip i {
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+/* ── Countdown ─────────────────────────────────────────────── */
+.tv-countdown {
+  display: flex;
+  gap: 16px;
+  justify-content: flex-start;
+}
+
+.tv-countdown-item {
+  text-align: center;
+  min-width: 56px;
+}
+
+.tv-countdown-value {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 28px;
+  font-weight: 700;
+  display: block;
+  line-height: 1;
+}
+
+.tv-countdown-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  margin-top: 2px;
+}
+
+.tv-countdown-sep {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 24px;
+  font-weight: 700;
+  opacity: 0.5;
+  margin-top: 2px;
+}
+
+/* ── Container ─────────────────────────────────────────────── */
+.tv-container {
+  padding: 24px 16px 120px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* ── Quick Stats ───────────────────────────────────────────── */
+.tv-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+  margin-top: -24px;
+  position: relative;
+  z-index: 2;
+}
+
+.tv-stat {
+  background: white;
+  border-radius: 12px;
+  padding: 16px 12px;
+  text-align: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+.tv-stat-value {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--orange-500);
+  display: block;
+  line-height: 1;
+}
+
+.tv-stat-label {
+  font-size: 11px;
+  color: var(--stone-500);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* ── Section Title ─────────────────────────────────────────── */
+.tv-section-title {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--stone-800);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tv-section-title i {
+  color: var(--orange-500);
+  font-size: 16px;
+}
+
+/* ── Day Card ──────────────────────────────────────────────── */
+.tv-day {
+  background: white;
+  border-radius: 16px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border: 1px solid var(--stone-100);
+  animation: tvFadeInUp 0.5s ease both;
+}
+
+.tv-day:nth-child(1) { animation-delay: 0s; }
+.tv-day:nth-child(2) { animation-delay: 0.08s; }
+.tv-day:nth-child(3) { animation-delay: 0.16s; }
+.tv-day:nth-child(4) { animation-delay: 0.24s; }
+.tv-day:nth-child(5) { animation-delay: 0.32s; }
+.tv-day:nth-child(6) { animation-delay: 0.4s; }
+.tv-day:nth-child(7) { animation-delay: 0.48s; }
+
+.tv-day-header {
+  background: linear-gradient(135deg, var(--stone-800) 0%, var(--stone-700) 100%);
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tv-day-label {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.tv-day-date {
+  font-size: 12px;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tv-day-body {
+  padding: 8px 0;
+}
+
+/* ── Activity Item ─────────────────────────────────────────── */
+.tv-activity {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 20px;
+  transition: background 0.15s ease;
+  position: relative;
+}
+
+.tv-activity:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 68px;
+  right: 20px;
+  height: 1px;
+  background: var(--stone-100);
+}
+
+.tv-activity:active {
+  background: var(--stone-50);
+}
+
+.tv-activity-time {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--stone-400);
+  min-width: 42px;
+  padding-top: 2px;
+  flex-shrink: 0;
+}
+
+.tv-activity-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.tv-activity-icon.type-flight { background: #EFF6FF; color: #3B82F6; }
+.tv-activity-icon.type-hotel { background: #F0FDF4; color: #22C55E; }
+.tv-activity-icon.type-activity { background: var(--orange-50); color: var(--orange-500); }
+.tv-activity-icon.type-transfer { background: #FEF3C7; color: #D97706; }
+.tv-activity-icon.type-restaurant { background: #FEF2F2; color: #EF4444; }
+.tv-activity-icon.type-note { background: var(--stone-100); color: var(--stone-500); }
+
+.tv-activity-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.tv-activity-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--stone-800);
+  margin-bottom: 2px;
+}
+
+.tv-activity-detail {
+  font-size: 12px;
+  color: var(--stone-500);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tv-activity-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tv-activity-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  background: white;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--stone-500);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.tv-activity-btn:hover,
+.tv-activity-btn:active {
+  border-color: var(--orange-500);
+  color: var(--orange-500);
+  background: var(--orange-50);
+}
+
+.tv-activity-btn i {
+  font-size: 10px;
+}
+
+.tv-activity-price {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--orange-500);
+  margin-top: 4px;
+}
+
+/* ── Empty Day ─────────────────────────────────────────────── */
+.tv-day-empty {
+  padding: 24px 20px;
+  text-align: center;
+  color: var(--stone-400);
+  font-size: 13px;
+}
+
+.tv-day-empty i {
+  font-size: 24px;
+  margin-bottom: 8px;
+  display: block;
+  color: var(--stone-300);
+}
+
+/* ── Vouchers Section ──────────────────────────────────────── */
+.tv-vouchers {
+  margin-top: 32px;
+}
+
+.tv-voucher-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid var(--stone-100);
+  display: flex;
+  align-items: stretch;
+}
+
+.tv-voucher-left {
+  background: linear-gradient(135deg, var(--orange-500) 0%, var(--orange-600) 100%);
+  color: white;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  gap: 4px;
+}
+
+.tv-voucher-left i {
+  font-size: 20px;
+}
+
+.tv-voucher-left span {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tv-voucher-right {
+  padding: 14px 16px;
+  flex: 1;
+}
+
+.tv-voucher-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--stone-800);
+  margin-bottom: 2px;
+}
+
+.tv-voucher-detail {
+  font-size: 12px;
+  color: var(--stone-500);
+  margin-bottom: 8px;
+}
+
+.tv-voucher-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tv-voucher-actions .tv-activity-btn {
+  font-size: 11px;
+  padding: 5px 10px;
+}
+
+/* ── Budget Summary ────────────────────────────────────────── */
+.tv-budget {
+  margin-top: 32px;
+}
+
+.tv-budget-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  border: 1px solid var(--stone-100);
+}
+
+.tv-budget-total {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tv-budget-label {
+  font-size: 12px;
+  color: var(--stone-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tv-budget-value {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--orange-500);
+  line-height: 1;
+  margin-top: 4px;
+}
+
+.tv-budget-bar {
+  background: var(--stone-100);
+  border-radius: 8px;
+  height: 10px;
+  margin: 16px 0;
+  overflow: hidden;
+}
+
+.tv-budget-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--orange-500), var(--orange-600));
+  border-radius: 8px;
+  transition: width 0.8s ease;
+}
+
+.tv-budget-bar-fill.over {
+  background: linear-gradient(90deg, #EF4444, #DC2626);
+}
+
+.tv-budget-breakdown {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.tv-budget-breakdown span:first-child {
+  color: var(--stone-500);
+}
+
+.tv-budget-breakdown span:last-child {
+  font-weight: 600;
+  color: var(--stone-800);
+}
+
+/* ── Agent Contact ─────────────────────────────────────────── */
+.tv-agent {
+  margin-top: 32px;
+}
+
+.tv-agent-card {
+  background: linear-gradient(135deg, var(--stone-800) 0%, var(--stone-700) 100%);
+  border-radius: 16px;
+  padding: 24px;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 4px 16px rgba(61,52,38,0.3);
+}
+
+.tv-agent-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(245,142,38,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 18px;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid rgba(255,255,255,0.2);
+}
+
+.tv-agent-info {
+  flex: 1;
+}
+
+.tv-agent-name {
+  font-family: var(--font-sans);
+  font-weight: 800;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.tv-agent-role {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ── FAB (Floating Action Button) ──────────────────────────── */
+.tv-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  left: 24px;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  gap: 12px;
+  z-index: 100;
+}
+
+.tv-fab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.tv-fab-btn:active {
+  transform: scale(0.97);
+}
+
+.tv-fab-whatsapp {
+  background: #25D366;
+  color: white;
+}
+
+.tv-fab-whatsapp:hover {
+  background: #1DA851;
+  box-shadow: 0 8px 24px rgba(37,211,102,0.35);
+}
+
+.tv-fab-call {
+  background: white;
+  color: var(--stone-800);
+  max-width: 56px;
+  padding: 16px;
+}
+
+.tv-fab-call:hover {
+  background: var(--stone-100);
+}
+
+/* ── Footer ────────────────────────────────────────────────── */
+.tv-footer {
+  text-align: center;
+  padding: 32px 16px 16px;
+  font-size: 11px;
+  color: var(--stone-400);
+}
+
+.tv-footer a {
+  color: var(--orange-500);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+/* ── Animations ────────────────────────────────────────────── */
+@keyframes tvFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Responsive (max-width adjustments for small screens) ─── */
+@media (max-width: 380px) {
+  .tv-hero {
+    padding: 36px 16px 28px;
+  }
+
+  .tv-hero-destination {
+    font-size: 26px;
+  }
+
+  .tv-countdown-value {
+    font-size: 22px;
+  }
+
+  .tv-stats {
+    gap: 8px;
+  }
+
+  .tv-stat-value {
+    font-size: 18px;
+  }
+
+  .tv-budget-value {
+    font-size: 28px;
+  }
+}
+
+/* ── Desktop override (keep mobile feel, center content) ──── */
+@media (min-width: 600px) {
+  .tv-hero {
+    text-align: center;
+    padding: 56px 32px 44px;
+  }
+
+  .tv-logo {
+    justify-content: center;
+  }
+
+  .tv-hero-chips {
+    justify-content: center;
+  }
+
+  .tv-countdown {
+    justify-content: center;
+  }
+
+  .tv-container {
+    padding: 32px 24px 120px;
+  }
+
+  .tv-stats {
+    margin-top: -28px;
+  }
+}
