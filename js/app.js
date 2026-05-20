@@ -134,10 +134,10 @@ function showSearchResults(query) {
   const results = document.getElementById('search-results');
   let html = '';
 
-  // Search leads — use dynamic cache from leads.js if available, fallback to static
-  const leadsSource = (typeof currentLeads !== 'undefined' && currentLeads.length) ? currentLeads : (typeof LEADS !== 'undefined' ? LEADS : []);
+  // Search leads — use dynamic cache from leads.js if available
+  const leadsSource = (typeof currentLeads !== 'undefined' && currentLeads.length) ? currentLeads : [];
   const matchedLeads = leadsSource.filter(l =>
-    l.name.toLowerCase().includes(query) ||
+    (l.name || '').toLowerCase().includes(query) ||
     (l.destination || '').toLowerCase().includes(query) ||
     (l.email || '').toLowerCase().includes(query)
   ).slice(0, 4);

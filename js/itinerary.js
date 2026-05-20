@@ -11,17 +11,47 @@ function initItinerary() {
 }
 
 // ── Itinerary List ──────────────────────────────────────────
-function renderItineraryList() {
+async function renderItineraryList() {
   const grid = document.getElementById('itinerary-grid');
   if (!grid) return;
 
-  grid.innerHTML = ITINERARIES.map(it => {
+  const session = JSON.parse(localStorage.getItem('mapapro_session') || '{}');
+  let itineraries;
+
+  if (session.isSupabase) {
+    try {
+      itineraries = await fetchItineraries();
+      // Normalize Supabase fields to match static data format
+      itineraries = itineraries.map(it => ({
+        ...it,
+        client: it.client_name || (it.lead ? it.lead.name : 'Cliente'),
+        dates: it.start_date && it.end_date
+          ? `${new Date(it.start_date).toLocaleDateString('pt-BR')} — ${new Date(it.end_date).toLocaleDateString('pt-BR')}`
+          : 'A definir',
+        passengers: it.passengers || 1,
+        budget: Number(it.budget) || 0,
+        spent: Number(it.spent) || 0,
+        status: it.status === 'draft' ? 'Rascunho' : it.status === 'sent' ? 'Enviado' : it.status === 'approved' ? 'Aprovado' : it.status,
+        days: it.days || [],
+      }));
+    } catch (err) {
+      console.error('renderItineraryList Supabase error:', err);
+      itineraries = [...ITINERARIES];
+    }
+  } else {
+    itineraries = [...ITINERARIES];
+  }
+
+  // Store for global search access
+  window._currentItineraries = itineraries;
+
+  grid.innerHTML = itineraries.map(it => {
     const pct = it.budget > 0 ? Math.round((it.spent / it.budget) * 100) : 0;
     const statusClass = it.status === 'Aprovado' ? 'status-badge-closed' :
                         it.status === 'Rascunho' ? 'status-badge-new' : 'status-badge-negotiating';
 
     return `
-    <div class="itinerary-card" onclick="openItinerary(${it.id})">
+    <div class="itinerary-card" onclick="openItinerary('${it.id}')">
       <div class="itinerary-card-cover">
         <i class="fas fa-route"></i>
         <span class="itinerary-card-status">
@@ -37,7 +67,7 @@ function renderItineraryList() {
         </div>
         <div class="itinerary-card-footer">
           <span class="itinerary-card-price">R$ ${it.budget.toLocaleString('pt-BR')}</span>
-          <span style="font-size: 12px; color: var(--gray-400);">${it.days.length} dias</span>
+          <span style="font-size: 12px; color: var(--gray-400);">${(it.days || []).length} dias</span>
         </div>
       </div>
     </div>`;
@@ -45,8 +75,45 @@ function renderItineraryList() {
 }
 
 // ── Open Builder ────────────────────────────────────────────
-function openItinerary(id) {
-  const it = ITINERARIES.find(i => i.id === id);
+async function openItinerary(id) {
+  const session = JSON.parse(localStorage.getItem('mapapro_session') || '{}');
+  let it;
+
+  if (session.isSupabase) {
+    try {
+      it = await fetchItineraryById(id);
+      if (it) {
+        // Normalize Supabase fields
+        it.client = it.client_name || 'Cliente';
+        it.dates = it.start_date && it.end_date
+          ? `${new Date(it.start_date).toLocaleDateString('pt-BR')} — ${new Date(it.end_date).toLocaleDateString('pt-BR')}`
+          : 'A definir';
+        it.budget = Number(it.budget) || 0;
+        it.spent = Number(it.spent) || 0;
+        it.passengers = it.passengers || 1;
+        // Normalize days with activities
+        it.days = (it.days || []).map(day => ({
+          ...day,
+          label: day.label || `Dia ${day.day_number}`,
+          date: day.date ? new Date(day.date).toLocaleDateString('pt-BR') : 'DD/MM',
+          activities: (day.activities || []).map(act => ({
+            ...act,
+            type: act.type || 'activity',
+            title: act.title || 'Atividade',
+            detail: act.description || '',
+            time: act.time_start || '',
+            price: Number(act.cost) || 0,
+          })),
+        }));
+      }
+    } catch (err) {
+      console.error('openItinerary Supabase error:', err);
+      it = null;
+    }
+  } else {
+    it = ITINERARIES.find(i => i.id == id);
+  }
+
   if (!it) return;
 
   currentItinerary = it;
@@ -85,35 +152,58 @@ function initItineraryButtons() {
 
   const newBtn = document.getElementById('new-itinerary-btn');
   if (newBtn) {
-    newBtn.addEventListener('click', () => {
-      const newIt = {
-        id: ITINERARIES.length + 1,
-        title: 'Novo Roteiro',
-        client: 'Cliente',
-        destination: 'Destino',
-        dates: 'A definir',
-        passengers: 1,
-        budget: 10000,
-        spent: 0,
-        status: 'Rascunho',
-        days: [
-          { label: 'Dia 1', date: 'DD/MM', activities: [] },
-          { label: 'Dia 2', date: 'DD/MM', activities: [] },
-          { label: 'Dia 3', date: 'DD/MM', activities: [] },
-        ]
-      };
-      ITINERARIES.push(newIt);
-      openItinerary(newIt.id);
-      showToast('Novo roteiro criado!', 'success');
+    newBtn.addEventListener('click', async () => {
+      const session = JSON.parse(localStorage.getItem('mapapro_session') || '{}');
+
+      if (session.isSupabase) {
+        try {
+          const created = await createItinerary({
+            title: 'Novo Roteiro',
+            status: 'draft',
+          });
+          if (created) {
+            await renderItineraryList();
+            openItinerary(created.id);
+            showToast('Novo roteiro criado!', 'success');
+          }
+        } catch (err) {
+          console.error('New itinerary error:', err);
+          showToast('Erro ao criar roteiro.', 'error');
+        }
+      } else {
+        const newIt = {
+          id: ITINERARIES.length + 1,
+          title: 'Novo Roteiro',
+          client: 'Cliente',
+          destination: 'Destino',
+          dates: 'A definir',
+          passengers: 1,
+          budget: 10000,
+          spent: 0,
+          status: 'Rascunho',
+          days: [
+            { label: 'Dia 1', date: 'DD/MM', activities: [] },
+            { label: 'Dia 2', date: 'DD/MM', activities: [] },
+            { label: 'Dia 3', date: 'DD/MM', activities: [] },
+          ]
+        };
+        ITINERARIES.push(newIt);
+        openItinerary(newIt.id);
+        showToast('Novo roteiro criado!', 'success');
+      }
     });
   }
 
   const saveBtn = document.getElementById('save-itinerary-btn');
   if (saveBtn) {
-    saveBtn.addEventListener('click', () => {
+    saveBtn.addEventListener('click', async () => {
       if (currentItinerary) {
         currentItinerary.title = document.getElementById('builder-title').value;
-        renderItineraryList();
+        const session = JSON.parse(localStorage.getItem('mapapro_session') || '{}');
+        if (session.isSupabase && currentItinerary.id) {
+          await updateItinerary(currentItinerary.id, { title: currentItinerary.title });
+        }
+        await renderItineraryList();
         showToast('Roteiro salvo com sucesso! 💾', 'success');
       }
     });

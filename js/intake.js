@@ -252,7 +252,7 @@ function validateIntakeStep(step) {
 }
 
 // ── Submit ────────────────────────────────────────────────────
-function submitIntakeForm() {
+async function submitIntakeForm() {
   const name = document.getElementById('lead-name').value.trim();
   const email = document.getElementById('lead-email').value.trim();
   const phone = document.getElementById('lead-phone').value.trim();
@@ -268,6 +268,7 @@ function submitIntakeForm() {
   const accomType = [...selectedAccomType].join(', ');
   const accomPrefs = [...selectedAccomPrefs].join(', ');
   const flightFlex = document.getElementById('lead-flight-flex')?.value || '';
+  const origin = document.getElementById('lead-origin')?.value || 'direto';
 
   // Build checklists from template
   const checklists = {
@@ -276,46 +277,76 @@ function submitIntakeForm() {
     entrega: CHECKLISTS_TEMPLATE.entrega.items.map(title => ({ title, done: false })),
   };
 
-  // Create the lead object
-  const newLead = {
-    id: LEADS.length + 1,
-    name,
-    email,
-    phone,
-    destination,
-    value,
-    status: 'new',
-    lastActivity: new Date().toISOString().split('T')[0],
-    notes: [tripDetails, notes, flightObs].filter(Boolean).join(' | '),
-    // Extended traveler profile
-    profile: {
-      originCity,
-      date,
-      pax,
-      cards: [...selectedCards],
-      miles: [...selectedMiles],
-      milesBalance,
-      accomType,
-      accomPrefs,
-      flightFlex,
-    },
-    checklists,
+  const profile = {
+    originCity,
+    date,
+    pax,
+    cards: [...selectedCards],
+    miles: [...selectedMiles],
+    milesBalance,
+    accomType,
+    accomPrefs,
+    flightFlex,
   };
 
-  LEADS.unshift(newLead);
+  const combinedNotes = [tripDetails, notes, flightObs].filter(Boolean).join(' | ');
 
-  // Re-render pipeline & dashboard
-  renderPipeline();
-  renderDashboardLeads();
+  const session = JSON.parse(localStorage.getItem('mapapro_session') || '{}');
+
+  if (session.isSupabase) {
+    // ── Supabase mode ──
+    try {
+      const created = await createLead({
+        name,
+        email,
+        phone,
+        destination,
+        value,
+        status: 'new',
+        origin,
+        notes: combinedNotes,
+        profile,
+        checklists,
+      });
+      if (!created) {
+        showToast('Erro ao criar viajante no servidor.', 'error');
+        return;
+      }
+      // Refresh pipeline with real data
+      if (typeof initLeads === 'function') initLeads();
+      if (typeof initDashboard === 'function') initDashboard();
+    } catch (err) {
+      console.error('submitIntakeForm Supabase error:', err);
+      showToast('Erro ao salvar no servidor. Tente novamente.', 'error');
+      return;
+    }
+  } else {
+    // ── Demo mode ──
+    const newLead = {
+      id: LEADS.length + 1,
+      name,
+      email,
+      phone,
+      destination,
+      value,
+      status: 'new',
+      lastActivity: new Date().toISOString().split('T')[0],
+      notes: combinedNotes,
+      profile,
+      checklists,
+    };
+    LEADS.unshift(newLead);
+    renderPipeline();
+    renderDashboardLeads();
+  }
 
   // Update nav badge
   const badge = document.querySelector('.nav-badge');
-  if (badge) badge.textContent = LEADS.filter(l => l.status === 'new').length;
+  if (badge) badge.textContent = (typeof currentLeads !== 'undefined' ? currentLeads : LEADS).filter(l => l.status === 'new').length;
 
   // Close and reset
   closeModal('lead-modal');
   resetIntakeForm();
-
   showToast(`✈️ Viajante "${name}" criado com sucesso!`, 'success');
 }
 

@@ -4,43 +4,18 @@
 
 // ── Init Dashboard ────────────────────────────────────────────
 async function initDashboard() {
-  const session = getSession();
   let chartData = null;
 
-  if (session && session.isSupabase) {
-    const stats = await fetchDashboardStats();
-    if (stats) {
-      updateDashboardMetrics(stats);
-      renderTasks(stats.tasks);
-      renderDashboardLeads(stats.leads);
-      chartData = stats.chartData;
-    }
-  } else {
-    // Fallback offline mode
-    const stats = calculateFallbackStats();
+  const stats = await fetchDashboardStats();
+  if (stats) {
     updateDashboardMetrics(stats);
-    renderTasks(TASKS);
-    renderDashboardLeads(LEADS);
+    renderTasks(stats.tasks);
+    renderDashboardLeads(stats.leads);
+    chartData = stats.chartData;
   }
 
   initSalesChart(chartData);
   renderCalendar();
-}
-
-function calculateFallbackStats() {
-  const newLeads = LEADS.filter(l => l.status === 'new').length;
-  const negotiating = LEADS.filter(l => l.status === 'negotiating').length;
-  const closed = LEADS.filter(l => l.status === 'closed').length;
-  const lost = LEADS.filter(l => l.status === 'lost').length;
-  const totalLeads = LEADS.length;
-
-  const totalPipeline = LEADS
-    .filter(l => l.status === 'negotiating')
-    .reduce((sum, l) => sum + l.value, 0);
-  
-  const totalSales = 47850; // Mock stat
-
-  return { totalLeads, newLeads, negotiating, closed, lost, totalSales, totalPipeline };
 }
 
 function updateDashboardMetrics(stats) {
@@ -67,8 +42,7 @@ function initSalesChart(chartData) {
   const canvas = document.getElementById('sales-chart');
   if (!canvas) return;
 
-  // Use Supabase data if available, otherwise fallback to static
-  _activeChartData = chartData || SALES_DATA;
+  _activeChartData = chartData || { labels: [], revenue: [], count: [] };
 
   const ctx = canvas.getContext('2d');
 
@@ -189,7 +163,7 @@ function renderTasks(tasksToRender) {
   const container = document.getElementById('task-list');
   if (!container) return;
 
-  const tasksList = tasksToRender || TASKS; // Fallback
+  const tasksList = tasksToRender || [];
 
   if (tasksList.length === 0) {
     container.innerHTML = '<div style="padding: 20px; text-align: center; color: var(--gray-400);">Sem tarefas pendentes! 🎉</div>';
@@ -216,21 +190,9 @@ function renderTasks(tasksToRender) {
 }
 
 async function toggleTask(id, currentStatus) {
-  const session = getSession();
-  
-  if (session && session.isSupabase) {
-    await updateTask(id, { completed: !currentStatus });
-    const stats = await fetchDashboardStats();
-    renderTasks(stats.tasks);
-  } else {
-    // Fallback static
-    const task = TASKS.find(t => t.id === id);
-    if (task) {
-      task.completed = !task.completed;
-      renderTasks(TASKS);
-    }
-  }
-
+  await updateTask(id, { completed: !currentStatus });
+  const stats = await fetchDashboardStats();
+  renderTasks(stats.tasks);
   showToast(!currentStatus ? 'Tarefa concluída! ✅' : 'Tarefa reaberta', 'success');
 }
 
@@ -239,7 +201,7 @@ function renderDashboardLeads(leadsToRender) {
   const tbody = document.getElementById('dashboard-leads-body');
   if (!tbody) return;
 
-  const leadsList = leadsToRender || LEADS; // Fallback
+  const leadsList = leadsToRender || [];
   const recentLeads = [...leadsList].sort((a, b) => new Date(b.last_activity_at || b.lastActivity) - new Date(a.last_activity_at || a.lastActivity)).slice(0, 6);
 
   if (recentLeads.length === 0) {

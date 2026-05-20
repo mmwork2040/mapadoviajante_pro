@@ -30,12 +30,13 @@ function renderFinanceSummary() {
   const container = document.getElementById('finance-summary');
   if (!container) return;
 
+  // Revenue = all income (packages); Commissions = income with category 'comissao'
   const totalIncome = _finTransactions
-    .filter(t => t.type === 'income')
+    .filter(t => t.type === 'income' && t.category !== 'comissao')
     .reduce((s, t) => s + Number(t.amount), 0);
 
   const totalCommission = _finTransactions
-    .filter(t => t.type === 'commission')
+    .filter(t => t.type === 'income' && t.category === 'comissao')
     .reduce((s, t) => s + Number(t.amount), 0);
 
   const totalExpense = _finTransactions
@@ -44,6 +45,16 @@ function renderFinanceSummary() {
 
   const netProfit = totalCommission - totalExpense;
   const profitMargin = totalIncome > 0 ? ((totalCommission / totalIncome) * 100).toFixed(1) : 0;
+
+  // Update finance metric cards in the HTML
+  const elRevenue = document.getElementById('fin-revenue');
+  const elComm = document.getElementById('fin-commissions');
+  const elExp = document.getElementById('fin-expenses');
+  const elProfit = document.getElementById('fin-profit');
+  if (elRevenue) elRevenue.textContent = 'R$ ' + totalIncome.toLocaleString('pt-BR');
+  if (elComm) elComm.textContent = 'R$ ' + totalCommission.toLocaleString('pt-BR');
+  if (elExp) elExp.textContent = 'R$ ' + totalExpense.toLocaleString('pt-BR');
+  if (elProfit) elProfit.textContent = 'R$ ' + netProfit.toLocaleString('pt-BR');
 
   const incomeCount = _finTransactions.filter(t => t.type === 'income').length;
 
@@ -267,9 +278,9 @@ function buildFinanceChartData() {
     const bucket = months.find(m => m.year === txDate.getFullYear() && m.month === txDate.getMonth());
     if (!bucket) return;
 
-    if (t.type === 'income') {
+    if (t.type === 'income' && t.category !== 'comissao') {
       bucket.revenue += Number(t.amount);
-    } else if (t.type === 'commission') {
+    } else if (t.type === 'income' && t.category === 'comissao') {
       bucket.commissions += Number(t.amount);
     }
   });

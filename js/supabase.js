@@ -283,6 +283,152 @@ async function fetchDestinations() {
 }
 
 // ══════════════════════════════════════════════════════════════
+// ITINERARIES SERVICE
+// ══════════════════════════════════════════════════════════════
+
+async function fetchItineraries() {
+  const { data, error } = await supabase
+    .from('crm_itineraries')
+    .select('*, lead:crm_leads!crm_itineraries_lead_id_fkey(name)')
+    .eq('agency_id', _agencyId)
+    .order('created_at', { ascending: false });
+  if (error) { console.error('fetchItineraries:', error); return []; }
+  return data || [];
+}
+
+async function fetchItineraryById(id) {
+  const { data: itinerary, error: itErr } = await supabase
+    .from('crm_itineraries')
+    .select('*')
+    .eq('id', id)
+    .single();
+  if (itErr || !itinerary) { console.error('fetchItineraryById:', itErr); return null; }
+
+  // Get days with their activities
+  const { data: days, error: dayErr } = await supabase
+    .from('crm_itinerary_days')
+    .select('*, activities:crm_itinerary_activities(*)')
+    .eq('itinerary_id', id)
+    .order('sort_order', { ascending: true });
+  if (dayErr) console.error('fetchItineraryDays:', dayErr);
+
+  // Sort activities within each day
+  (days || []).forEach(day => {
+    if (day.activities) day.activities.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  });
+
+  // Get vouchers
+  const { data: vouchers, error: vErr } = await supabase
+    .from('crm_vouchers')
+    .select('*')
+    .eq('itinerary_id', id);
+  if (vErr) console.error('fetchVouchers:', vErr);
+
+  return { ...itinerary, days: days || [], vouchers: vouchers || [] };
+}
+
+async function createItinerary(itineraryData) {
+  const { data, error } = await supabase
+    .from('crm_itineraries')
+    .insert({
+      agency_id: _agencyId,
+      created_by: _memberId,
+      lead_id: itineraryData.lead_id || null,
+      title: itineraryData.title,
+      client_name: itineraryData.client_name || null,
+      destination: itineraryData.destination || null,
+      start_date: itineraryData.start_date || null,
+      end_date: itineraryData.end_date || null,
+      passengers: itineraryData.passengers || 1,
+      budget: itineraryData.budget || 0,
+      spent: itineraryData.spent || 0,
+      status: itineraryData.status || 'draft',
+    })
+    .select()
+    .single();
+  if (error) { console.error('createItinerary:', error); return null; }
+  return data;
+}
+
+async function updateItinerary(id, updates) {
+  const { data, error } = await supabase
+    .from('crm_itineraries')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) { console.error('updateItinerary:', error); return null; }
+  return data;
+}
+
+async function deleteItinerary(id) {
+  // Get day IDs for cascading delete
+  const { data: days } = await supabase.from('crm_itinerary_days').select('id').eq('itinerary_id', id);
+  const dayIds = (days || []).map(d => d.id);
+  if (dayIds.length) await supabase.from('crm_itinerary_activities').delete().in('day_id', dayIds);
+  await supabase.from('crm_itinerary_days').delete().eq('itinerary_id', id);
+  await supabase.from('crm_vouchers').delete().eq('itinerary_id', id);
+  const { error } = await supabase.from('crm_itineraries').delete().eq('id', id);
+  if (error) { console.error('deleteItinerary:', error); return false; }
+  return true;
+}
+
+async function createItineraryDay(dayData) {
+  const { data, error } = await supabase.from('crm_itinerary_days').insert(dayData).select().single();
+  if (error) { console.error('createItineraryDay:', error); return null; }
+  return data;
+}
+
+async function updateItineraryDay(id, updates) {
+  const { data, error } = await supabase.from('crm_itinerary_days').update(updates).eq('id', id).select().single();
+  if (error) { console.error('updateItineraryDay:', error); return null; }
+  return data;
+}
+
+async function deleteItineraryDay(id) {
+  await supabase.from('crm_itinerary_activities').delete().eq('day_id', id);
+  const { error } = await supabase.from('crm_itinerary_days').delete().eq('id', id);
+  if (error) { console.error('deleteItineraryDay:', error); return false; }
+  return true;
+}
+
+async function createItineraryActivity(activityData) {
+  const { data, error } = await supabase.from('crm_itinerary_activities').insert(activityData).select().single();
+  if (error) { console.error('createItineraryActivity:', error); return null; }
+  return data;
+}
+
+async function updateItineraryActivity(id, updates) {
+  const { data, error } = await supabase.from('crm_itinerary_activities').update(updates).eq('id', id).select().single();
+  if (error) { console.error('updateItineraryActivity:', error); return null; }
+  return data;
+}
+
+async function deleteItineraryActivity(id) {
+  const { error } = await supabase.from('crm_itinerary_activities').delete().eq('id', id);
+  if (error) { console.error('deleteItineraryActivity:', error); return false; }
+  return true;
+}
+
+async function createVoucher(voucherData) {
+  const { data, error } = await supabase.from('crm_vouchers').insert(voucherData).select().single();
+  if (error) { console.error('createVoucher:', error); return null; }
+  return data;
+}
+
+async function updateVoucher(id, updates) {
+  const { data, error } = await supabase.from('crm_vouchers').update(updates).eq('id', id).select().single();
+  if (error) { console.error('updateVoucher:', error); return null; }
+  return data;
+}
+
+async function deleteVoucher(id) {
+  const { error } = await supabase.from('crm_vouchers').delete().eq('id', id);
+  if (error) { console.error('deleteVoucher:', error); return false; }
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════
 // DASHBOARD AGGREGATES
 // ══════════════════════════════════════════════════════════════
 

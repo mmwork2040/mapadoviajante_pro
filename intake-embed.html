@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Formulário de captação de viajantes — O Segredo do Viajante">
+  <title>Novo Viajante — Formulário de Captação</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <style>
+    /* ══════════════════════════════════════════════════════════════
+       EMBED FORM — Design Tokens (Self-contained)
+       ══════════════════════════════════════════════════════════════ */
+    :root {
+      --orange-50: #fff7f1;
+      --orange-100: #ffe9d8;
+      --orange-200: #ffd0ad;
+      --orange-300: #ffb378;
+      --orange-400: #ff9447;
+      --orange-500: #ff7a1a;
+      --orange-600: #ea6600;
+      --orange-700: #bf5200;
+      --sand-50: #fbf8f4;
+      --sand-100: #f6efe6;
+      --stone-0: #ffffff;
+      --stone-50: #f8f8fa;
+      --stone-100: #f1f2f4;
+      --stone-200: #dde1e6;
+      --stone-300: #c9cfd8;
+      --stone-400: #99a1ad;
+      --stone-500: #697281;
+      --stone-600: #4e5662;
+      --stone-700: #343a43;
+      --stone-800: #1f242b;
+      --stone-900: #111418;
+      --primary: var(--orange-500);
+      --primary-hover: var(--orange-600);
+      --primary-light: var(--orange-50);
+      --primary-subtle: rgba(255, 122, 26, 0.1);
+      --primary-surface: #fff3e8;
+      --success: #1f9d55;
+      --success-light: rgba(31, 157, 85, 0.1);
+      --danger: #ee5f52;
+      --info: #3178ff;
+      --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --radius-xs: 10px;
+      --radius-sm: 14px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-xl: 30px;
+      --radius-full: 999px;
+      --shadow-xs: 0 4px 10px rgba(17, 20, 24, 0.04);
+      --shadow-sm: 0 10px 20px rgba(17, 20, 24, 0.06);
+      --shadow-md: 0 18px 34px rgba(17, 20, 24, 0.08);
+      --shadow-lg: 0 28px 54px rgba(17, 20, 24, 0.12);
+      --shadow-cta: 0 16px 36px rgba(255, 122, 26, 0.24);
+      --border-color: rgba(17, 20, 24, 0.06);
+      --border-color-strong: rgba(17, 20, 24, 0.08);
+      --ease-standard: cubic-bezier(.2,.8,.2,1);
+      --ease-entrance: cubic-bezier(.16,1,.3,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+    body {
+      font-family: var(--font-sans);
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--stone-900);
+      background: transparent;
+      min-height: 100vh;
+    }
+
+    /* ── Main Container ─────────────────────────────────────── */
+    .embed-container {
+      max-width: 680px;
+      margin: 0 auto;
+      background: var(--stone-0);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      animation: formSlideUp 600ms var(--ease-entrance);
+    }
+
+    @keyframes formSlideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Header ──────────────────────────────────────────────── */
+    .embed-header {
+      padding: 28px 32px 22px;
+      background: linear-gradient(135deg, var(--primary-light), var(--sand-100));
+      border-bottom: 1px solid var(--stone-100);
+    }
+
+    .embed-title-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+
+    .embed-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-lg);
+      background: linear-gradient(135deg, var(--orange-500), var(--orange-400));
+      color: var(--stone-0);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-cta);
+    }
+
+    .embed-title-row h2 {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: var(--stone-900);
+      margin-bottom: 2px;
+    }
+
+    .embed-subtitle {
+      font-size: 13px;
+      color: var(--stone-500);
+    }
+
+    /* Step Progress */
+    .embed-steps {
+      display: flex;
+      align-items: center;
+    }
+
+    .embed-step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .step-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid var(--stone-300);
+      background: var(--stone-0);
+      color: var(--stone-400);
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 300ms var(--ease-standard);
+    }
+
+    .embed-step span {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--stone-400);
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      transition: color 300ms var(--ease-standard);
+    }
+
+    .embed-step.active .step-dot {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--stone-0);
+      box-shadow: 0 0 0 4px rgba(255, 122, 26, 0.2);
+    }
+
+    .embed-step.active span { color: var(--primary); }
+
+    .embed-step.done .step-dot {
+      background: var(--success);
+      border-color: var(--success);
+      color: var(--stone-0);
+    }
+
+    .embed-step.done .step-dot::after { content: '✓'; }
+    .embed-step.done span { color: var(--success); }
+
+    .step-line {
+      flex: 1;
+      height: 2px;
+      background: var(--stone-200);
+      margin: 0 8px;
+      margin-bottom: 14px;
+      transition: background 300ms var(--ease-standard);
+    }
+
+    .step-line.done { background: var(--success); }
+
+    /* ── Form Panels ─────────────────────────────────────────── */
+    .embed-form {
+      padding: 24px 32px;
+    }
+
+    .embed-panel {
+      display: none;
+      animation: fadeIn 300ms ease;
+    }
+
+    .embed-panel.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--primary);
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary-subtle);
+    }
+
+    .section-label i { font-size: 13px; }
+
+    /* ── Form Controls ───────────────────────────────────────── */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--stone-700);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 12px 16px;
+      min-height: 48px;
+      border: 1px solid var(--border-color-strong);
+      border-radius: var(--radius-md);
+      background: var(--stone-50);
+      color: var(--stone-900);
+      font-family: inherit;
+      font-size: 14px;
+      transition: border-color 160ms var(--ease-standard),
+                  box-shadow 160ms var(--ease-standard);
+      outline: none;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      border-color: var(--orange-500);
+      box-shadow: 0 0 0 3px rgba(255, 122, 26, 0.12);
+      background: var(--stone-0);
+    }
+
+    .form-group input::placeholder,
+    .form-group textarea::placeholder {
+      color: var(--stone-400);
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* ── Pax Counter ─────────────────────────────────────────── */
+    .pax-counter {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 14px;
+      border: 1.5px solid var(--stone-200);
+      border-radius: var(--radius-md);
+      background: var(--stone-0);
+      width: fit-content;
+    }
+
+    .pax-btn {
+      width: 28px;
+      height: 28px;
+      border: 1.5px solid var(--stone-200);
+      border-radius: 50%;
+      background: var(--stone-0);
+      color: var(--stone-600);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      transition: all 160ms var(--ease-standard);
+    }
+
+    .pax-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-subtle);
+    }
+
+    #pax-display {
+      font-weight: 800;
+      font-size: 22px;
+      color: var(--stone-900);
+      min-width: 32px;
+      text-align: center;
+    }
+
+    /* ── Option Pills ────────────────────────────────────────── */
+    .option-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .option-pill {
+      padding: 8px 14px;
+      border: 1.5px solid var(--stone-200);
+      border-radius: var(--radius-md);
+      background: var(--stone-0);
+      color: var(--stone-600);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 160ms var(--ease-standard);
+      font-family: inherit;
+    }
+
+    .option-pill:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-subtle);
+    }
+
+    .option-pill.selected {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--stone-0);
+    }
+
+    /* ── Card Tags ────────────────────────────────────────────── */
+    .cards-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .card-tag {
+      padding: 6px 14px;
+      border: 1.5px solid var(--stone-200);
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--stone-600);
+      cursor: pointer;
+      transition: all 160ms var(--ease-standard);
+      user-select: none;
+    }
+
+    .card-tag:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: var(--primary-subtle);
+    }
+
+    .card-tag.selected {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--stone-0);
+    }
+
+    .subsection-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--stone-600);
+      margin-bottom: 10px;
+      margin-top: 8px;
+    }
+
+    /* ── Navigation Footer ───────────────────────────────────── */
+    .embed-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 32px 24px;
+      border-top: 1px solid var(--stone-100);
+    }
+
+    .progress-dots {
+      display: flex;
+      gap: 8px;
+    }
+
+    .progress-dots .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--stone-200);
+      transition: all 300ms var(--ease-standard);
+    }
+
+    .progress-dots .dot.active {
+      background: var(--primary);
+      width: 20px;
+      border-radius: var(--radius-full);
+    }
+
+    .btn {
+      appearance: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 20px;
+      min-height: 44px;
+      border: none;
+      border-radius: var(--radius-md);
+      font-weight: 700;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: transform 160ms var(--ease-standard),
+                  box-shadow 240ms var(--ease-standard),
+                  background 160ms var(--ease-standard);
+      white-space: nowrap;
+      line-height: 1;
+    }
+
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(1px) scale(0.99); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--orange-500), var(--orange-400));
+      color: var(--stone-0);
+      box-shadow: var(--shadow-cta);
+    }
+
+    .btn-primary:hover { box-shadow: 0 18px 42px rgba(255, 122, 26, 0.28); }
+
+    .btn-primary:disabled {
+      background: var(--stone-200);
+      color: var(--stone-400);
+      box-shadow: none;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--stone-600);
+      padding: 8px 14px;
+    }
+
+    .btn-ghost:hover { background: var(--stone-100); color: var(--stone-900); }
+
+    /* ── Success State ───────────────────────────────────────── */
+    .success-state {
+      text-align: center;
+      padding: 56px 32px;
+      animation: fadeIn 400ms ease;
+    }
+
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--success-light);
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      margin: 0 auto 20px;
+      animation: scaleIn 500ms var(--ease-entrance);
+    }
+
+    @keyframes scaleIn {
+      from { transform: scale(0); }
+      to { transform: scale(1); }
+    }
+
+    .success-state h3 {
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: var(--stone-900);
+    }
+
+    .success-state p {
+      color: var(--stone-500);
+      font-size: 14px;
+      margin-bottom: 24px;
+    }
+
+    .success-state .btn {
+      margin: 0 auto;
+    }
+
+    /* ── Toast ────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      padding: 14px 24px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 13px;
+      box-shadow: var(--shadow-md);
+      z-index: 9999;
+      transition: transform 400ms var(--ease-entrance);
+      font-family: var(--font-sans);
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+    .toast-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+
+    /* ── Loading Spinner ──────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 18px;
+      height: 18px;
+      border: 2.5px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.6s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ── Powered By ──────────────────────────────────────────── */
+    .powered-by {
+      text-align: center;
+      padding: 12px;
+      font-size: 11px;
+      color: var(--stone-400);
+    }
+
+    .powered-by a {
+      color: var(--orange-500);
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .powered-by a:hover { text-decoration: underline; }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 720px) {
+      .embed-container { border-radius: 0; box-shadow: none; border: none; }
+      .embed-header { padding: 20px 20px 16px; }
+      .embed-form { padding: 20px; }
+      .embed-nav { padding: 16px 20px 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .embed-step span { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="embed-container" id="embed-container">
+
+    <!-- Header with Steps -->
+    <div class="embed-header">
+      <div class="embed-title-row">
+        <div class="embed-icon"><i class="fas fa-plane-departure"></i></div>
+        <div>
+          <h2>Planeje sua Viagem</h2>
+          <p class="embed-subtitle">Preencha seus dados e um consultor entrará em contato</p>
+        </div>
+      </div>
+      <div class="embed-steps">
+        <div class="embed-step active" data-step="1">
+          <div class="step-dot">1</div>
+          <span>Contato</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="embed-step" data-step="2">
+          <div class="step-dot">2</div>
+          <span>Viagem</span>
+        </div>
+        <div class="step-line"></div>
+        <div class="embed-step" data-step="3">
+          <div class="step-dot">3</div>
+          <span>Preferências</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <form id="embed-form" class="embed-form" novalidate>
+
+      <!-- STEP 1: Contact Info -->
+      <div class="embed-panel active" id="step-1">
+        <div class="section-label"><i class="fas fa-user"></i> Seus Dados</div>
+        <div class="form-group">
+          <label for="e-name">Nome Completo *</label>
+          <input type="text" id="e-name" placeholder="Ex: João Silva" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="e-email">E-mail</label>
+            <input type="email" id="e-email" placeholder="seu@email.com">
+          </div>
+          <div class="form-group">
+            <label for="e-phone">WhatsApp *</label>
+            <input type="tel" id="e-phone" placeholder="(11) 99999-9999" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="e-origin">Como nos encontrou?</label>
+          <select id="e-origin">
+            <option value="">Selecionar...</option>
+            <option value="instagram">Instagram</option>
+            <option value="indicacao">Indicação</option>
+            <option value="whatsapp">WhatsApp</option>
+            <option value="site">Site</option>
+            <option value="google">Google</option>
+            <option value="outro">Outro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- STEP 2: Trip Details -->
+      <div class="embed-panel" id="step-2">
+        <div class="section-label"><i class="fas fa-map-marker-alt"></i> Dados da Viagem</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="e-destination">Destino Desejado *</label>
+            <input type="text" id="e-destination" placeholder="Ex: Lisboa, Portugal" required>
+          </div>
+          <div class="form-group">
+            <label for="e-origin-city">Cidade de Partida</label>
+            <input type="text" id="e-origin-city" placeholder="Ex: São Paulo (GRU)">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="e-date">Data Pretendida</label>
+            <input type="text" id="e-date" placeholder="Ex: Julho 2026 / Flexível">
+          </div>
+          <div class="form-group">
+            <label for="e-pax">Nº de Viajantes</label>
+            <div class="pax-counter">
+              <button type="button" class="pax-btn" onclick="changePax(-1)"><i class="fas fa-minus"></i></button>
+              <span id="pax-display">2</span>
+              <input type="hidden" id="e-pax" value="2">
+              <button type="button" class="pax-btn" onclick="changePax(1)"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="e-budget">Orçamento Estimado (R$)</label>
+          <input type="number" id="e-budget" placeholder="Ex: 15000">
+        </div>
+        <div class="form-group">
+          <label for="e-details">O que você sonha para essa viagem?</label>
+          <textarea id="e-details" rows="3" placeholder="Ex: Lua de mel, praias tranquilas, gastronomia local..."></textarea>
+        </div>
+      </div>
+
+      <!-- STEP 3: Preferences -->
+      <div class="embed-panel" id="step-3">
+        <div class="section-label"><i class="fas fa-hotel"></i> Preferências de Hospedagem</div>
+        <div class="form-group">
+          <label>Tipo de Hospedagem</label>
+          <div class="option-pills" id="accom-type">
+            <button type="button" class="option-pill" data-val="hotel">🏨 Hotel</button>
+            <button type="button" class="option-pill" data-val="resort">🌴 Resort</button>
+            <button type="button" class="option-pill" data-val="pousada">🏡 Pousada</button>
+            <button type="button" class="option-pill" data-val="allinclusive">🍹 All-Inclusive</button>
+            <button type="button" class="option-pill" data-val="airbnb">🔑 Airbnb</button>
+            <button type="button" class="option-pill" data-val="hostel">🎒 Hostel</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>O que é importante para você?</label>
+          <div class="option-pills" id="accom-prefs">
+            <button type="button" class="option-pill" data-val="mar">🌊 Vista para o mar</button>
+            <button type="button" class="option-pill" data-val="piscina">🏊 Piscina</button>
+            <button type="button" class="option-pill" data-val="centro">📍 Localização central</button>
+            <button type="button" class="option-pill" data-val="familia">👨‍👩‍👧 Para família</button>
+            <button type="button" class="option-pill" data-val="romantico">💑 Clima romântico</button>
+            <button type="button" class="option-pill" data-val="luxo">✨ Luxo</button>
+            <button type="button" class="option-pill" data-val="custo">💰 Melhor custo-benefício</button>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top: 20px;"><i class="fas fa-plane"></i> Preferências de Voo</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="e-flight-flex">Flexibilidade de Datas</label>
+            <select id="e-flight-flex">
+              <option value="">Selecionar...</option>
+              <option value="fixa">Data Fixa</option>
+              <option value="1semana">± 1 semana</option>
+              <option value="2semanas">± 2 semanas</option>
+              <option value="flexivel">Totalmente Flexível</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="e-flight-class">Classe</label>
+            <select id="e-flight-class">
+              <option value="economica">Econômica</option>
+              <option value="premium">Premium Economy</option>
+              <option value="executiva">Executiva</option>
+              <option value="primeira">Primeira Classe</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="e-notes">Algo mais que devemos saber?</label>
+          <textarea id="e-notes" rows="2" placeholder="Restrições alimentares, necessidades especiais, orçamento flexível..."></textarea>
+        </div>
+      </div>
+
+      <!-- Success State -->
+      <div class="embed-panel" id="step-success">
+        <div class="success-state">
+          <div class="success-icon"><i class="fas fa-check"></i></div>
+          <h3>Recebemos seus dados! ✈️</h3>
+          <p>Um consultor de viagens entrará em contato pelo WhatsApp em breve para criar o roteiro perfeito para você.</p>
+          <button type="button" class="btn btn-primary" onclick="resetForm()">
+            <i class="fas fa-redo"></i> Enviar outro formulário
+          </button>
+        </div>
+      </div>
+
+    </form>
+
+    <!-- Navigation -->
+    <div class="embed-nav" id="embed-nav">
+      <button type="button" class="btn btn-ghost" id="btn-back" onclick="goBack()" style="display:none;">
+        <i class="fas fa-arrow-left"></i> Voltar
+      </button>
+      <div class="progress-dots">
+        <span class="dot active"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+      <button type="button" class="btn btn-primary" id="btn-next" onclick="goNext()">
+        Próximo <i class="fas fa-arrow-right"></i>
+      </button>
+    </div>
+
+    <div class="powered-by">
+      Powered by <a href="#" target="_blank">Mapa do Viajante PRO</a>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+  <script>
+  /* ══════════════════════════════════════════════════════════════
+     EMBED FORM — Self-contained JavaScript
+     ══════════════════════════════════════════════════════════════ */
+
+  // ── Configuration ─────────────────────────────────────────────
+  // These will be set by the embedding page or via URL params
+  const CONFIG = {
+    supabaseUrl: '',
+    supabaseKey: '',
+    agencyId: '',
+    origin: 'site',      // default lead origin
+    redirectUrl: '',      // optional redirect after submit
+  };
+
+  // Parse config from URL params or data attributes
+  (function parseConfig() {
+    // Check URL params
+    const params = new URLSearchParams(window.location.search);
+    CONFIG.supabaseUrl = params.get('url') || CONFIG.supabaseUrl;
+    CONFIG.supabaseKey = params.get('key') || CONFIG.supabaseKey;
+    CONFIG.agencyId = params.get('agency') || CONFIG.agencyId;
+    CONFIG.origin = params.get('origin') || CONFIG.origin;
+    CONFIG.redirectUrl = params.get('redirect') || CONFIG.redirectUrl;
+
+    // Check data attributes on the script tag
+    const script = document.currentScript || document.querySelector('script[data-supabase-url]');
+    if (script) {
+      CONFIG.supabaseUrl = script.dataset.supabaseUrl || CONFIG.supabaseUrl;
+      CONFIG.supabaseKey = script.dataset.supabaseKey || CONFIG.supabaseKey;
+      CONFIG.agencyId = script.dataset.agencyId || CONFIG.agencyId;
+      CONFIG.origin = script.dataset.origin || CONFIG.origin;
+    }
+
+    // Check window config (for advanced embedding)
+    if (window.MAPA_EMBED_CONFIG) {
+      Object.assign(CONFIG, window.MAPA_EMBED_CONFIG);
+    }
+
+    // Fallback to the default Supabase instance
+    if (!CONFIG.supabaseUrl) CONFIG.supabaseUrl = 'https://daosxeeukdqfssxjsmil.supabase.co';
+    if (!CONFIG.supabaseKey) CONFIG.supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhb3N4ZWV1a2RxZnNzeGpzbWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTU5OTMsImV4cCI6MjA3ODM3MTk5M30.sv6bBr9440PrVMrXiCZWvW4OLPuoZnkFEKnU9fdAB2Y';
+  })();
+
+  // Initialize Supabase client
+  let _supabase = null;
+  try {
+    _supabase = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey);
+  } catch (e) {
+    console.warn('Supabase not available, form will work in offline mode', e);
+  }
+
+  // ── State ─────────────────────────────────────────────────────
+  let currentStep = 1;
+  const TOTAL_STEPS = 3;
+  let selectedAccomType = new Set();
+  let selectedAccomPrefs = new Set();
+  let isSubmitting = false;
+
+  // ── Option Pills ──────────────────────────────────────────────
+  document.querySelectorAll('#accom-type .option-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      document.querySelectorAll('#accom-type .option-pill').forEach(p => {
+        p.classList.remove('selected');
+        selectedAccomType.clear();
+      });
+      pill.classList.add('selected');
+      selectedAccomType.add(pill.dataset.val);
+    });
+  });
+
+  document.querySelectorAll('#accom-prefs .option-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      if (selectedAccomPrefs.has(pill.dataset.val)) {
+        selectedAccomPrefs.delete(pill.dataset.val);
+        pill.classList.remove('selected');
+      } else {
+        selectedAccomPrefs.add(pill.dataset.val);
+        pill.classList.add('selected');
+      }
+    });
+  });
+
+  // ── Pax Counter ───────────────────────────────────────────────
+  function changePax(delta) {
+    const input = document.getElementById('e-pax');
+    const display = document.getElementById('pax-display');
+    let val = parseInt(input.value) || 2;
+    val = Math.max(1, Math.min(20, val + delta));
+    input.value = val;
+    display.textContent = val;
+  }
+
+  // ── Validation ────────────────────────────────────────────────
+  function validateStep(step) {
+    if (step === 1) {
+      const name = document.getElementById('e-name').value.trim();
+      const phone = document.getElementById('e-phone').value.trim();
+      if (!name) {
+        showToast('Por favor, informe seu nome.', 'error');
+        document.getElementById('e-name').focus();
+        return false;
+      }
+      if (!phone) {
+        showToast('Por favor, informe seu WhatsApp.', 'error');
+        document.getElementById('e-phone').focus();
+        return false;
+      }
+    }
+    if (step === 2) {
+      const dest = document.getElementById('e-destination').value.trim();
+      if (!dest) {
+        showToast('Por favor, informe o destino desejado.', 'error');
+        document.getElementById('e-destination').focus();
+        return false;
+      }
+    }
+    return true;
+  }
+
+  // ── Navigation ────────────────────────────────────────────────
+  function goNext() {
+    if (!validateStep(currentStep)) return;
+
+    if (currentStep >= TOTAL_STEPS) {
+      submitForm();
+      return;
+    }
+
+    goToStep(currentStep + 1);
+  }
+
+  function goBack() {
+    if (currentStep <= 1) return;
+    goToStep(currentStep - 1);
+  }
+
+  function goToStep(step) {
+    // Hide current panel
+    document.getElementById(`step-${currentStep}`)?.classList.remove('active');
+
+    // Mark done
+    const prevStepEl = document.querySelector(`.embed-step[data-step="${currentStep}"]`);
+    if (step > currentStep && prevStepEl) {
+      prevStepEl.classList.remove('active');
+      prevStepEl.classList.add('done');
+      prevStepEl.querySelector('.step-dot').textContent = '';
+      const lines = document.querySelectorAll('.step-line');
+      if (lines[currentStep - 1]) lines[currentStep - 1].classList.add('done');
+    }
+
+    // Handle going back
+    if (step < currentStep) {
+      for (let i = step; i <= currentStep; i++) {
+        const el = document.querySelector(`.embed-step[data-step="${i}"]`);
+        if (el) {
+          el.classList.remove('done', 'active');
+          el.querySelector('.step-dot').textContent = i;
+        }
+        const line = document.querySelectorAll('.step-line')[i - 1];
+        if (line) line.classList.remove('done');
+      }
+    }
+
+    currentStep = step;
+
+    // Show new panel
+    document.getElementById(`step-${step}`)?.classList.add('active');
+
+    // Activate step indicator
+    document.querySelectorAll('.embed-step').forEach(el => el.classList.remove('active'));
+    const activeEl = document.querySelector(`.embed-step[data-step="${step}"]`);
+    if (activeEl && !activeEl.classList.contains('done')) activeEl.classList.add('active');
+
+    // Progress dots
+    document.querySelectorAll('.progress-dots .dot').forEach((dot, i) => {
+      dot.classList.toggle('active', i + 1 === step);
+    });
+
+    // Nav buttons
+    const backBtn = document.getElementById('btn-back');
+    const nextBtn = document.getElementById('btn-next');
+    backBtn.style.display = step > 1 ? '' : 'none';
+    if (step === TOTAL_STEPS) {
+      nextBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+    } else {
+      nextBtn.innerHTML = 'Próximo <i class="fas fa-arrow-right"></i>';
+    }
+  }
+
+  // ── Submit ────────────────────────────────────────────────────
+  async function submitForm() {
+    if (isSubmitting) return;
+    isSubmitting = true;
+
+    const nextBtn = document.getElementById('btn-next');
+    nextBtn.disabled = true;
+    nextBtn.innerHTML = '<span class="spinner"></span> Enviando...';
+
+    const name = document.getElementById('e-name').value.trim();
+    const email = document.getElementById('e-email').value.trim();
+    const phone = document.getElementById('e-phone').value.trim();
+    const origin = document.getElementById('e-origin').value || CONFIG.origin;
+    const destination = document.getElementById('e-destination').value.trim() || 'A definir';
+    const originCity = document.getElementById('e-origin-city').value.trim();
+    const date = document.getElementById('e-date').value.trim();
+    const pax = parseInt(document.getElementById('e-pax').value) || 2;
+    const budget = parseInt(document.getElementById('e-budget').value) || 0;
+    const details = document.getElementById('e-details').value.trim();
+    const flightFlex = document.getElementById('e-flight-flex').value;
+    const flightClass = document.getElementById('e-flight-class').value;
+    const notes = document.getElementById('e-notes').value.trim();
+
+    const leadData = {
+      name,
+      email: email || null,
+      phone: phone || null,
+      destination,
+      value: budget,
+      status: 'new',
+      origin,
+      notes: [details, notes].filter(Boolean).join(' | '),
+      profile: {
+        originCity,
+        date,
+        pax,
+        accomType: [...selectedAccomType].join(', '),
+        accomPrefs: [...selectedAccomPrefs].join(', '),
+        flightFlex,
+        flightClass,
+        source: 'embed_form',
+        submitted_at: new Date().toISOString(),
+      },
+      checklists: {},
+    };
+
+    // Add agency_id if provided
+    if (CONFIG.agencyId) {
+      leadData.agency_id = CONFIG.agencyId;
+    }
+
+    try {
+      if (_supabase) {
+        // Resolve agency_id if not provided
+        let agencyId = CONFIG.agencyId;
+        if (!agencyId) {
+          // Try to get the first agency (for single-agency setups)
+          const { data: agencies } = await _supabase.from('agencies').select('id').limit(1);
+          if (agencies && agencies.length) agencyId = agencies[0].id;
+        }
+
+        const insertData = {
+          agency_id: agencyId,
+          name: leadData.name,
+          email: leadData.email,
+          phone: leadData.phone,
+          destination: leadData.destination,
+          value: leadData.value,
+          status: 'new',
+          origin: leadData.origin,
+          notes: leadData.notes,
+          profile: leadData.profile,
+          checklists: leadData.checklists,
+        };
+
+        const { data, error } = await _supabase
+          .from('crm_leads')
+          .insert(insertData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Supabase insert error:', error);
+          showToast('Erro ao enviar. Tente novamente.', 'error');
+          isSubmitting = false;
+          nextBtn.disabled = false;
+          nextBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+          return;
+        }
+
+        console.log('Lead created:', data);
+      } else {
+        // Offline mode — just log
+        console.log('Lead data (offline):', leadData);
+      }
+
+      // Show success
+      showSuccess();
+
+      // Notify parent window (for iframe embedding)
+      if (window.parent !== window) {
+        window.parent.postMessage({
+          type: 'mapa_lead_created',
+          lead: { name, email, phone, destination },
+        }, '*');
+      }
+
+      // Optional redirect
+      if (CONFIG.redirectUrl) {
+        setTimeout(() => {
+          window.location.href = CONFIG.redirectUrl;
+        }, 2000);
+      }
+
+    } catch (err) {
+      console.error('Submit error:', err);
+      showToast('Erro ao enviar. Tente novamente.', 'error');
+    }
+
+    isSubmitting = false;
+    nextBtn.disabled = false;
+    nextBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Enviar';
+  }
+
+  function showSuccess() {
+    // Hide all step panels
+    document.querySelectorAll('.embed-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('step-success').classList.add('active');
+
+    // Hide nav
+    document.getElementById('embed-nav').style.display = 'none';
+
+    // Mark all steps as done
+    document.querySelectorAll('.embed-step').forEach(el => {
+      el.classList.remove('active');
+      el.classList.add('done');
+      el.querySelector('.step-dot').textContent = '';
+    });
+    document.querySelectorAll('.step-line').forEach(l => l.classList.add('done'));
+  }
+
+  function resetForm() {
+    currentStep = 1;
+    selectedAccomType.clear();
+    selectedAccomPrefs.clear();
+
+    document.getElementById('embed-form').reset();
+    document.getElementById('pax-display').textContent = '2';
+
+    // Reset panels
+    document.querySelectorAll('.embed-panel').forEach((p, i) => {
+      p.classList.toggle('active', i === 0);
+    });
+
+    // Reset step indicators
+    document.querySelectorAll('.embed-step').forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      el.querySelector('.step-dot').textContent = i + 1;
+      if (i === 0) el.classList.add('active');
+    });
+    document.querySelectorAll('.step-line').forEach(l => l.classList.remove('done'));
+
+    // Reset dots
+    document.querySelectorAll('.progress-dots .dot').forEach((d, i) => {
+      d.classList.toggle('active', i === 0);
+    });
+
+    // Reset pills
+    document.querySelectorAll('.option-pill').forEach(p => p.classList.remove('selected'));
+
+    // Show nav
+    const nav = document.getElementById('embed-nav');
+    nav.style.display = '';
+
+    // Reset buttons
+    document.getElementById('btn-back').style.display = 'none';
+    document.getElementById('btn-next').innerHTML = 'Próximo <i class="fas fa-arrow-right"></i>';
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────
+  function showToast(message, type = 'error') {
+    const toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.className = `toast toast-${type} show`;
+    setTimeout(() => toast.classList.remove('show'), 3000);
+  }
+  </script>
+
+</body>
+</html>

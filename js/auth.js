@@ -87,158 +87,44 @@ async function logout() {
 // ══════════════════════════════════════════════════════════════
 
 async function authenticate(email, password) {
-  // Try Supabase Auth first
-  if (isSupabaseAvailable()) {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (!isSupabaseAvailable()) {
+    return { success: false, error: 'Sistema indisponível. Tente novamente mais tarde.' };
+  }
 
-      if (!error && data.user) {
-        // Load agency context
-        const member = await loadAgencyContext();
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
-        if (member) {
-          const sessionUser = {
-            id: data.user.id,
-            name: member.name,
-            email: data.user.email,
-            role: member.role,
-            avatar: member.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
-            memberId: member.id,
-            agencyId: member.agency_id,
-            isSupabase: true,
-          };
-          setSession(sessionUser);
-          return { success: true, user: sessionUser };
-        } else {
-          // User exists in auth but not linked to agency
-          await supabase.auth.signOut();
-          return { success: false, error: 'Usuário não vinculado a nenhuma agência' };
-        }
-      }
-
-      // If Supabase auth failed, fall through to demo
-      if (error) {
-        console.warn('Supabase auth failed, trying demo fallback:', error.message);
-      }
-    } catch (e) {
-      console.warn('Supabase auth error, using demo fallback:', e);
+    if (error) {
+      return { success: false, error: 'E-mail ou senha inválidos' };
     }
+
+    if (data.user) {
+      const member = await loadAgencyContext();
+
+      if (member) {
+        const sessionUser = {
+          id: data.user.id,
+          name: member.name,
+          email: data.user.email,
+          role: member.role,
+          avatar: member.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+          memberId: member.id,
+          agencyId: member.agency_id,
+          isSupabase: true,
+        };
+        setSession(sessionUser);
+        return { success: true, user: sessionUser };
+      } else {
+        await supabase.auth.signOut();
+        return { success: false, error: 'Usuário não vinculado a nenhuma agência. Contate o administrador.' };
+      }
+    }
+  } catch (e) {
+    console.error('Supabase auth error:', e);
+    return { success: false, error: 'Erro ao conectar. Tente novamente.' };
   }
 
-  // Fallback: Demo users (localStorage only)
-  const user = USERS_DB.find(u => u.email === email && u.password === password);
-  if (user) {
-    setSession({ ...user, isSupabase: false });
-    return { success: true, user };
-  }
   return { success: false, error: 'E-mail ou senha inválidos' };
-}
-
-async function registerUser(name, email, password, role) {
-  if (isSupabaseAvailable()) {
-    try {
-      // 1. Sign up user via Supabase Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name: name,
-            role: role
-          }
-        }
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      if (data.user) {
-        // 2. Insert member into public.agency_members
-        const avatarColor = getAvatarColorByRole(role);
-        const { error: memberError } = await supabase
-          .from('agency_members')
-          .insert({
-            agency_id: 'a0000000-0000-0000-0000-000000000001',
-            user_id: data.user.id,
-            name: name,
-            email: email,
-            role: role,
-            avatar_color: avatarColor,
-            is_active: true
-          });
-
-        if (memberError) {
-          console.error('Erro ao vincular membro à agência:', memberError);
-          return { success: false, error: 'Usuário criado, mas houve um erro ao vinculá-lo à agência: ' + memberError.message };
-        }
-
-        // If session is active (meaning no email confirmation required)
-        if (data.session) {
-          const sessionUser = {
-            id: data.user.id,
-            name: name,
-            email: email,
-            role: role,
-            avatar: name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
-            memberId: data.user.id,
-            agencyId: 'a0000000-0000-0000-0000-000000000001',
-            isSupabase: true,
-          };
-          // Try to load correct context to get actual member.id
-          const loadedMember = await loadAgencyContext();
-          if (loadedMember) {
-            sessionUser.memberId = loadedMember.id;
-          }
-          setSession(sessionUser);
-          return { success: true, sessionActive: true, user: sessionUser };
-        } else {
-          // Email confirmation is required
-          return { success: true, sessionActive: false, message: 'Cadastro realizado! Verifique seu e-mail para confirmar o cadastro e poder entrar.' };
-        }
-      }
-    } catch (e) {
-      console.error('Erro no fluxo de cadastro:', e);
-      return { success: false, error: e.message || 'Erro inesperado ao realizar cadastro.' };
-    }
-  }
-
-  // Fallback: Demo user (offline mode - save in USERS_DB and localStorage)
-  const exists = USERS_DB.some(u => u.email === email);
-  if (exists) {
-    return { success: false, error: 'E-mail já cadastrado' };
-  }
-
-  const newId = USERS_DB.length + 1;
-  const newDemoUser = {
-    id: newId,
-    name: name,
-    email: email,
-    password: password,
-    role: role,
-    avatar: name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
-    status: 'online',
-    lastLogin: new Date().toISOString()
-  };
-  USERS_DB.push(newDemoUser);
-  setSession({ ...newDemoUser, isSupabase: false });
-  return { success: true, sessionActive: true, user: newDemoUser };
-}
-
-function getAvatarColorByRole(role) {
-  if (role === 'admin') return '#F58E26';
-  if (role === 'gerente') return '#3B82F6';
-  return '#10B981';
-}
-
-function authenticateByRole(role) {
-  // Quick role-based login (for demo selectors)
-  const user = USERS_DB.find(u => u.role === role);
-  if (user) {
-    // Try Supabase first
-    return authenticate(user.email, user.password);
-  }
-  return Promise.resolve({ success: false, error: 'Perfil não encontrado' });
 }
 
 // ── Guard: Check Auth on CRM Pages ─────────────────────────

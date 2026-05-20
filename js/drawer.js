@@ -575,31 +575,55 @@ function drawerWhatsApp() {
   }
 }
 
-function drawerCreateItinerary() {
+async function drawerCreateItinerary() {
   if (!currentDrawerLead) return;
 
-  const newIt = {
-    id: ITINERARIES.length + 1,
-    title: `${currentDrawerLead.destination} — ${currentDrawerLead.name}`,
-    client: currentDrawerLead.name,
-    destination: currentDrawerLead.destination,
-    dates: 'A definir',
-    passengers: currentDrawerLead.profile?.pax || 1,
-    budget: currentDrawerLead.value,
-    spent: 0,
-    status: 'Rascunho',
-    days: [
-      { label: 'Dia 1', date: 'DD/MM', activities: [] },
-      { label: 'Dia 2', date: 'DD/MM', activities: [] },
-      { label: 'Dia 3', date: 'DD/MM', activities: [] },
-    ]
-  };
+  const session = getSession();
 
-  ITINERARIES.push(newIt);
-  closeDrawer();
-  navigateTo('itinerary');
-  openItinerary(newIt.id);
-  showToast(`✈️ Roteiro criado para ${currentDrawerLead.name}!`, 'success');
+  if (session && session.isSupabase) {
+    // ── Supabase mode ──
+    try {
+      const created = await createItinerary({
+        title: `${currentDrawerLead.destination || 'Roteiro'} — ${currentDrawerLead.name}`,
+        client_name: currentDrawerLead.name,
+        destination: currentDrawerLead.destination,
+        lead_id: currentDrawerLead.id,
+        passengers: currentDrawerLead.profile?.pax || 1,
+        budget: currentDrawerLead.value || 10000,
+        status: 'draft',
+      });
+      closeDrawer();
+      navigateTo('itinerary');
+      if (created && typeof openItinerary === 'function') openItinerary(created.id);
+      showToast(`✈️ Roteiro criado para ${currentDrawerLead.name}!`, 'success');
+    } catch (err) {
+      console.error('drawerCreateItinerary Supabase error:', err);
+      showToast('Erro ao criar roteiro. Tente novamente.', 'error');
+    }
+  } else {
+    // ── Demo mode ──
+    const newIt = {
+      id: ITINERARIES.length + 1,
+      title: `${currentDrawerLead.destination} — ${currentDrawerLead.name}`,
+      client: currentDrawerLead.name,
+      destination: currentDrawerLead.destination,
+      dates: 'A definir',
+      passengers: currentDrawerLead.profile?.pax || 1,
+      budget: currentDrawerLead.value,
+      spent: 0,
+      status: 'Rascunho',
+      days: [
+        { label: 'Dia 1', date: 'DD/MM', activities: [] },
+        { label: 'Dia 2', date: 'DD/MM', activities: [] },
+        { label: 'Dia 3', date: 'DD/MM', activities: [] },
+      ]
+    };
+    ITINERARIES.push(newIt);
+    closeDrawer();
+    navigateTo('itinerary');
+    openItinerary(newIt.id);
+    showToast(`✈️ Roteiro criado para ${currentDrawerLead.name}!`, 'success');
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -618,12 +642,17 @@ const ACTIVITY_TYPES = {
   done:       { icon: 'fa-circle-check',    color: '#16A34A', label: 'Concluído' },
 };
 
+function _getTeamMembers() {
+  const cached = typeof getCachedTeamMembers === 'function' ? getCachedTeamMembers() : [];
+  return cached.length ? cached : TEAM_MEMBERS;
+}
+
 function getActivityAuthor(activity) {
   if (activity.author) {
     return activity.author;
   }
-  // Fallback for static array
-  return TEAM_MEMBERS.find(m => m.id === activity.author) || TEAM_MEMBERS[0];
+  const tm = _getTeamMembers();
+  return tm.find(m => m.id === activity.author) || tm[0];
 }
 
 async function renderActivitiesTab(lead) {
@@ -675,7 +704,7 @@ async function renderActivitiesTab(lead) {
             <span class="activity-assign-label"><i class="fas fa-user-tag"></i> Atribuir a:</span>
             <select class="activity-assign-select" id="activity-assign-select">
               <option value="">Ninguém</option>
-              ${TEAM_MEMBERS.map(m => `<option value="${m.id}">${m.name} (${m.roleLabel})</option>`).join('')}
+              ${_getTeamMembers().map(m => `<option value="${m.id}">${m.name} (${m.roleLabel || m.role || ''})</option>`).join('')}
             </select>
           </div>
           <button class="btn btn-primary btn-sm" onclick="submitActivity(${lead.id})">
@@ -708,8 +737,9 @@ async function renderActivitiesTab(lead) {
 function renderActivityItem(act, index) {
   const typeCfg = ACTIVITY_TYPES[act.type] || ACTIVITY_TYPES.note;
   const author = getActivityAuthor(act);
-  const assignedTo = act.assigned_to_id ? TEAM_MEMBERS.find(m => m.id === act.assigned_to_id) : (act.assignedTo ? TEAM_MEMBERS.find(m => m.id === act.assignedTo) : null);
-  const mentionedMembers = (act.mentions || []).map(id => TEAM_MEMBERS.find(m => m.id === id)).filter(Boolean);
+  const tm = _getTeamMembers();
+  const assignedTo = act.assigned_to_id ? tm.find(m => m.id === act.assigned_to_id) : (act.assignedTo ? tm.find(m => m.id === act.assignedTo) : null);
+  const mentionedMembers = (act.mentions || []).map(id => tm.find(m => m.id === id)).filter(Boolean);
 
   // Format date
   const actDate = new Date(act.created_at || act.date);
@@ -718,7 +748,7 @@ function renderActivityItem(act, index) {
 
   // Highlight @mentions in details
   let details = act.details || '';
-  TEAM_MEMBERS.forEach(m => {
+  _getTeamMembers().forEach(m => {
     details = details.replace(new RegExp(`@${m.name}`, 'g'), `<span class="mention-highlight">@${m.name}</span>`);
   });
 
@@ -798,7 +828,7 @@ async function submitActivity(leadId) {
   const mentions = [];
   let match;
   while ((match = mentionRegex.exec(details)) !== null) {
-    const mentioned = TEAM_MEMBERS.find(m => m.name.toLowerCase().startsWith(match[1].toLowerCase()));
+    const mentioned = _getTeamMembers().find(m => m.name.toLowerCase().startsWith(match[1].toLowerCase()));
     if (mentioned && !mentions.includes(mentioned.id)) {
       mentions.push(mentioned.id);
     }
@@ -811,7 +841,7 @@ async function submitActivity(leadId) {
 
   // Get current session user
   const session = getSession();
-  const authorId = session ? (TEAM_MEMBERS.find(m => m.name === session.name)?.id || 1) : 1;
+  const authorId = session ? (_getTeamMembers().find(m => m.name === session.name)?.id || 1) : 1;
 
   const type = assignedTo ? 'assignment' : selectedActivityType;
 
@@ -855,7 +885,7 @@ async function submitActivity(leadId) {
 
   // Show notification
   if (mentions.length > 0) {
-    const mentionNames = mentions.map(id => TEAM_MEMBERS.find(m => m.id === id)?.name).filter(Boolean);
+    const mentionNames = mentions.map(id => _getTeamMembers().find(m => m.id === id)?.name).filter(Boolean);
     showToast(`📬 Notificação enviada para: ${mentionNames.join(', ')}`, 'success');
   } else {
     showToast('✅ Atividade registrada!', 'success');
@@ -887,7 +917,7 @@ function initMentionAutocomplete() {
 
     if (atMatch) {
       const query = atMatch[1].toLowerCase();
-      const matches = TEAM_MEMBERS.filter(m =>
+      const matches = _getTeamMembers().filter(m =>
         m.name.toLowerCase().includes(query) ||
         m.roleLabel.toLowerCase().includes(query)
       );
@@ -957,7 +987,7 @@ function updateNotificationBadgeForMentions() {
   const session = getSession();
   if (!session) return;
 
-  const currentUser = TEAM_MEMBERS.find(m => m.name === session.name);
+  const currentUser = _getTeamMembers().find(m => m.name === session.name);
   if (!currentUser) return;
 
   let totalMentions = 0;
