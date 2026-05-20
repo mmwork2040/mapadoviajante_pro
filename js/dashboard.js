@@ -278,11 +278,14 @@ function renderCalendar() {
     days.push(d);
   }
 
+  const session = getSession();
+  const eventsToRender = (session && session.isSupabase) ? [] : CALENDAR_EVENTS;
+
   let html = '<div class="cal-week-grid">';
 
   days.forEach((date, idx) => {
     const isToday = idx === 0;
-    const dayEvents = CALENDAR_EVENTS.filter(e => e.day === idx);
+    const dayEvents = eventsToRender.filter(e => e.day === idx);
 
     html += `
       <div class="cal-day-col ${isToday ? 'cal-today' : ''}">
@@ -316,7 +319,7 @@ function renderCalendar() {
   // Month indicator
   html += `<div class="cal-footer">
     <span class="cal-month-label">${monthNames[today.getMonth()]} ${today.getFullYear()}</span>
-    <span class="cal-event-count">${CALENDAR_EVENTS.filter(e => e.type !== 'free').length} compromissos esta semana</span>
+    <span class="cal-event-count">${eventsToRender.filter(e => e.type !== 'free').length} compromissos esta semana</span>
   </div>`;
 
   container.innerHTML = html;

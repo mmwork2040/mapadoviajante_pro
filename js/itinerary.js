@@ -36,7 +36,7 @@ async function renderItineraryList() {
       }));
     } catch (err) {
       console.error('renderItineraryList Supabase error:', err);
-      itineraries = [...ITINERARIES];
+      itineraries = [];
     }
   } else {
     itineraries = [...ITINERARIES];
