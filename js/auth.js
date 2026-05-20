@@ -138,7 +138,9 @@ async function signInWithGoogle() {
     return { success: false, error: 'Sistema indisponível. Tente novamente mais tarde.' };
   }
   try {
-    const redirectTo = window.location.origin + window.location.pathname.replace('login.html', 'index.html');
+    // Always redirect back to login.html so handleOAuthSession() can process the tokens
+    const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+    const redirectTo = window.location.origin + basePath + 'login.html';
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },
@@ -361,8 +363,22 @@ function addConnectionIndicator(session) {
 // ══════════════════════════════════════════════════════════════
 
 async function initAuth() {
-  const session = guardAuth();
-  if (!session) return;
+  let session = getSession();
+
+  // No localStorage session — but maybe this is an OAuth callback?
+  if (!session && isSupabaseAvailable()) {
+    // Give Supabase SDK time to process OAuth tokens from URL hash
+    const oauthUser = await handleOAuthSession();
+    if (oauthUser) {
+      session = getSession(); // handleOAuthSession sets session in localStorage
+    }
+  }
+
+  // Still no session after OAuth check — redirect to login
+  if (!session) {
+    window.location.href = 'login.html';
+    return;
+  }
 
   // If session was Supabase-based, restore context
   if (session.isSupabase && isSupabaseAvailable()) {
