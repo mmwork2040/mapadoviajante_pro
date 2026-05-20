@@ -134,22 +134,24 @@ function showSearchResults(query) {
   const results = document.getElementById('search-results');
   let html = '';
 
-  // Search leads
-  const matchedLeads = LEADS.filter(l =>
+  // Search leads — use dynamic cache from leads.js if available, fallback to static
+  const leadsSource = (typeof currentLeads !== 'undefined' && currentLeads.length) ? currentLeads : (typeof LEADS !== 'undefined' ? LEADS : []);
+  const matchedLeads = leadsSource.filter(l =>
     l.name.toLowerCase().includes(query) ||
-    l.destination.toLowerCase().includes(query) ||
-    l.email.toLowerCase().includes(query)
+    (l.destination || '').toLowerCase().includes(query) ||
+    (l.email || '').toLowerCase().includes(query)
   ).slice(0, 4);
 
   if (matchedLeads.length) {
     html += '<div class="search-result-group">Leads</div>';
     matchedLeads.forEach(lead => {
+      const val = Number(lead.value) || 0;
       html += `
         <div class="search-result-item" onclick="navigateTo('leads')">
           <i class="fas fa-user"></i>
           <div class="result-text">
             <div class="result-label">${lead.name}</div>
-            <div class="result-meta">${lead.destination} • R$ ${lead.value.toLocaleString('pt-BR')}</div>
+            <div class="result-meta">${lead.destination || 'Indefinido'} • R$ ${val.toLocaleString('pt-BR')}</div>
           </div>
         </div>`;
     });
@@ -170,14 +172,15 @@ function showSearchResults(query) {
           <i class="fas fa-map-marker-alt"></i>
           <div class="result-text">
             <div class="result-label">${dest.name}</div>
-            <div class="result-meta">${dest.country} • ${dest.category}</div>
+            <div class="result-meta">${dest.country || ''} • ${dest.category || ''}</div>
           </div>
         </div>`;
     });
   }
 
-  // Search itineraries
-  const matchedItin = ITINERARIES.filter(i =>
+  // Search itineraries — use static for now (no Supabase itinerary table yet)
+  const itinSource = typeof ITINERARIES !== 'undefined' ? ITINERARIES : [];
+  const matchedItin = itinSource.filter(i =>
     i.title.toLowerCase().includes(query) ||
     i.client.toLowerCase().includes(query) ||
     i.destination.toLowerCase().includes(query)
@@ -320,6 +323,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   initItinerary();
   await initLibrary();
   await initFinances();
-  initAdmin();
+  await initAdmin();
   initCopilot();
 });

@@ -26,10 +26,10 @@ const AGENCY_SETTINGS = [
   { label: 'Plano Ativo',          value: 'PRO — Ilimitado',        desc: 'Licença do MapaPRO' },
 ];
 
-// ── Initialize Admin Panel ──────────────────────────────────
-function initAdmin() {
-  renderAdminMetrics();
-  renderUsersTable();
+// ── Initialize Admin Panel ──────────────────────────────────────────
+async function initAdmin() {
+  await renderAdminMetrics();
+  await renderUsersTable();
   renderActivityLog();
   renderAgencySettings();
   initAIConfig();
@@ -37,23 +37,46 @@ function initAdmin() {
 }
 
 // ── Admin Metrics ───────────────────────────────────────────
-function renderAdminMetrics() {
+async function renderAdminMetrics() {
   const container = document.getElementById('admin-metrics');
   if (!container) return;
 
-  const totalUsers = USERS_DB.length;
-  const activeUsers = USERS_DB.filter(u => u.status === 'online').length;
+  const session = getSession();
+  let totalUsers = 0;
+  let activeUsers = 0;
+  let totalRevenue = 0;
+  let totalLeads = 0;
 
-  // Calculate total revenue from TRANSACTIONS
-  const totalRevenue = typeof TRANSACTIONS !== 'undefined'
-    ? TRANSACTIONS.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
-    : 0;
+  if (session && session.isSupabase) {
+    try {
+      // Fetch real data from Supabase
+      const team = await fetchTeamMembers();
+      totalUsers = team.length;
+      activeUsers = team.filter(m => m.is_active).length;
 
-  const totalLeads = typeof LEADS !== 'undefined' ? LEADS.length : 0;
+      const leads = await fetchLeads();
+      totalLeads = leads.length;
+
+      const transactions = await fetchTransactions();
+      totalRevenue = transactions
+        .filter(t => t.type === 'income' && t.status === 'confirmed')
+        .reduce((sum, t) => sum + Number(t.amount), 0);
+    } catch (e) {
+      console.error('Erro ao carregar métricas admin:', e);
+    }
+  } else {
+    // Fallback offline mode
+    totalUsers = USERS_DB.length;
+    activeUsers = USERS_DB.filter(u => u.status === 'online').length;
+    totalRevenue = typeof TRANSACTIONS !== 'undefined'
+      ? TRANSACTIONS.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
+      : 0;
+    totalLeads = typeof LEADS !== 'undefined' ? LEADS.length : 0;
+  }
 
   const metrics = [
     { icon: 'fa-users',       class: 'icon-users',   label: 'Total Usuários',    value: totalUsers },
-    { icon: 'fa-circle-check', class: 'icon-active',  label: 'Usuários Online',   value: activeUsers },
+    { icon: 'fa-circle-check', class: 'icon-active',  label: 'Usuários Ativos',   value: activeUsers },
     { icon: 'fa-dollar-sign',  class: 'icon-revenue', label: 'Receita Total',     value: `R$ ${totalRevenue.toLocaleString('pt-BR')}` },
     { icon: 'fa-address-book', class: 'icon-leads',   label: 'Total de Leads',    value: totalLeads },
   ];
@@ -72,17 +95,49 @@ function renderAdminMetrics() {
 }
 
 // ── Users Table ─────────────────────────────────────────────
-function renderUsersTable() {
+async function renderUsersTable() {
   const tbody = document.getElementById('admin-users-body');
   if (!tbody) return;
 
   const roleLabels = { admin: 'Admin', gerente: 'Gerente', consultor: 'Consultor' };
+  const session = getSession();
+  let users = [];
 
-  tbody.innerHTML = USERS_DB.map((user, i) => `
+  if (session && session.isSupabase) {
+    try {
+      const team = await fetchTeamMembers();
+      users = team.map(m => ({
+        name: m.name,
+        email: m.email || '—',
+        avatar: m.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+        avatarColor: m.avatar_color || '#6B7280',
+        role: m.role,
+        status: m.is_active ? 'online' : 'offline',
+        lastLogin: '—',
+      }));
+    } catch (e) {
+      console.error('Erro ao carregar usuários do Supabase:', e);
+    }
+  }
+
+  // Fallback to demo users if no Supabase data
+  if (users.length === 0) {
+    users = USERS_DB.map(u => ({
+      name: u.name,
+      email: u.email,
+      avatar: u.avatar,
+      avatarColor: null,
+      role: u.role,
+      status: u.status,
+      lastLogin: u.lastLogin,
+    }));
+  }
+
+  tbody.innerHTML = users.map((user, i) => `
     <tr style="animation: fadeInLog 0.3s ease ${i * 60}ms both">
       <td>
         <div class="user-row-info">
-          <div class="user-avatar-sm">${user.avatar}</div>
+          <div class="user-avatar-sm" ${user.avatarColor ? `style="background:${user.avatarColor}; color:white;"` : ''}>${user.avatar}</div>
           <div>
             <div class="user-row-name">${user.name}</div>
             <div class="user-row-email">${user.email}</div>
@@ -92,14 +147,14 @@ function renderUsersTable() {
       <td>
         <span class="user-role-badge role-${user.role}">
           <i class="fas ${user.role === 'admin' ? 'fa-shield-halved' : user.role === 'gerente' ? 'fa-briefcase' : 'fa-headset'}"></i>
-          ${roleLabels[user.role]}
+          ${roleLabels[user.role] || user.role}
         </span>
       </td>
       <td>
         <span class="user-status-dot ${user.status}"></span>
-        ${user.status === 'online' ? 'Online' : 'Offline'}
+        ${user.status === 'online' ? 'Ativo' : 'Inativo'}
       </td>
-      <td>${new Date(user.lastLogin).toLocaleDateString('pt-BR')} ${new Date(user.lastLogin).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</td>
+      <td>${user.lastLogin !== '—' ? new Date(user.lastLogin).toLocaleDateString('pt-BR') + ' ' + new Date(user.lastLogin).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
       <td style="text-align: center;">
         <button class="btn btn-ghost btn-sm" onclick="showToast('Editar ${user.name} — em breve', 'info')" title="Editar">
           <i class="fas fa-pen"></i>

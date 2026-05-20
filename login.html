@@ -104,12 +104,15 @@
 
       </form>
 
-      <!-- Demo Credentials -->
-      <div class="login-footer">
-        <p style="margin-bottom: 8px; color: rgba(255,255,255,0.35); font-size: 11px;">ACESSO DEMO</p>
+      <!-- Demo Credentials (hidden by default) -->
+      <div class="login-footer" id="demo-footer" style="display: none;">
+        <p style="margin-bottom: 8px; color: rgba(255,255,255,0.35); font-size: 11px;">ACESSO DEMO (OFFLINE)</p>
         <p>Admin: <a href="#" onclick="fillDemo('admin')">admin@mapapro.com</a></p>
         <p>Gerente: <a href="#" onclick="fillDemo('gerente')">gerente@mapapro.com</a></p>
         <p>Consultor: <a href="#" onclick="fillDemo('consultor')">consultor@mapapro.com</a></p>
+      </div>
+      <div style="text-align: center; margin-top: 12px;">
+        <a href="#" onclick="event.preventDefault(); const df=document.getElementById('demo-footer'); df.style.display = df.style.display === 'none' ? 'block' : 'none';" style="color: rgba(255,255,255,0.25); font-size: 10px; text-decoration: none;">Modo Demo (offline)</a>
       </div>
     </div>
   </div>
@@ -126,27 +129,16 @@
       }
     })();
 
-    // Pre-fill credentials based on selected role
+    // Demo credentials (only used when explicitly clicking demo links)
     const roleCredentials = {
       admin:     { email: 'admin@mapapro.com',     password: 'admin123' },
       gerente:   { email: 'gerente@mapapro.com',   password: 'gerente123' },
       consultor: { email: 'consultor@mapapro.com', password: 'consultor123' },
     };
 
-    // When role radio changes, auto-fill credentials
-    document.querySelectorAll('input[name="role"]').forEach(radio => {
-      radio.addEventListener('change', (e) => {
-        const creds = roleCredentials[e.target.value];
-        if (creds) {
-          document.getElementById('login-email').value = creds.email;
-          document.getElementById('login-password').value = creds.password;
-        }
-      });
-    });
-
-    // Auto-fill admin on load
-    document.getElementById('login-email').value = roleCredentials.admin.email;
-    document.getElementById('login-password').value = roleCredentials.admin.password;
+    // Fields start empty — user must type real credentials
+    document.getElementById('login-email').value = '';
+    document.getElementById('login-password').value = '';
 
     // Fill demo credentials
     function fillDemo(role) {
@@ -168,13 +160,18 @@
       const toggleMsg = document.getElementById('toggle-message');
       const toggleBtn = document.getElementById('toggle-mode-btn');
       const errorEl = document.getElementById('login-error');
-      const demoFooter = document.querySelector('.login-footer');
+      const demoFooter = document.getElementById('demo-footer');
       
       errorEl.classList.remove('visible');
+
+      // Clear fields when switching modes
+      document.getElementById('login-email').value = '';
+      document.getElementById('login-password').value = '';
       
       if (authMode === 'login') {
         authMode = 'register';
         nameField.style.display = 'block';
+        document.getElementById('login-name').value = '';
         document.getElementById('login-name').required = true;
         submitBtn.innerHTML = 'Criar minha conta <i class="fas fa-user-plus"></i>';
         toggleMsg.textContent = 'Já tem uma conta?';
@@ -187,7 +184,6 @@
         submitBtn.innerHTML = 'Entrar no sistema <i class="fas fa-arrow-right"></i>';
         toggleMsg.textContent = 'Não tem uma conta?';
         toggleBtn.textContent = 'Cadastre-se';
-        if (demoFooter) demoFooter.style.display = 'block';
       }
     }
 
