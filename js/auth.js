@@ -127,6 +127,64 @@ async function authenticate(email, password) {
   return { success: false, error: 'E-mail ou senha inválidos' };
 }
 
+async function signInWithGoogle() {
+  if (!isSupabaseAvailable()) {
+    return { success: false, error: 'Sistema indisponível. Tente novamente mais tarde.' };
+  }
+  try {
+    const redirectTo = window.location.origin + window.location.pathname.replace('login.html', 'index.html');
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) {
+    console.error('Google OAuth error:', e);
+    return { success: false, error: 'Erro ao conectar com Google. Tente novamente.' };
+  }
+}
+
+async function sendPasswordReset(email) {
+  if (!isSupabaseAvailable()) {
+    return { success: false, error: 'Sistema indisponível. Tente novamente mais tarde.' };
+  }
+  try {
+    const redirectTo = window.location.origin + window.location.pathname;
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) {
+    console.error('Password reset error:', e);
+    return { success: false, error: 'Erro ao enviar e-mail. Tente novamente.' };
+  }
+}
+
+async function handleOAuthSession() {
+  if (!isSupabaseAvailable()) return null;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    const member = await loadAgencyContext();
+    if (!member) { await supabase.auth.signOut(); return null; }
+    const sessionUser = {
+      id: session.user.id,
+      name: member.name,
+      email: session.user.email,
+      role: member.role,
+      avatar: member.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+      memberId: member.id,
+      agencyId: member.agency_id,
+      isSupabase: true,
+    };
+    setSession(sessionUser);
+    return sessionUser;
+  } catch (e) {
+    console.error('OAuth session error:', e);
+    return null;
+  }
+}
+
 // ── Guard: Check Auth on CRM Pages ─────────────────────────
 function guardAuth() {
   const session = getSession();

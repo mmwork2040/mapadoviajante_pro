@@ -6,7 +6,12 @@ const SUPABASE_URL = 'https://daosxeeukdqfssxjsmil.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhb3N4ZWV1a2RxZnNzeGpzbWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTU5OTMsImV4cCI6MjA3ODM3MTk5M30.sv6bBr9440PrVMrXiCZWvW4OLPuoZnkFEKnU9fdAB2Y';
 
 // Initialize Supabase client (loaded via CDN)
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase = null;
+try {
+  supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+} catch (e) {
+  console.error('Supabase SDK não disponível — verifique a conexão:', e);
+}
 
 // ── Agency context cache ────────────────────────────────────
 let _agencyId = null;

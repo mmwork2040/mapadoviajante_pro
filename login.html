@@ -37,9 +37,9 @@
         <p class="login-subtitle">CRM Copilot para Agências de Viagem</p>
       </div>
 
-      <!-- Error Message -->
+      <!-- Feedback Message -->
       <div class="login-error" id="login-error">
-        <i class="fas fa-exclamation-triangle"></i>
+        <i class="fas fa-exclamation-triangle" id="login-error-icon"></i>
         <span id="login-error-text">E-mail ou senha inválidos</span>
       </div>
 
@@ -58,13 +58,45 @@
           <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" required>
         </div>
 
-<button type="submit" class="login-submit" id="login-submit">
+        <div style="text-align: right; margin-top: -8px;">
+          <a href="#" onclick="showForgotPassword(event)" class="login-forgot-link">Esqueci minha senha</a>
+        </div>
+
+        <button type="submit" class="login-submit" id="login-submit">
           Entrar no sistema
           <i class="fas fa-arrow-right"></i>
         </button>
 
+        <div class="login-divider"><span>ou</span></div>
+
+        <button type="button" class="login-google-btn" id="google-btn" onclick="handleGoogleLogin()">
+          <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+            <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+            <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+            <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.548 0 9s.348 2.825.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+            <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/>
+          </svg>
+          Entrar com Google
+        </button>
 
       </form>
+
+      <!-- Forgot Password Panel -->
+      <div class="login-form" id="forgot-form" style="display:none;">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 4px;">Informe seu e-mail e enviaremos um link para redefinir sua senha.</p>
+        <div class="login-field">
+          <label for="reset-email">E-mail</label>
+          <i class="fas fa-envelope field-icon"></i>
+          <input type="email" id="reset-email" placeholder="seu@email.com" autocomplete="email">
+        </div>
+        <button type="button" class="login-submit" id="reset-submit" onclick="handleForgotPassword()">
+          Enviar link de recuperação
+          <i class="fas fa-paper-plane"></i>
+        </button>
+        <div style="text-align: center; margin-top: 4px;">
+          <a href="#" onclick="showLoginForm(event)" class="login-forgot-link">Voltar ao login</a>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -72,30 +104,65 @@
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script>
-    // Check if already logged in
-    (function() {
-      const session = getSession();
-      if (session) {
-        window.location.href = 'index.html';
-        return;
-      }
+    // ── Callback OAuth & session check ──────────────────────
+    (async function() {
+      // Se já tem sessão local, redireciona
+      const localSession = getSession();
+      if (localSession) { window.location.href = 'index.html'; return; }
+
+      // Verifica se há sessão Supabase ativa (retorno de OAuth Google)
+      const oauthUser = await handleOAuthSession();
+      if (oauthUser) { window.location.href = 'index.html'; }
     })();
 
-    // Handle Login (async for Supabase auth)
+    // ── Helpers de UI ────────────────────────────────────────
+    function showFeedback(message, type = 'error') {
+      const el = document.getElementById('login-error');
+      const text = document.getElementById('login-error-text');
+      const icon = document.getElementById('login-error-icon');
+      text.textContent = message;
+      if (type === 'success') {
+        el.style.background = 'rgba(16,185,129,0.12)';
+        el.style.borderColor = 'rgba(16,185,129,0.2)';
+        el.style.color = '#34D399';
+        icon.className = 'fas fa-check-circle';
+      } else {
+        el.style.background = 'rgba(238,95,82,0.12)';
+        el.style.borderColor = 'rgba(238,95,82,0.2)';
+        el.style.color = '#FF7B73';
+        icon.className = 'fas fa-exclamation-triangle';
+      }
+      el.classList.add('visible');
+    }
+
+    function hideFeedback() {
+      document.getElementById('login-error').classList.remove('visible');
+    }
+
+    function showForgotPassword(e) {
+      if (e) e.preventDefault();
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('forgot-form').style.display = 'flex';
+      hideFeedback();
+    }
+
+    function showLoginForm(e) {
+      if (e) e.preventDefault();
+      document.getElementById('forgot-form').style.display = 'none';
+      document.getElementById('login-form').style.display = 'flex';
+      hideFeedback();
+    }
+
+    // ── Login com e-mail/senha ────────────────────────────────
     async function handleLogin(e) {
       e.preventDefault();
       const email = document.getElementById('login-email').value.trim();
       const password = document.getElementById('login-password').value;
-      const errorEl = document.getElementById('login-error');
-      const errorText = document.getElementById('login-error-text');
       const btn = document.getElementById('login-submit');
-
-      // Hide previous error
-      errorEl.classList.remove('visible');
+      hideFeedback();
 
       if (!email || !password) {
-        errorText.textContent = 'Preencha todos os campos';
-        errorEl.classList.add('visible');
+        showFeedback('Preencha todos os campos');
         return;
       }
 
@@ -110,10 +177,51 @@
       } else {
         btn.innerHTML = 'Entrar no sistema <i class="fas fa-arrow-right"></i>';
         btn.disabled = false;
-        errorText.textContent = result.error;
-        errorEl.classList.add('visible');
+        showFeedback(result.error);
         btn.style.animation = 'shakeError 0.4s ease';
         setTimeout(() => btn.style.animation = '', 400);
+      }
+    }
+
+    // ── Login com Google ──────────────────────────────────────
+    async function handleGoogleLogin() {
+      const btn = document.getElementById('google-btn');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Redirecionando...';
+      hideFeedback();
+
+      const result = await signInWithGoogle();
+      if (!result.success) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/><path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.175 0 7.548 0 9s.348 2.825.957 4.039l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.166 6.656 3.58 9 3.58z" fill="#EA4335"/></svg> Entrar com Google';
+        showFeedback(result.error);
+      }
+      // Se success, o Supabase redireciona automaticamente para o Google
+    }
+
+    // ── Recuperação de senha ──────────────────────────────────
+    async function handleForgotPassword() {
+      const email = document.getElementById('reset-email').value.trim();
+      const btn = document.getElementById('reset-submit');
+      hideFeedback();
+
+      if (!email) {
+        showFeedback('Informe seu e-mail para continuar');
+        return;
+      }
+
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enviando...';
+      btn.disabled = true;
+
+      const result = await sendPasswordReset(email);
+
+      btn.innerHTML = 'Enviar link de recuperação <i class="fas fa-paper-plane"></i>';
+      btn.disabled = false;
+
+      if (result.success) {
+        showFeedback('Link enviado! Verifique sua caixa de entrada.', 'success');
+      } else {
+        showFeedback(result.error);
       }
     }
   </script>
