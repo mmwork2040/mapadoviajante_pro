@@ -23,14 +23,15 @@ async function loadAgencyContext() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: member, error } = await supabase
+  const { data: members, error } = await supabase
     .from('agency_members')
     .select('id, agency_id, name, role, avatar_color')
     .eq('user_id', user.id)
     .eq('is_active', true)
-    .single();
+    .limit(1);
 
-  if (error || !member) return null;
+  if (error || !members || members.length === 0) return null;
+  const member = members[0];
 
   _agencyId = member.agency_id;
   _memberId = member.id;

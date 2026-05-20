@@ -26,6 +26,114 @@ const AGENCY_SETTINGS = [
   { label: 'Plano Ativo',          value: 'PRO — Ilimitado',        desc: 'Licença do MapaPRO' },
 ];
 
+// ══════════════════════════════════════════════════════════════
+// NOVO USUÁRIO — Modal & Criação
+// ══════════════════════════════════════════════════════════════
+
+let _selectedRole = 'consultor';
+
+function openNewUserModal() {
+  _selectedRole = 'consultor';
+  document.getElementById('new-user-modal').style.display = 'flex';
+  document.getElementById('nu-name').value = '';
+  document.getElementById('nu-email').value = '';
+  document.getElementById('nu-password').value = '';
+  document.getElementById('nu-feedback').style.display = 'none';
+  selectNewUserRole('consultor');
+}
+
+function closeNewUserModal() {
+  document.getElementById('new-user-modal').style.display = 'none';
+}
+
+function selectNewUserRole(role) {
+  _selectedRole = role;
+  document.querySelectorAll('.nu-role-card').forEach(card => {
+    card.classList.toggle('active', card.dataset.role === role);
+  });
+}
+
+async function submitNewUser() {
+  const name     = document.getElementById('nu-name').value.trim();
+  const email    = document.getElementById('nu-email').value.trim();
+  const password = document.getElementById('nu-password').value;
+  const feedback = document.getElementById('nu-feedback');
+  const btn      = document.getElementById('nu-submit-btn');
+
+  feedback.style.display = 'none';
+
+  if (!name || !email || !password) {
+    feedback.textContent = 'Preencha todos os campos obrigatórios.';
+    feedback.className = 'nu-feedback nu-feedback-error';
+    feedback.style.display = 'block';
+    return;
+  }
+  if (password.length < 6) {
+    feedback.textContent = 'A senha deve ter no mínimo 6 caracteres.';
+    feedback.className = 'nu-feedback nu-feedback-error';
+    feedback.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando...';
+
+  const session = getSession();
+  const agencyId = session?.agencyId || getAgencyId();
+
+  if (!agencyId) {
+    feedback.textContent = 'Não foi possível identificar a agência. Faça login novamente.';
+    feedback.className = 'nu-feedback nu-feedback-error';
+    feedback.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = 'Criar Usuário';
+    return;
+  }
+
+  try {
+    // 1. Criar conta no Supabase Auth
+    const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { name } } });
+
+    if (error) {
+      const msg = error.message.includes('already registered')
+        ? 'Este e-mail já possui conta. Solicite ao usuário que faça login — o admin pode editá-lo na tabela abaixo.'
+        : error.message;
+      throw new Error(msg);
+    }
+
+    if (!data.user) throw new Error('Erro ao criar usuário.');
+
+    // 2. Vincular à agência com o papel selecionado
+    const avatarColors = { admin: '#F58E26', gerente: '#3B82F6', consultor: '#10B981' };
+    const { error: memberError } = await supabase.from('agency_members').insert({
+      agency_id:    agencyId,
+      user_id:      data.user.id,
+      name,
+      email,
+      role:         _selectedRole,
+      avatar_color: avatarColors[_selectedRole] || '#6B7280',
+      is_active:    true,
+    });
+
+    if (memberError) throw new Error('Conta criada, mas não vinculada à agência: ' + memberError.message);
+
+    feedback.textContent = `Usuário ${name} criado com sucesso! Um e-mail de confirmação foi enviado.`;
+    feedback.className = 'nu-feedback nu-feedback-success';
+    feedback.style.display = 'block';
+    btn.innerHTML = '<i class="fas fa-check"></i> Criado!';
+
+    await renderUsersTable();
+    setTimeout(closeNewUserModal, 2000);
+
+  } catch (e) {
+    feedback.textContent = e.message || 'Erro inesperado.';
+    feedback.className = 'nu-feedback nu-feedback-error';
+    feedback.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = 'Criar Usuário';
+  }
+}
+
 // ── Initialize Admin Panel ──────────────────────────────────────────
 async function initAdmin() {
   await renderAdminMetrics();
