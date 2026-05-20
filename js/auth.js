@@ -99,7 +99,13 @@ async function authenticate(email, password) {
     }
 
     if (data.user) {
-      const member = await loadAgencyContext();
+      let member = await loadAgencyContext();
+
+      // Auto-provision: if no agency membership exists, create one
+      if (!member) {
+        const userName = data.user.user_metadata?.name || data.user.user_metadata?.full_name || email.split('@')[0];
+        member = await autoProvisionAgency(data.user.id, userName, data.user.email);
+      }
 
       if (member) {
         const sessionUser = {
@@ -116,7 +122,7 @@ async function authenticate(email, password) {
         return { success: true, user: sessionUser };
       } else {
         await supabase.auth.signOut();
-        return { success: false, error: 'Usuário não vinculado a nenhuma agência. Contate o administrador.' };
+        return { success: false, error: 'Erro ao configurar sua conta. Tente novamente.' };
       }
     }
   } catch (e) {
@@ -165,8 +171,17 @@ async function handleOAuthSession() {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return null;
-    const member = await loadAgencyContext();
+
+    let member = await loadAgencyContext();
+
+    // Auto-provision: if no agency membership exists, create one
+    if (!member) {
+      const userName = session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email.split('@')[0];
+      member = await autoProvisionAgency(session.user.id, userName, session.user.email);
+    }
+
     if (!member) { await supabase.auth.signOut(); return null; }
+
     const sessionUser = {
       id: session.user.id,
       name: member.name,

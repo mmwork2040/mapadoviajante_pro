@@ -510,4 +510,105 @@ function buildMonthlyChartData(incomeTransactions) {
   };
 }
 
+// ══════════════════════════════════════════════════════════════
+// AUTO-PROVISIONING (self-registration for new PRO users)
+// ══════════════════════════════════════════════════════════════
+
+async function autoProvisionAgency(userId, userName, userEmail) {
+  try {
+    const agencyName = `Agência de ${userName || 'Novo Usuário'}`;
+    const slug = (userName || 'novo-usuario')
+      .toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '')
+      + '-' + Date.now().toString(36);
+
+    // 1. Create new agency
+    const { data: agency, error: agErr } = await supabase
+      .from('agencies')
+      .insert({
+        name: agencyName,
+        slug: slug,
+        email: userEmail,
+      })
+      .select()
+      .single();
+
+    if (agErr || !agency) {
+      console.error('autoProvisionAgency — create agency:', agErr);
+      return null;
+    }
+
+    // 2. Create agency member (admin)
+    const avatarInitials = userName
+      ? userName.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase()
+      : '??';
+
+    const { data: member, error: memErr } = await supabase
+      .from('agency_members')
+      .insert({
+        agency_id: agency.id,
+        user_id: userId,
+        name: userName || 'Novo Usuário',
+        email: userEmail,
+        role: 'admin',
+        avatar_color: '#F58E26',
+        is_active: true,
+      })
+      .select()
+      .single();
+
+    if (memErr || !member) {
+      console.error('autoProvisionAgency — create member:', memErr);
+      return null;
+    }
+
+    // 3. Set context cache
+    _agencyId = member.agency_id;
+    _memberId = member.id;
+    _memberRole = member.role;
+
+    return member;
+  } catch (e) {
+    console.error('autoProvisionAgency error:', e);
+    return null;
+  }
+}
+
+async function signUpUser(name, email, password) {
+  if (!window.supabase || !window.supabase.auth) {
+    return { success: false, error: 'Sistema indisponível. Tente novamente mais tarde.' };
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { name } },
+    });
+
+    if (error) {
+      if (error.message.includes('already registered')) {
+        return { success: false, error: 'Este e-mail já está cadastrado. Faça login normalmente.' };
+      }
+      return { success: false, error: error.message };
+    }
+
+    if (data.user) {
+      // Auto-provision agency for the new user
+      const member = await autoProvisionAgency(data.user.id, name, email);
+      if (!member) {
+        return { success: false, error: 'Erro ao configurar sua agência. Tente novamente.' };
+      }
+      return { success: true, user: data.user, member };
+    }
+
+    return { success: false, error: 'Erro inesperado ao criar conta.' };
+  } catch (e) {
+    console.error('signUpUser error:', e);
+    return { success: false, error: 'Erro ao criar conta. Tente novamente.' };
+  }
+}
+
 console.log('✅ Supabase client initialized');

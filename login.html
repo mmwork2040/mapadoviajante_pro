@@ -81,6 +81,12 @@
 
       </form>
 
+      <!-- Link para cadastro -->
+      <div style="text-align: center; margin-top: 12px;">
+        <span style="color: rgba(255,255,255,0.4); font-size: 13px;">Não tem conta?</span>
+        <a href="#" onclick="showSignUpForm(event)" class="login-forgot-link" style="font-size: 13px; margin-left: 4px;">Criar conta gratuita</a>
+      </div>
+
       <!-- Forgot Password Panel -->
       <div class="login-form" id="forgot-form" style="display:none;">
         <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 4px;">Informe seu e-mail e enviaremos um link para redefinir sua senha.</p>
@@ -95,6 +101,33 @@
         </button>
         <div style="text-align: center; margin-top: 4px;">
           <a href="#" onclick="showLoginForm(event)" class="login-forgot-link">Voltar ao login</a>
+        </div>
+      </div>
+
+      <!-- Sign Up Panel -->
+      <div class="login-form" id="signup-form" style="display:none;">
+        <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 4px;">Crie sua conta e comece a usar o CRM PRO agora.</p>
+        <div class="login-field">
+          <label for="signup-name">Seu nome</label>
+          <i class="fas fa-user field-icon"></i>
+          <input type="text" id="signup-name" placeholder="Nome completo" autocomplete="name" required>
+        </div>
+        <div class="login-field">
+          <label for="signup-email">E-mail</label>
+          <i class="fas fa-envelope field-icon"></i>
+          <input type="email" id="signup-email" placeholder="seu@email.com" autocomplete="email" required>
+        </div>
+        <div class="login-field">
+          <label for="signup-password">Senha</label>
+          <i class="fas fa-lock field-icon"></i>
+          <input type="password" id="signup-password" placeholder="Mínimo 6 caracteres" autocomplete="new-password" required minlength="6">
+        </div>
+        <button type="button" class="login-submit" id="signup-submit" onclick="handleSignUp()">
+          Criar minha conta
+          <i class="fas fa-rocket"></i>
+        </button>
+        <div style="text-align: center; margin-top: 8px;">
+          <a href="#" onclick="showLoginForm(event)" class="login-forgot-link">Já tenho conta — Entrar</a>
         </div>
       </div>
 
@@ -149,7 +182,16 @@
     function showLoginForm(e) {
       if (e) e.preventDefault();
       document.getElementById('forgot-form').style.display = 'none';
+      document.getElementById('signup-form').style.display = 'none';
       document.getElementById('login-form').style.display = 'flex';
+      hideFeedback();
+    }
+
+    function showSignUpForm(e) {
+      if (e) e.preventDefault();
+      document.getElementById('login-form').style.display = 'none';
+      document.getElementById('forgot-form').style.display = 'none';
+      document.getElementById('signup-form').style.display = 'flex';
       hideFeedback();
     }
 
@@ -222,6 +264,54 @@
         showFeedback('Link enviado! Verifique sua caixa de entrada.', 'success');
       } else {
         showFeedback(result.error);
+      }
+    }
+
+    // ── Cadastro (Sign Up) ────────────────────────────────────
+    async function handleSignUp() {
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const btn = document.getElementById('signup-submit');
+      hideFeedback();
+
+      if (!name || !email || !password) {
+        showFeedback('Preencha todos os campos');
+        return;
+      }
+      if (password.length < 6) {
+        showFeedback('A senha deve ter pelo menos 6 caracteres');
+        return;
+      }
+
+      btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando conta...';
+      btn.disabled = true;
+
+      const result = await signUpUser(name, email, password);
+
+      if (result.success) {
+        // Sign up successful — create session and redirect
+        const member = result.member;
+        const sessionUser = {
+          id: result.user.id,
+          name: member.name,
+          email: email,
+          role: member.role,
+          avatar: member.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+          memberId: member.id,
+          agencyId: member.agency_id,
+          isSupabase: true,
+        };
+        setSession(sessionUser);
+        btn.innerHTML = '<i class="fas fa-check"></i> Conta criada!';
+        showFeedback('Conta criada com sucesso! Redirecionando...', 'success');
+        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+      } else {
+        btn.innerHTML = 'Criar minha conta <i class="fas fa-rocket"></i>';
+        btn.disabled = false;
+        showFeedback(result.error);
+        btn.style.animation = 'shakeError 0.4s ease';
+        setTimeout(() => btn.style.animation = '', 400);
       }
     }
   </script>
