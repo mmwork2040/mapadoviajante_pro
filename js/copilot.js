@@ -1,7 +1,28 @@
 /* ══════════════════════════════════════════════════════════════
    COPILOT.JS — Thay IA Assistant Slide-Over Panel
-   Simulated AI suggestions for Module 1 (dummy data).
+   Real AI integration with Google Gemini & OpenAI API + Supabase logging.
    ══════════════════════════════════════════════════════════════ */
+
+let aiConfig = null;
+
+async function loadAIConfig() {
+  const session = getSession();
+  if (session && session.isSupabase) {
+    try {
+      const { data, error } = await supabase
+        .from('crm_ai_config')
+        .select('*')
+        .eq('agency_id', session.agencyId)
+        .maybeSingle();
+      if (!error && data) {
+        aiConfig = data;
+        console.log('✅ Copilot AI Config carregada do Supabase:', aiConfig);
+      }
+    } catch (e) {
+      console.error('❌ Erro ao carregar crm_ai_config no Copilot:', e);
+    }
+  }
+}
 
 function initCopilot() {
   const trigger = document.querySelector('.sidebar-ai-widget');
@@ -37,6 +58,9 @@ function initCopilot() {
 
   // Populate initial suggestions
   renderCopilotInsights();
+
+  // Load config initially
+  loadAIConfig();
 }
 
 function toggleCopilot(open) {
@@ -48,6 +72,8 @@ function toggleCopilot(open) {
     panel.classList.add('open');
     if (overlay) overlay.classList.add('active');
     document.getElementById('copilot-input')?.focus();
+    // Load config dynamically when opening to ensure we have any recent changes from admin
+    loadAIConfig();
   } else {
     panel.classList.remove('open');
     if (overlay) overlay.classList.remove('active');
@@ -110,7 +136,7 @@ function renderCopilotInsights() {
   `).join('');
 }
 
-// ── Chat Simulation ─────────────────────────────────────────
+// ── Chat Real e Simulação ──────────────────────────────────
 function sendCopilotMessage() {
   const input = document.getElementById('copilot-input');
   const chat = document.getElementById('copilot-chat');
@@ -119,7 +145,7 @@ function sendCopilotMessage() {
   const msg = input.value.trim();
   if (!msg) return;
 
-  // Add user message
+  // Add user message to UI
   chat.innerHTML += `
     <div class="copilot-msg copilot-msg-user">
       <div class="copilot-msg-bubble">${escapeHTML(msg)}</div>
@@ -128,7 +154,13 @@ function sendCopilotMessage() {
   input.value = '';
   chat.scrollTop = chat.scrollHeight;
 
-  // Simulate typing
+  // Store message in active generic conversation history
+  if (!window.copilotHistory) {
+    window.copilotHistory = [];
+  }
+  window.copilotHistory.push({ role: 'user', content: msg });
+
+  // Add typing indicator
   const typingId = 'typing-' + Date.now();
   chat.innerHTML += `
     <div class="copilot-msg copilot-msg-ai" id="${typingId}">
@@ -138,15 +170,221 @@ function sendCopilotMessage() {
     </div>`;
   chat.scrollTop = chat.scrollHeight;
 
-  // Simulate AI response after delay
-  setTimeout(() => {
+  const session = getSession();
+  const isLive = session && session.isSupabase && aiConfig && aiConfig.api_key_encrypted;
+
+  if (isLive) {
+    // Live mode: call configured provider API
+    callLiveAI(msg, typingId);
+  } else {
+    // Fallback Demo mode: simulate AI response after delay
+    setTimeout(() => {
+      const typingEl = document.getElementById(typingId);
+      if (typingEl) {
+        const bubble = typingEl.querySelector('.copilot-msg-bubble');
+        bubble.classList.remove('copilot-typing');
+        const simulatedReply = generateAIResponse(msg);
+        bubble.innerHTML = simulatedReply;
+        // Append response to conversation history as well
+        window.copilotHistory.push({ role: 'assistant', content: simulatedReply.replace(/<[^>]*>/g, '') });
+      }
+      chat.scrollTop = chat.scrollHeight;
+    }, 1200 + Math.random() * 800);
+  }
+}
+
+async function callLiveAI(msg, typingId) {
+  const chat = document.getElementById('copilot-chat');
+  const session = getSession();
+  const provider = aiConfig.provider || 'gemini';
+  const apiKey = aiConfig.api_key_encrypted;
+  const modelName = aiConfig.model || 'gemini-2.5-flash';
+  const systemPrompt = aiConfig.system_prompt || 'Você é a Thay, uma assistente de viagens altamente qualificada da agência O Segredo do Viajante. Ajude o consultor com roteiros, destinos, preços e informações operacionais.';
+
+  try {
+    let replyText = '';
+    let promptTokens = 0;
+    let replyTokens = 0;
+    let totalTokens = 0;
+
+    if (provider === 'gemini') {
+      const geminiContents = window.copilotHistory.map(item => ({
+        role: item.role === 'user' ? 'user' : 'model',
+        parts: [{ text: item.content }]
+      }));
+
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: geminiContents,
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        }
+      };
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      replyText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      promptTokens = data.usageMetadata?.promptTokenCount || Math.ceil(msg.length / 4);
+      replyTokens = data.usageMetadata?.candidatesTokenCount || Math.ceil(replyText.length / 4);
+      totalTokens = data.usageMetadata?.totalTokenCount || (promptTokens + replyTokens);
+
+    } else if (provider === 'openai') {
+      const openaiMessages = [
+        { role: 'system', content: systemPrompt },
+        ...window.copilotHistory.map(item => ({
+          role: item.role === 'user' ? 'user' : 'assistant',
+          content: item.content
+        }))
+      ];
+
+      const url = 'https://api.openai.com/v1/chat/completions';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: modelName,
+          messages: openaiMessages
+        })
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      replyText = data.choices?.[0]?.message?.content || '';
+
+      promptTokens = data.usage?.prompt_tokens || Math.ceil(msg.length / 4);
+      replyTokens = data.usage?.completion_tokens || Math.ceil(replyText.length / 4);
+      totalTokens = data.usage?.total_tokens || (promptTokens + replyTokens);
+
+    } else if (provider === 'claude') {
+      const claudeMessages = window.copilotHistory.map(item => ({
+        role: item.role === 'user' ? 'user' : 'assistant',
+        content: item.content
+      }));
+
+      const url = 'https://api.anthropic.com/v1/messages';
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'dangerouslyAllowBrowser': 'true'
+        },
+        body: JSON.stringify({
+          model: modelName,
+          max_tokens: 1024,
+          system: systemPrompt,
+          messages: claudeMessages
+        })
+      });
+
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      replyText = data.content?.[0]?.text || '';
+
+      promptTokens = data.usage?.input_tokens || Math.ceil(msg.length / 4);
+      replyTokens = data.usage?.output_tokens || Math.ceil(replyText.length / 4);
+      totalTokens = promptTokens + replyTokens;
+    } else {
+      throw new Error(`Provedor de IA desconhecido: ${provider}`);
+    }
+
+    // Update message bubble in UI
     const typingEl = document.getElementById(typingId);
     if (typingEl) {
-      typingEl.querySelector('.copilot-msg-bubble').classList.remove('copilot-typing');
-      typingEl.querySelector('.copilot-msg-bubble').innerHTML = generateAIResponse(msg);
+      const bubble = typingEl.querySelector('.copilot-msg-bubble');
+      bubble.classList.remove('copilot-typing');
+      bubble.innerHTML = formatMarkdown(replyText);
     }
-    chat.scrollTop = chat.scrollHeight;
-  }, 1200 + Math.random() * 800);
+
+    // Save answer to generic history
+    window.copilotHistory.push({ role: 'assistant', content: replyText });
+
+    // Save usage log in Supabase
+    try {
+      await supabase
+        .from('ai_usage_logs')
+        .insert({
+          user_id: session.id,
+          model_id: modelName,
+          provider: provider,
+          feature: 'chat',
+          tokens_input: promptTokens,
+          tokens_output: replyTokens,
+          total_tokens: totalTokens
+        });
+      console.log(`✅ Log de uso de IA inserido: ${totalTokens} tokens`);
+    } catch (e) {
+      console.error('❌ Erro ao salvar logs de uso de IA no Supabase:', e);
+    }
+
+  } catch (error) {
+    console.error('❌ Erro na chamada da API de IA:', error);
+    const typingEl = document.getElementById(typingId);
+    if (typingEl) {
+      const bubble = typingEl.querySelector('.copilot-msg-bubble');
+      bubble.classList.remove('copilot-typing');
+      bubble.style.color = '#EF4444';
+      bubble.innerHTML = `⚠️ Erro ao gerar resposta: ${error.message}. Por favor, verifique se a chave cadastrada no painel de administração é válida.`;
+    }
+  }
+
+  if (chat) chat.scrollTop = chat.scrollHeight;
+}
+
+// ── Markdown Formatter ─────────────────────────────────────
+function formatMarkdown(text) {
+  if (!text) return '';
+  
+  // Escape HTML first to prevent XSS
+  let html = escapeHTML(text);
+  
+  // Bold: **text**
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Italic: *text*
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  
+  // Code block: ```code```
+  html = html.replace(/```([\s\S]*?)```/g, '<pre style="background: rgba(0,0,0,0.15); padding: 8px; border-radius: 4px; font-family: monospace; font-size: 12px; margin: 8px 0; overflow-x: auto; white-space: pre-wrap;">$1</pre>');
+  
+  // Inline code: `code`
+  html = html.replace(/`(.*?)`/g, '<code style="background: rgba(0,0,0,0.15); padding: 2px 4px; border-radius: 3px; font-family: monospace; font-size: 12px;">$1</code>');
+
+  // Lists: replace bullet points starting with - or * or • followed by space
+  html = html.replace(/^(?:\-|\*|•)\s+(.+)$/gm, '<li style="margin-left: 15px; list-style-type: disc;">$1</li>');
+
+  // Replace double line breaks with paragraph structure or just double break
+  html = html.replace(/\n\n/g, '<br><br>');
+  
+  // Single line breaks
+  html = html.replace(/\n/g, '<br>');
+  
+  return html;
 }
 
 function generateAIResponse(query) {
