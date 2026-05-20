@@ -39,7 +39,7 @@ const ROLE_CONFIG = {
 
 // ── Detect if Supabase is available ─────────────────────────
 function isSupabaseAvailable() {
-  return typeof supabase !== 'undefined' && supabase && supabase.auth;
+  return !!(window.supabase && window.supabase.auth);
 }
 
 // ══════════════════════════════════════════════════════════════
