@@ -3,18 +3,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 // ── Activity Log Data ───────────────────────────────────────
-const ACTIVITY_LOG = [
-  { type: 'sale',    user: 'Ana Costa',        action: 'Fechou venda — Pacote Curaçao', detail: 'R$ 12.400 • Casal Oliveira', time: 'Há 2 horas' },
-  { type: 'lead',    user: 'Pedro Mendes',      action: 'Cadastrou novo lead', detail: 'Larissa Campos — Grécia', time: 'Há 3 horas' },
-  { type: 'itin',    user: 'Juliana Ferreira',   action: 'Criou roteiro', detail: 'Maldivas 7 noites — Camila Pires', time: 'Há 5 horas' },
-  { type: 'login',   user: 'Carlos Souza',       action: 'Fez login no sistema', detail: 'Desktop • Chrome', time: 'Há 6 horas' },
-  { type: 'sale',    user: 'Pedro Mendes',       action: 'Atualizou lead para "Em Negociação"', detail: 'Rafael Dias — Lisboa + Espanha', time: 'Há 8 horas' },
-  { type: 'setting', user: 'Lucas Felipe',       action: 'Alterou configuração', detail: 'Comissão padrão: 10% → 12%', time: 'Há 1 dia' },
-  { type: 'lead',    user: 'Ana Costa',          action: 'Enviou proposta', detail: 'Família Santos — Portugal • R$ 18.500', time: 'Há 1 dia' },
-  { type: 'itin',    user: 'Juliana Ferreira',   action: 'Compartilhou roteiro via WhatsApp', detail: 'Casal Oliveira — Curaçao', time: 'Há 2 dias' },
-  { type: 'login',   user: 'Ana Costa',          action: 'Fez login no sistema', detail: 'Mobile • Safari', time: 'Há 2 dias' },
-  { type: 'sale',    user: 'Carlos Souza',       action: 'Recebeu pagamento', detail: 'Comissão Peru — R$ 1.360', time: 'Há 3 dias' },
-];
+const ACTIVITY_LOG = [];
 
 // ── Agency Settings Data ────────────────────────────────────
 const AGENCY_SETTINGS = [
@@ -284,6 +273,16 @@ function renderActivityLog() {
     itin: 'fa-route',
     setting: 'fa-gear'
   };
+
+  if (ACTIVITY_LOG.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 40px 20px; color: var(--gray-400);">
+        <i class="fas fa-inbox" style="font-size: 32px; margin-bottom: 12px; opacity: 0.5;"></i>
+        <p>Nenhuma atividade recente registrada.</p>
+      </div>
+    `;
+    return;
+  }
 
   container.innerHTML = ACTIVITY_LOG.map((item, i) => `
     <div class="activity-item" style="animation-delay: ${i * 50}ms">

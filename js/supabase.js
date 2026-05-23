@@ -94,6 +94,8 @@ async function fetchLeadById(leadId) {
 }
 
 async function createLead(leadData) {
+  if (!_agencyId) await loadAgencyContext();
+  
   const { data, error } = await supabase
     .from('crm_leads')
     .insert({
@@ -113,7 +115,11 @@ async function createLead(leadData) {
     .select()
     .single();
 
-  if (error) { console.error('createLead:', error); return null; }
+  if (error) {
+    console.error('createLead erro detalhado:', error);
+    showToast('Erro: ' + error.message, 'error');
+    return null;
+  }
   return data;
 }
 
@@ -288,6 +294,31 @@ async function fetchDestinations() {
   return data || [];
 }
 
+async function createDestination(destData) {
+  if (!_agencyId) await loadAgencyContext();
+
+  const { data, error } = await supabase
+    .from('crm_library_destinations')
+    .insert({
+      agency_id: _agencyId,
+      title: destData.title,
+      country: destData.country || null,
+      category: destData.category || 'praia',
+      base_price: destData.base_price || 0,
+      days: destData.days || 1,
+      description: destData.description || null,
+      image_url: destData.image_url || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('createDestination erro:', error);
+    return null;
+  }
+  return data;
+}
+
 // ══════════════════════════════════════════════════════════════
 // ITINERARIES SERVICE
 // ══════════════════════════════════════════════════════════════
@@ -334,6 +365,8 @@ async function fetchItineraryById(id) {
 }
 
 async function createItinerary(itineraryData) {
+  if (!_agencyId) await loadAgencyContext();
+
   const { data, error } = await supabase
     .from('crm_itineraries')
     .insert({
@@ -352,7 +385,12 @@ async function createItinerary(itineraryData) {
     })
     .select()
     .single();
-  if (error) { console.error('createItinerary:', error); return null; }
+  
+  if (error) {
+    console.error('createItinerary erro detalhado:', error);
+    showToast('Erro ao criar roteiro: ' + error.message, 'error');
+    return null;
+  }
   return data;
 }
 

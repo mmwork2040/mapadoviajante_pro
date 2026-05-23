@@ -191,8 +191,76 @@ function showDestinationDetail(id) {
   openModal('destination-modal');
 }
 
+// ── Use in Itinerary ──────────────────────────────────────────
 function useInItinerary(destination) {
   closeModal('destination-modal');
   navigateTo('itinerary');
   showToast(`Destino "${destination}" selecionado! Crie um novo roteiro.`, 'info');
+}
+
+// ── New Destination ──────────────────────────────────────────
+function openNewDestinationModal() {
+  document.getElementById('new-destination-form').reset();
+  openModal('new-destination-modal');
+}
+
+async function submitNewDestination() {
+  const name = document.getElementById('nd-name').value.trim();
+  const country = document.getElementById('nd-country').value.trim();
+  const category = document.getElementById('nd-category').value;
+  const cost = document.getElementById('nd-cost').value;
+  const days = document.getElementById('nd-days').value;
+  const desc = document.getElementById('nd-desc').value.trim();
+  const image = document.getElementById('nd-image').value.trim() || 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&q=80&w=800';
+
+  const btn = document.getElementById('nd-submit-btn');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+  btn.disabled = true;
+
+  try {
+    const session = getSession();
+    if (session && session.isSupabase) {
+      if (typeof createDestination === 'function') {
+        const dest = await createDestination({
+          title: name,
+          country,
+          category,
+          base_price: parseInt(cost) || 0,
+          days: parseInt(days) || 1,
+          description: desc,
+          image_url: image
+        });
+        if (dest) {
+          showToast('Destino criado com sucesso!', 'success');
+          await loadLibraryData();
+          renderLibrary();
+        } else {
+          showToast('Erro ao criar destino no servidor', 'error');
+        }
+      } else {
+        showToast('Função createDestination não encontrada!', 'error');
+      }
+    } else {
+      // Offline fallback
+      _libDestinations.unshift({
+        id: Date.now(),
+        title: name,
+        country,
+        category,
+        base_price: parseInt(cost) || 0,
+        days: parseInt(days) || 1,
+        description: desc,
+        image_url: image
+      });
+      showToast('Destino criado (Modo Offline)', 'success');
+      renderLibrary();
+    }
+  } catch (error) {
+    showToast('Erro ao salvar destino: ' + error.message, 'error');
+  } finally {
+    btn.innerHTML = originalText;
+    btn.disabled = false;
+    closeModal('new-destination-modal');
+  }
 }

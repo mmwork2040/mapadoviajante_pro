@@ -322,8 +322,9 @@ async function submitIntakeForm() {
     }
   } else {
     // ── Demo mode ──
+    if (typeof window.LEADS === 'undefined') window.LEADS = [];
     const newLead = {
-      id: LEADS.length + 1,
+      id: window.LEADS.length + 1,
       name,
       email,
       phone,
@@ -335,14 +336,17 @@ async function submitIntakeForm() {
       profile,
       checklists,
     };
-    LEADS.unshift(newLead);
-    renderPipeline();
-    renderDashboardLeads();
+    window.LEADS.unshift(newLead);
+    if (typeof renderPipeline === 'function') renderPipeline();
+    if (typeof renderDashboardLeads === 'function') renderDashboardLeads();
   }
 
   // Update nav badge
   const badge = document.querySelector('.nav-badge');
-  if (badge) badge.textContent = (typeof currentLeads !== 'undefined' ? currentLeads : LEADS).filter(l => l.status === 'new').length;
+  if (badge) {
+    const leadsList = typeof currentLeads !== 'undefined' ? currentLeads : (typeof window.LEADS !== 'undefined' ? window.LEADS : []);
+    badge.textContent = leadsList.filter(l => l.status === 'new').length;
+  }
 
   // Close and reset
   closeModal('lead-modal');

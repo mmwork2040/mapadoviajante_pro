@@ -449,7 +449,7 @@ function openBlockEditor(dayIndex, actIndex) {
       </div>
       <div class="block-editor-field">
         <label>Tipo</label>
-        <select id="editor-type">
+        <select id="editor-type" disabled title="Não é possível alterar o tipo após a criação">
           <option value="flight" ${act.type === 'flight' ? 'selected' : ''}>✈️ Voo</option>
           <option value="hotel" ${act.type === 'hotel' ? 'selected' : ''}>🏨 Hotel</option>
           <option value="activity" ${act.type === 'activity' ? 'selected' : ''}>📍 Atividade</option>
@@ -459,7 +459,12 @@ function openBlockEditor(dayIndex, actIndex) {
         </select>
       </div>
     </div>
-    <div class="block-editor-footer">
+    <div class="block-editor-footer" style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; align-items: center;">
+      <input type="file" id="ai-file-${dayIndex}-${actIndex}" style="display: none;" accept=".pdf,.txt,.csv,.doc,.docx" onchange="handleAIFileUpload(event, ${dayIndex}, ${actIndex})">
+      <button class="btn btn-ghost btn-sm" style="color: var(--orange-500);" onclick="document.getElementById('ai-file-${dayIndex}-${actIndex}').click(); event.stopPropagation();" title="Anexar documento e preencher com IA">
+        <i class="fas fa-wand-magic-sparkles"></i> Extrair de Documento
+      </button>
+      <div id="ai-status-${dayIndex}-${actIndex}" style="font-size: 11px; color: var(--gray-400); flex: 1;"></div>
       <button class="btn btn-ghost btn-sm" onclick="duplicateActivity(${dayIndex}, ${actIndex}); event.stopPropagation();">
         <i class="fas fa-copy"></i> Duplicar
       </button>
@@ -751,4 +756,158 @@ function downloadPdf() {
     showToast('Erro ao gerar PDF. Tente novamente.', 'error');
   });
 }
+
+// ── AI Extraction ───────────────────────────────────────────
+async function handleAIFileUpload(event, dayIndex, actIndex) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const statusEl = document.getElementById(`ai-status-${dayIndex}-${actIndex}`);
+  if (statusEl) statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Lendo arquivo...';
+
+  try {
+    let text = '';
+    const ext = file.name.split('.').pop().toLowerCase();
+    
+    if (ext === 'pdf') {
+      text = await extractTextFromPDF(file);
+    } else {
+      text = await file.text();
+    }
+
+    if (!text || text.trim().length < 10) {
+      throw new Error("Não foi possível extrair texto legível do arquivo.");
+    }
+
+    if (statusEl) statusEl.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Analisando com a Thay...';
+    
+    const extracted = await extractDataWithAI(text);
+    
+    if (extracted) {
+      if (extracted.title) document.getElementById('editor-title').value = extracted.title;
+      if (extracted.detail) document.getElementById('editor-detail').value = extracted.detail;
+      if (extracted.time) document.getElementById('editor-time').value = extracted.time;
+      if (extracted.price) document.getElementById('editor-price').value = extracted.price;
+      if (extracted.type) {
+        const sel = document.getElementById('editor-type');
+        if (sel) {
+          sel.disabled = false; // Allow AI to change it
+          sel.value = extracted.type;
+        }
+      }
+      if (statusEl) statusEl.innerHTML = '<span style="color:var(--green-500)"><i class="fas fa-check"></i> Preenchido! (Revise e clique em Salvar)</span>';
+      showToast('Dados extraídos com sucesso! 🪄', 'success');
+    } else {
+      throw new Error("A IA não conseguiu interpretar os dados.");
+    }
+
+  } catch (err) {
+    console.error('AI Extraction error:', err);
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--red-500)"><i class="fas fa-times"></i> Erro: ${err.message}</span>`;
+    showToast('Falha na extração por IA.', 'error');
+  }
+}
+
+async function extractTextFromPDF(file) {
+  const arrayBuffer = await file.arrayBuffer();
+  if (!window.pdfjsLib) throw new Error("Biblioteca PDF não carregada.");
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  let text = '';
+  // Limit to first 3 pages to save tokens and time
+  const numPages = Math.min(pdf.numPages, 3); 
+  for (let i = 1; i <= numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const strings = content.items.map(item => item.str);
+    text += strings.join(' ') + '\n';
+  }
+  return text;
+}
+
+async function extractDataWithAI(textContent) {
+  // Use config from copilot.js if loaded, or fetch from Supabase
+  let config = window.aiConfig;
+  const session = getSession();
+  
+  if (!config && session && session.isSupabase) {
+    const { data } = await supabase.from('crm_ai_config').select('*').eq('agency_id', session.agencyId).maybeSingle();
+    config = data;
+  }
+  
+  const provider = config?.provider || 'gemini';
+  const apiKey = config?.api_key_encrypted || localStorage.getItem('thay_api_key');
+  const modelName = config?.model || 'gemini-2.5-flash';
+
+  if (!apiKey) {
+    throw new Error('Chave de API da IA não configurada no painel Super Admin.');
+  }
+
+  const prompt = `Extraia as informações cruciais deste documento/voucher de viagem para preencher um bloco de roteiro.
+Responda APENAS com um objeto JSON válido, sem formatação markdown.
+As chaves do JSON devem ser exatamente estas:
+- title: string curta (ex: "Voo LA8045", "Marriott Resort", "Passeio de Barco")
+- detail: string (breve resumo do documento, locais, assentos, reserva)
+- time: string no formato "HH:MM" (horário de embarque, check-in ou início)
+- price: numero (apenas o valor numérico em BRL, converta se necessário ou coloque 0 se não tiver)
+- type: string (deve ser obrigatoriamente um destes: "flight", "hotel", "activity", "transfer", "restaurant", "note")
+
+Texto do documento:
+${textContent.substring(0, 8000)}`;
+
+  try {
+    let responseText = '';
+    
+    if (provider === 'gemini') {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseMimeType: "application/json" }
+        })
+      });
+      if (!res.ok) throw new Error(`Gemini API error ${res.status}`);
+      const data = await res.json();
+      responseText = data.candidates[0].content.parts[0].text;
+    } else if (provider === 'openai') {
+      const url = 'https://api.openai.com/v1/chat/completions';
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${apiKey}\` },
+        body: JSON.stringify({
+          model: modelName,
+          response_format: { type: "json_object" },
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      if (!res.ok) throw new Error(`OpenAI API error ${res.status}`);
+      const data = await res.json();
+      responseText = data.choices[0].message.content;
+    } else if (provider === 'claude') {
+      const url = 'https://api.anthropic.com/v1/messages';
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify({
+          model: modelName,
+          max_tokens: 1024,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      if (!res.ok) throw new Error(`Claude API error ${res.status}`);
+      const data = await res.json();
+      responseText = data.content[0].text;
+    }
+
+    // Limpar crases Markdown do JSON se a IA enviou
+    responseText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
+    return JSON.parse(responseText);
+
+  } catch (e) {
+    console.error('extractDataWithAI error:', e);
+    throw e;
+  }
+}
+
 

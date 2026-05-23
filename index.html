@@ -503,6 +503,9 @@
               <button class="chip" data-filter="cultural">🏛️ Cultural</button>
               <button class="chip" data-filter="luxo">✨ Luxo</button>
             </div>
+            <button class="btn btn-primary" onclick="openNewDestinationModal()">
+              <i class="fas fa-plus"></i> Novo Destino
+            </button>
           </div>
         </div>
         <div class="library-grid" id="library-grid">
@@ -517,6 +520,58 @@
             <div id="destination-detail">
               <!-- Populated by JS -->
             </div>
+          </div>
+        </div>
+
+        <!-- New Destination Modal -->
+        <div id="new-destination-modal" class="modal hidden">
+          <div class="modal-overlay" onclick="closeModal('new-destination-modal')"></div>
+          <div class="modal-content">
+            <button class="modal-close" onclick="closeModal('new-destination-modal')"><i class="fas fa-times"></i></button>
+            <h2 style="margin-bottom: 20px;">Adicionar Novo Destino</h2>
+            <form id="new-destination-form" onsubmit="event.preventDefault(); submitNewDestination();">
+              <div class="form-group">
+                <label>Nome do Destino</label>
+                <input type="text" id="nd-name" class="input" required placeholder="Ex: Aruba">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>País</label>
+                  <input type="text" id="nd-country" class="input" required placeholder="Ex: Holanda">
+                </div>
+                <div class="form-group">
+                  <label>Categoria</label>
+                  <select id="nd-category" class="input" required>
+                    <option value="praia">Praia</option>
+                    <option value="aventura">Aventura</option>
+                    <option value="cultural">Cultural</option>
+                    <option value="luxo">Luxo</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Custo Base (R$)</label>
+                  <input type="number" id="nd-cost" class="input" required placeholder="Ex: 8000">
+                </div>
+                <div class="form-group">
+                  <label>Dias recomendados</label>
+                  <input type="number" id="nd-days" class="input" required placeholder="Ex: 7">
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Descrição</label>
+                <textarea id="nd-desc" class="input" rows="3" required placeholder="Breve descrição do destino..."></textarea>
+              </div>
+              <div class="form-group">
+                <label>URL da Imagem (Opcional)</label>
+                <input type="url" id="nd-image" class="input" placeholder="https://...">
+              </div>
+              <div class="form-actions" style="margin-top: 24px;">
+                <button type="button" class="btn btn-ghost" onclick="closeModal('new-destination-modal')">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="nd-submit-btn">Salvar Destino</button>
+              </div>
+            </form>
           </div>
         </div>
       </div>
@@ -1350,6 +1405,13 @@
   <!-- html2pdf.js (PDF Export) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
 
+  <!-- PDF.js for AI document extraction -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+  <script>
+    // Setup PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+  </script>
+
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
@@ -1357,7 +1419,6 @@
   <script src="js/supabase.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/theme.js"></script>
-  <script src="js/data.js"></script>
   <script src="js/app.js"></script>
   <script src="js/dashboard.js"></script>
   <script src="js/leads.js"></script>
