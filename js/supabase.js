@@ -2,8 +2,8 @@
    SUPABASE.JS — Client Initialization & Service Layer
    ══════════════════════════════════════════════════════════════ */
 
-const SUPABASE_URL = 'https://daosxeeukdqfssxjsmil.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRhb3N4ZWV1a2RxZnNzeGpzbWlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI3OTU5OTMsImV4cCI6MjA3ODM3MTk5M30.sv6bBr9440PrVMrXiCZWvW4OLPuoZnkFEKnU9fdAB2Y';
+const SUPABASE_URL = 'https://ddulmdacvcnkdkzwmsbz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRkdWxtZGFjdmNua2Rrendtc2J6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1NDEwMzIsImV4cCI6MjA5NTExNzAzMn0.vCyVOzsppbV-oiM9VcbOeUfRMpAG-UK4eq8US4b5x8s';
 
 // Initialize Supabase client — overwrites window.supabase (SDK) with the client instance
 try {

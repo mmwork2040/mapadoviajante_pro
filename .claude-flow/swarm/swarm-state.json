@@ -1,0 +1,24 @@
+{
+  "swarms": {
+    "swarm-1779295245736-dk0obv": {
+      "swarmId": "swarm-1779295245736-dk0obv",
+      "topology": "hierarchical",
+      "maxAgents": 15,
+      "status": "running",
+      "agents": [],
+      "tasks": [],
+      "config": {
+        "topology": "hierarchical",
+        "maxAgents": 15,
+        "strategy": "specialized",
+        "communicationProtocol": "message-bus",
+        "autoScaling": true,
+        "consensusMechanism": "majority"
+      },
+      "createdAt": "2026-05-20T16:40:45.736Z",
+      "updatedAt": "2026-05-20T16:40:45.736Z",
+      "pid": 45190
+    }
+  },
+  "version": "3.0.0"
+}

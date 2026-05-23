@@ -16,3 +16,7 @@ Thumbs.db
 
 # Vercel
 .vercel/
+
+# Database dumps and logs
+*.sql
+*.log
