@@ -290,22 +290,30 @@
       const result = await signUpUser(name, email, password);
 
       if (result.success) {
-        // Sign up successful — create session and redirect
-        const member = result.member;
-        const sessionUser = {
-          id: result.user.id,
-          name: member.name,
-          email: email,
-          role: member.role,
-          avatar: member.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
-          memberId: member.id,
-          agencyId: member.agency_id,
-          isSupabase: true,
-        };
-        setSession(sessionUser);
-        btn.innerHTML = '<i class="fas fa-check"></i> Conta criada!';
-        showFeedback('Conta criada com sucesso! Redirecionando...', 'success');
-        setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        if (result.needsConfirmation) {
+          // Email confirmation required
+          btn.innerHTML = '<i class="fas fa-check"></i> Conta criada!';
+          showFeedback('Conta criada! Verifique seu e-mail para confirmar o cadastro.', 'success');
+          btn.disabled = false;
+          setTimeout(() => showLoginForm(), 4000);
+        } else {
+          // Sign up successful — create session and redirect
+          const member = result.member;
+          const sessionUser = {
+            id: result.user.id,
+            name: member.name,
+            email: email,
+            role: member.role,
+            avatar: member.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+            memberId: member.id,
+            agencyId: member.agency_id,
+            isSupabase: true,
+          };
+          setSession(sessionUser);
+          btn.innerHTML = '<i class="fas fa-check"></i> Conta criada!';
+          showFeedback('Conta criada com sucesso! Redirecionando...', 'success');
+          setTimeout(() => { window.location.href = 'index.html'; }, 800);
+        }
       } else {
         btn.innerHTML = 'Criar minha conta <i class="fas fa-rocket"></i>';
         btn.disabled = false;

@@ -634,12 +634,20 @@ async function signUpUser(name, email, password) {
     }
 
     if (data.user) {
-      // Auto-provision agency for the new user
-      const member = await autoProvisionAgency(data.user.id, name, email);
-      if (!member) {
-        return { success: false, error: 'Erro ao configurar sua agência. Tente novamente.' };
+      // Check if we have a session (email confirmation disabled)
+      if (data.session) {
+        // User is authenticated immediately — auto-provision agency
+        const member = await autoProvisionAgency(data.user.id, name, email);
+        if (!member) {
+          return { success: false, error: 'Erro ao configurar sua agência. Tente novamente.' };
+        }
+        return { success: true, user: data.user, member };
+      } else {
+        // Email confirmation required — user exists but no session yet
+        // The trigger handle_new_user() already created profile + user_role
+        // autoProvisionAgency will run on first login via authenticate()
+        return { success: true, user: data.user, member: null, needsConfirmation: true };
       }
-      return { success: true, user: data.user, member };
     }
 
     return { success: false, error: 'Erro inesperado ao criar conta.' };

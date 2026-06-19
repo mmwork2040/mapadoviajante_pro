@@ -13,6 +13,7 @@ Thumbs.db
 # Environment
 .env
 .env.local
+.env.production
 
 # Vercel
 .vercel/
@@ -20,3 +21,24 @@ Thumbs.db
 # Database dumps and logs
 *.sql
 *.log
+old_data.sql
+old_schema.sql
+data_restore.log
+schema_restore.log
+
+# Large / non-production files
+*.txt
+*.json.bak
+design-system*.html
+mapa*.json
+
+# Agent / tooling configs (not needed in production)
+.claude/
+.claude-flow/
+.swarm/
+.mcp.json
+CLAUDE.md
+
+# Stray assets at root (not needed in prod)
+original-*.webp
+
