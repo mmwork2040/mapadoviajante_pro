@@ -171,8 +171,10 @@ function initItineraryButtons() {
           showToast('Erro ao criar roteiro.', 'error');
         }
       } else {
+        // Local fallback
+        const newId = 'local-' + Math.random().toString(36).substr(2, 9);
         const newIt = {
-          id: ITINERARIES.length + 1,
+          id: newId,
           title: 'Novo Roteiro',
           client: 'Cliente',
           destination: 'Destino',
@@ -187,9 +189,12 @@ function initItineraryButtons() {
             { label: 'Dia 3', date: 'DD/MM', activities: [] },
           ]
         };
-        ITINERARIES.push(newIt);
-        openItinerary(newIt.id);
-        showToast('Novo roteiro criado!', 'success');
+        if (typeof ITINERARIES !== 'undefined') {
+          ITINERARIES.unshift(newIt); // Add to the top
+        }
+        await renderItineraryList();
+        openItinerary(newId);
+        showToast('Novo roteiro criado (Local)!', 'success');
       }
     });
   }

@@ -131,6 +131,7 @@ async function initAdmin() {
   renderAgencySettings();
   initAIConfig();
   initKnowledgeBase();
+  loadSystemConfigs();
 }
 
 // ── Admin Metrics ───────────────────────────────────────────
@@ -1010,4 +1011,39 @@ function renderKBFiles() {
       </div>
     `;
   }).join('');
+}
+
+// ── System Configurations (Email & Push) ─────────────────────
+function loadSystemConfigs() {
+  // Load Email
+  const emailConf = JSON.parse(localStorage.getItem('mapapro_email_config') || '{}');
+  if (emailConf.provider) document.getElementById('email-provider').value = emailConf.provider;
+  if (emailConf.apiKey) document.getElementById('email-api-key').value = emailConf.apiKey;
+  if (emailConf.sender) document.getElementById('email-sender').value = emailConf.sender;
+
+  // Load Push
+  const pushConf = JSON.parse(localStorage.getItem('mapapro_push_config') || '{}');
+  if (pushConf.serverKey) document.getElementById('firebase-server-key').value = pushConf.serverKey;
+  if (pushConf.senderId) document.getElementById('firebase-sender-id').value = pushConf.senderId;
+  if (pushConf.vapidKey) document.getElementById('firebase-vapid-key').value = pushConf.vapidKey;
+}
+
+function saveEmailConfig(e) {
+  e.preventDefault();
+  const provider = document.getElementById('email-provider').value;
+  const apiKey = document.getElementById('email-api-key').value;
+  const sender = document.getElementById('email-sender').value;
+
+  localStorage.setItem('mapapro_email_config', JSON.stringify({ provider, apiKey, sender }));
+  showToast('Configurações de E-mail salvas com sucesso!', 'success');
+}
+
+function savePushConfig(e) {
+  e.preventDefault();
+  const serverKey = document.getElementById('firebase-server-key').value;
+  const senderId = document.getElementById('firebase-sender-id').value;
+  const vapidKey = document.getElementById('firebase-vapid-key').value;
+
+  localStorage.setItem('mapapro_push_config', JSON.stringify({ serverKey, senderId, vapidKey }));
+  showToast('Configurações do Firebase salvas com sucesso!', 'success');
 }

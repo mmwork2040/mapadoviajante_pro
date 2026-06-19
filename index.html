@@ -765,12 +765,65 @@
             <div class="card-body">
               <div class="agency-settings" id="admin-settings">
                 <!-- Populated by admin.js -->
-              </div>
             </div>
           </div>
         </div>
 
-        <!-- Thay IA — Configuration & Token Usage -->
+          <!-- Email & Push Notifications Configuration -->
+          <div class="admin-grid" style="margin-top: var(--sp-5);">
+            <div class="card email-config-card">
+              <div class="card-header">
+                <h3><i class="fas fa-envelope" style="color: var(--orange-500); margin-right: 8px;"></i>Configurações de E-mail</h3>
+                <span style="font-size: 12px; color: var(--gray-400);">Envio de propostas e alertas</span>
+              </div>
+              <div class="card-body">
+                <form id="email-config-form" onsubmit="saveEmailConfig(event)">
+                  <div class="form-group">
+                    <label class="form-label">Provedor SMTP / API</label>
+                    <select class="form-input" id="email-provider">
+                      <option value="sendgrid">SendGrid</option>
+                      <option value="smtp">SMTP Personalizado</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Chave de API / Senha</label>
+                    <input type="password" class="form-input" id="email-api-key" placeholder="SG.xxxx...">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">E-mail Remetente Padrão</label>
+                    <input type="email" class="form-input" id="email-sender" placeholder="contato@suaagencia.com">
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-save"></i> Salvar Configurações</button>
+                </form>
+              </div>
+            </div>
+
+            <div class="card push-config-card">
+              <div class="card-header">
+                <h3><i class="fas fa-bell" style="color: var(--orange-500); margin-right: 8px;"></i>Notificações Push (Firebase)</h3>
+                <span style="font-size: 12px; color: var(--gray-400);">Alertas via push para usuários</span>
+              </div>
+              <div class="card-body">
+                <form id="push-config-form" onsubmit="savePushConfig(event)">
+                  <div class="form-group">
+                    <label class="form-label">Firebase Server Key</label>
+                    <input type="password" class="form-input" id="firebase-server-key" placeholder="AAAAxxxx...">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Sender ID</label>
+                    <input type="text" class="form-input" id="firebase-sender-id" placeholder="Ex: 123456789">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">VAPID Key</label>
+                    <input type="text" class="form-input" id="firebase-vapid-key" placeholder="BNxxxxx...">
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-save"></i> Salvar Configurações</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- Thay IA — Configuration & Token Usage -->
         <div class="admin-grid" style="margin-top: var(--sp-5);">
           <div class="card ai-config-card">
             <div class="card-header">
@@ -1008,7 +1061,7 @@
               <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
                 <div class="form-group">
                   <label class="form-label">Valor (R$)</label>
-                  <input type="number" class="form-input" name="amount" placeholder="0,00" step="0.01" min="0" required>
+                  <input type="text" class="form-input mask-currency" name="amount" placeholder="0,00" required>
                 </div>
                 <div class="form-group">
                   <label class="form-label">Data</label>
@@ -1177,13 +1230,13 @@
             </div>
             <div class="form-group">
               <label class="form-label" for="lead-phone">WhatsApp *</label>
-              <input class="form-input" type="tel" id="lead-phone" placeholder="(11) 99999-9999" required>
+              <input class="form-input mask-phone" type="text" id="lead-phone" placeholder="(11) 99999-9999" required>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
               <label class="form-label" for="lead-value">Orçamento Estimado (R$)</label>
-              <input class="form-input" type="number" id="lead-value" placeholder="0">
+              <input class="form-input mask-currency" type="text" id="lead-value" placeholder="0,00">
             </div>
             <div class="form-group">
               <label class="form-label" for="lead-origin">Como nos encontrou?</label>
@@ -1416,9 +1469,11 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
   <!-- App Scripts -->
+  <script src="https://unpkg.com/imask"></script>
   <script src="js/supabase.js?v=4"></script>
   <script src="js/auth.js?v=4"></script>
   <script src="js/theme.js?v=4"></script>
+  <script src="js/masks.js?v=4"></script>
   <script src="js/app.js?v=4"></script>
   <script src="js/dashboard.js?v=4"></script>
   <script src="js/leads.js?v=4"></script>
@@ -1446,7 +1501,7 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Valor (R$)</label>
-            <input type="number" id="nt-amount" class="form-input" required placeholder="Ex: 1500.00" step="0.01">
+            <input type="text" id="nt-amount" class="form-input mask-currency" required placeholder="Ex: 1500,00">
           </div>
           <div class="form-group">
             <label class="form-label">Data</label>
