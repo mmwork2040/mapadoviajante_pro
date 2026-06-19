@@ -268,7 +268,10 @@ async function submitIntakeForm() {
   const accomType = [...selectedAccomType].join(', ');
   const accomPrefs = [...selectedAccomPrefs].join(', ');
   const flightFlex = document.getElementById('lead-flight-flex')?.value || '';
-  const origin = document.getElementById('lead-origin')?.value || 'direto';
+  let origin = document.getElementById('lead-origin')?.value || 'direto';
+  if (origin === 'outro') {
+    origin = document.getElementById('lead-origin-other')?.value.trim() || 'Outro';
+  }
 
   // Build checklists from template
   const checklists = {

@@ -39,7 +39,7 @@ async function renderItineraryList() {
       itineraries = [];
     }
   } else {
-    itineraries = [...ITINERARIES];
+    itineraries = [...(window.localItineraries || [])];
   }
 
   // Store for global search access
@@ -111,7 +111,7 @@ async function openItinerary(id) {
       it = null;
     }
   } else {
-    it = ITINERARIES.find(i => i.id == id);
+    it = (window.localItineraries || []).find(i => i.id == id);
   }
 
   if (!it) return;
@@ -189,9 +189,8 @@ function initItineraryButtons() {
             { label: 'Dia 3', date: 'DD/MM', activities: [] },
           ]
         };
-        if (typeof ITINERARIES !== 'undefined') {
-          ITINERARIES.unshift(newIt); // Add to the top
-        }
+          window.localItineraries = window.localItineraries || [];
+          window.localItineraries.unshift(newIt);
         await renderItineraryList();
         openItinerary(newId);
         showToast('Novo roteiro criado (Local)!', 'success');
