@@ -599,21 +599,8 @@ body,
    ══════════════════════════════════════════════════════════════ */
 
 /* ── Modals ──────────────────────────────────────────────── */
-/* The modal-overlay > .modal pattern (transaction modal, etc.) */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(8px);
-}
-
-.modal-overlay.hidden {
-  display: none;
-}
+/* A regra modal-overlay foi removida daqui pois ela já é definida no tokens.css corretamente, 
+   sem quebrar a ordem z-index do modal-content. */
 
 .modal-overlay > .modal {
   /* Reset tokens.css .modal (position:fixed;inset:0) */
