@@ -299,7 +299,6 @@
 
 .sidebar-collapsed .sidebar-collapse-btn {
   /* display: none; */
-  transform: rotate(180deg);
   margin-top: 8px;
 }
 

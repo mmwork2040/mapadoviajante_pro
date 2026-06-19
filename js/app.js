@@ -50,6 +50,16 @@ function initSidebar() {
   if (collapseBtn) {
     collapseBtn.addEventListener('click', () => {
       app.classList.toggle('sidebar-collapsed');
+      const icon = collapseBtn.querySelector('i');
+      if (icon) {
+        if (app.classList.contains('sidebar-collapsed')) {
+          icon.classList.remove('fa-angles-left');
+          icon.classList.add('fa-angles-right');
+        } else {
+          icon.classList.remove('fa-angles-right');
+          icon.classList.add('fa-angles-left');
+        }
+      }
     });
   }
 

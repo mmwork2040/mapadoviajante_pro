@@ -1167,27 +1167,27 @@
         <div class="intake-panel active" id="intake-step-1">
           <div class="intake-section-label"><i class="fas fa-user"></i> Dados de Contato</div>
           <div class="form-group">
-            <label for="lead-name">Nome Completo *</label>
-            <input type="text" id="lead-name" placeholder="Ex: Família Santos" required>
+            <label class="form-label" for="lead-name">Nome Completo *</label>
+            <input class="form-input" type="text" id="lead-name" placeholder="Ex: Família Santos" required>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="lead-email">E-mail</label>
-              <input type="email" id="lead-email" placeholder="email@exemplo.com">
+              <label class="form-label" for="lead-email">E-mail</label>
+              <input class="form-input" type="email" id="lead-email" placeholder="email@exemplo.com">
             </div>
             <div class="form-group">
-              <label for="lead-phone">WhatsApp *</label>
-              <input type="tel" id="lead-phone" placeholder="(11) 99999-9999" required>
+              <label class="form-label" for="lead-phone">WhatsApp *</label>
+              <input class="form-input" type="tel" id="lead-phone" placeholder="(11) 99999-9999" required>
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="lead-value">Orçamento Estimado (R$)</label>
-              <input type="number" id="lead-value" placeholder="0">
+              <label class="form-label" for="lead-value">Orçamento Estimado (R$)</label>
+              <input class="form-input" type="number" id="lead-value" placeholder="0">
             </div>
             <div class="form-group">
-              <label for="lead-origin">Como nos encontrou?</label>
-              <select id="lead-origin" class="filter-select">
+              <label class="form-label" for="lead-origin">Como nos encontrou?</label>
+              <select id="lead-origin" class="form-input">
                 <option value="">Selecionar...</option>
                 <option value="instagram">Instagram</option>
                 <option value="indicacao">Indicação</option>
@@ -1204,21 +1204,21 @@
           <div class="intake-section-label"><i class="fas fa-map-marker-alt"></i> Dados da Viagem</div>
           <div class="form-row">
             <div class="form-group">
-              <label for="lead-destination">Destino *</label>
-              <input type="text" id="lead-destination" placeholder="Ex: Lisboa, Portugal" required>
+              <label class="form-label" for="lead-destination">Destino *</label>
+              <input class="form-input" type="text" id="lead-destination" placeholder="Ex: Lisboa, Portugal" required>
             </div>
             <div class="form-group">
-              <label for="lead-origin-city">Ponto de Partida</label>
-              <input type="text" id="lead-origin-city" placeholder="Ex: Guarulhos (GRU)">
+              <label class="form-label" for="lead-origin-city">Ponto de Partida</label>
+              <input class="form-input" type="text" id="lead-origin-city" placeholder="Ex: Guarulhos (GRU)">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="lead-date">Data Pretendida</label>
-              <input type="text" id="lead-date" placeholder="Ex: Julho 2025 / Flexível">
+              <label class="form-label" for="lead-date">Data Pretendida</label>
+              <input class="form-input" type="text" id="lead-date" placeholder="Ex: Julho 2025 / Flexível">
             </div>
             <div class="form-group">
-              <label for="lead-pax">Nº de Pessoas</label>
+              <label class="form-label" for="lead-pax">Nº de Pessoas</label>
               <div class="pax-counter">
                 <button type="button" class="pax-btn" onclick="changePax(-1)"><i class="fas fa-minus"></i></button>
                 <span id="pax-display">2</span>
@@ -1228,12 +1228,12 @@
             </div>
           </div>
           <div class="form-group">
-            <label for="lead-trip-details">Detalhes e Expectativas</label>
-            <textarea id="lead-trip-details" rows="3" placeholder="Ex: Lua de mel, querem praias tranquilas, não gostam de aventura extrema..."></textarea>
+            <label class="form-label" for="lead-trip-details">Detalhes e Expectativas</label>
+            <textarea class="form-input" id="lead-trip-details" rows="3" placeholder="Ex: Lua de mel, querem praias tranquilas, não gostam de aventura extrema..."></textarea>
           </div>
           <div class="form-group">
-            <label for="lead-notes">Observações Extras</label>
-            <textarea id="lead-notes" rows="2" placeholder="Qualquer informação relevante para a consultoria..."></textarea>
+            <label class="form-label" for="lead-notes">Observações Extras</label>
+            <textarea class="form-input" id="lead-notes" rows="2" placeholder="Qualquer informação relevante para a consultoria..."></textarea>
           </div>
         </div>
 
@@ -1275,12 +1275,12 @@
 
           <div class="form-row" style="margin-top: var(--sp-4);">
             <div class="form-group">
-              <label for="lead-miles-balance">Saldo de Milhas (aproximado)</label>
-              <input type="text" id="lead-miles-balance" placeholder="Ex: 50.000 Smiles">
+              <label class="form-label" for="lead-miles-balance">Saldo de Milhas (aproximado)</label>
+              <input class="form-input" type="text" id="lead-miles-balance" placeholder="Ex: 50.000 Smiles">
             </div>
             <div class="form-group">
-              <label for="lead-miles-expiry">Vencimento das Milhas</label>
-              <input type="text" id="lead-miles-expiry" placeholder="Ex: Dez/2025 / Não sei">
+              <label class="form-label" for="lead-miles-expiry">Vencimento das Milhas</label>
+              <input class="form-input" type="text" id="lead-miles-expiry" placeholder="Ex: Dez/2025 / Não sei">
             </div>
           </div>
         </div>
@@ -1290,22 +1290,22 @@
           <div class="intake-section-label"><i class="fas fa-plane"></i> Preferências de Voo</div>
           <div class="form-row">
             <div class="form-group">
-              <label for="lead-flight-dest">Destino do Voo</label>
-              <input type="text" id="lead-flight-dest" placeholder="Ex: Lisboa (LIS)">
+              <label class="form-label" for="lead-flight-dest">Destino do Voo</label>
+              <input class="form-input" type="text" id="lead-flight-dest" placeholder="Ex: Lisboa (LIS)">
             </div>
             <div class="form-group">
-              <label for="lead-flight-days">Dias de Viagem</label>
-              <input type="number" id="lead-flight-days" placeholder="Ex: 10">
+              <label class="form-label" for="lead-flight-days">Dias de Viagem</label>
+              <input class="form-input" type="number" id="lead-flight-days" placeholder="Ex: 10">
             </div>
           </div>
           <div class="form-row">
             <div class="form-group">
-              <label for="lead-flight-date">Data Pretendida</label>
-              <input type="text" id="lead-flight-date" placeholder="Ex: Jul 2025">
+              <label class="form-label" for="lead-flight-date">Data Pretendida</label>
+              <input class="form-input" type="text" id="lead-flight-date" placeholder="Ex: Jul 2025">
             </div>
             <div class="form-group">
-              <label for="lead-flight-flex">Flexibilidade de Datas</label>
-              <select id="lead-flight-flex" class="filter-select">
+              <label class="form-label" for="lead-flight-flex">Flexibilidade de Datas</label>
+              <select id="lead-flight-flex" class="form-input">
                 <option value="">Selecionar...</option>
                 <option value="fixa">Data Fixa</option>
                 <option value="1semana">± 1 semana</option>
@@ -1317,7 +1317,7 @@
 
           <div class="intake-section-label" style="margin-top: var(--sp-5);"><i class="fas fa-hotel"></i> Hospedagem</div>
           <div class="form-group">
-            <label>Tipo de Hospedagem</label>
+            <label class="form-label">Tipo de Hospedagem</label>
             <div class="option-pills" id="accommodation-type">
               <button type="button" class="option-pill" data-val="hotel">🏨 Hotel</button>
               <button type="button" class="option-pill" data-val="resort">🌴 Resort</button>
@@ -1328,7 +1328,7 @@
             </div>
           </div>
           <div class="form-group">
-            <label>Preferências Gerais</label>
+            <label class="form-label">Preferências Gerais</label>
             <div class="option-pills" id="accommodation-prefs">
               <button type="button" class="option-pill" data-val="mar">Vista para o mar</button>
               <button type="button" class="option-pill" data-val="piscina">Piscina privada</button>
@@ -1340,8 +1340,8 @@
             </div>
           </div>
           <div class="form-group">
-            <label for="lead-flight-obs">Observações sobre o voo</label>
-            <textarea id="lead-flight-obs" rows="2" placeholder="Ex: prefere janela, necessidade de cadeirante, bebê a bordo..."></textarea>
+            <label class="form-label" for="lead-flight-obs">Observações sobre o voo</label>
+            <textarea class="form-input" id="lead-flight-obs" rows="2" placeholder="Ex: prefere janela, necessidade de cadeirante, bebê a bordo..."></textarea>
           </div>
         </div>
 
@@ -1430,44 +1430,7 @@
   <script src="js/admin.js"></script>
   <script src="js/copilot.js"></script>
 
-  <!-- ════════════════ MODAL: NOVO LEAD ════════════════ -->
-  <div id="lead-modal" class="modal hidden">
-    <div class="modal-overlay" onclick="closeModal('lead-modal')"></div>
-    <div class="modal-content">
-      <button class="modal-close" onclick="closeModal('lead-modal')"><i class="fas fa-times"></i></button>
-      <h2 style="margin-bottom: 20px;">Cadastrar Novo Lead</h2>
-      <form id="new-lead-form" onsubmit="submitNewLead(event)">
-        <div class="form-group">
-          <label>Nome do Viajante</label>
-          <input type="text" id="nl-name" class="input" required placeholder="Ex: Maria Clara">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>E-mail</label>
-            <input type="email" id="nl-email" class="input" placeholder="maria@email.com">
-          </div>
-          <div class="form-group">
-            <label>Telefone</label>
-            <input type="tel" id="nl-phone" class="input" placeholder="(11) 99999-9999">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>Destino Desejado</label>
-            <input type="text" id="nl-destination" class="input" placeholder="Ex: Paris, Orlando...">
-          </div>
-          <div class="form-group">
-            <label>Orçamento (R$)</label>
-            <input type="number" id="nl-value" class="input" placeholder="Ex: 15000">
-          </div>
-        </div>
-        <div class="form-actions" style="margin-top: 24px;">
-          <button type="button" class="btn btn-ghost" onclick="closeModal('lead-modal')">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar Lead</button>
-        </div>
-      </form>
-    </div>
-  </div>
+
 
   <!-- ════════════════ MODAL: NOVA TRANSAÇÃO ════════════════ -->
   <div id="transaction-modal" class="modal hidden">
@@ -1477,30 +1440,30 @@
       <h2 style="margin-bottom: 20px;">Nova Transação</h2>
       <form id="transaction-form" onsubmit="submitTransaction(event)">
         <div class="form-group">
-          <label>Descrição</label>
-          <input type="text" name="desc" class="input" required placeholder="Ex: Pacote Europa">
+          <label class="form-label">Descrição</label>
+          <input type="text" id="nt-description" class="form-input" required placeholder="Ex: Pagamento Fornecedor XYZ">
         </div>
         <div class="form-row">
           <div class="form-group">
-            <label>Tipo</label>
-            <select name="type" class="input" required>
-              <option value="income">Receita (Venda)</option>
-              <option value="commission">Comissão (Líquida)</option>
-              <option value="expense">Despesa (Custos)</option>
-            </select>
+            <label class="form-label">Valor (R$)</label>
+            <input type="number" id="nt-amount" class="form-input" required placeholder="Ex: 1500.00" step="0.01">
           </div>
           <div class="form-group">
-            <label>Valor (R$)</label>
-            <input type="number" name="amount" class="input" required placeholder="0.00" step="0.01" min="0">
+            <label class="form-label">Data</label>
+            <input type="date" id="nt-date" class="form-input" required>
           </div>
         </div>
         <div class="form-group">
-          <label>Data</label>
-          <input type="date" name="date" class="input" required>
+          <label class="form-label">Tipo</label>
+          <select id="nt-type" class="form-input" required>
+            <option value="income">Receita</option>
+            <option value="expense">Despesa</option>
+            <option value="commission">Comissão (Receita)</option>
+          </select>
         </div>
         <div class="form-actions" style="margin-top: 24px;">
           <button type="button" class="btn btn-ghost" onclick="closeModal('transaction-modal')">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Adicionar Transação</button>
+          <button type="submit" class="btn btn-primary">Salvar Transação</button>
         </div>
       </form>
     </div>
