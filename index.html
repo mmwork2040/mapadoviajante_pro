@@ -1430,6 +1430,82 @@
   <script src="js/admin.js"></script>
   <script src="js/copilot.js"></script>
 
+  <!-- ════════════════ MODAL: NOVO LEAD ════════════════ -->
+  <div id="lead-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('lead-modal')"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('lead-modal')"><i class="fas fa-times"></i></button>
+      <h2 style="margin-bottom: 20px;">Cadastrar Novo Lead</h2>
+      <form id="new-lead-form" onsubmit="submitNewLead(event)">
+        <div class="form-group">
+          <label>Nome do Viajante</label>
+          <input type="text" id="nl-name" class="input" required placeholder="Ex: Maria Clara">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" id="nl-email" class="input" placeholder="maria@email.com">
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="tel" id="nl-phone" class="input" placeholder="(11) 99999-9999">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Destino Desejado</label>
+            <input type="text" id="nl-destination" class="input" placeholder="Ex: Paris, Orlando...">
+          </div>
+          <div class="form-group">
+            <label>Orçamento (R$)</label>
+            <input type="number" id="nl-value" class="input" placeholder="Ex: 15000">
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top: 24px;">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('lead-modal')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar Lead</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ════════════════ MODAL: NOVA TRANSAÇÃO ════════════════ -->
+  <div id="transaction-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeModal('transaction-modal')"></div>
+    <div class="modal-content">
+      <button class="modal-close" onclick="closeModal('transaction-modal')"><i class="fas fa-times"></i></button>
+      <h2 style="margin-bottom: 20px;">Nova Transação</h2>
+      <form id="transaction-form" onsubmit="submitTransaction(event)">
+        <div class="form-group">
+          <label>Descrição</label>
+          <input type="text" name="desc" class="input" required placeholder="Ex: Pacote Europa">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select name="type" class="input" required>
+              <option value="income">Receita (Venda)</option>
+              <option value="commission">Comissão (Líquida)</option>
+              <option value="expense">Despesa (Custos)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Valor (R$)</label>
+            <input type="number" name="amount" class="input" required placeholder="0.00" step="0.01" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" name="date" class="input" required>
+        </div>
+        <div class="form-actions" style="margin-top: 24px;">
+          <button type="button" class="btn btn-ghost" onclick="closeModal('transaction-modal')">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Adicionar Transação</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- ════════════════ MODAL: NOVO USUÁRIO ════════════════ -->
   <div id="new-user-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; padding:16px;">
     <div style="background:var(--card-bg, #1a1d26); border:1px solid var(--border-color); border-radius:20px; width:100%; max-width:520px; box-shadow:0 24px 60px rgba(0,0,0,0.4); overflow:hidden;" onclick="event.stopPropagation()">

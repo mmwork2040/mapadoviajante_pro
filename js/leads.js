@@ -225,3 +225,60 @@ function initAddLead() {
 function showLeadDetail(id) {
   openDrawer(id);
 }
+
+// ── Submit New Lead ─────────────────────────────────────────
+async function submitNewLead(e) {
+  e.preventDefault();
+  const name = document.getElementById('nl-name').value;
+  const email = document.getElementById('nl-email').value;
+  const phone = document.getElementById('nl-phone').value;
+  const destination = document.getElementById('nl-destination').value;
+  const value = document.getElementById('nl-value').value;
+
+  const btn = e.target.querySelector('button[type="submit"]');
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+  btn.disabled = true;
+
+  const session = getSession();
+
+  if (session && session.isSupabase) {
+    const newLead = await createLead({
+      name,
+      email,
+      phone,
+      destination,
+      value: parseFloat(value) || 0,
+      status: 'new'
+    });
+
+    if (newLead) {
+      await loadAndRenderPipeline();
+      closeModal('lead-modal');
+      e.target.reset();
+      showToast('Lead cadastrado com sucesso!', 'success');
+    } else {
+      showToast('Erro ao cadastrar lead.', 'error');
+    }
+  } else {
+    // Fallback static
+    const newLead = {
+      id: Date.now(),
+      name,
+      email,
+      phone,
+      destination,
+      value: parseFloat(value) || 0,
+      status: 'new',
+      lastActivity: new Date().toISOString()
+    };
+    LEADS.unshift(newLead);
+    renderPipeline();
+    closeModal('lead-modal');
+    e.target.reset();
+    showToast('Lead cadastrado com sucesso!', 'success');
+  }
+
+  btn.innerHTML = originalText;
+  btn.disabled = false;
+}

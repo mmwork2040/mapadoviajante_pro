@@ -298,7 +298,9 @@
 }
 
 .sidebar-collapsed .sidebar-collapse-btn {
-  display: none;
+  /* display: none; */
+  transform: rotate(180deg);
+  margin-top: 8px;
 }
 
 .sidebar-collapsed .nav-item a {
