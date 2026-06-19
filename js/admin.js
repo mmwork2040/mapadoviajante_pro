@@ -1028,14 +1028,46 @@ function loadSystemConfigs() {
   if (pushConf.vapidKey) document.getElementById('firebase-vapid-key').value = pushConf.vapidKey;
 }
 
-function saveEmailConfig(e) {
-  e.preventDefault();
-  const provider = document.getElementById('email-provider').value;
-  const apiKey = document.getElementById('email-api-key').value;
+function saveEmailConfig() {
   const sender = document.getElementById('email-sender').value;
+  const triggerNewTraveler = document.getElementById('trigger-new-traveler').checked;
+  const triggerItineraryApproved = document.getElementById('trigger-itinerary-approved').checked;
+  const triggerGeneral = document.getElementById('trigger-general').checked;
 
-  localStorage.setItem('mapapro_email_config', JSON.stringify({ provider, apiKey, sender }));
+  localStorage.setItem('mapapro_email_config', JSON.stringify({ sender, triggerNewTraveler, triggerItineraryApproved, triggerGeneral }));
   showToast('Configurações de E-mail salvas com sucesso!', 'success');
+}
+
+function connectGmail() {
+  const clientId = 'SEU_CLIENT_ID_DO_GOOGLE_CLOUD';
+  const redirectUri = window.location.origin + window.location.pathname; // Assume they use query params here
+  const scope = 'https://www.googleapis.com/auth/gmail.send';
+  const state = 'email_config_callback';
+
+  const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${state}&access_type=offline&prompt=consent`;
+  
+  // In a real flow, this would redirect
+  // window.location.href = authUrl;
+  
+  // For now, simulate success
+  document.getElementById('gmail-status-text').textContent = 'Conectado como contato@agencia.com';
+  document.getElementById('gmail-status-text').style.color = '#10A37F';
+  document.getElementById('btn-connect-gmail').textContent = 'Desconectar';
+  document.getElementById('btn-connect-gmail').setAttribute('onclick', 'disconnectGmail()');
+  showToast('Redirecionando para autorização do Google...', 'info');
+}
+
+function disconnectGmail() {
+  document.getElementById('gmail-status-text').textContent = 'Não conectado';
+  document.getElementById('gmail-status-text').style.color = 'var(--stone-400)';
+  document.getElementById('btn-connect-gmail').textContent = 'Conectar Conta';
+  document.getElementById('btn-connect-gmail').setAttribute('onclick', 'connectGmail()');
+  showToast('Conta Gmail desconectada', 'info');
+}
+
+function toggleAdminAccordion(headerEl) {
+  const accordion = headerEl.parentElement;
+  accordion.classList.toggle('expanded');
 }
 
 function savePushConfig(e) {

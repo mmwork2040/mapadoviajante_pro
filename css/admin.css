@@ -996,3 +996,87 @@
     flex-wrap: wrap;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   ACCORDIONS (ADMIN PAGE)
+   ══════════════════════════════════════════════════════════════ */
+.admin-accordion {
+  background: var(--surface-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--sp-4);
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.admin-accordion-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  cursor: pointer;
+  user-select: none;
+  background: var(--surface-card);
+  transition: background 0.2s ease;
+}
+
+.admin-accordion-header:hover {
+  background: var(--surface-hover);
+}
+
+.admin-accordion-title {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.admin-accordion-title h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+}
+
+.admin-accordion-title span.subtitle {
+  font-size: 12px;
+  color: var(--gray-400);
+  margin-left: var(--sp-2);
+}
+
+.admin-accordion-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(249, 115, 22, 0.1);
+  color: var(--orange-500);
+  font-size: 14px;
+}
+
+.admin-accordion-toggle {
+  color: var(--stone-400);
+  transition: transform 0.3s ease;
+}
+
+.admin-accordion.expanded .admin-accordion-toggle {
+  transform: rotate(180deg);
+}
+
+.admin-accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, padding 0.4s ease;
+  padding: 0 var(--sp-5);
+  background: var(--surface-ground);
+  border-top: 1px solid transparent;
+}
+
+.admin-accordion.expanded .admin-accordion-body {
+  max-height: 2000px; /* arbitrary large value */
+  padding: var(--sp-4) var(--sp-5);
+  border-top-color: var(--border-light);
+}

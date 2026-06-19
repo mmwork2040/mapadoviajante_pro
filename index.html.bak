@@ -729,23 +729,14 @@
           <!-- Populated by admin.js -->
         </div>
 
-        
-        <!-- Admin Accordions Wrapper -->
-        <div class="admin-accordions-wrapper" style="margin-top: var(--sp-5);">
-
-          <!-- ACCORDION: Usuários do Sistema -->
-          <div class="admin-accordion">
-            <div class="admin-accordion-header" onclick="toggleAdminAccordion(this)">
-              <div class="admin-accordion-title">
-                <div class="admin-accordion-icon"><i class="fas fa-users"></i></div>
-                <div>
-                  <h3>Usuários do Sistema</h3>
-                  <span class="subtitle">Gerencie acessos e papéis</span>
-                </div>
-              </div>
-              <i class="fas fa-chevron-down admin-accordion-toggle"></i>
+        <!-- Users Table -->
+        <div class="admin-grid" style="margin-top: var(--sp-5);">
+          <div class="card admin-users-card">
+            <div class="card-header">
+              <h3><i class="fas fa-users" style="color: var(--orange-500); margin-right: 8px;"></i>Usuários do Sistema</h3>
+              <span style="font-size: 12px; color: var(--gray-400);">Gerencie acessos e papéis</span>
             </div>
-            <div class="admin-accordion-body" style="padding: 0;">
+            <div class="card-body" style="padding: 0;">
               <table class="data-table">
                 <thead>
                   <tr>
@@ -762,96 +753,66 @@
               </table>
             </div>
           </div>
+        </div>
 
-          <!-- ACCORDION: Log de Atividades -->
-          <div class="admin-accordion">
-            <div class="admin-accordion-header" onclick="toggleAdminAccordion(this)">
-              <div class="admin-accordion-title">
-                <div class="admin-accordion-icon"><i class="fas fa-clock-rotate-left"></i></div>
-                <div>
-                  <h3>Log de Atividades</h3>
-                  <span class="subtitle">Histórico de ações no sistema</span>
-                </div>
-              </div>
-              <i class="fas fa-chevron-down admin-accordion-toggle"></i>
+        <!-- Activity Log + Settings -->
+        <div class="admin-grid">
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-clock-rotate-left" style="color: var(--orange-500); margin-right: 8px;"></i>Log de Atividades</h3>
             </div>
-            <div class="admin-accordion-body">
+            <div class="card-body">
               <div class="activity-log" id="admin-activity-log">
                 <!-- Populated by admin.js -->
               </div>
             </div>
           </div>
-
-          <!-- ACCORDION: Configurações da Agência -->
-          <div class="admin-accordion">
-            <div class="admin-accordion-header" onclick="toggleAdminAccordion(this)">
-              <div class="admin-accordion-title">
-                <div class="admin-accordion-icon"><i class="fas fa-gear"></i></div>
-                <div>
-                  <h3>Configurações da Agência</h3>
-                  <span class="subtitle">Preferências gerais do sistema</span>
-                </div>
-              </div>
-              <i class="fas fa-chevron-down admin-accordion-toggle"></i>
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-gear" style="color: var(--orange-500); margin-right: 8px;"></i>Configurações da Agência</h3>
             </div>
-            <div class="admin-accordion-body">
+            <div class="card-body">
               <div class="agency-settings" id="admin-settings">
                 <!-- Populated by admin.js -->
-              </div>
             </div>
           </div>
+        </div>
 
-          <!-- ACCORDION: Configurações de E-mail (Gmail) -->
-          <div class="admin-accordion">
-            <div class="admin-accordion-header" onclick="toggleAdminAccordion(this)">
-              <div class="admin-accordion-title">
-                <div class="admin-accordion-icon"><i class="fas fa-envelope"></i></div>
-                <div>
-                  <h3>Configurações de E-mail</h3>
-                  <span class="subtitle">Envio de propostas e alertas via Gmail</span>
-                </div>
+          <!-- Email & Push Notifications Configuration -->
+          <div class="admin-grid" style="margin-top: var(--sp-5);">
+            <div class="card email-config-card">
+              <div class="card-header">
+                <h3><i class="fas fa-envelope" style="color: var(--orange-500); margin-right: 8px;"></i>Configurações de E-mail</h3>
+                <span style="font-size: 12px; color: var(--gray-400);">Envio de propostas e alertas</span>
               </div>
-              <i class="fas fa-chevron-down admin-accordion-toggle"></i>
+              <div class="card-body">
+                <form id="email-config-form" onsubmit="saveEmailConfig(event)">
+                  <div class="form-group">
+                    <label class="form-label">Provedor SMTP / API</label>
+                    <select class="form-input" id="email-provider">
+                      <option value="sendgrid">SendGrid</option>
+                      <option value="smtp">SMTP Personalizado</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Chave de API / Senha</label>
+                    <input type="password" class="form-input" id="email-api-key" placeholder="SG.xxxx...">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">E-mail Remetente Padrão</label>
+                    <input type="email" class="form-input" id="email-sender" placeholder="contato@suaagencia.com">
+                  </div>
+                  <button type="submit" class="btn btn-primary" style="width: 100%;"><i class="fas fa-save"></i> Salvar Configurações</button>
+                </form>
+              </div>
             </div>
-            <div class="admin-accordion-body" style="padding-bottom: 20px;">
-              <div id="gmail-status-container" style="display: flex; justify-content: space-between; align-items: center; background: var(--surface-hover); padding: 16px; border-radius: 8px; margin-bottom: 16px; margin-top: 16px;">
-                <div>
-                  <h4 style="margin: 0; color: var(--text-primary);"><i class="fab fa-google" style="color: #DB4437; margin-right: 8px;"></i>Integração Gmail</h4>
-                  <span style="font-size: 13px; color: var(--stone-400);" id="gmail-status-text">Não conectado</span>
-                </div>
-                <button class="btn btn-outline" id="btn-connect-gmail" onclick="connectGmail()">Conectar Conta</button>
-              </div>
 
-              <div class="form-group">
-                <label class="form-label">E-mail Remetente Padrão</label>
-                <input type="email" class="form-input" id="email-sender" placeholder="contato@suaagencia.com">
+            <div class="card push-config-card">
+              <div class="card-header">
+                <h3><i class="fas fa-bell" style="color: var(--orange-500); margin-right: 8px;"></i>Notificações Push (Firebase)</h3>
+                <span style="font-size: 12px; color: var(--gray-400);">Alertas via push para usuários</span>
               </div>
-              
-              <h4 style="margin-top: 24px; margin-bottom: 12px; font-size: 14px;">Gatilhos de Envio</h4>
-              <div style="display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap;">
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;"><input type="checkbox" id="trigger-new-traveler" checked> Novo Viajante Cadastrado</label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;"><input type="checkbox" id="trigger-itinerary-approved" checked> Roteiro Aprovado</label>
-                <label style="display: flex; align-items: center; gap: 8px; font-size: 14px;"><input type="checkbox" id="trigger-general" checked> Comunicações Gerais</label>
-              </div>
-              
-              <button class="btn btn-primary" onclick="saveEmailConfig()" style="width: 100%;"><i class="fas fa-save"></i> Salvar Configurações de E-mail</button>
-            </div>
-          </div>
-
-          <!-- ACCORDION: Notificações Push -->
-          <div class="admin-accordion">
-            <div class="admin-accordion-header" onclick="toggleAdminAccordion(this)">
-              <div class="admin-accordion-title">
-                <div class="admin-accordion-icon"><i class="fas fa-bell"></i></div>
-                <div>
-                  <h3>Notificações Push (Firebase)</h3>
-                  <span class="subtitle">Alertas via push para usuários</span>
-                </div>
-              </div>
-              <i class="fas fa-chevron-down admin-accordion-toggle"></i>
-            </div>
-            <div class="admin-accordion-body" style="padding-bottom: 20px;">
-              <div style="margin-top: 16px;">
+              <div class="card-body">
                 <form id="push-config-form" onsubmit="savePushConfig(event)">
                   <div class="form-group">
                     <label class="form-label">Firebase Server Key</label>
@@ -871,26 +832,17 @@
             </div>
           </div>
 
-          <!-- ACCORDION: Thay IA Configuração -->
-          <div class="admin-accordion">
-            <div class="admin-accordion-header" onclick="toggleAdminAccordion(this)">
-              <div class="admin-accordion-title">
-                <div class="admin-accordion-icon"><i class="fas fa-robot"></i></div>
-                <div>
-                  <h3>Thay IA — Configuração</h3>
-                  <span class="subtitle">Modelos e Chaves de API</span>
-                </div>
-              </div>
-              <i class="fas fa-chevron-down admin-accordion-toggle"></i>
+          <!-- Thay IA — Configuration & Token Usage -->
+        <div class="admin-grid" style="margin-top: var(--sp-5);">
+          <div class="card ai-config-card">
+            <div class="card-header">
+              <h3><i class="fas fa-robot" style="color: var(--orange-500); margin-right: 8px;"></i>Thay IA — Configuração</h3>
+              <span class="ai-status-badge" id="ai-status-badge">
+                <span class="ai-status-dot"></span> Desconectada
+              </span>
             </div>
-            <div class="admin-accordion-body" style="padding-bottom: 20px;">
-              <div style="margin-top: 16px;">
-                <div style="margin-bottom: 16px;">
-                  <span class="ai-status-badge" id="ai-status-badge">
-                    <span class="ai-status-dot"></span> Desconectada
-                  </span>
-                </div>
-                <!-- Provider Selector -->
+            <div class="card-body">
+              <!-- Provider Selector -->
               <div class="ai-provider-grid" id="ai-provider-grid">
                 <button class="ai-provider-card active" data-provider="openai" onclick="selectAIProvider('openai')">
                   <div class="ai-provider-icon" style="background: rgba(16,163,127,0.1); color: #10A37F;">
@@ -954,25 +906,16 @@
                 </div>
               </div>
             </div>
-              </div>
-            </div>
           </div>
 
-          <!-- ACCORDION: Consumo de Tokens -->
-          <div class="admin-accordion">
-            <div class="admin-accordion-header" onclick="toggleAdminAccordion(this)">
-              <div class="admin-accordion-title">
-                <div class="admin-accordion-icon"><i class="fas fa-chart-bar"></i></div>
-                <div>
-                  <h3>Consumo de Tokens</h3>
-                  <span class="subtitle">Estatísticas de uso da IA</span>
-                </div>
-              </div>
-              <i class="fas fa-chevron-down admin-accordion-toggle"></i>
+          <!-- Token Consumption -->
+          <div class="card ai-usage-card">
+            <div class="card-header">
+              <h3><i class="fas fa-chart-bar" style="color: var(--orange-500); margin-right: 8px;"></i>Consumo de Tokens</h3>
+              <span style="font-size: 12px; color: var(--stone-400);">Ciclo atual: Mai/2026</span>
             </div>
-            <div class="admin-accordion-body" style="padding-bottom: 20px;">
-              <div style="margin-top: 16px;">
-                <!-- Total usage summary -->
+            <div class="card-body">
+              <!-- Total usage summary -->
               <div class="ai-usage-summary" id="ai-usage-summary">
                 <!-- Populated by admin.js -->
               </div>
@@ -982,25 +925,19 @@
               <div class="ai-usage-users" id="ai-usage-users">
                 <!-- Populated by admin.js -->
               </div>
-              </div>
             </div>
           </div>
+        </div>
 
-          <!-- ACCORDION: Base de Conhecimento Thay IA -->
-          <div class="admin-accordion">
-            <div class="admin-accordion-header" onclick="toggleAdminAccordion(this)">
-              <div class="admin-accordion-title">
-                <div class="admin-accordion-icon"><i class="fas fa-graduation-cap"></i></div>
-                <div>
-                  <h3>Base de Conhecimento — Thay IA</h3>
-                  <span class="subtitle">Treine a Thay com informações da agência</span>
-                </div>
-              </div>
-              <i class="fas fa-chevron-down admin-accordion-toggle"></i>
-            </div>
-            <div class="admin-accordion-body" style="padding-bottom: 20px;">
-              <div style="margin-top: 16px;">
-                <!-- System Prompt / Instructions -->
+        <!-- Thay IA — Knowledge Base -->
+        <div class="card ai-kb-card" style="margin-top: var(--sp-5);">
+          <div class="card-header">
+            <h3><i class="fas fa-graduation-cap" style="color: var(--orange-500); margin-right: 8px;"></i>Base de Conhecimento — Thay IA</h3>
+            <span style="font-size: 12px; color: var(--stone-400);">Treine a Thay com informações da sua agência</span>
+          </div>
+          <div class="card-body">
+
+            <!-- System Prompt / Instructions -->
             <div class="kb-section">
               <div class="kb-section-header">
                 <div class="kb-section-icon" style="background: rgba(139,92,246,0.1); color: #8B5CF6;">
@@ -1104,14 +1041,12 @@
                 <!-- Populated by admin.js -->
               </div>
             </div>
-              </div>
-            </div>
+
           </div>
-
-        </div> <!-- /.admin-accordions-wrapper -->
+        </div>
       </div>
-    </main>
 
+    </main>
   </div>
 
   <!-- ════════════════ LEAD DRAWER ════════════════ -->
