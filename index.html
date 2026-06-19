@@ -526,9 +526,18 @@
         <!-- New Destination Modal -->
         <div id="new-destination-modal" class="modal hidden">
           <div class="modal-overlay" onclick="closeModal('new-destination-modal')"></div>
-          <div class="modal-content">
+          <div class="modal-content intake-modal">
             <button class="modal-close" onclick="closeModal('new-destination-modal')"><i class="fas fa-times"></i></button>
-            <h2 style="margin-bottom: 20px;">Adicionar Novo Destino</h2>
+            <div class="intake-header">
+              <div class="intake-title-row">
+                <div class="intake-icon"><i class="fas fa-map-marker-alt"></i></div>
+                <div>
+                  <h2>Novo Destino</h2>
+                  <p class="intake-subtitle">Adicione um novo local ao portfólio da agência</p>
+                </div>
+              </div>
+            </div>
+            <div class="intake-form">
             <form id="new-destination-form" onsubmit="event.preventDefault(); submitNewDestination();">
               <div class="form-group">
                 <label>Nome do Destino</label>
@@ -569,7 +578,7 @@
               </div>
               <div class="form-actions" style="margin-top: 24px;">
                 <button type="button" class="btn btn-ghost" onclick="closeModal('new-destination-modal')">Cancelar</button>
-                <button type="submit" class="btn btn-primary" id="nd-submit-btn">Salvar Destino</button>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Destino</button>
               </div>
             </form>
           </div>
@@ -1037,46 +1046,6 @@
         </div>
       </div>
 
-      <!-- New Transaction Modal -->
-      <div id="transaction-modal" class="modal-overlay hidden" onclick="if(event.target===this) closeModal('transaction-modal')">
-        <div class="modal" style="max-width: 480px;">
-          <div class="modal-header">
-            <h3><i class="fas fa-plus-circle" style="color: var(--primary);"></i> Nova Transação</h3>
-            <button class="modal-close" onclick="closeModal('transaction-modal')"><i class="fas fa-times"></i></button>
-          </div>
-          <div class="modal-body">
-            <form id="transaction-form" onsubmit="submitTransaction(event)">
-              <div class="form-group">
-                <label class="form-label">Tipo</label>
-                <select class="form-input" name="type" required>
-                  <option value="income">Receita</option>
-                  <option value="commission">Comissão</option>
-                  <option value="expense">Despesa</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">Descrição</label>
-                <input type="text" class="form-input" name="desc" placeholder="Ex: Pacote Lisboa — João Silva" required>
-              </div>
-              <div class="form-row" style="display:grid; grid-template-columns: 1fr 1fr; gap: var(--sp-4);">
-                <div class="form-group">
-                  <label class="form-label">Valor (R$)</label>
-                  <input type="text" class="form-input mask-currency" name="amount" placeholder="0,00" required>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Data</label>
-                  <input type="date" class="form-input" name="date" required>
-                </div>
-              </div>
-              <div style="display: flex; justify-content: flex-end; gap: var(--sp-3); margin-top: var(--sp-4);">
-                <button type="button" class="btn btn-outline" onclick="closeModal('transaction-modal')">Cancelar</button>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-check"></i> Salvar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
     </main>
   </div>
 
@@ -1490,9 +1459,18 @@
   <!-- ════════════════ MODAL: NOVA TRANSAÇÃO ════════════════ -->
   <div id="transaction-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeModal('transaction-modal')"></div>
-    <div class="modal-content">
+    <div class="modal-content intake-modal">
       <button class="modal-close" onclick="closeModal('transaction-modal')"><i class="fas fa-times"></i></button>
-      <h2 style="margin-bottom: 20px;">Nova Transação</h2>
+      <div class="intake-header">
+        <div class="intake-title-row">
+          <div class="intake-icon"><i class="fas fa-dollar-sign"></i></div>
+          <div>
+            <h2>Nova Transação</h2>
+            <p class="intake-subtitle">Registre receitas, despesas ou comissões do financeiro</p>
+          </div>
+        </div>
+      </div>
+      <div class="intake-form">
       <form id="transaction-form" onsubmit="submitTransaction(event)">
         <div class="form-group">
           <label class="form-label">Descrição</label>
@@ -1518,27 +1496,30 @@
         </div>
         <div class="form-actions" style="margin-top: 24px;">
           <button type="button" class="btn btn-ghost" onclick="closeModal('transaction-modal')">Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar Transação</button>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Transação</button>
         </div>
       </form>
     </div>
   </div>
+  </div>
 
   <!-- ════════════════ MODAL: NOVO USUÁRIO ════════════════ -->
-  <div id="new-user-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; padding:16px;">
-    <div style="background:var(--card-bg, #1a1d26); border:1px solid var(--border-color); border-radius:20px; width:100%; max-width:520px; box-shadow:0 24px 60px rgba(0,0,0,0.4); overflow:hidden;" onclick="event.stopPropagation()">
+  <div id="new-user-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeNewUserModal()"></div>
+    <div class="modal-content intake-modal" onclick="event.stopPropagation()">
+      <button class="modal-close" onclick="closeNewUserModal()"><i class="fas fa-times"></i></button>
 
-      <!-- Header -->
-      <div style="display:flex; align-items:center; justify-content:space-between; padding:20px 24px 16px; border-bottom:1px solid var(--border-color);">
-        <div>
-          <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--gray-900);">Novo Usuário</h3>
-          <p style="margin:4px 0 0; font-size:12px; color:var(--gray-400);">O usuário receberá um e-mail para confirmar o acesso</p>
+      <div class="intake-header">
+        <div class="intake-title-row">
+          <div class="intake-icon"><i class="fas fa-user-plus"></i></div>
+          <div>
+            <h2>Novo Usuário</h2>
+            <p class="intake-subtitle">O usuário receberá um e-mail para confirmar o acesso</p>
+          </div>
         </div>
-        <button onclick="closeNewUserModal()" style="background:none; border:none; cursor:pointer; color:var(--gray-400); font-size:18px; padding:4px; line-height:1;"><i class="fas fa-times"></i></button>
       </div>
 
-      <!-- Body -->
-      <div style="padding:20px 24px; display:flex; flex-direction:column; gap:16px;">
+      <div class="intake-form" style="display:flex; flex-direction:column; gap:16px;">
 
         <!-- Nome + Email -->
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
