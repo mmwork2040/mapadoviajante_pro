@@ -6,7 +6,8 @@
 .intake-modal {
   max-width: 680px;
   padding: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 /* ── Header ──────────────────────────────────────────────── */
