@@ -285,7 +285,7 @@
 }
 
 .sidebar-collapsed .sidebar-collapse-btn i {
-  transform: rotate(180deg);
+  /* O ícone agora é fisicamente alterado pelo JS */
 }
 
 .sidebar-collapsed .sidebar-logo {
