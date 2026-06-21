@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createTransaction, fetchTransactions } from "@/lib/services";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Transaction, TxType } from "@/lib/types";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/financeiro")({
   component: FinancePage,
