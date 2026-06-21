@@ -87,6 +87,9 @@ function AdminPage() {
               <Plus className="h-4 w-4" />
             </button>
           </div>
+          {tasksQ.isError ? (
+            <QueryError message="Não foi possível carregar as tarefas." onRetry={() => tasksQ.refetch()} />
+          ) : (
           <ul className="space-y-2">
             {tasks.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma tarefa.</li>}
             {tasks.map((t) => (
@@ -106,6 +109,7 @@ function AdminPage() {
               </li>
             ))}
           </ul>
+          )}
         </div>
       </div>
 
