@@ -142,7 +142,7 @@ export async function fetchLeads(filters: {
   const { data, error } = await query;
   if (error) {
     console.error("fetchLeads:", error);
-    return [];
+    throw new Error("Não foi possível carregar os leads.");
   }
   return (data as Lead[]) || [];
 }
