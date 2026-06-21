@@ -55,7 +55,9 @@ function LeadsPage() {
         </button>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryError message="Não foi possível carregar os leads." onRetry={() => refetch()} />
+      ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
