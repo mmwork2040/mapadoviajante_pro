@@ -114,7 +114,7 @@ export async function fetchTeamMembers(): Promise<AgencyMember[]> {
     .order("name");
   if (error) {
     console.error("fetchTeamMembers:", error);
-    return [];
+    throw new Error("Não foi possível carregar a equipe.");
   }
   return (data as AgencyMember[]) || [];
 }
@@ -142,7 +142,7 @@ export async function fetchLeads(filters: {
   const { data, error } = await query;
   if (error) {
     console.error("fetchLeads:", error);
-    return [];
+    throw new Error("Não foi possível carregar os leads.");
   }
   return (data as Lead[]) || [];
 }
@@ -238,7 +238,7 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
     .order("created_at", { ascending: false });
   if (error) {
     console.error("fetchLeadActivities:", error);
-    return [];
+    throw new Error("Não foi possível carregar o histórico.");
   }
   return (data as LeadActivity[]) || [];
 }
@@ -291,7 +291,7 @@ export async function fetchTasks(filters: { completed?: boolean; assigned_to?: s
   const { data, error } = await query;
   if (error) {
     console.error("fetchTasks:", error);
-    return [];
+    throw new Error("Não foi possível carregar as tarefas.");
   }
   return (data as Task[]) || [];
 }
@@ -355,7 +355,7 @@ export async function fetchTransactions(filters: {
   const { data, error } = await query;
   if (error) {
     console.error("fetchTransactions:", error);
-    return [];
+    throw new Error("Não foi possível carregar as transações.");
   }
   return (data as Transaction[]) || [];
 }
@@ -393,7 +393,7 @@ export async function fetchDestinations(): Promise<Destination[]> {
     .order("name");
   if (error) {
     console.error("fetchDestinations:", error);
-    return [];
+    throw new Error("Não foi possível carregar os destinos.");
   }
   return (data as Destination[]) || [];
 }
@@ -432,7 +432,7 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
     .order("created_at", { ascending: false });
   if (error) {
     console.error("fetchItineraries:", error);
-    return [];
+    throw new Error("Não foi possível carregar os roteiros.");
   }
   return (data as Itinerary[]) || [];
 }

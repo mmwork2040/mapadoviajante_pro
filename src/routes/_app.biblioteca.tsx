@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createDestination, fetchDestinations } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import type { Destination } from "@/lib/types";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/biblioteca")({
   component: LibraryPage,
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_app/biblioteca")({
 function LibraryPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["destinations"],
     queryFn: fetchDestinations,
   });
@@ -34,7 +35,9 @@ function LibraryPage() {
         </button>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryError message="Não foi possível carregar os destinos." onRetry={() => refetch()} />
+      ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <p className="text-muted-foreground">Nenhum destino cadastrado.</p>

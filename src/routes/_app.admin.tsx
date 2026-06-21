@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createTask, fetchTasks, fetchTeamMembers, updateTask } from "@/lib/services";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth } from "@/lib/auth";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/admin")({
   component: AdminPage,
@@ -16,21 +17,26 @@ function AdminPage() {
   const { member } = useAuth();
   const [taskTitle, setTaskTitle] = useState("");
 
-  const { data: team = [] } = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
-  const { data: tasks = [] } = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks({}) });
+  const teamQ = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
+  const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks({}) });
+  const team = teamQ.data ?? [];
+  const tasks = tasksQ.data ?? [];
 
   const addTask = useMutation({
     mutationFn: () => createTask({ title: taskTitle, priority: "normal" }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (!res) return toast.error("Erro ao criar tarefa.");
       setTaskTitle("");
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
+    onError: () => toast.error("Erro ao criar tarefa."),
   });
 
   const toggle = useMutation({
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
       updateTask(id, { completed, completed_at: completed ? new Date().toISOString() : null }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: () => toast.error("Erro ao atualizar tarefa."),
   });
 
   return (
@@ -43,6 +49,9 @@ function AdminPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-card p-5">
           <h2 className="mb-4 font-semibold">Equipe</h2>
+          {teamQ.isError ? (
+            <QueryError message="Não foi possível carregar a equipe." onRetry={() => teamQ.refetch()} />
+          ) : (
           <ul className="space-y-3">
             {team.map((m) => (
               <li key={m.id} className="flex items-center gap-3">
@@ -59,6 +68,7 @@ function AdminPage() {
               </li>
             ))}
           </ul>
+          )}
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-5">
@@ -77,6 +87,9 @@ function AdminPage() {
               <Plus className="h-4 w-4" />
             </button>
           </div>
+          {tasksQ.isError ? (
+            <QueryError message="Não foi possível carregar as tarefas." onRetry={() => tasksQ.refetch()} />
+          ) : (
           <ul className="space-y-2">
             {tasks.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma tarefa.</li>}
             {tasks.map((t) => (
@@ -96,6 +109,7 @@ function AdminPage() {
               </li>
             ))}
           </ul>
+          )}
         </div>
       </div>
 

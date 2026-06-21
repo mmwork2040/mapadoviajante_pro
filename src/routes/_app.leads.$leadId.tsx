@@ -13,6 +13,7 @@ import {
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { LeadStatus } from "@/lib/types";
 import { useNavigate } from "@tanstack/react-router";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/leads/$leadId")({
   component: LeadDetailPage,
@@ -32,7 +33,7 @@ function LeadDetailPage() {
   const navigate = useNavigate();
   const [note, setNote] = useState("");
 
-  const { data: lead, isLoading } = useQuery({
+  const { data: lead, isLoading, isError, refetch } = useQuery({
     queryKey: ["lead", leadId],
     queryFn: () => fetchLeadById(leadId),
   });
@@ -47,6 +48,7 @@ function LeadDetailPage() {
       qc.invalidateQueries({ queryKey: ["lead", leadId] });
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
+    onError: () => toast.error("Erro ao atualizar status."),
   });
 
   const addNote = useMutation({
@@ -56,15 +58,21 @@ function LeadDetailPage() {
       setNote("");
       qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
     },
+    onError: () => toast.error("Erro ao salvar anotação."),
   });
 
   async function remove() {
     if (!confirm("Excluir este lead?")) return;
-    await deleteLead(leadId);
-    toast.success("Lead excluído.");
-    navigate({ to: "/leads" });
+    try {
+      await deleteLead(leadId);
+      toast.success("Lead excluído.");
+      navigate({ to: "/leads" });
+    } catch {
+      toast.error("Erro ao excluir lead.");
+    }
   }
 
+  if (isError) return <QueryError message="Não foi possível carregar o lead." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!lead) return <p>Lead não encontrado.</p>;
 

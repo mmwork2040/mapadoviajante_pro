@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/leads")({
   component: LeadsPage,
@@ -22,7 +23,7 @@ const COLUMNS: { key: LeadStatus; label: string }[] = [
 function LeadsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const { data: leads = [], isLoading } = useQuery({
+  const { data: leads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["leads"],
     queryFn: () => fetchLeads({}),
   });
@@ -54,7 +55,9 @@ function LeadsPage() {
         </button>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryError message="Não foi possível carregar os leads." onRetry={() => refetch()} />
+      ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
       ) : (
         <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">

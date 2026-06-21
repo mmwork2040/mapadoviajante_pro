@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createTransaction, fetchTransactions } from "@/lib/services";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Transaction, TxType } from "@/lib/types";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/financeiro")({
   component: FinancePage,
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_app/financeiro")({
 function FinancePage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const { data: txs = [], isLoading } = useQuery({
+  const { data: txs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => fetchTransactions({}),
   });
@@ -45,7 +46,9 @@ function FinancePage() {
 
       <div className="rounded-2xl border border-border bg-card p-5">
         <h2 className="mb-4 font-semibold">Histórico</h2>
-        {isLoading ? (
+        {isError ? (
+          <QueryError message="Não foi possível carregar as transações." onRetry={() => refetch()} />
+        ) : isLoading ? (
           <p className="text-muted-foreground">Carregando…</p>
         ) : (
           <div className="overflow-x-auto">

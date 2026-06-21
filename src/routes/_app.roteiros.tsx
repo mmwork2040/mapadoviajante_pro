@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createItinerary, fetchItineraries } from "@/lib/services";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/roteiros")({
   component: ItinerariesPage,
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_app/roteiros")({
 function ItinerariesPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
@@ -34,7 +35,9 @@ function ItinerariesPage() {
         </button>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryError message="Não foi possível carregar os roteiros." onRetry={() => refetch()} />
+      ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <p className="text-muted-foreground">Nenhum roteiro ainda. Crie o primeiro!</p>

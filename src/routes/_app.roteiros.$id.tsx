@@ -11,6 +11,7 @@ import {
   fetchItineraryById,
 } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
   component: ItineraryDetailPage,
@@ -19,7 +20,7 @@ export const Route = createFileRoute("/_app/roteiros/$id")({
 function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
   const qc = useQueryClient();
-  const { data: it, isLoading } = useQuery({
+  const { data: it, isLoading, isError, refetch } = useQuery({
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
   });
@@ -35,8 +36,10 @@ function ItineraryDetailPage() {
         sort_order: (it?.days?.length || 0) + 1,
       }),
     onSuccess: refresh,
+    onError: () => toast.error("Erro ao adicionar dia."),
   });
 
+  if (isError) return <QueryError message="Não foi possível carregar o roteiro." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!it) return <p>Roteiro não encontrado.</p>;
 
