@@ -65,6 +65,7 @@ function LeadDetailPage() {
     navigate({ to: "/leads" });
   }
 
+  if (isError) return <QueryError message="Não foi possível carregar o lead." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!lead) return <p>Lead não encontrado.</p>;
 
