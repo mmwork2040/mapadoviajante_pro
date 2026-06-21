@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createDestination, fetchDestinations } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import type { Destination } from "@/lib/types";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/biblioteca")({
   component: LibraryPage,
