@@ -49,6 +49,9 @@ function AdminPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-border bg-card p-5">
           <h2 className="mb-4 font-semibold">Equipe</h2>
+          {teamQ.isError ? (
+            <QueryError message="Não foi possível carregar a equipe." onRetry={() => teamQ.refetch()} />
+          ) : (
           <ul className="space-y-3">
             {team.map((m) => (
               <li key={m.id} className="flex items-center gap-3">
@@ -65,6 +68,7 @@ function AdminPage() {
               </li>
             ))}
           </ul>
+          )}
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-5">
