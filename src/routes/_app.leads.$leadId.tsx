@@ -13,6 +13,7 @@ import {
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { LeadStatus } from "@/lib/types";
 import { useNavigate } from "@tanstack/react-router";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/leads/$leadId")({
   component: LeadDetailPage,
