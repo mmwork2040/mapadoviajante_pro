@@ -87,6 +87,23 @@ async function logout() {
 // ══════════════════════════════════════════════════════════════
 
 async function authenticate(email, password) {
+  // Check if it's a demo user first for offline / demo mode fallback
+  const demoUser = USERS_DB.find(u => u.email === email && u.password === password);
+  if (demoUser) {
+    const sessionUser = {
+      id: demoUser.id,
+      name: demoUser.name,
+      email: demoUser.email,
+      role: demoUser.role,
+      avatar: demoUser.avatar || (demoUser.name ? demoUser.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase() : '??'),
+      memberId: null,
+      agencyId: null,
+      isSupabase: false,
+    };
+    setSession(sessionUser);
+    return { success: true, user: sessionUser };
+  }
+
   if (!isSupabaseAvailable()) {
     return { success: false, error: 'Sistema indisponível. Tente novamente mais tarde.' };
   }

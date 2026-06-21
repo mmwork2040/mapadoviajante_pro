@@ -252,7 +252,12 @@ async function renderUsersTable() {
         <span class="user-status-dot ${user.status}"></span>
         ${user.status === 'online' ? 'Ativo' : 'Inativo'}
       </td>
-      <td>${user.lastLogin !== '—' ? new Date(user.lastLogin).toLocaleDateString('pt-BR') + ' ' + new Date(user.lastLogin).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '—'}</td>
+      <td>${(() => {
+        if (!user.lastLogin || user.lastLogin === '—') return '—';
+        const d = new Date(user.lastLogin);
+        if (isNaN(d.getTime())) return '—';
+        return d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      })()}</td>
       <td style="text-align: center;">
         <button class="btn btn-ghost btn-sm" onclick="showToast('Editar ${user.name} — em breve', 'info')" title="Editar">
           <i class="fas fa-pen"></i>
@@ -1063,6 +1068,11 @@ function disconnectGmail() {
   document.getElementById('btn-connect-gmail').textContent = 'Conectar Conta';
   document.getElementById('btn-connect-gmail').setAttribute('onclick', 'connectGmail()');
   showToast('Conta Gmail desconectada', 'info');
+}
+
+function getAvatarColorByRole(role) {
+  const colors = { admin: '#F58E26', gerente: '#3B82F6', consultor: '#10B981' };
+  return colors[role] || '#6B7280';
 }
 
 function toggleAdminAccordion(headerEl) {

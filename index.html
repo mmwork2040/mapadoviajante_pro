@@ -578,7 +578,7 @@
               </div>
               <div class="form-actions" style="margin-top: 24px;">
                 <button type="button" class="btn btn-ghost" onclick="closeModal('new-destination-modal')">Cancelar</button>
-                <button type="submit" class="btn btn-primary" style="width: 100%;">Salvar Destino</button>
+                <button type="submit" id="nd-submit-btn" class="btn btn-primary" style="width: 100%;">Salvar Destino</button>
               </div>
             </form>
           </div>
@@ -1540,21 +1540,21 @@
       <form id="transaction-form" onsubmit="submitTransaction(event)">
         <div class="form-group">
           <label class="form-label">Descrição</label>
-          <input type="text" id="nt-description" class="form-input" required placeholder="Ex: Pagamento Fornecedor XYZ">
+          <input type="text" id="nt-description" name="desc" class="form-input" required placeholder="Ex: Pagamento Fornecedor XYZ">
         </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Valor (R$)</label>
-            <input type="text" id="nt-amount" class="form-input mask-currency" required placeholder="Ex: 1500,00">
+            <input type="text" id="nt-amount" name="amount" class="form-input mask-currency" required placeholder="Ex: 1500,00">
           </div>
           <div class="form-group">
             <label class="form-label">Data</label>
-            <input type="date" id="nt-date" class="form-input" required>
+            <input type="date" id="nt-date" name="date" class="form-input" required>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">Tipo</label>
-          <select id="nt-type" class="form-input" required>
+          <select id="nt-type" name="type" class="form-input" required>
             <option value="income">Receita</option>
             <option value="expense">Despesa</option>
             <option value="commission">Comissão (Receita)</option>
