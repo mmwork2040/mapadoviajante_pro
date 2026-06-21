@@ -36,8 +36,10 @@ function ItineraryDetailPage() {
         sort_order: (it?.days?.length || 0) + 1,
       }),
     onSuccess: refresh,
+    onError: () => toast.error("Erro ao adicionar dia."),
   });
 
+  if (isError) return <QueryError message="Não foi possível carregar o roteiro." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!it) return <p>Roteiro não encontrado.</p>;
 
