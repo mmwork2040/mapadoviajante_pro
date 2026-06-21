@@ -291,7 +291,7 @@ export async function fetchTasks(filters: { completed?: boolean; assigned_to?: s
   const { data, error } = await query;
   if (error) {
     console.error("fetchTasks:", error);
-    return [];
+    throw new Error("Não foi possível carregar as tarefas.");
   }
   return (data as Task[]) || [];
 }
