@@ -432,7 +432,7 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
     .order("created_at", { ascending: false });
   if (error) {
     console.error("fetchItineraries:", error);
-    return [];
+    throw new Error("Não foi possível carregar os roteiros.");
   }
   return (data as Itinerary[]) || [];
 }
