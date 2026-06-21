@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Users, TrendingUp, CircleDollarSign, ListChecks } from "lucide-react";
 import { fetchDashboardStats } from "@/lib/services";
 import { formatCurrency, formatDate } from "@/lib/ui";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/")({
   component: DashboardPage,
