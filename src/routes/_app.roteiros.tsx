@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createItinerary, fetchItineraries } from "@/lib/services";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/roteiros")({
   component: ItinerariesPage,
