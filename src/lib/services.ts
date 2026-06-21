@@ -394,12 +394,40 @@ export async function fetchDestinations(): Promise<Destination[]> {
     .from("crm_library_destinations")
     .select("*")
     .eq("agency_id", _agencyId)
-    .order("name");
+    .order("title", { ascending: true });
   if (error) {
     console.error("fetchDestinations:", error);
     throw new Error("Não foi possível carregar os destinos.");
   }
   return (data as Destination[]) || [];
+}
+
+export async function updateDestination(
+  id: string,
+  updates: Partial<Destination>,
+): Promise<Destination | null> {
+  const patch: Partial<Destination> = { ...updates };
+  if (updates.title !== undefined) patch.name = updates.title;
+  const { data, error } = await supabase
+    .from("crm_library_destinations")
+    .update(patch)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("updateDestination:", error);
+    return null;
+  }
+  return data as Destination;
+}
+
+export async function deleteDestination(id: string): Promise<boolean> {
+  const { error } = await supabase.from("crm_library_destinations").delete().eq("id", id);
+  if (error) {
+    console.error("deleteDestination:", error);
+    return false;
+  }
+  return true;
 }
 
 export async function createDestination(destData: Partial<Destination>): Promise<Destination | null> {
