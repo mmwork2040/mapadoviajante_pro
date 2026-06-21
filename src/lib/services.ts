@@ -238,7 +238,7 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
     .order("created_at", { ascending: false });
   if (error) {
     console.error("fetchLeadActivities:", error);
-    return [];
+    throw new Error("Não foi possível carregar o histórico.");
   }
   return (data as LeadActivity[]) || [];
 }
