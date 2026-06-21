@@ -148,12 +148,14 @@ export async function fetchLeads(filters: {
 }
 
 export async function fetchLeadById(leadId: string): Promise<Lead | null> {
-  const { data, error } = await supabase.from("crm_leads").select("*").eq("id", leadId).single();
+  let query = supabase.from("crm_leads").select("*").eq("id", leadId);
+  if (_agencyId) query = query.eq("agency_id", _agencyId);
+  const { data, error } = await query.maybeSingle();
   if (error) {
     console.error("fetchLeadById:", error);
-    return null;
+    throw new Error("Não foi possível carregar o lead.");
   }
-  return data as Lead;
+  return (data as Lead) || null;
 }
 
 export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> {
