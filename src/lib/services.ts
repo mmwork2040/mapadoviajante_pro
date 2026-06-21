@@ -119,6 +119,43 @@ export async function fetchTeamMembers(): Promise<AgencyMember[]> {
   return (data as AgencyMember[]) || [];
 }
 
+const MEMBER_COLORS = ["#ff7a1a", "#2563eb", "#16a34a", "#db2777", "#9333ea", "#0891b2"];
+
+export async function inviteTeamMember(
+  data: { name: string; email: string; role?: string },
+): Promise<AgencyMember | null> {
+  if (!_agencyId) await loadAgencyContext();
+  const color = MEMBER_COLORS[Math.floor(Math.random() * MEMBER_COLORS.length)];
+  const { data: member, error } = await supabase
+    .from("agency_members")
+    .insert({
+      agency_id: _agencyId,
+      name: data.name,
+      email: data.email,
+      role: data.role || "agent",
+      avatar_color: color,
+      is_active: true,
+    })
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("inviteTeamMember:", error);
+    return null;
+  }
+  return member as AgencyMember;
+}
+
+export async function updateMemberRole(id: string, role: string): Promise<boolean> {
+  const { error } = await supabase.from("agency_members").update({ role }).eq("id", id);
+  if (error) {
+    console.error("updateMemberRole:", error);
+    return false;
+  }
+  return true;
+}
+
+
+
 // ── Leads ──────────────────────────────────────────────────────
 export async function fetchLeads(filters: {
   status?: string;
