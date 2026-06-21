@@ -23,7 +23,7 @@ const COLUMNS: { key: LeadStatus; label: string }[] = [
 function LeadsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const { data: leads = [], isLoading } = useQuery({
+  const { data: leads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["leads"],
     queryFn: () => fetchLeads({}),
   });
