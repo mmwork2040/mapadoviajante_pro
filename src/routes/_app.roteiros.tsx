@@ -34,7 +34,9 @@ function ItinerariesPage() {
         </button>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryError message="Não foi possível carregar os roteiros." onRetry={() => refetch()} />
+      ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <p className="text-muted-foreground">Nenhum roteiro ainda. Crie o primeiro!</p>
