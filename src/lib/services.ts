@@ -114,7 +114,7 @@ export async function fetchTeamMembers(): Promise<AgencyMember[]> {
     .order("name");
   if (error) {
     console.error("fetchTeamMembers:", error);
-    return [];
+    throw new Error("Não foi possível carregar a equipe.");
   }
   return (data as AgencyMember[]) || [];
 }
