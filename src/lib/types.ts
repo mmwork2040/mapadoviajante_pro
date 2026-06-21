@@ -140,6 +140,7 @@ export interface Voucher {
   provider?: string | null;
   code?: string | null;
   details?: string | null;
+  notes?: string | null;
 }
 
 export interface DashboardStats {
