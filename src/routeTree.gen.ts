@@ -9,61 +9,309 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as IntakeRouteImport } from './routes/intake'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as ViajanteIdRouteImport } from './routes/viajante.$id'
+import { Route as AppRoteirosRouteImport } from './routes/_app.roteiros'
+import { Route as AppLeadsRouteImport } from './routes/_app.leads'
+import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
+import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
+import { Route as AppAdminRouteImport } from './routes/_app.admin'
+import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
+import { Route as AppLeadsLeadIdRouteImport } from './routes/_app.leads.$leadId'
 
-const IndexRoute = IndexRouteImport.update({
+const IntakeRoute = IntakeRouteImport.update({
+  id: '/intake',
+  path: '/intake',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const ViajanteIdRoute = ViajanteIdRouteImport.update({
+  id: '/viajante/$id',
+  path: '/viajante/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoteirosRoute = AppRoteirosRouteImport.update({
+  id: '/roteiros',
+  path: '/roteiros',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLeadsRoute = AppLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppBibliotecaRoute = AppBibliotecaRouteImport.update({
+  id: '/biblioteca',
+  path: '/biblioteca',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRoteirosIdRoute = AppRoteirosIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppRoteirosRoute,
+} as any)
+const AppLeadsLeadIdRoute = AppLeadsLeadIdRouteImport.update({
+  id: '/$leadId',
+  path: '/$leadId',
+  getParentRoute: () => AppLeadsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
+  '/auth': typeof AuthRoute
+  '/intake': typeof IntakeRoute
+  '/admin': typeof AppAdminRoute
+  '/biblioteca': typeof AppBibliotecaRoute
+  '/financeiro': typeof AppFinanceiroRoute
+  '/leads': typeof AppLeadsRouteWithChildren
+  '/roteiros': typeof AppRoteirosRouteWithChildren
+  '/viajante/$id': typeof ViajanteIdRoute
+  '/leads/$leadId': typeof AppLeadsLeadIdRoute
+  '/roteiros/$id': typeof AppRoteirosIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/intake': typeof IntakeRoute
+  '/admin': typeof AppAdminRoute
+  '/biblioteca': typeof AppBibliotecaRoute
+  '/financeiro': typeof AppFinanceiroRoute
+  '/leads': typeof AppLeadsRouteWithChildren
+  '/roteiros': typeof AppRoteirosRouteWithChildren
+  '/viajante/$id': typeof ViajanteIdRoute
+  '/': typeof AppIndexRoute
+  '/leads/$leadId': typeof AppLeadsLeadIdRoute
+  '/roteiros/$id': typeof AppRoteirosIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/intake': typeof IntakeRoute
+  '/_app/admin': typeof AppAdminRoute
+  '/_app/biblioteca': typeof AppBibliotecaRoute
+  '/_app/financeiro': typeof AppFinanceiroRoute
+  '/_app/leads': typeof AppLeadsRouteWithChildren
+  '/_app/roteiros': typeof AppRoteirosRouteWithChildren
+  '/viajante/$id': typeof ViajanteIdRoute
+  '/_app/': typeof AppIndexRoute
+  '/_app/leads/$leadId': typeof AppLeadsLeadIdRoute
+  '/_app/roteiros/$id': typeof AppRoteirosIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/intake'
+    | '/admin'
+    | '/biblioteca'
+    | '/financeiro'
+    | '/leads'
+    | '/roteiros'
+    | '/viajante/$id'
+    | '/leads/$leadId'
+    | '/roteiros/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/auth'
+    | '/intake'
+    | '/admin'
+    | '/biblioteca'
+    | '/financeiro'
+    | '/leads'
+    | '/roteiros'
+    | '/viajante/$id'
+    | '/'
+    | '/leads/$leadId'
+    | '/roteiros/$id'
+  id:
+    | '__root__'
+    | '/_app'
+    | '/auth'
+    | '/intake'
+    | '/_app/admin'
+    | '/_app/biblioteca'
+    | '/_app/financeiro'
+    | '/_app/leads'
+    | '/_app/roteiros'
+    | '/viajante/$id'
+    | '/_app/'
+    | '/_app/leads/$leadId'
+    | '/_app/roteiros/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  IntakeRoute: typeof IntakeRoute
+  ViajanteIdRoute: typeof ViajanteIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/intake': {
+      id: '/intake'
+      path: '/intake'
+      fullPath: '/intake'
+      preLoaderRoute: typeof IntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/viajante/$id': {
+      id: '/viajante/$id'
+      path: '/viajante/$id'
+      fullPath: '/viajante/$id'
+      preLoaderRoute: typeof ViajanteIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/roteiros': {
+      id: '/_app/roteiros'
+      path: '/roteiros'
+      fullPath: '/roteiros'
+      preLoaderRoute: typeof AppRoteirosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/leads': {
+      id: '/_app/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AppLeadsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/financeiro': {
+      id: '/_app/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/biblioteca': {
+      id: '/_app/biblioteca'
+      path: '/biblioteca'
+      fullPath: '/biblioteca'
+      preLoaderRoute: typeof AppBibliotecaRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/roteiros/$id': {
+      id: '/_app/roteiros/$id'
+      path: '/$id'
+      fullPath: '/roteiros/$id'
+      preLoaderRoute: typeof AppRoteirosIdRouteImport
+      parentRoute: typeof AppRoteirosRoute
+    }
+    '/_app/leads/$leadId': {
+      id: '/_app/leads/$leadId'
+      path: '/$leadId'
+      fullPath: '/leads/$leadId'
+      preLoaderRoute: typeof AppLeadsLeadIdRouteImport
+      parentRoute: typeof AppLeadsRoute
     }
   }
 }
 
+interface AppLeadsRouteChildren {
+  AppLeadsLeadIdRoute: typeof AppLeadsLeadIdRoute
+}
+
+const AppLeadsRouteChildren: AppLeadsRouteChildren = {
+  AppLeadsLeadIdRoute: AppLeadsLeadIdRoute,
+}
+
+const AppLeadsRouteWithChildren = AppLeadsRoute._addFileChildren(
+  AppLeadsRouteChildren,
+)
+
+interface AppRoteirosRouteChildren {
+  AppRoteirosIdRoute: typeof AppRoteirosIdRoute
+}
+
+const AppRoteirosRouteChildren: AppRoteirosRouteChildren = {
+  AppRoteirosIdRoute: AppRoteirosIdRoute,
+}
+
+const AppRoteirosRouteWithChildren = AppRoteirosRoute._addFileChildren(
+  AppRoteirosRouteChildren,
+)
+
+interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
+  AppBibliotecaRoute: typeof AppBibliotecaRoute
+  AppFinanceiroRoute: typeof AppFinanceiroRoute
+  AppLeadsRoute: typeof AppLeadsRouteWithChildren
+  AppRoteirosRoute: typeof AppRoteirosRouteWithChildren
+  AppIndexRoute: typeof AppIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
+  AppBibliotecaRoute: AppBibliotecaRoute,
+  AppFinanceiroRoute: AppFinanceiroRoute,
+  AppLeadsRoute: AppLeadsRouteWithChildren,
+  AppRoteirosRoute: AppRoteirosRouteWithChildren,
+  AppIndexRoute: AppIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  AuthRoute: AuthRoute,
+  IntakeRoute: IntakeRoute,
+  ViajanteIdRoute: ViajanteIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
