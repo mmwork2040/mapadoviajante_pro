@@ -393,7 +393,7 @@ export async function fetchDestinations(): Promise<Destination[]> {
     .order("name");
   if (error) {
     console.error("fetchDestinations:", error);
-    return [];
+    throw new Error("Não foi possível carregar os destinos.");
   }
   return (data as Destination[]) || [];
 }
