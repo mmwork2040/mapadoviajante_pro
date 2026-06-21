@@ -63,9 +63,13 @@ function LeadDetailPage() {
 
   async function remove() {
     if (!confirm("Excluir este lead?")) return;
-    await deleteLead(leadId);
-    toast.success("Lead excluído.");
-    navigate({ to: "/leads" });
+    try {
+      await deleteLead(leadId);
+      toast.success("Lead excluído.");
+      navigate({ to: "/leads" });
+    } catch {
+      toast.error("Erro ao excluir lead.");
+    }
   }
 
   if (isError) return <QueryError message="Não foi possível carregar o lead." onRetry={() => refetch()} />;
