@@ -49,6 +49,7 @@ function getMemberRole() { return _memberRole; }
 // ══════════════════════════════════════════════════════════════
 
 async function fetchTeamMembers() {
+  if (!_agencyId) { _teamMembers = []; return []; }
   const { data, error } = await supabase
     .from('agency_members')
     .select('id, name, email, phone, role, avatar_color, is_active, user_id')
@@ -67,6 +68,7 @@ function getCachedTeamMembers() { return _teamMembers; }
 // ══════════════════════════════════════════════════════════════
 
 async function fetchLeads(filters = {}) {
+  if (!_agencyId) return [];
   let query = supabase
     .from('crm_leads')
     .select('*, assigned_member:agency_members!crm_leads_assigned_to_fkey(name, avatar_color)')
@@ -189,6 +191,7 @@ async function createLeadActivity(leadId, activityData) {
 // ══════════════════════════════════════════════════════════════
 
 async function fetchTasks(filters = {}) {
+  if (!_agencyId) return [];
   let query = supabase
     .from('crm_tasks')
     .select('*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name)')
@@ -242,6 +245,7 @@ async function updateTask(taskId, updates) {
 // ══════════════════════════════════════════════════════════════
 
 async function fetchTransactions(filters = {}) {
+  if (!_agencyId) return [];
   let query = supabase
     .from('crm_transactions')
     .select('*, lead:crm_leads!crm_transactions_lead_id_fkey(name)')
@@ -284,6 +288,7 @@ async function createTransaction(txData) {
 // ══════════════════════════════════════════════════════════════
 
 async function fetchDestinations() {
+  if (!_agencyId) return [];
   const { data, error } = await supabase
     .from('crm_library_destinations')
     .select('*')
@@ -324,6 +329,7 @@ async function createDestination(destData) {
 // ══════════════════════════════════════════════════════════════
 
 async function fetchItineraries() {
+  if (!_agencyId) return [];
   const { data, error } = await supabase
     .from('crm_itineraries')
     .select('*, lead:crm_leads!crm_itineraries_lead_id_fkey(name)')
