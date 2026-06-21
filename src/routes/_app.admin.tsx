@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createTask, fetchTasks, fetchTeamMembers, updateTask } from "@/lib/services";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth } from "@/lib/auth";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/admin")({
   component: AdminPage,
