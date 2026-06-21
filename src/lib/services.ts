@@ -355,7 +355,7 @@ export async function fetchTransactions(filters: {
   const { data, error } = await query;
   if (error) {
     console.error("fetchTransactions:", error);
-    return [];
+    throw new Error("Não foi possível carregar as transações.");
   }
   return (data as Transaction[]) || [];
 }
