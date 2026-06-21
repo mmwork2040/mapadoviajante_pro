@@ -470,15 +470,14 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
 }
 
 export async function fetchItineraryById(id: string): Promise<Itinerary | null> {
-  const { data: itinerary, error: itErr } = await supabase
-    .from("crm_itineraries")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (itErr || !itinerary) {
+  let itQuery = supabase.from("crm_itineraries").select("*").eq("id", id);
+  if (_agencyId) itQuery = itQuery.eq("agency_id", _agencyId);
+  const { data: itinerary, error: itErr } = await itQuery.maybeSingle();
+  if (itErr) {
     console.error("fetchItineraryById:", itErr);
-    return null;
+    throw new Error("Não foi possível carregar o roteiro.");
   }
+  if (!itinerary) return null;
   const { data: days } = await supabase
     .from("crm_itinerary_days")
     .select("*, activities:crm_itinerary_activities(*)")
