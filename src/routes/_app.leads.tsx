@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/leads")({
   component: LeadsPage,
