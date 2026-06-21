@@ -46,7 +46,9 @@ function FinancePage() {
 
       <div className="rounded-2xl border border-border bg-card p-5">
         <h2 className="mb-4 font-semibold">Histórico</h2>
-        {isLoading ? (
+        {isError ? (
+          <QueryError message="Não foi possível carregar as transações." onRetry={() => refetch()} />
+        ) : isLoading ? (
           <p className="text-muted-foreground">Carregando…</p>
         ) : (
           <div className="overflow-x-auto">
