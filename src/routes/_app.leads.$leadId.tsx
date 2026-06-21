@@ -48,6 +48,7 @@ function LeadDetailPage() {
       qc.invalidateQueries({ queryKey: ["lead", leadId] });
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
+    onError: () => toast.error("Erro ao atualizar status."),
   });
 
   const addNote = useMutation({
@@ -57,6 +58,7 @@ function LeadDetailPage() {
       setNote("");
       qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
     },
+    onError: () => toast.error("Erro ao salvar anotação."),
   });
 
   async function remove() {
