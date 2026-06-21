@@ -35,7 +35,9 @@ function LibraryPage() {
         </button>
       </div>
 
-      {isLoading ? (
+      {isError ? (
+        <QueryError message="Não foi possível carregar os destinos." onRetry={() => refetch()} />
+      ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <p className="text-muted-foreground">Nenhum destino cadastrado.</p>
