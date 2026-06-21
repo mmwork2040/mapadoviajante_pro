@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_app/biblioteca")({
 function LibraryPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const { data: items = [], isLoading } = useQuery({
+  const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["destinations"],
     queryFn: fetchDestinations,
   });
