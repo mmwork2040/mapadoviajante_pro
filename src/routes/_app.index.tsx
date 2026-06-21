@@ -18,10 +18,14 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function DashboardPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardStats,
   });
+
+  if (isError) {
+    return <QueryError message="Não foi possível carregar o painel." onRetry={() => refetch()} />;
+  }
 
   if (isLoading || !data) {
     return <p className="text-muted-foreground">Carregando painel…</p>;
