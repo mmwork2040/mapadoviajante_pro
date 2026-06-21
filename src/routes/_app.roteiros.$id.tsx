@@ -11,6 +11,7 @@ import {
   fetchItineraryById,
 } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
+import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
   component: ItineraryDetailPage,
