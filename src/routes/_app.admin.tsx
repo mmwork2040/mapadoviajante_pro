@@ -17,21 +17,26 @@ function AdminPage() {
   const { member } = useAuth();
   const [taskTitle, setTaskTitle] = useState("");
 
-  const { data: team = [] } = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
-  const { data: tasks = [] } = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks({}) });
+  const teamQ = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
+  const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks({}) });
+  const team = teamQ.data ?? [];
+  const tasks = tasksQ.data ?? [];
 
   const addTask = useMutation({
     mutationFn: () => createTask({ title: taskTitle, priority: "normal" }),
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (!res) return toast.error("Erro ao criar tarefa.");
       setTaskTitle("");
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
+    onError: () => toast.error("Erro ao criar tarefa."),
   });
 
   const toggle = useMutation({
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
       updateTask(id, { completed, completed_at: completed ? new Date().toISOString() : null }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onError: () => toast.error("Erro ao atualizar tarefa."),
   });
 
   return (
