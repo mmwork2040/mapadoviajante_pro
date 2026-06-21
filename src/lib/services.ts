@@ -343,6 +343,7 @@ export async function fetchTransactions(filters: {
   status?: string;
   from?: string;
   to?: string;
+  lead_id?: string;
 } = {}): Promise<Transaction[]> {
   if (!_agencyId) return [];
   let query = supabase
@@ -352,6 +353,7 @@ export async function fetchTransactions(filters: {
     .order("transaction_date", { ascending: false });
   if (filters.type) query = query.eq("type", filters.type);
   if (filters.status) query = query.eq("status", filters.status);
+  if (filters.lead_id) query = query.eq("lead_id", filters.lead_id);
   if (filters.from) query = query.gte("transaction_date", filters.from);
   if (filters.to) query = query.lte("transaction_date", filters.to);
   const { data, error } = await query;
