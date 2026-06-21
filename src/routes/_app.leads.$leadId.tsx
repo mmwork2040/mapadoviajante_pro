@@ -32,7 +32,7 @@ function LeadDetailPage() {
   const navigate = useNavigate();
   const [note, setNote] = useState("");
 
-  const { data: lead, isLoading } = useQuery({
+  const { data: lead, isLoading, isError, refetch } = useQuery({
     queryKey: ["lead", leadId],
     queryFn: () => fetchLeadById(leadId),
   });
