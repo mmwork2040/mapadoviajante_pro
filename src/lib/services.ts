@@ -119,6 +119,43 @@ export async function fetchTeamMembers(): Promise<AgencyMember[]> {
   return (data as AgencyMember[]) || [];
 }
 
+const MEMBER_COLORS = ["#ff7a1a", "#2563eb", "#16a34a", "#db2777", "#9333ea", "#0891b2"];
+
+export async function inviteTeamMember(
+  data: { name: string; email: string; role?: string },
+): Promise<AgencyMember | null> {
+  if (!_agencyId) await loadAgencyContext();
+  const color = MEMBER_COLORS[Math.floor(Math.random() * MEMBER_COLORS.length)];
+  const { data: member, error } = await supabase
+    .from("agency_members")
+    .insert({
+      agency_id: _agencyId,
+      name: data.name,
+      email: data.email,
+      role: data.role || "agent",
+      avatar_color: color,
+      is_active: true,
+    })
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("inviteTeamMember:", error);
+    return null;
+  }
+  return member as AgencyMember;
+}
+
+export async function updateMemberRole(id: string, role: string): Promise<boolean> {
+  const { error } = await supabase.from("agency_members").update({ role }).eq("id", id);
+  if (error) {
+    console.error("updateMemberRole:", error);
+    return false;
+  }
+  return true;
+}
+
+
+
 // ── Leads ──────────────────────────────────────────────────────
 export async function fetchLeads(filters: {
   status?: string;
@@ -148,12 +185,14 @@ export async function fetchLeads(filters: {
 }
 
 export async function fetchLeadById(leadId: string): Promise<Lead | null> {
-  const { data, error } = await supabase.from("crm_leads").select("*").eq("id", leadId).single();
+  let query = supabase.from("crm_leads").select("*").eq("id", leadId);
+  if (_agencyId) query = query.eq("agency_id", _agencyId);
+  const { data, error } = await query.maybeSingle();
   if (error) {
     console.error("fetchLeadById:", error);
-    return null;
+    throw new Error("Não foi possível carregar o lead.");
   }
-  return data as Lead;
+  return (data as Lead) || null;
 }
 
 export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> {
@@ -341,6 +380,7 @@ export async function fetchTransactions(filters: {
   status?: string;
   from?: string;
   to?: string;
+  lead_id?: string;
 } = {}): Promise<Transaction[]> {
   if (!_agencyId) return [];
   let query = supabase
@@ -350,6 +390,7 @@ export async function fetchTransactions(filters: {
     .order("transaction_date", { ascending: false });
   if (filters.type) query = query.eq("type", filters.type);
   if (filters.status) query = query.eq("status", filters.status);
+  if (filters.lead_id) query = query.eq("lead_id", filters.lead_id);
   if (filters.from) query = query.gte("transaction_date", filters.from);
   if (filters.to) query = query.lte("transaction_date", filters.to);
   const { data, error } = await query;
@@ -390,12 +431,40 @@ export async function fetchDestinations(): Promise<Destination[]> {
     .from("crm_library_destinations")
     .select("*")
     .eq("agency_id", _agencyId)
-    .order("name");
+    .order("title", { ascending: true });
   if (error) {
     console.error("fetchDestinations:", error);
     throw new Error("Não foi possível carregar os destinos.");
   }
   return (data as Destination[]) || [];
+}
+
+export async function updateDestination(
+  id: string,
+  updates: Partial<Destination>,
+): Promise<Destination | null> {
+  const patch: Partial<Destination> = { ...updates };
+  if (updates.title !== undefined) patch.name = updates.title;
+  const { data, error } = await supabase
+    .from("crm_library_destinations")
+    .update(patch)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("updateDestination:", error);
+    return null;
+  }
+  return data as Destination;
+}
+
+export async function deleteDestination(id: string): Promise<boolean> {
+  const { error } = await supabase.from("crm_library_destinations").delete().eq("id", id);
+  if (error) {
+    console.error("deleteDestination:", error);
+    return false;
+  }
+  return true;
 }
 
 export async function createDestination(destData: Partial<Destination>): Promise<Destination | null> {
@@ -438,15 +507,14 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
 }
 
 export async function fetchItineraryById(id: string): Promise<Itinerary | null> {
-  const { data: itinerary, error: itErr } = await supabase
-    .from("crm_itineraries")
-    .select("*")
-    .eq("id", id)
-    .single();
-  if (itErr || !itinerary) {
+  let itQuery = supabase.from("crm_itineraries").select("*").eq("id", id);
+  if (_agencyId) itQuery = itQuery.eq("agency_id", _agencyId);
+  const { data: itinerary, error: itErr } = await itQuery.maybeSingle();
+  if (itErr) {
     console.error("fetchItineraryById:", itErr);
-    return null;
+    throw new Error("Não foi possível carregar o roteiro.");
   }
+  if (!itinerary) return null;
   const { data: days } = await supabase
     .from("crm_itinerary_days")
     .select("*, activities:crm_itinerary_activities(*)")
@@ -523,10 +591,44 @@ export async function createItineraryDay(dayData: Partial<ItineraryDay>): Promis
   return data as ItineraryDay;
 }
 
+export async function updateItineraryDay(
+  id: string,
+  updates: Partial<ItineraryDay>,
+): Promise<ItineraryDay | null> {
+  const { data, error } = await supabase
+    .from("crm_itinerary_days")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("updateItineraryDay:", error);
+    return null;
+  }
+  return data as ItineraryDay;
+}
+
 export async function deleteItineraryDay(id: string): Promise<boolean> {
   await supabase.from("crm_itinerary_activities").delete().eq("day_id", id);
   const { error } = await supabase.from("crm_itinerary_days").delete().eq("id", id);
   return !error;
+}
+
+export async function updateItineraryActivity(
+  id: string,
+  updates: Partial<ItineraryActivity>,
+): Promise<ItineraryActivity | null> {
+  const { data, error } = await supabase
+    .from("crm_itinerary_activities")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("updateItineraryActivity:", error);
+    return null;
+  }
+  return data as ItineraryActivity;
 }
 
 export async function createItineraryActivity(

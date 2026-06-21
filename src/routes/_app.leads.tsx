@@ -23,9 +23,10 @@ const COLUMNS: { key: LeadStatus; label: string }[] = [
 function LeadsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: leads = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ["leads"],
-    queryFn: () => fetchLeads({}),
+    queryKey: ["leads", { search }],
+    queryFn: () => fetchLeads({ search: search || undefined }),
   });
 
   const move = useMutation({
@@ -42,18 +43,27 @@ function LeadsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Leads</h1>
           <p className="text-sm text-muted-foreground">Funil de vendas (arraste para mover).</p>
         </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Novo Lead
-        </button>
+        <div className="flex items-center gap-2">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar nome, e-mail, destino…"
+            className="w-56 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+          <button
+            onClick={() => setOpen(true)}
+            className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> Novo Lead
+          </button>
+        </div>
       </div>
+
 
       {isError ? (
         <QueryError message="Não foi possível carregar os leads." onRetry={() => refetch()} />
