@@ -554,10 +554,44 @@ export async function createItineraryDay(dayData: Partial<ItineraryDay>): Promis
   return data as ItineraryDay;
 }
 
+export async function updateItineraryDay(
+  id: string,
+  updates: Partial<ItineraryDay>,
+): Promise<ItineraryDay | null> {
+  const { data, error } = await supabase
+    .from("crm_itinerary_days")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("updateItineraryDay:", error);
+    return null;
+  }
+  return data as ItineraryDay;
+}
+
 export async function deleteItineraryDay(id: string): Promise<boolean> {
   await supabase.from("crm_itinerary_activities").delete().eq("day_id", id);
   const { error } = await supabase.from("crm_itinerary_days").delete().eq("id", id);
   return !error;
+}
+
+export async function updateItineraryActivity(
+  id: string,
+  updates: Partial<ItineraryActivity>,
+): Promise<ItineraryActivity | null> {
+  const { data, error } = await supabase
+    .from("crm_itinerary_activities")
+    .update(updates)
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("updateItineraryActivity:", error);
+    return null;
+  }
+  return data as ItineraryActivity;
 }
 
 export async function createItineraryActivity(
