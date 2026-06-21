@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_app/roteiros/$id")({
 function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
   const qc = useQueryClient();
-  const { data: it, isLoading } = useQuery({
+  const { data: it, isLoading, isError, refetch } = useQuery({
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
   });
