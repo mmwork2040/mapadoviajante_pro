@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_app/financeiro")({
 function FinancePage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const { data: txs = [], isLoading } = useQuery({
+  const { data: txs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["transactions"],
     queryFn: () => fetchTransactions({}),
   });
