@@ -1,34 +1,85 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, X, ArrowUpRight, ArrowDownRight } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
 import { createTransaction, fetchTransactions } from "@/lib/services";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Transaction, TxType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
+
 export const Route = createFileRoute("/_app/financeiro")({
   component: FinancePage,
 });
 
+const CATEGORIES = ["pacote", "comissao", "operacional", "marketing"];
+const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
 function FinancePage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [typeFilter, setTypeFilter] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
   const { data: txs = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () => fetchTransactions({}),
+    queryKey: ["transactions", { typeFilter, from, to }],
+    queryFn: () =>
+      fetchTransactions({
+        type: typeFilter || undefined,
+        from: from || undefined,
+        to: to || undefined,
+      }),
   });
 
   const income = txs.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
+  const commissions = txs
+    .filter((t) => t.type === "income" && t.category === "comissao")
+    .reduce((s, t) => s + Number(t.amount), 0);
   const expense = txs.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
+  const netProfit = commissions - expense;
+
+  const chart = useMemo(() => {
+    const now = new Date();
+    const months: { y: number; m: number; label: string; revenue: number; commission: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push({ y: d.getFullYear(), m: d.getMonth(), label: MONTH_LABELS[d.getMonth()], revenue: 0, commission: 0 });
+    }
+    txs.forEach((t) => {
+      if (t.type !== "income" || !t.transaction_date) return;
+      const d = new Date(t.transaction_date);
+      const bucket = months.find((b) => b.y === d.getFullYear() && b.m === d.getMonth());
+      if (!bucket) return;
+      bucket.revenue += Number(t.amount);
+      if (t.category === "comissao") bucket.commission += Number(t.amount);
+    });
+    return {
+      labels: months.map((b) => b.label),
+      datasets: [
+        { label: "Receitas", data: months.map((b) => b.revenue), backgroundColor: "#ff7a1a", borderRadius: 6 },
+        { label: "Comissões", data: months.map((b) => b.commission), backgroundColor: "#2563eb", borderRadius: 6 },
+      ],
+    };
+  }, [txs]);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">Receitas e despesas da agência.</p>
+          <p className="text-sm text-muted-foreground">Receitas, comissões e despesas da agência.</p>
         </div>
         <button
           onClick={() => setOpen(true)}
@@ -38,14 +89,54 @@ function FinancePage() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Stat label="Receitas" value={formatCurrency(income)} tone="text-[var(--success)]" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <Stat label="Receita Total" value={formatCurrency(income)} tone="text-[var(--success)]" />
+        <Stat label="Comissões" value={formatCurrency(commissions)} tone="text-primary" />
         <Stat label="Despesas" value={formatCurrency(expense)} tone="text-destructive" />
-        <Stat label="Saldo" value={formatCurrency(income - expense)} tone="text-primary" />
+        <Stat label="Lucro Líquido" value={formatCurrency(netProfit)} tone={netProfit >= 0 ? "text-[var(--success)]" : "text-destructive"} />
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="mb-4 font-semibold">Histórico</h2>
+        <h2 className="mb-4 font-semibold">Receitas vs Comissões (6 meses)</h2>
+        <div className="h-64">
+          <Bar
+            data={chart}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: "bottom" } },
+            }}
+          />
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-semibold">Histórico</h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <select
+              value={typeFilter}
+              onChange={(e) => setTypeFilter(e.target.value)}
+              className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+            >
+              <option value="">Todos os tipos</option>
+              <option value="income">Receitas</option>
+              <option value="expense">Despesas</option>
+            </select>
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+            />
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+            />
+          </div>
+        </div>
         {isError ? (
           <QueryError message="Não foi possível carregar as transações." onRetry={() => refetch()} />
         ) : isLoading ? (
@@ -57,11 +148,19 @@ function FinancePage() {
                 <tr className="text-left text-xs uppercase text-muted-foreground">
                   <th className="pb-2">Descrição</th>
                   <th className="pb-2">Categoria</th>
+                  <th className="pb-2">Status</th>
                   <th className="pb-2">Data</th>
                   <th className="pb-2 text-right">Valor</th>
                 </tr>
               </thead>
               <tbody>
+                {txs.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-3 text-muted-foreground">
+                      Nenhuma transação.
+                    </td>
+                  </tr>
+                )}
                 {txs.map((t) => (
                   <tr key={t.id} className="border-t border-border">
                     <td className="py-2 font-medium">
@@ -74,7 +173,8 @@ function FinancePage() {
                         {t.description || "—"}
                       </span>
                     </td>
-                    <td className="py-2 text-muted-foreground">{t.category || "—"}</td>
+                    <td className="py-2 capitalize text-muted-foreground">{t.category || "—"}</td>
+                    <td className="py-2 text-muted-foreground">{t.status === "confirmed" ? "Confirmado" : "Pendente"}</td>
                     <td className="py-2 text-muted-foreground">{formatDate(t.transaction_date)}</td>
                     <td className={`py-2 text-right font-semibold ${t.type === "income" ? "text-[var(--success)]" : "text-destructive"}`}>
                       {t.type === "income" ? "+" : "-"}
@@ -114,7 +214,8 @@ function NewTxModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
   const [form, setForm] = useState<Partial<Transaction>>({
     type: "income",
     amount: 0,
-    status: "completed",
+    category: "pacote",
+    status: "confirmed",
     transaction_date: new Date().toISOString().slice(0, 10),
   });
   const [saving, setSaving] = useState(false);
@@ -151,8 +252,32 @@ function NewTxModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
               <option value="expense">Despesa</option>
             </select>
           </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">Categoria</span>
+            <select
+              value={form.category}
+              onChange={(e) => setForm({ ...form, category: e.target.value })}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm capitalize outline-none focus:border-primary"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c} className="capitalize">
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">Status</span>
+            <select
+              value={form.status}
+              onChange={(e) => setForm({ ...form, status: e.target.value })}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="confirmed">Confirmado</option>
+              <option value="pending">Pendente</option>
+            </select>
+          </label>
           <FF label="Descrição" value={form.description || ""} onChange={(v) => setForm({ ...form, description: v })} />
-          <FF label="Categoria" value={form.category || ""} onChange={(v) => setForm({ ...form, category: v })} />
           <FF label="Valor" type="number" value={String(form.amount ?? "")} onChange={(v) => setForm({ ...form, amount: Number(v) })} />
           <FF label="Data" type="date" value={form.transaction_date || ""} onChange={(v) => setForm({ ...form, transaction_date: v })} />
           <button
