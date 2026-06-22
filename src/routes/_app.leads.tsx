@@ -140,6 +140,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     const res = await createLead(form);
     setSaving(false);
     if (res) {
+      dispatchWebhook("lead.created", res);
       toast.success("Lead criado!");
       onCreated();
     } else toast.error("Erro ao criar lead.");
