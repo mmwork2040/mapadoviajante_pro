@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
+import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
