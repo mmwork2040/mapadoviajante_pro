@@ -226,6 +226,7 @@ function NewTxModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
     const res = await createTransaction(form);
     setSaving(false);
     if (res) {
+      dispatchWebhook("transaction.created", res);
       toast.success("Transação registrada!");
       onCreated();
     } else toast.error("Erro ao registrar.");
