@@ -13,6 +13,7 @@ import {
 } from "chart.js";
 import { Bar } from "react-chartjs-2";
 import { createTransaction, fetchTransactions } from "@/lib/services";
+import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Transaction, TxType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
