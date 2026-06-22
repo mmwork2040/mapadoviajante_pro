@@ -195,9 +195,12 @@ function AdminPage() {
         </div>
       </div>
 
+      {isAdmin && <WebhookCard />}
+
       <p className="text-xs text-muted-foreground">
         Logado como <strong>{member?.name}</strong> ({member?.role}).
       </p>
+
 
       {inviteOpen && (
         <InviteModal
