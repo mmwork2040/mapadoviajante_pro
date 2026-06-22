@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, X, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { createItinerary, fetchItineraries } from "@/lib/services";
+import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
