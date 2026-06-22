@@ -45,6 +45,7 @@ function AdminPage() {
     mutationFn: () => createTask(task),
     onSuccess: (res) => {
       if (!res) return toast.error("Erro ao criar tarefa.");
+      dispatchWebhook("task.created", res);
       setTask({ priority: "normal" });
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
@@ -54,7 +55,10 @@ function AdminPage() {
   const toggle = useMutation({
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
       updateTask(id, { completed, completed_at: completed ? new Date().toISOString() : null }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: (_res, vars) => {
+      if (vars.completed) dispatchWebhook("task.completed", { id: vars.id });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    },
     onError: () => toast.error("Erro ao atualizar tarefa."),
   });
 
@@ -62,6 +66,7 @@ function AdminPage() {
     mutationFn: ({ id, role }: { id: string; role: string }) => updateMemberRole(id, role),
     onSuccess: (ok) => {
       if (!ok) return toast.error("Erro ao alterar cargo.");
+
       toast.success("Cargo atualizado.");
       qc.invalidateQueries({ queryKey: ["team"] });
     },
