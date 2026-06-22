@@ -5,6 +5,7 @@ import { Plus, Check, UserPlus, X, Webhook } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
+  dispatchWebhook,
   getWebhookConfig,
   saveWebhookConfig,
   type WebhookConfig,
