@@ -12,6 +12,7 @@ import {
   fetchTransactions,
   updateLead,
 } from "@/lib/services";
+import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
