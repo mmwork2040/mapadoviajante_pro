@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
+import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
@@ -32,7 +33,10 @@ function LeadsPage() {
   const move = useMutation({
     mutationFn: ({ id, status }: { id: string; status: LeadStatus }) =>
       updateLead(id, { status }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leads"] }),
+    onSuccess: (_res, vars) => {
+      dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
   });
 
   function onDrop(e: React.DragEvent, status: LeadStatus) {
@@ -136,6 +140,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
     const res = await createLead(form);
     setSaving(false);
     if (res) {
+      dispatchWebhook("lead.created", res);
       toast.success("Lead criado!");
       onCreated();
     } else toast.error("Erro ao criar lead.");

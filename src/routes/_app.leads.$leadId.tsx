@@ -12,6 +12,7 @@ import {
   fetchTransactions,
   updateLead,
 } from "@/lib/services";
+import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
@@ -78,6 +79,7 @@ function LeadDetailPage() {
     if (!confirm("Excluir este lead?")) return;
     const ok = await deleteLead(leadId);
     if (ok) {
+      dispatchWebhook("lead.deleted", { id: leadId });
       toast.success("Lead excluído.");
       navigate({ to: "/leads" });
     } else toast.error("Erro ao excluir lead.");

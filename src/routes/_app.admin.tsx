@@ -1,8 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { Plus, Check, UserPlus, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Check, UserPlus, X, Webhook } from "lucide-react";
 import { toast } from "sonner";
+import {
+  WEBHOOK_EVENTS,
+  dispatchWebhook,
+  getWebhookConfig,
+  saveWebhookConfig,
+  type WebhookConfig,
+} from "@/lib/webhook";
 import {
   createTask,
   fetchTasks,
@@ -39,6 +46,7 @@ function AdminPage() {
     mutationFn: () => createTask(task),
     onSuccess: (res) => {
       if (!res) return toast.error("Erro ao criar tarefa.");
+      dispatchWebhook("task.created", res);
       setTask({ priority: "normal" });
       qc.invalidateQueries({ queryKey: ["tasks"] });
     },
@@ -48,7 +56,10 @@ function AdminPage() {
   const toggle = useMutation({
     mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
       updateTask(id, { completed, completed_at: completed ? new Date().toISOString() : null }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["tasks"] }),
+    onSuccess: (_res, vars) => {
+      if (vars.completed) dispatchWebhook("task.completed", { id: vars.id });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+    },
     onError: () => toast.error("Erro ao atualizar tarefa."),
   });
 
@@ -56,6 +67,7 @@ function AdminPage() {
     mutationFn: ({ id, role }: { id: string; role: string }) => updateMemberRole(id, role),
     onSuccess: (ok) => {
       if (!ok) return toast.error("Erro ao alterar cargo.");
+
       toast.success("Cargo atualizado.");
       qc.invalidateQueries({ queryKey: ["team"] });
     },
@@ -189,9 +201,12 @@ function AdminPage() {
         </div>
       </div>
 
+      {isAdmin && <WebhookCard />}
+
       <p className="text-xs text-muted-foreground">
         Logado como <strong>{member?.name}</strong> ({member?.role}).
       </p>
+
 
       {inviteOpen && (
         <InviteModal
@@ -216,6 +231,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
     const res = await inviteTeamMember(form);
     setSaving(false);
     if (res) {
+      dispatchWebhook("member.invited", res);
       toast.success("Membro adicionado à equipe!");
       onInvited();
     } else toast.error("Erro ao convidar membro.");
@@ -274,3 +290,117 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
     </div>
   );
 }
+
+function WebhookCard() {
+  const [config, setConfig] = useState<WebhookConfig>(() => getWebhookConfig());
+  const [saved, setSaved] = useState(false);
+  const disabled = !config.enabled;
+
+  useEffect(() => {
+    setConfig(getWebhookConfig());
+  }, []);
+
+  function update(patch: Partial<WebhookConfig>) {
+    setConfig((c) => ({ ...c, ...patch }));
+    setSaved(false);
+  }
+
+  function toggleEvent(id: WebhookConfig["events"][number]) {
+    update({
+      events: config.events.includes(id)
+        ? config.events.filter((e) => e !== id)
+        : [...config.events, id],
+    });
+  }
+
+  function save() {
+    saveWebhookConfig(config);
+    setSaved(true);
+    toast.success("Configuração de webhook salva.");
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Webhook className="h-5 w-5 text-primary" />
+          <h2 className="font-semibold">Webhook</h2>
+        </div>
+        <label className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">
+            {config.enabled ? "Habilitado" : "Desabilitado"}
+          </span>
+          <button
+            type="button"
+            onClick={() => update({ enabled: !config.enabled })}
+            className={`relative h-6 w-11 rounded-full transition-colors ${
+              config.enabled ? "bg-primary" : "bg-muted"
+            }`}
+            aria-pressed={config.enabled}
+          >
+            <span
+              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+                config.enabled ? "translate-x-5" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </label>
+      </div>
+
+      <p className="mb-4 text-xs text-muted-foreground">
+        Quando desabilitado, nenhum evento é disparado e as opções abaixo ficam inativas.
+      </p>
+
+      <div className={`space-y-4 ${disabled ? "pointer-events-none opacity-50" : ""}`}>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">URL do webhook</span>
+          <input
+            value={config.url}
+            disabled={disabled}
+            onChange={(e) => update({ url: e.target.value })}
+            placeholder="https://exemplo.com/webhook"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:cursor-not-allowed"
+          />
+        </label>
+
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Segredo (opcional)</span>
+          <input
+            value={config.secret}
+            disabled={disabled}
+            onChange={(e) => update({ secret: e.target.value })}
+            placeholder="Enviado no header X-Webhook-Secret"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:cursor-not-allowed"
+          />
+        </label>
+
+        <div>
+          <span className="mb-2 block text-sm font-medium">Eventos disparados</span>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {WEBHOOK_EVENTS.map((ev) => (
+              <label key={ev.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  disabled={disabled}
+                  checked={config.events.includes(ev.id)}
+                  onChange={() => toggleEvent(ev.id)}
+                  className="h-4 w-4 accent-primary"
+                />
+                <span>{ev.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={save}
+        className="mt-5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+      >
+        {saved ? "Salvo ✓" : "Salvar configuração"}
+      </button>
+    </div>
+  );
+}
+
