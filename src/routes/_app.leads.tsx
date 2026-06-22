@@ -33,7 +33,10 @@ function LeadsPage() {
   const move = useMutation({
     mutationFn: ({ id, status }: { id: string; status: LeadStatus }) =>
       updateLead(id, { status }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["leads"] }),
+    onSuccess: (_res, vars) => {
+      dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
   });
 
   function onDrop(e: React.DragEvent, status: LeadStatus) {
