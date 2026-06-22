@@ -231,6 +231,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
     const res = await inviteTeamMember(form);
     setSaving(false);
     if (res) {
+      dispatchWebhook("member.invited", res);
       toast.success("Membro adicionado à equipe!");
       onInvited();
     } else toast.error("Erro ao convidar membro.");
