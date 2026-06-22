@@ -88,6 +88,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
     const res = await createItinerary(form);
     setSaving(false);
     if (res) {
+      dispatchWebhook("itinerary.created", res);
       toast.success("Roteiro criado!");
       onCreated();
     } else toast.error("Erro ao criar roteiro.");
