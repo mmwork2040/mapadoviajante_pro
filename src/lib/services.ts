@@ -738,7 +738,7 @@ export async function createItineraryActivity(
 ): Promise<ItineraryActivity | null> {
   const { data, error } = await supabase
     .from("crm_itinerary_activities")
-    .insert(mapActivityPayload(activityData))
+    .insert({ type: "activity", ...mapActivityPayload(activityData) })
     .select()
     .single();
   if (error) {
