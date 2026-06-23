@@ -87,7 +87,13 @@ function LeadsPage() {
             return (
               <div
                 key={col.key}
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (overCol !== col.key) setOverCol(col.key);
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverCol(null);
+                }}
                 onDrop={(e) => onDrop(e, col.key)}
                 className="flex flex-col"
               >
@@ -101,19 +107,30 @@ function LeadsPage() {
                   </span>
                 </div>
                 <div className="mb-3 h-px bg-border" />
-                {items.length === 0 ? (
-                  <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-primary/50 bg-primary/5 p-4 text-center text-sm font-medium text-primary">
-                    Nenhum lead
-                    <br />
-                    nesta etapa
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {items.map((l) => (
-                      <LeadCard key={l.id} lead={l} />
-                    ))}
-                  </div>
-                )}
+                <div
+                  className={`flex-1 space-y-2 rounded-2xl p-1 transition ${
+                    overCol === col.key ? "bg-primary/10 ring-2 ring-primary/40" : ""
+                  }`}
+                >
+                  {items.length === 0 ? (
+                    <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-primary/50 bg-primary/5 p-4 text-center text-sm font-medium text-primary">
+                      {overCol === col.key ? "Solte aqui" : "Nenhum lead nesta etapa"}
+                    </div>
+                  ) : (
+                    items.map((l) => (
+                      <LeadCard
+                        key={l.id}
+                        lead={l}
+                        dragging={dragId === l.id}
+                        onDragStart={() => setDragId(l.id)}
+                        onDragEnd={() => {
+                          setDragId(null);
+                          setOverCol(null);
+                        }}
+                      />
+                    ))
+                  )}
+                </div>
               </div>
             );
           })}
