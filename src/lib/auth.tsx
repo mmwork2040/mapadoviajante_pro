@@ -13,16 +13,19 @@ import {
   loadAgencyContext,
   setAgencyContext,
 } from "@/lib/services";
+import { acceptInvite, getMyPendingInvite, type PendingInvite } from "@/lib/invites";
 import type { AgencyMember } from "@/lib/types";
 
 interface AuthContextValue {
   session: Session | null;
   member: AgencyMember | null;
+  pendingInvite: PendingInvite | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (name: string, email: string, password: string) => Promise<{ error?: string; needsConfirmation?: boolean }>;
   signOut: () => Promise<void>;
   refreshMember: () => Promise<void>;
+  acceptPendingInvite: () => Promise<{ ok: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
