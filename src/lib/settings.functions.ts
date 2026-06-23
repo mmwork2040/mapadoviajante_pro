@@ -71,8 +71,7 @@ export const saveAgencyConfig = createServerFn({ method: "POST" })
     } catch {
       throw new Error("Configuração inválida.");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("system_settings").upsert(
+    const { error } = await context.supabase.from("system_settings").upsert(
       {
         key: settingsKey(member.agencyId, data.scope as Scope),
         value: parsed as never,
