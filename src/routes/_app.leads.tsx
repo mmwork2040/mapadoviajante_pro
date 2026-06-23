@@ -5,7 +5,7 @@ import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Che
 import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj } from "@/lib/ui";
+import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
@@ -372,7 +372,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           {step === 2 && (
             <Section icon={Gift} title="Benefícios & Fidelidade">
               <ModalField label="Programas de Fidelidade" placeholder="Ex: Smiles, LATAM Pass" value={form.loyalty_programs} onChange={(v) => set({ loyalty_programs: v })} suggestions={LOYALTY_PROGRAMS} />
-              <ModalField label="Pontos / Milhas" placeholder="Ex: 80.000 milhas" value={form.points_miles} onChange={(v) => set({ points_miles: v })} />
+              <ModalField label="Pontos / Milhas" placeholder="Ex: 80.000" value={form.points_miles} onChange={(v) => set({ points_miles: maskMiles(v) })} />
               <ModalSelect label="Possui Passaporte?" value={form.has_passport} onChange={(v) => set({ has_passport: v })} options={["Sim", "Não", "Vencido"]} />
               <ModalTextarea label="Preferências do cliente" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} />
             </Section>
