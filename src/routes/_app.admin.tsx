@@ -256,6 +256,28 @@ function AdminPage() {
         </CollapsibleSection>
       )}
 
+      {isAdmin && (
+        <CollapsibleSection
+          icon={Bell}
+          color="#0ea5e9"
+          title="Notificações"
+          subtitle="Configure notificações push via Firebase (FCM)"
+        >
+          <NotificationsCard />
+        </CollapsibleSection>
+      )}
+
+      {isAdmin && (
+        <CollapsibleSection
+          icon={Mail}
+          color="#ea4335"
+          title="E-mail (Gmail)"
+          subtitle="Envie e-mails pela conta Gmail conectada à agência"
+        >
+          <GmailCard />
+        </CollapsibleSection>
+      )}
+
 
       <p className="text-xs text-muted-foreground">
         Logado como <strong>{member?.name}</strong> ({member?.role}).
