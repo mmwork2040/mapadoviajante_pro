@@ -5,6 +5,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // Configurações por agência são armazenadas na tabela global `system_settings`
 // usando uma chave composta. Assim ficam persistidas no banco e disponíveis em
 // qualquer dispositivo/ambiente (não apenas no navegador onde foram salvas).
+// O payload trafega como string JSON para manter a serialização simples.
 
 const SCOPES = ["webhook", "notifications", "gmail"] as const;
 type Scope = (typeof SCOPES)[number];
@@ -38,16 +39,17 @@ export const getAgencyConfig = createServerFn({ method: "GET" })
   .inputValidator((data) =>
     z.object({ scope: z.string().refine(isScope, "scope inválido") }).parse(data),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ value: string | null }> => {
     const member = await resolveAgency(context.supabase, context.userId);
-    if (!member) return { value: null as Record<string, unknown> | null };
+    if (!member) return { value: null };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("key", settingsKey(member.agencyId, data.scope as Scope))
       .maybeSingle();
-    return { value: (row?.value ?? null) as Record<string, unknown> | null };
+    if (row?.value == null) return { value: null };
+    return { value: JSON.stringify(row.value) };
   });
 
 /** Salva a configuração de uma seção da Administração para a agência do usuário. */
@@ -57,24 +59,28 @@ export const saveAgencyConfig = createServerFn({ method: "POST" })
     z
       .object({
         scope: z.string().refine(isScope, "scope inválido"),
-        value: z.unknown(),
+        value: z.string(),
       })
       .parse(data),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const member = await resolveAgency(context.supabase, context.userId);
     if (!member) throw new Error("Agência não encontrada para o usuário.");
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(data.value);
+    } catch {
+      throw new Error("Configuração inválida.");
+    }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin
-      .from("system_settings")
-      .upsert(
-        {
-          key: settingsKey(member.agencyId, data.scope as Scope),
-          value: data.value as never,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "key" },
-      );
+    const { error } = await supabaseAdmin.from("system_settings").upsert(
+      {
+        key: settingsKey(member.agencyId, data.scope as Scope),
+        value: parsed as never,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
     if (error) throw new Error(error.message);
     return { ok: true };
   });
