@@ -51,6 +51,7 @@ function LeadDetailPage() {
   const { leadId } = useParams({ from: "/_app/leads/$leadId" });
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [note, setNote] = useState("");
 
   const { data: lead, isLoading, isError, refetch } = useQuery({
