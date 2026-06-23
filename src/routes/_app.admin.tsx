@@ -680,6 +680,7 @@ function NotificationsCard() {
 }
 
 function GmailCard() {
+  const [config, setConfig] = useState<GmailConfig>(() => getGmailConfig());
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -688,22 +689,48 @@ function GmailCard() {
   const statusQ = useQuery({ queryKey: ["gmail-status"], queryFn: () => getGmailStatus() });
   const connected = statusQ.data?.connected;
 
+  useEffect(() => {
+    const c = getGmailConfig();
+    setConfig(c);
+    setSubject((s) => s || c.defaultSubject);
+  }, []);
+
+  function update(patch: Partial<GmailConfig>) {
+    setConfig((c) => ({ ...c, ...patch }));
+  }
+
+  function save() {
+    saveGmailConfig(config);
+    toast.success("Configuração de e-mail salva.");
+  }
+
   async function submit() {
+    if (!config.enabled) {
+      toast.error("Habilite o envio de e-mail primeiro.");
+      return;
+    }
     if (!to.trim() || !subject.trim() || !body.trim()) {
       toast.error("Preencha destinatário, assunto e mensagem.");
       return;
     }
+    const finalBody = config.signature ? `${body}\n\n${config.signature}` : body;
     setSending(true);
-    const res = await send({ data: { to: to.trim(), subject: subject.trim(), body } });
+    const res = await send({ data: { to: to.trim(), subject: subject.trim(), body: finalBody } });
     setSending(false);
     if (res.ok) {
       toast.success(res.message);
-      setSubject("");
+      setSubject(config.defaultSubject);
       setBody("");
     } else {
       toast.error(res.message);
     }
   }
+
+  const fields: { key: keyof GmailConfig; label: string; placeholder: string }[] = [
+    { key: "senderName", label: "Nome do remetente", placeholder: "Sua Agência" },
+    { key: "replyTo", label: "Responder para", placeholder: "contato@suaagencia.com" },
+    { key: "defaultSubject", label: "Assunto padrão", placeholder: "Sobre sua viagem" },
+  ];
 
   return (
     <div className="space-y-4">
@@ -716,48 +743,100 @@ function GmailCard() {
         </span>
       </div>
 
-      <label className="block">
-        <span className="mb-1 block text-xs font-medium text-muted-foreground">Destinatário</span>
-        <input
-          type="email"
-          value={to}
-          onChange={(e) => setTo(e.target.value)}
-          placeholder="cliente@email.com"
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        />
+      <label className="flex items-center gap-3 text-sm font-medium">
+        <button
+          type="button"
+          onClick={() => update({ enabled: !config.enabled })}
+          className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${config.enabled ? "bg-primary" : "bg-muted"}`}
+          aria-pressed={config.enabled}
+        >
+          <span
+            className={`h-5 w-5 rounded-full bg-white transition-transform ${config.enabled ? "translate-x-[22px]" : "translate-x-0.5"}`}
+          />
+        </button>
+        {config.enabled ? "Habilitado" : "Desabilitado"}
       </label>
-      <label className="block">
-        <span className="mb-1 block text-xs font-medium text-muted-foreground">Assunto</span>
-        <input
-          value={subject}
-          onChange={(e) => setSubject(e.target.value)}
-          placeholder="Assunto do e-mail"
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        />
-      </label>
-      <label className="block">
-        <span className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</span>
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={5}
-          placeholder="Escreva a mensagem (HTML permitido)…"
-          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-        />
-      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {fields.map((f) => (
+          <label key={f.key} className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">{f.label}</span>
+            <input
+              value={(config[f.key] as string) || ""}
+              onChange={(e) => update({ [f.key]: e.target.value } as Partial<GmailConfig>)}
+              placeholder={f.placeholder}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+        ))}
+        <label className="block sm:col-span-2">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Assinatura</span>
+          <textarea
+            value={config.signature}
+            onChange={(e) => update({ signature: e.target.value })}
+            rows={2}
+            placeholder="Atenciosamente, Equipe…"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
 
       <button
         type="button"
-        onClick={submit}
-        disabled={sending || !connected}
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+        onClick={save}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
       >
-        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {sending ? "Enviando…" : "Enviar e-mail"}
+        <Save className="h-4 w-4" /> Salvar
       </button>
+
+      <div className="border-t border-border pt-4">
+        <p className="mb-3 text-xs font-medium text-muted-foreground">Enviar e-mail de teste</p>
+        <div className="space-y-4">
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Destinatário</span>
+            <input
+              type="email"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              placeholder="cliente@email.com"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Assunto</span>
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Assunto do e-mail"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</span>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={5}
+              placeholder="Escreva a mensagem (HTML permitido)…"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={submit}
+            disabled={sending || !connected || !config.enabled}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+          >
+            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            {sending ? "Enviando…" : "Enviar e-mail"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
+
 
 const AI_PROVIDERS = [
   {
