@@ -129,6 +129,9 @@ export interface ItineraryActivity {
   description?: string | null;
   location?: string | null;
   type?: string | null;
+  cost?: number | null;
+  duration?: string | null;
+  maps_url?: string | null;
   sort_order?: number;
 }
 
@@ -148,6 +151,7 @@ export interface ExtractedDocData {
   title?: string;
   date?: string;
   time?: string;
+  duration?: string;
   location?: string;
   description?: string;
   flight_number?: string;
@@ -155,6 +159,8 @@ export interface ExtractedDocData {
   room?: string;
   provider?: string;
   code?: string;
+  cost?: number;
+  people?: number;
 }
 
 export interface Voucher {

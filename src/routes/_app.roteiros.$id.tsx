@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Sparkles, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   createItineraryActivity,
@@ -16,7 +16,7 @@ import {
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
-import { extractDocumentData } from "@/lib/ai.functions";
+import { extractDocumentData, itineraryCopilot } from "@/lib/ai.functions";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
@@ -99,6 +99,8 @@ function ItineraryDetailPage() {
 
       <VouchersCard itineraryId={id} vouchers={it.vouchers || []} onChange={refresh} />
 
+      <CopilotCard it={it} />
+
       {editing && <EditItineraryModal it={it} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); refresh(); }} />}
     </div>
   );
@@ -141,28 +143,35 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
         reader.readAsDataURL(file);
       });
       const data = await extract({ data: { fileBase64: base64, mime: file.type } });
-      const parts = [
+      const descParts = [
         data.flight_number && `Voo ${data.flight_number}`,
         data.hotel_name,
         data.room && `Quarto ${data.room}`,
         data.provider,
         data.code && `Localizador ${data.code}`,
-        data.date,
+        data.people ? `${data.people} pessoa(s)` : "",
         data.description,
       ].filter(Boolean);
-      setTitle(data.title || data.hotel_name || data.flight_number || "Item importado");
-      setTime(data.time || "");
-      setLocation(data.location || "");
-      if (parts.length) toast.success("Documento lido — revise e adicione.");
-      else toast.info("Documento lido, poucos dados encontrados.");
-      // Guarda detalhes na descrição via título caso necessário
-      if (data.description) setLocation(data.location || data.description.slice(0, 60));
+      await createItineraryActivity({
+        day_id: day.id,
+        title: data.title || data.hotel_name || data.flight_number || "Item importado",
+        time: data.time || null,
+        duration: data.duration || null,
+        location: data.location || null,
+        cost: data.cost ? Number(data.cost) : null,
+        description: descParts.join(" · ") || null,
+        type: data.type || "activity",
+        sort_order: (day.activities?.length || 0) + 1,
+      });
+      toast.success("Documento lido — atividade criada!");
+      onChange();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
     } finally {
       setExtracting(false);
     }
   }
+
 
   async function saveDayTitle() {
     if (dayTitle === (day.title || `Dia ${day.day_number}`)) return;
@@ -378,6 +387,101 @@ function VouchersCard({
     </div>
   );
 }
+
+function CopilotCard({ it }: { it: Itinerary }) {
+  const [prompt, setPrompt] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const ask = useServerFn(itineraryCopilot);
+
+  function buildContext(question: string): string {
+    const dias = (it.days || [])
+      .map((d) => {
+        const acts = (d.activities || [])
+          .map((a) => `  - ${[a.time, a.title, a.location].filter(Boolean).join(" ")}`)
+          .join("\n");
+        return `${d.title || `Dia ${d.day_number}`}\n${acts || "  (sem atividades)"}`;
+      })
+      .join("\n");
+    return `Roteiro: ${it.title}
+Destino: ${it.destination || "—"}
+Cliente: ${it.client_name || "—"}
+Orçamento: ${formatCurrency(it.budget)}
+Dias atuais:
+${dias || "(nenhum dia ainda)"}
+
+Pedido do consultor: ${question}`;
+  }
+
+  async function run(q?: string) {
+    const question = (q ?? prompt).trim();
+    if (!question) return;
+    setLoading(true);
+    setAnswer("");
+    try {
+      const res = await ask({ data: { prompt: buildContext(question) } });
+      setAnswer(res.text);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro no copiloto.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const suggestions = [
+    "Sugira um roteiro dia a dia para este destino",
+    "Quais passeios imperdíveis combinam com o orçamento?",
+    "Monte uma sugestão de gastronomia local",
+  ];
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <h2 className="mb-3 flex items-center gap-2 font-semibold">
+        <Sparkles className="h-4 w-4 text-primary" /> Copiloto de IA
+      </h2>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Peça ajuda para elaborar o roteiro para o lead com base nas informações atuais.
+      </p>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {suggestions.map((s) => (
+          <button
+            key={s}
+            onClick={() => run(s)}
+            disabled={loading}
+            className="rounded-full border border-border px-3 py-1 text-xs hover:bg-muted disabled:opacity-60"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run();
+          }}
+          rows={2}
+          placeholder="Ex: monte um roteiro de 4 dias com foco em família…"
+          className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+        <button
+          onClick={() => run()}
+          disabled={loading}
+          className="flex items-center gap-1 self-end rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </button>
+      </div>
+      {answer && (
+        <div className="mt-4 whitespace-pre-wrap rounded-lg bg-muted/50 p-4 text-sm leading-relaxed">
+          {answer}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function EditItineraryModal({
   it,

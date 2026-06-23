@@ -10,19 +10,22 @@ type ProviderConfig = {
   maxTokens?: number | null;
 };
 
-const EXTRACTION_PROMPT = `Você é um assistente que lê documentos de viagem (passagens aéreas, reservas de hotel, transfers, vouchers).
+const EXTRACTION_PROMPT = `Você é um assistente que lê documentos de viagem: ingressos de parques/atrações, passeios, passagens aéreas, reservas de hotel, transfers e vouchers.
 Extraia as informações relevantes e responda APENAS com um JSON válido, sem texto extra, no formato:
 {
-  "type": "voo|hotel|transfer|passeio|outro",
-  "title": "título curto do item",
+  "type": "voo|hotel|transfer|passeio|ingresso|outro",
+  "title": "título curto do item (ex: Ingresso Disney Magic Kingdom)",
   "date": "AAAA-MM-DD ou vazio",
   "time": "HH:MM ou vazio",
-  "location": "local/aeroporto/cidade ou vazio",
+  "duration": "duração estimada (ex: 2h) ou vazio",
+  "location": "local/aeroporto/cidade/atração ou vazio",
   "flight_number": "número do voo ou vazio",
   "hotel_name": "nome do hotel ou vazio",
   "room": "tipo/numero do quarto ou vazio",
   "provider": "companhia/fornecedor ou vazio",
   "code": "localizador/código da reserva ou vazio",
+  "cost": valor total como número (sem moeda) ou 0,
+  "people": quantidade de pessoas como número inteiro ou 0,
   "description": "resumo das informações encontradas"
 }`;
 
@@ -137,4 +140,14 @@ export async function extractDocument(
   }
 
   return parseJsonLoose(text);
+}
+
+export async function askCopilot(cfg: ProviderConfig, prompt: string): Promise<string> {
+  let text = "";
+  if (cfg.provider === "openai") text = await callOpenAI(cfg, prompt);
+  else if (cfg.provider === "anthropic") text = await callAnthropic(cfg, prompt);
+  else if (cfg.provider === "google") text = await callGoogle(cfg, [{ text: prompt }]);
+  else throw new Error("Provedor não suportado.");
+  if (!text.trim()) throw new Error("Resposta vazia do provedor.");
+  return text.trim();
 }
