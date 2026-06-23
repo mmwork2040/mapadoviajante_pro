@@ -185,6 +185,29 @@ const STEPS = [
 
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
 
+const AIRLINES = [
+  "LATAM",
+  "GOL",
+  "Azul",
+  "American Airlines",
+  "Delta Air Lines",
+  "United Airlines",
+  "Emirates",
+  "Qatar Airways",
+  "Air France",
+  "KLM",
+  "Lufthansa",
+  "TAP Air Portugal",
+  "Iberia",
+  "British Airways",
+  "Turkish Airlines",
+  "Copa Airlines",
+  "Avianca",
+  "Aerolíneas Argentinas",
+  "Air Canada",
+  "Etihad Airways",
+];
+
 const LOYALTY_PROGRAMS = [
   "Smiles (GOL)",
   "LATAM Pass",
@@ -345,9 +368,9 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
           {step === 3 && (
             <Section icon={Hotel} title="Voos & Hotel">
               <ModalSelect label="Classe de Voo" value={form.flight_class} onChange={(v) => set({ flight_class: v })} options={["Econômica", "Premium Economy", "Executiva", "Primeira Classe"]} />
-              <ModalField label="Companhia preferida" placeholder="Ex: LATAM, Emirates" value={form.airline_pref} onChange={(v) => set({ airline_pref: v })} />
-              <ModalSelect label="Categoria de Hotel" value={form.hotel_category} onChange={(v) => set({ hotel_category: v })} options={["3 estrelas", "4 estrelas", "5 estrelas", "Resort", "Boutique"]} />
-              <ModalSelect label="Tipo de Quarto" value={form.room_type} onChange={(v) => set({ room_type: v })} options={["Standard", "Luxo", "Suíte", "Família"]} />
+              <ModalField label="Companhia preferida" placeholder="Ex: LATAM, Emirates" value={form.airline_pref} onChange={(v) => set({ airline_pref: v })} suggestions={AIRLINES} />
+              <ModalSelect label="Categoria de Hotel" value={form.hotel_category} onChange={(v) => set({ hotel_category: v })} options={["Econômico / 2 estrelas", "3 estrelas", "4 estrelas", "5 estrelas", "Resort", "Boutique", "All Inclusive", "Pousada", "Apart-hotel / Flat", "Hostel", "Hotel Fazenda", "Cassino"]} />
+              <ModalSelect label="Tipo de Quarto" value={form.room_type} onChange={(v) => set({ room_type: v })} options={["Standard", "Superior", "Luxo / Deluxe", "Suíte", "Suíte Master", "Suíte Presidencial", "Família", "Quarto Conectado", "Single", "Duplo (Twin)", "Casal (King)", "Quarto Acessível"]} />
               <ModalTextarea label="Observações de hospedagem" placeholder="Vista, café da manhã, localização…" value={form.hotel_notes} onChange={(v) => set({ hotel_notes: v })} />
             </Section>
           )}
