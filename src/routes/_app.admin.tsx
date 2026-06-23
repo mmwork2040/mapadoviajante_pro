@@ -713,6 +713,10 @@ function GmailCard() {
       toast.error("Preencha destinatário, assunto e mensagem.");
       return;
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to.trim())) {
+      toast.error("Informe um e-mail de destinatário válido.");
+      return;
+    }
     const finalBody = config.signature ? `${body}\n\n${config.signature}` : body;
     setSending(true);
     const res = await send({ data: { to: to.trim(), subject: subject.trim(), body: finalBody } });
