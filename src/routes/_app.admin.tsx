@@ -724,6 +724,7 @@ function GmailCard() {
   const send = useServerFn(sendGmail);
   const statusQ = useQuery({ queryKey: ["gmail-status"], queryFn: () => getGmailStatus() });
   const connected = statusQ.data?.connected;
+  const connectedEmail = statusQ.data?.email;
 
   useEffect(() => {
     const c = getGmailConfig();
@@ -774,14 +775,25 @@ function GmailCard() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2 text-sm">
-        <span
-          className={`inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-500" : "bg-muted-foreground"}`}
-        />
-        <span className="text-muted-foreground">
-          {connected ? "Conta Gmail conectada." : "Gmail não conectado."}
-        </span>
+      <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-500" : "bg-muted-foreground"}`}
+          />
+          <span className="text-muted-foreground">
+            {connected ? "Conta Gmail conectada para envio:" : "Gmail não conectado."}
+          </span>
+        </div>
+        {connected && (
+          <p className="mt-1 font-medium">{connectedEmail || "conta conectada"}</p>
+        )}
+        <p className="mt-2 text-xs text-muted-foreground">
+          Para trocar a conta de envio, reconecte o conector do Gmail nas configurações do
+          projeto (Conectores) com a conta desejada. O nome do remetente, o e-mail de resposta
+          e a assinatura abaixo podem ser alterados livremente.
+        </p>
       </div>
+
 
       <label className="flex items-center gap-3 text-sm font-medium">
         <button
