@@ -131,7 +131,7 @@ export async function revokeMember(id: string): Promise<boolean> {
 
 /** Conta quantos registros de atividade existem em nome de um membro. */
 async function countMemberActivity(id: string): Promise<number> {
-  const checks: Array<Promise<{ count: number | null }>> = [
+  const checks = [
     supabase.from("crm_lead_activities").select("id", { count: "exact", head: true }).eq("author_id", id),
     supabase.from("crm_lead_activities").select("id", { count: "exact", head: true }).eq("assigned_to_id", id),
     supabase.from("crm_leads").select("id", { count: "exact", head: true }).eq("assigned_to", id),
