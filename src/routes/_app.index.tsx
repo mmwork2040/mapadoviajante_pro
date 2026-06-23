@@ -1,8 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Users, TrendingUp, CircleDollarSign, ListChecks } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  CircleDollarSign,
+  Users,
+  TrendingUp,
+  PieChart,
+  Plus,
+  ArrowRight,
+  CalendarDays,
+} from "lucide-react";
 import { fetchDashboardStats } from "@/lib/services";
-import { formatCurrency, formatDate } from "@/lib/ui";
+import { formatCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/")({
@@ -17,11 +26,45 @@ const STATUS_LABEL: Record<string, string> = {
   lost: "Perdido",
 };
 
+const WEEK_DAYS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
+const MONTH_NAMES = [
+  "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+  "Jul", "Ago", "Set", "Out", "Nov", "Dez",
+];
+
+function timeAgo(value?: string | null): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  const diff = Date.now() - d.getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "agora";
+  if (mins < 60) return `${mins}min atrás`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h atrás`;
+  const days = Math.floor(hours / 24);
+  return `${days}d atrás`;
+}
+
 function DashboardPage() {
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardStats,
   });
+
+  const [chartMode, setChartMode] = useState<"revenue" | "count">("revenue");
+  const [agendaMode, setAgendaMode] = useState<"week" | "month">("week");
+
+  const week = useMemo(() => {
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(today.getDate() - today.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
+  }, []);
 
   if (isError) {
     return <QueryError message="Não foi possível carregar o painel." onRetry={() => refetch()} />;
@@ -31,72 +74,226 @@ function DashboardPage() {
     return <p className="text-muted-foreground">Carregando painel…</p>;
   }
 
+  const monthRevenue = data.chartData.revenue[data.chartData.revenue.length - 1] ?? 0;
+  const conversion = data.totalLeads > 0 ? Math.round((data.closed / data.totalLeads) * 100) : 0;
+  const activeLeads = data.totalLeads - data.closed - data.lost;
+
   const cards = [
-    { label: "Total de Leads", value: data.totalLeads, icon: Users, tone: "text-info" },
-    { label: "Em Negociação", value: data.negotiating, icon: TrendingUp, tone: "text-primary" },
     {
-      label: "Vendas Fechadas",
-      value: formatCurrency(data.totalSales),
+      label: "Vendas do Mês",
+      value: formatCurrency(monthRevenue),
+      hint: "no mês atual",
       icon: CircleDollarSign,
-      tone: "text-[var(--success)]",
+      ring: "bg-amber-100 text-amber-600",
     },
-    { label: "Tarefas Pendentes", value: data.pendingTasks, icon: ListChecks, tone: "text-warning" },
+    {
+      label: "Leads Ativos",
+      value: String(activeLeads),
+      hint: `${data.newLeads} novos`,
+      icon: Users,
+      ring: "bg-blue-100 text-blue-600",
+    },
+    {
+      label: "Pipeline",
+      value: formatCurrency(data.totalPipeline),
+      hint: `${data.negotiating} em negociação`,
+      icon: TrendingUp,
+      ring: "bg-pink-100 text-pink-600",
+    },
+    {
+      label: "Taxa de Conversão",
+      value: `${conversion}%`,
+      hint: `${data.closed} fechados`,
+      icon: PieChart,
+      ring: "bg-emerald-100 text-emerald-600",
+    },
   ];
 
-  const maxRev = Math.max(1, ...data.chartData.revenue);
+  const series = chartMode === "revenue" ? data.chartData.revenue : data.chartData.count;
+  const maxVal = Math.max(1, ...series);
+  const todayKey = new Date().toDateString();
+
+  const tasksToday = data.tasks
+    .filter((t) => !t.completed)
+    .filter((t) => {
+      if (!t.due_date) return false;
+      return new Date(t.due_date).toDateString() === todayKey;
+    });
+
+  const recentLeads = [...data.leads]
+    .sort(
+      (a, b) =>
+        new Date(b.last_activity_at || b.created_at || 0).getTime() -
+        new Date(a.last_activity_at || a.created_at || 0).getTime(),
+    )
+    .slice(0, 6);
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">Visão geral da sua operação.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold">Página Inicial</h1>
+          <p className="text-sm text-muted-foreground">Visão geral das suas vendas e operações.</p>
+        </div>
+        <Link
+          to="/roteiros"
+          className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" /> Novo Roteiro
+        </Link>
       </div>
 
+      {/* Stat cards */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-2xl border border-border bg-card p-5">
-            <c.icon className={`h-5 w-5 ${c.tone}`} />
-            <p className="mt-3 text-2xl font-bold">{c.value}</p>
-            <p className="text-sm text-muted-foreground">{c.label}</p>
+          <div key={c.label} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${c.ring}`}>
+                <c.icon className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground">{c.label}</p>
+                <p className="mt-1 text-2xl font-bold leading-tight">{c.value}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{c.hint}</p>
+              </div>
+            </div>
           </div>
         ))}
       </div>
 
+      {/* Chart + Tasks */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-5 lg:col-span-2">
-          <h2 className="mb-4 font-semibold">Receita por período</h2>
-          <div className="flex h-48 items-end gap-2">
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
+          <div className="mb-6 flex items-center justify-between gap-3">
+            <h2 className="font-semibold">Vendas — Últimos 6 Meses</h2>
+            <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
+              <button
+                onClick={() => setChartMode("revenue")}
+                className={`rounded-full px-3 py-1 transition ${
+                  chartMode === "revenue" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                }`}
+              >
+                Receita
+              </button>
+              <button
+                onClick={() => setChartMode("count")}
+                className={`rounded-full px-3 py-1 transition ${
+                  chartMode === "count" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                }`}
+              >
+                Nº Vendas
+              </button>
+            </div>
+          </div>
+          <div className="flex h-56 items-end gap-3">
             {data.chartData.labels.map((label, i) => (
               <div key={label} className="flex flex-1 flex-col items-center gap-2">
-                <div
-                  className="w-full rounded-t-md bg-primary/80"
-                  style={{ height: `${(data.chartData.revenue[i] / maxRev) * 100}%` }}
-                  title={formatCurrency(data.chartData.revenue[i])}
-                />
-                <span className="text-[10px] text-muted-foreground">{label}</span>
+                <div className="flex w-full flex-1 items-end">
+                  <div
+                    className="w-full rounded-t-md bg-gradient-to-t from-primary/60 to-primary"
+                    style={{ height: `${Math.max(2, (series[i] / maxVal) * 100)}%` }}
+                    title={chartMode === "revenue" ? formatCurrency(series[i]) : String(series[i])}
+                  />
+                </div>
+                <span className="text-[11px] text-muted-foreground">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="mb-4 font-semibold">Tarefas pendentes</h2>
-          <ul className="space-y-3">
-            {data.tasks.length === 0 && (
-              <li className="text-sm text-muted-foreground">Nenhuma tarefa pendente 🎉</li>
-            )}
-            {data.tasks.slice(0, 6).map((t) => (
-              <li key={t.id} className="flex items-center justify-between gap-2 text-sm">
-                <span className="truncate">{t.title}</span>
-                <span className="shrink-0 text-xs text-muted-foreground">{formatDate(t.due_date)}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="font-semibold">Tarefas do Dia</h2>
+            <span className="text-xs text-muted-foreground">{tasksToday.length} pendentes</span>
+          </div>
+          {tasksToday.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">Sem tarefas pendentes! 🎉</p>
+          ) : (
+            <ul className="space-y-3">
+              {tasksToday.map((t) => (
+                <li key={t.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
+                  <span className="truncate">{t.title}</span>
+                  {t.lead?.name && (
+                    <span className="shrink-0 text-xs text-muted-foreground">{t.lead.name}</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-5">
-        <h2 className="mb-4 font-semibold">Leads recentes</h2>
+      {/* Agenda da Semana */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 font-semibold">
+            <CalendarDays className="h-5 w-5 text-primary" /> Agenda da Semana
+          </h2>
+          <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
+            <button
+              onClick={() => setAgendaMode("week")}
+              className={`rounded-full px-3 py-1 transition ${
+                agendaMode === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              Semana
+            </button>
+            <button
+              onClick={() => setAgendaMode("month")}
+              className={`rounded-full px-3 py-1 transition ${
+                agendaMode === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              Mês
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-7 overflow-hidden rounded-xl border border-border">
+          {week.map((d, i) => {
+            const isToday = d.toDateString() === todayKey;
+            const count = data.tasks.filter(
+              (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed,
+            ).length;
+            return (
+              <div
+                key={i}
+                className={`min-h-[120px] border-r border-border p-2 last:border-r-0 ${
+                  isToday ? "bg-primary/5" : ""
+                }`}
+              >
+                <p className="text-center text-[11px] font-medium text-muted-foreground">{WEEK_DAYS[d.getDay()]}</p>
+                <p className="mt-1 text-center">
+                  <span
+                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
+                      isToday ? "bg-primary text-primary-foreground" : ""
+                    }`}
+                  >
+                    {d.getDate()}
+                  </span>
+                </p>
+                <div className="mt-3 text-center text-xs text-muted-foreground">
+                  {count > 0 ? `${count} tarefa(s)` : "—"}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
+          <span>
+            {MONTH_NAMES[week[0].getMonth()]} {week[0].getFullYear()}
+          </span>
+          <span>{data.pendingTasks} compromissos pendentes</span>
+        </div>
+      </div>
+
+      {/* Leads Recentes */}
+      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-semibold">Leads Recentes</h2>
+          <Link to="/leads" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
+            Ver todos <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -105,10 +302,18 @@ function DashboardPage() {
                 <th className="pb-2">Destino</th>
                 <th className="pb-2">Valor</th>
                 <th className="pb-2">Status</th>
+                <th className="pb-2">Última Atividade</th>
               </tr>
             </thead>
             <tbody>
-              {data.leads.slice(0, 8).map((l) => (
+              {recentLeads.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                    Nenhum lead encontrado
+                  </td>
+                </tr>
+              )}
+              {recentLeads.map((l) => (
                 <tr key={l.id} className="border-t border-border">
                   <td className="py-2 font-medium">{l.name}</td>
                   <td className="py-2 text-muted-foreground">{l.destination || "—"}</td>
@@ -118,6 +323,7 @@ function DashboardPage() {
                       {STATUS_LABEL[l.status] || l.status}
                     </span>
                   </td>
+                  <td className="py-2 text-muted-foreground">{timeAgo(l.last_activity_at || l.created_at)}</td>
                 </tr>
               ))}
             </tbody>
