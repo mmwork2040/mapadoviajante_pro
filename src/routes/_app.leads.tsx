@@ -159,6 +159,7 @@ const EMPTY_FORM: WizardForm = {
   phone: "",
   value: "",
   origin: "",
+  origin_other: "",
   destination: "",
   travel_dates: "",
   passengers: "",
