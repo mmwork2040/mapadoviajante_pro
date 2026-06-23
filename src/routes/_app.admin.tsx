@@ -35,11 +35,11 @@ import {
   fetchAiConfig,
   fetchTasks,
   fetchTeamMembers,
-  inviteTeamMember,
   saveAiConfig,
   updateMemberRole,
   updateTask,
 } from "@/lib/services";
+import { sendTeamInvite } from "@/lib/invites.functions";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
