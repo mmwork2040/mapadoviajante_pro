@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
+import { fetchLeads } from "@/lib/services";
 
 const NAV = [
   { to: "/", label: "Página Inicial", icon: LayoutDashboard },
@@ -31,6 +33,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
+  const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
+  const leadsCount = leadsQ.data?.length ?? 0;
+
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
@@ -59,7 +64,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 key={to}
                 to={to}
                 title={collapsed ? label : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
@@ -69,6 +74,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
                 {!collapsed && <span className="animate-fade-in whitespace-nowrap">{label}</span>}
+                {to === "/leads" && leadsCount > 0 && (
+                  <span
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground ${
+                      collapsed ? "absolute right-1.5 top-1.5" : "ml-auto"
+                    }`}
+                  >
+                    {leadsCount}
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -130,9 +144,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   key={to}
                   to={to}
                   aria-label={label}
-                  className={`rounded-lg p-2 ${active ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
+                  className={`relative rounded-lg p-2 ${active ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
                 >
                   <Icon className="h-5 w-5" />
+                  {to === "/leads" && leadsCount > 0 && (
+                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                      {leadsCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
