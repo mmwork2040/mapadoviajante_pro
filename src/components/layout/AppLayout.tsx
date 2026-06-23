@@ -64,7 +64,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 key={to}
                 to={to}
                 title={collapsed ? label : undefined}
-                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
