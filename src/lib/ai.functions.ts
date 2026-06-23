@@ -77,7 +77,7 @@ type CopilotInput = { prompt: string };
 
 type KnowledgeState = {
   status?: string;
-  data_sources?: { library?: boolean; finance?: boolean };
+  data_sources?: { library?: boolean; leads?: boolean; finance?: boolean };
   documents?: { name: string; text: string }[];
 };
 
