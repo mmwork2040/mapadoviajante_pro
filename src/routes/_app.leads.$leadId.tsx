@@ -37,16 +37,10 @@ const PROFILE_FIELDS: { key: string; label: string; type?: "date" | "currency" }
   { key: "budget_range", label: "Faixa de orçamento", type: "currency" },
 ];
 
-const brl = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  minimumFractionDigits: 0,
-});
-
-function formatCurrency(value: string) {
+function formatCurrencyInput(value: string) {
   const digits = value.replace(/\D/g, "");
   if (!digits) return "";
-  return brl.format(Number(digits) / 100);
+  return formatCurrency(Number(digits) / 100);
 }
 
 function LeadDetailPage() {
