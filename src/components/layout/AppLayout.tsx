@@ -33,6 +33,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
+  const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
+  const leadsCount = leadsQ.data?.length ?? 0;
+
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
