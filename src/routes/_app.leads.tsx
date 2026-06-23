@@ -136,6 +136,7 @@ type WizardForm = {
   phone: string;
   value: string;
   origin: string;
+  origin_other: string;
   destination: string;
   travel_dates: string;
   passengers: string;
@@ -158,6 +159,7 @@ const EMPTY_FORM: WizardForm = {
   phone: "",
   value: "",
   origin: "",
+  origin_other: "",
   destination: "",
   travel_dates: "",
   passengers: "",
@@ -182,6 +184,22 @@ const STEPS = [
 ];
 
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
+
+const LOYALTY_PROGRAMS = [
+  "Smiles (GOL)",
+  "LATAM Pass",
+  "TudoAzul (Azul)",
+  "Livelo",
+  "Esfera",
+  "Latam Pass + Multiplus",
+  "American Airlines AAdvantage",
+  "Delta SkyMiles",
+  "United MileagePlus",
+  "Emirates Skywards",
+  "TAP Miles&Go",
+  "Iberia Plus",
+  "Air France-KLM Flying Blue",
+];
 
 function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [step, setStep] = useState(0);
@@ -211,7 +229,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       destination: form.destination || null,
       value: parseCurrency(form.value),
       status: "new",
-      origin: form.origin || "direto",
+      origin: (form.origin === "Outro" ? form.origin_other.trim() : form.origin) || "direto",
       profile: {
         travel_dates: form.travel_dates,
         passengers: form.passengers,
@@ -299,6 +317,9 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
               <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
               <ModalField label="Orçamento Estimado (R$)" format="currency" placeholder="R$ 0,00" value={form.value} onChange={(v) => set({ value: v })} />
               <ModalSelect label="Como nos encontrou?" value={form.origin} onChange={(v) => set({ origin: v })} options={ORIGINS} />
+              {form.origin === "Outro" && (
+                <ModalField label="Especifique" placeholder="Digite como nos encontrou" value={form.origin_other} onChange={(v) => set({ origin_other: v })} />
+              )}
             </Section>
           )}
 
@@ -314,7 +335,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
           {step === 2 && (
             <Section icon={Gift} title="Benefícios & Fidelidade">
-              <ModalField label="Programas de Fidelidade" placeholder="Ex: Smiles, LATAM Pass" value={form.loyalty_programs} onChange={(v) => set({ loyalty_programs: v })} />
+              <ModalField label="Programas de Fidelidade" placeholder="Ex: Smiles, LATAM Pass" value={form.loyalty_programs} onChange={(v) => set({ loyalty_programs: v })} suggestions={LOYALTY_PROGRAMS} />
               <ModalField label="Pontos / Milhas" placeholder="Ex: 80.000 milhas" value={form.points_miles} onChange={(v) => set({ points_miles: v })} />
               <ModalSelect label="Possui Passaporte?" value={form.has_passport} onChange={(v) => set({ has_passport: v })} options={["Sim", "Não", "Vencido"]} />
               <ModalTextarea label="Preferências do cliente" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} />
@@ -404,6 +425,7 @@ export function ModalField({
   placeholder,
   full,
   format,
+  suggestions,
 }: {
   label: string;
   value: string;
@@ -413,7 +435,9 @@ export function ModalField({
   placeholder?: string;
   full?: boolean;
   format?: "currency" | "phone" | "cpfcnpj";
+  suggestions?: string[];
 }) {
+  const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
   const masks = {
     currency: maskCurrency,
     phone: maskPhone,
@@ -433,9 +457,17 @@ export function ModalField({
         required={required}
         value={value}
         placeholder={placeholder}
+        list={listId}
         onChange={(e) => handleChange(e.target.value)}
         className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
       />
+      {suggestions && (
+        <datalist id={listId}>
+          {suggestions.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+      )}
     </label>
   );
 }
