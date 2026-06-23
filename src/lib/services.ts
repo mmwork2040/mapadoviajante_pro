@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type {
   AgencyMember,
+  AiConfig,
   DashboardStats,
   Destination,
   Itinerary,
@@ -740,7 +741,61 @@ export async function deleteVoucher(id: string): Promise<boolean> {
   return !error;
 }
 
+export async function fetchItinerariesByLead(leadId: string): Promise<Itinerary[]> {
+  const { data, error } = await supabase
+    .from("crm_itineraries")
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("fetchItinerariesByLead:", error);
+    return [];
+  }
+  return (data as Itinerary[]) || [];
+}
+
+// ── AI config ──────────────────────────────────────────────────
+export async function fetchAiConfig(): Promise<AiConfig | null> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return null;
+  const { data, error } = await supabase
+    .from("crm_ai_config")
+    .select("*")
+    .eq("agency_id", _agencyId)
+    .maybeSingle();
+  if (error) {
+    console.error("fetchAiConfig:", error);
+    return null;
+  }
+  return data as AiConfig | null;
+}
+
+export async function saveAiConfig(updates: Partial<AiConfig>): Promise<AiConfig | null> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return null;
+  const existing = await fetchAiConfig();
+  const payload = {
+    agency_id: _agencyId,
+    provider: updates.provider ?? existing?.provider ?? "openai",
+    model: updates.model ?? existing?.model ?? "",
+    api_key_encrypted: updates.api_key_encrypted ?? existing?.api_key_encrypted ?? null,
+    system_prompt: updates.system_prompt ?? existing?.system_prompt ?? null,
+    max_tokens: updates.max_tokens ?? existing?.max_tokens ?? 1024,
+    knowledge_sources: updates.knowledge_sources ?? existing?.knowledge_sources ?? null,
+  };
+  const query = existing?.id
+    ? supabase.from("crm_ai_config").update(payload).eq("id", existing.id)
+    : supabase.from("crm_ai_config").insert(payload);
+  const { data, error } = await query.select().single();
+  if (error) {
+    console.error("saveAiConfig:", error);
+    return null;
+  }
+  return data as AiConfig;
+}
+
 // ── Dashboard ──────────────────────────────────────────────────
+
 function buildMonthlyChartData(incomeTransactions: Transaction[]) {
   const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const now = new Date();

@@ -132,6 +132,31 @@ export interface ItineraryActivity {
   sort_order?: number;
 }
 
+export interface AiConfig {
+  id?: string;
+  agency_id?: string;
+  provider: string;
+  model: string;
+  api_key_encrypted?: string | null;
+  system_prompt?: string | null;
+  max_tokens?: number | null;
+  knowledge_sources?: { status?: string; last_tested_at?: string } | null;
+}
+
+export interface ExtractedDocData {
+  type?: string;
+  title?: string;
+  date?: string;
+  time?: string;
+  location?: string;
+  description?: string;
+  flight_number?: string;
+  hotel_name?: string;
+  room?: string;
+  provider?: string;
+  code?: string;
+}
+
 export interface Voucher {
   id: string;
   itinerary_id: string;

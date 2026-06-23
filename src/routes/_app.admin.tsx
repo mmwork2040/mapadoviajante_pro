@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Plus, Check, UserPlus, X, Webhook } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -12,16 +13,19 @@ import {
 } from "@/lib/webhook";
 import {
   createTask,
+  fetchAiConfig,
   fetchTasks,
   fetchTeamMembers,
   inviteTeamMember,
+  saveAiConfig,
   updateMemberRole,
   updateTask,
 } from "@/lib/services";
+import { testAiConnection } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
-import type { Task } from "@/lib/types";
+import type { AiConfig, Task } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/admin")({
   component: AdminPage,
@@ -202,6 +206,9 @@ function AdminPage() {
       </div>
 
       {isAdmin && <WebhookCard />}
+
+      {isAdmin && <AiConfigCard />}
+
 
       <p className="text-xs text-muted-foreground">
         Logado como <strong>{member?.name}</strong> ({member?.role}).
@@ -403,4 +410,150 @@ function WebhookCard() {
     </div>
   );
 }
+
+const AI_PROVIDERS = [
+  { id: "openai", label: "OpenAI", placeholder: "gpt-4o-mini" },
+  { id: "anthropic", label: "Anthropic", placeholder: "claude-3-5-sonnet-20241022" },
+  { id: "google", label: "Google Gemini", placeholder: "gemini-1.5-flash" },
+];
+
+function AiConfigCard() {
+  const qc = useQueryClient();
+  const test = useServerFn(testAiConnection);
+  const { data: config } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+
+  const [form, setForm] = useState<AiConfig>({ provider: "openai", model: "", api_key_encrypted: "", system_prompt: "", max_tokens: 1024 });
+  const [testing, setTesting] = useState(false);
+
+  useEffect(() => {
+    if (config) {
+      setForm({
+        provider: config.provider || "openai",
+        model: config.model || "",
+        api_key_encrypted: config.api_key_encrypted || "",
+        system_prompt: config.system_prompt || "",
+        max_tokens: config.max_tokens || 1024,
+        knowledge_sources: config.knowledge_sources || null,
+      });
+    }
+  }, [config]);
+
+  const status = form.knowledge_sources?.status === "connected" ? "connected" : "disconnected";
+
+  function update(patch: Partial<AiConfig>) {
+    // Qualquer alteração de credencial invalida a conexão até novo teste
+    setForm((c) => ({ ...c, ...patch, knowledge_sources: { status: "disconnected" } }));
+  }
+
+  const saveMut = useMutation({
+    mutationFn: (cfg: Partial<AiConfig>) => saveAiConfig(cfg),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["ai-config"] }),
+  });
+
+  async function runTest() {
+    if (!form.model.trim() || !(form.api_key_encrypted || "").trim()) {
+      toast.error("Informe o modelo e a credencial.");
+      return;
+    }
+    setTesting(true);
+    try {
+      const res = await test({
+        data: { provider: form.provider, model: form.model, apiKey: form.api_key_encrypted || "" },
+      });
+      if (res.ok) {
+        const ks = { status: "connected", last_tested_at: new Date().toISOString() };
+        await saveMut.mutateAsync({ ...form, knowledge_sources: ks });
+        setForm((c) => ({ ...c, knowledge_sources: ks }));
+        toast.success("IA conectada e configuração salva!");
+      } else {
+        await saveMut.mutateAsync({ ...form, knowledge_sources: { status: "disconnected" } });
+        toast.error(`Falha na conexão: ${res.message}`);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao testar conexão.");
+    } finally {
+      setTesting(false);
+    }
+  }
+
+  const provider = AI_PROVIDERS.find((p) => p.id === form.provider);
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-primary" />
+          <h2 className="font-semibold">Inteligência Artificial</h2>
+        </div>
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-medium ${
+            status === "connected"
+              ? "bg-[var(--success)]/15 text-[var(--success)]"
+              : "bg-muted text-muted-foreground"
+          }`}
+        >
+          {status === "connected" ? "Conectada" : "Não conectada"}
+        </span>
+      </div>
+
+      <p className="mb-4 text-xs text-muted-foreground">
+        Configure uma LLM com suas credenciais. A leitura de documentos só funciona após testar e conectar.
+      </p>
+
+      <div className="space-y-3">
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Provedor</span>
+          <select
+            value={form.provider}
+            onChange={(e) => update({ provider: e.target.value })}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          >
+            {AI_PROVIDERS.map((p) => (
+              <option key={p.id} value={p.id}>{p.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Modelo</span>
+          <input
+            value={form.model}
+            onChange={(e) => update({ model: e.target.value })}
+            placeholder={provider?.placeholder}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Credencial (API key)</span>
+          <input
+            type="password"
+            value={form.api_key_encrypted || ""}
+            onChange={(e) => update({ api_key_encrypted: e.target.value })}
+            placeholder="sk-..."
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Instruções do sistema (opcional)</span>
+          <textarea
+            value={form.system_prompt || ""}
+            onChange={(e) => update({ system_prompt: e.target.value })}
+            rows={2}
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+        </label>
+      </div>
+
+      <button
+        type="button"
+        onClick={runTest}
+        disabled={testing}
+        className="mt-4 flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+      >
+        {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+        {testing ? "Testando…" : "Testar e conectar"}
+      </button>
+    </div>
+  );
+}
+
 

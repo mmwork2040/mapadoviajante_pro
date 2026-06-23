@@ -1,20 +1,23 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Send, Trash2, Plus, Check } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Plus, Check, Map } from "lucide-react";
 import { toast } from "sonner";
 import {
+  createItinerary,
   createLeadActivity,
   deleteLead,
+  fetchItinerariesByLead,
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
   fetchTransactions,
+  updateItinerary,
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
-import type { Lead, LeadStatus } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/leads/$leadId")({
@@ -193,6 +196,10 @@ function LeadDetailPage() {
         <div className="space-y-4 lg:col-span-2">
           <ProfileCard profile={profile} onSave={(p) => update.mutate({ profile: p })} />
           <ChecklistCard checklists={checklists} onSave={(c) => update.mutate({ checklists: c })} />
+
+          <ItinerariesPanel leadId={leadId} leadName={lead.name} lead={lead} />
+
+
 
           <div className="rounded-2xl border border-border bg-card p-5">
             <h2 className="mb-4 font-semibold">Histórico</h2>
