@@ -11,6 +11,7 @@ type ProviderConfig = {
 };
 
 const EXTRACTION_PROMPT = `Você é um assistente que lê documentos de viagem: ingressos de parques/atrações, passeios, passagens aéreas, reservas de hotel, transfers e vouchers.
+SEMPRE identifique e extraia obrigatoriamente: o TIPO da atividade, o DIA (data) e o HORÁRIO. Se houver horário de início e fim, use o horário de início em "time".
 Extraia as informações relevantes e responda APENAS com um JSON válido, sem texto extra, no formato:
 {
   "type": "voo|hotel|transfer|passeio|ingresso|outro",

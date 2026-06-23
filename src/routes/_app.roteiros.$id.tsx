@@ -241,9 +241,15 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
         </button>
       </div>
       <ul className="space-y-2">
-        {(day.activities || []).map((a) => (
-          <ActivityRow key={a.id} activity={a} onChange={onChange} />
-        ))}
+        {[...(day.activities || [])]
+          .sort((a, b) => {
+            const ta = a.time ? a.time.slice(0, 5) : "99:99";
+            const tb = b.time ? b.time.slice(0, 5) : "99:99";
+            return ta.localeCompare(tb);
+          })
+          .map((a) => (
+            <ActivityRow key={a.id} activity={a} onChange={onChange} />
+          ))}
       </ul>
       <div className="mt-3 flex gap-2">
         <input
