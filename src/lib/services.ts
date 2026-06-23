@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type {
   AgencyMember,
+  AiConfig,
   DashboardStats,
   Destination,
   Itinerary,
@@ -596,7 +597,13 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     .eq("itinerary_id", id)
     .order("sort_order", { ascending: true });
   (days || []).forEach((day: ItineraryDay) => {
-    if (day.activities) day.activities.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    if (day.activities) {
+      day.activities.forEach((a) => {
+        const raw = a as ItineraryActivity & { time_start?: string | null };
+        if (raw.time == null && raw.time_start != null) raw.time = raw.time_start;
+      });
+      day.activities.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    }
   });
   const { data: vouchers } = await supabase.from("crm_vouchers").select("*").eq("itinerary_id", id);
   return { ...(itinerary as Itinerary), days: (days as ItineraryDay[]) || [], vouchers: (vouchers as Voucher[]) || [] };
@@ -689,13 +696,21 @@ export async function deleteItineraryDay(id: string): Promise<boolean> {
   return !error;
 }
 
+// Mapeia o campo de UI `time` para a coluna real `time_start`.
+function mapActivityPayload(data: Partial<ItineraryActivity>): Record<string, unknown> {
+  const { time, ...rest } = data;
+  const payload: Record<string, unknown> = { ...rest };
+  if (time !== undefined) payload.time_start = time;
+  return payload;
+}
+
 export async function updateItineraryActivity(
   id: string,
   updates: Partial<ItineraryActivity>,
 ): Promise<ItineraryActivity | null> {
   const { data, error } = await supabase
     .from("crm_itinerary_activities")
-    .update(updates)
+    .update(mapActivityPayload(updates))
     .eq("id", id)
     .select()
     .maybeSingle();
@@ -711,7 +726,7 @@ export async function createItineraryActivity(
 ): Promise<ItineraryActivity | null> {
   const { data, error } = await supabase
     .from("crm_itinerary_activities")
-    .insert(activityData)
+    .insert(mapActivityPayload(activityData))
     .select()
     .single();
   if (error) {
@@ -720,6 +735,7 @@ export async function createItineraryActivity(
   }
   return data as ItineraryActivity;
 }
+
 
 export async function deleteItineraryActivity(id: string): Promise<boolean> {
   const { error } = await supabase.from("crm_itinerary_activities").delete().eq("id", id);
@@ -740,7 +756,61 @@ export async function deleteVoucher(id: string): Promise<boolean> {
   return !error;
 }
 
+export async function fetchItinerariesByLead(leadId: string): Promise<Itinerary[]> {
+  const { data, error } = await supabase
+    .from("crm_itineraries")
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("fetchItinerariesByLead:", error);
+    return [];
+  }
+  return (data as Itinerary[]) || [];
+}
+
+// ── AI config ──────────────────────────────────────────────────
+export async function fetchAiConfig(): Promise<AiConfig | null> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return null;
+  const { data, error } = await supabase
+    .from("crm_ai_config")
+    .select("*")
+    .eq("agency_id", _agencyId)
+    .maybeSingle();
+  if (error) {
+    console.error("fetchAiConfig:", error);
+    return null;
+  }
+  return data as AiConfig | null;
+}
+
+export async function saveAiConfig(updates: Partial<AiConfig>): Promise<AiConfig | null> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return null;
+  const existing = await fetchAiConfig();
+  const payload = {
+    agency_id: _agencyId,
+    provider: updates.provider ?? existing?.provider ?? "openai",
+    model: updates.model ?? existing?.model ?? "",
+    api_key_encrypted: updates.api_key_encrypted ?? existing?.api_key_encrypted ?? null,
+    system_prompt: updates.system_prompt ?? existing?.system_prompt ?? null,
+    max_tokens: updates.max_tokens ?? existing?.max_tokens ?? 1024,
+    knowledge_sources: updates.knowledge_sources ?? existing?.knowledge_sources ?? null,
+  };
+  const query = existing?.id
+    ? supabase.from("crm_ai_config").update(payload).eq("id", existing.id)
+    : supabase.from("crm_ai_config").insert(payload);
+  const { data, error } = await query.select().single();
+  if (error) {
+    console.error("saveAiConfig:", error);
+    return null;
+  }
+  return data as AiConfig;
+}
+
 // ── Dashboard ──────────────────────────────────────────────────
+
 function buildMonthlyChartData(incomeTransactions: Transaction[]) {
   const monthLabels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
   const now = new Date();

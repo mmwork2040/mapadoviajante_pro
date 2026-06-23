@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Plus, X, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import { createItinerary, fetchItineraries } from "@/lib/services";
+import { createItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
@@ -82,9 +82,30 @@ function ItinerariesPage() {
 function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState<Partial<Itinerary>>({ status: "draft", passengers: 1, budget: 0 });
   const [saving, setSaving] = useState(false);
+  const { data: leads = [] } = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
+
+  function selectLead(leadId: string) {
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead) {
+      setForm((f) => ({ ...f, lead_id: null }));
+      return;
+    }
+    setForm((f) => ({
+      ...f,
+      lead_id: lead.id,
+      client_name: lead.name,
+      destination: f.destination || lead.destination || "",
+      budget: f.budget || Number(lead.value) || 0,
+      title: f.title || `Roteiro - ${lead.name}`,
+    }));
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.lead_id) {
+      toast.error("Selecione um lead.");
+      return;
+    }
     setSaving(true);
     const res = await createItinerary(form);
     setSaving(false);
@@ -105,9 +126,23 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
           </button>
         </div>
         <form onSubmit={submit} className="space-y-3">
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">Lead</span>
+            <select
+              required
+              value={form.lead_id || ""}
+              onChange={(e) => selectLead(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="">Selecione um lead…</option>
+              {leads.map((l) => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
+            </select>
+          </label>
           <F label="Título" required value={form.title || ""} onChange={(v) => setForm({ ...form, title: v })} />
-          <F label="Cliente" value={form.client_name || ""} onChange={(v) => setForm({ ...form, client_name: v })} />
           <F label="Destino" value={form.destination || ""} onChange={(v) => setForm({ ...form, destination: v })} />
+
           <div className="grid grid-cols-2 gap-3">
             <F label="Início" type="date" value={form.start_date || ""} onChange={(v) => setForm({ ...form, start_date: v })} />
             <F label="Fim" type="date" value={form.end_date || ""} onChange={(v) => setForm({ ...form, end_date: v })} />

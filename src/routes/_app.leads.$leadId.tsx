@@ -1,20 +1,23 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Send, Trash2, Plus, Check } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Plus, Check, Map } from "lucide-react";
 import { toast } from "sonner";
 import {
+  createItinerary,
   createLeadActivity,
   deleteLead,
+  fetchItinerariesByLead,
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
   fetchTransactions,
+  updateItinerary,
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
-import type { Lead, LeadStatus } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/leads/$leadId")({
@@ -194,6 +197,10 @@ function LeadDetailPage() {
           <ProfileCard profile={profile} onSave={(p) => update.mutate({ profile: p })} />
           <ChecklistCard checklists={checklists} onSave={(c) => update.mutate({ checklists: c })} />
 
+          <ItinerariesPanel leadId={leadId} leadName={lead.name} lead={lead} />
+
+
+
           <div className="rounded-2xl border border-border bg-card p-5">
             <h2 className="mb-4 font-semibold">Histórico</h2>
             <div className="mb-4 flex gap-2">
@@ -348,7 +355,126 @@ function ChecklistCard({
   );
 }
 
+const ITINERARY_COLUMNS: { key: string; label: string }[] = [
+  { key: "draft", label: "Rascunho" },
+  { key: "active", label: "Em andamento" },
+  { key: "completed", label: "Concluído" },
+  { key: "cancelled", label: "Cancelado" },
+];
+
+function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName: string; lead: Lead }) {
+  const qc = useQueryClient();
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overCol, setOverCol] = useState<string | null>(null);
+  const { data: itineraries = [] } = useQuery({
+    queryKey: ["lead-itineraries", leadId],
+    queryFn: () => fetchItinerariesByLead(leadId),
+  });
+
+  const move = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) => updateItinerary(id, { status }),
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["lead-itineraries", leadId] });
+      const prev = qc.getQueryData<Itinerary[]>(["lead-itineraries", leadId]);
+      qc.setQueryData<Itinerary[]>(["lead-itineraries", leadId], (old) =>
+        (old ?? []).map((it) => (it.id === id ? { ...it, status } : it)),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["lead-itineraries", leadId], ctx.prev);
+      toast.error("Não foi possível mover o roteiro.");
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["lead-itineraries", leadId] }),
+  });
+
+  const create = useMutation({
+    mutationFn: () =>
+      createItinerary({
+        lead_id: leadId,
+        title: `Roteiro - ${leadName}`,
+        client_name: leadName,
+        destination: lead.destination || "",
+        budget: Number(lead.value) || 0,
+        status: "draft",
+      }),
+    onSuccess: (res) => {
+      if (!res) return toast.error("Erro ao criar roteiro.");
+      toast.success("Roteiro criado!");
+      qc.invalidateQueries({ queryKey: ["lead-itineraries", leadId] });
+    },
+    onError: () => toast.error("Erro ao criar roteiro."),
+  });
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 font-semibold">
+          <Map className="h-4 w-4" /> Roteiros
+        </h2>
+        <button
+          onClick={() => create.mutate()}
+          className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          <Plus className="h-4 w-4" /> Novo
+        </button>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {ITINERARY_COLUMNS.map((col) => {
+          const items = itineraries.filter((it) => (it.status || "draft") === col.key);
+          return (
+            <div
+              key={col.key}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                setOverCol(col.key);
+              }}
+              onDragLeave={() => setOverCol((c) => (c === col.key ? null : c))}
+              onDrop={() => {
+                if (dragId) move.mutate({ id: dragId, status: col.key });
+                setDragId(null);
+                setOverCol(null);
+              }}
+              className={`rounded-xl border p-2 transition-colors ${
+                overCol === col.key ? "border-primary bg-accent/40" : "border-border bg-muted/30"
+              }`}
+            >
+              <p className="mb-2 px-1 text-xs font-medium text-muted-foreground">
+                {col.label} ({items.length})
+              </p>
+              <div className="space-y-2">
+                {items.map((it) => (
+                  <Link
+                    key={it.id}
+                    to="/roteiros/$id"
+                    params={{ id: it.id }}
+                    draggable
+                    onDragStart={() => setDragId(it.id)}
+                    onDragEnd={() => {
+                      setDragId(null);
+                      setOverCol(null);
+                    }}
+                    className="block cursor-grab rounded-lg border border-border bg-card p-2 text-sm hover:border-primary active:cursor-grabbing"
+                  >
+                    <p className="font-medium">{it.title}</p>
+                    <p className="text-xs text-muted-foreground">{formatCurrency(it.budget)}</p>
+                  </Link>
+                ))}
+                {items.length === 0 && (
+                  <p className="px-1 py-2 text-xs text-muted-foreground/60">—</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Row({ k, v }: { k: string; v?: string | null }) {
+
   return (
     <div className="flex justify-between gap-2">
       <dt className="text-muted-foreground">{k}</dt>
