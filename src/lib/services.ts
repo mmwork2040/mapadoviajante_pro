@@ -178,7 +178,7 @@ export async function fetchLeads(filters: {
     .eq("agency_id", _agencyId)
     .order("last_activity_at", { ascending: false });
 
-  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.status) query = query.eq("status", filters.status === "contacted" ? "new" : filters.status);
   if (filters.destination) query = query.eq("destination", filters.destination);
   if (filters.search)
     query = query.or(
@@ -190,7 +190,8 @@ export async function fetchLeads(filters: {
     console.error("fetchLeads:", error);
     throw new Error("Não foi possível carregar os leads.");
   }
-  return ((data as Lead[]) || []).map(normalizeLead);
+  const normalized = ((data as Lead[]) || []).map(normalizeLead);
+  return filters.status ? normalized.filter((lead) => lead.status === filters.status) : normalized;
 }
 
 export async function fetchLeadById(leadId: string): Promise<Lead | null> {
