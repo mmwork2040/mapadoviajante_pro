@@ -112,7 +112,7 @@ export const saveAgencyPaymentConfig = createServerFn({ method: "POST" })
       row.asaas_api_key = data.apiKey.trim();
     }
 
-    const { error } = await context.supabase
+    const { error } = await (context.supabase as any)
       .from("agency_payment_settings")
       .upsert(row, { onConflict: "agency_id" });
     if (error) throw new Error(error.message);
