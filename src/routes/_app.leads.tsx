@@ -35,8 +35,26 @@ function LeadsPage() {
   const move = useMutation({
     mutationFn: ({ id, status }: { id: string; status: LeadStatus }) =>
       updateLead(id, { status }),
-    onSuccess: (_res, vars) => {
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["leads"] });
+      const prev = qc.getQueryData<Lead[]>(["leads", { search }]);
+      qc.setQueryData<Lead[]>(["leads", { search }], (old) =>
+        (old ?? []).map((l) => (l.id === id ? { ...l, status } : l)),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["leads", { search }], ctx.prev);
+      toast.error("Não foi possível mover o lead.");
+    },
+    onSuccess: (res, vars) => {
+      if (!res) {
+        toast.error("Não foi possível mover o lead.");
+        return;
+      }
       dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
   });
