@@ -159,7 +159,14 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                   {initials(m.name)}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{m.name}</p>
+                  <p className="text-sm font-medium">
+                    {m.name}
+                    {m.status === "pending" && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        Convite pendente
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-muted-foreground">{m.email}</p>
                 </div>
                 {isAdmin ? (
