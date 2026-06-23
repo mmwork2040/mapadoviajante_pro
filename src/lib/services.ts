@@ -129,6 +129,50 @@ export async function revokeMember(id: string): Promise<boolean> {
   return true;
 }
 
+/** Conta quantos registros de atividade existem em nome de um membro. */
+async function countMemberActivity(id: string): Promise<number> {
+  const checks: Array<Promise<{ count: number | null }>> = [
+    supabase.from("crm_lead_activities").select("id", { count: "exact", head: true }).eq("author_id", id),
+    supabase.from("crm_lead_activities").select("id", { count: "exact", head: true }).eq("assigned_to_id", id),
+    supabase.from("crm_leads").select("id", { count: "exact", head: true }).eq("assigned_to", id),
+    supabase.from("crm_tasks").select("id", { count: "exact", head: true }).eq("assigned_to", id),
+    supabase.from("crm_tasks").select("id", { count: "exact", head: true }).eq("created_by", id),
+    supabase.from("crm_transactions").select("id", { count: "exact", head: true }).eq("created_by", id),
+  ];
+  const results = await Promise.all(checks);
+  return results.reduce((sum, r) => sum + (r.count ?? 0), 0);
+}
+
+/**
+ * Remove um membro da equipe. Se houver registros de atividade em seu nome,
+ * apenas bloqueia o acesso (mantém o histórico). Caso contrário, exclui o
+ * membro completamente da agência.
+ */
+export async function removeMember(
+  id: string,
+): Promise<{ ok: boolean; action?: "blocked" | "deleted"; error?: string }> {
+  const activity = await countMemberActivity(id);
+
+  if (activity > 0) {
+    const { error } = await supabase
+      .from("agency_members")
+      .update({ is_active: false, status: "blocked", invite_token: null })
+      .eq("id", id);
+    if (error) {
+      console.error("removeMember (block):", error);
+      return { ok: false, error: "Não foi possível bloquear o membro." };
+    }
+    return { ok: true, action: "blocked" };
+  }
+
+  const { error } = await supabase.from("agency_members").delete().eq("id", id);
+  if (error) {
+    console.error("removeMember (delete):", error);
+    return { ok: false, error: "Não foi possível excluir o membro." };
+  }
+  return { ok: true, action: "deleted" };
+}
+
 
 
 // ── Leads ──────────────────────────────────────────────────────
