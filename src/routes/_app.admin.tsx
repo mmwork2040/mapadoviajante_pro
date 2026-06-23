@@ -758,9 +758,13 @@ function GmailCard() {
     setConfig((c) => ({ ...c, ...patch }));
   }
 
-  function save() {
-    saveGmailConfig(config);
-    toast.success("Configuração de e-mail salva.");
+  async function save() {
+    try {
+      await saveGmailConfig(config);
+      toast.success("Configuração de e-mail salva.");
+    } catch {
+      toast.error("Não foi possível salvar a configuração.");
+    }
   }
 
   async function submit() {
