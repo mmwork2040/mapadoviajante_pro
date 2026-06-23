@@ -146,7 +146,7 @@ export interface AiConfig {
   knowledge_sources?: {
     status?: string;
     last_tested_at?: string;
-    data_sources?: { library?: boolean; finance?: boolean };
+    data_sources?: { library?: boolean; leads?: boolean; finance?: boolean };
     documents?: KnowledgeDoc[];
   } | null;
 }
