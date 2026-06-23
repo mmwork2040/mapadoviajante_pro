@@ -106,10 +106,35 @@ export async function testConnection(cfg: ProviderConfig): Promise<{ ok: boolean
 function parseJsonLoose(text: string): ExtractedDocData {
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");
-  const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end === -1) throw new Error("Não foi possível interpretar o documento.");
+  if (start === -1) throw new Error("Não foi possível interpretar o documento.");
+  // Walk from the first "{" and match braces to find the end of the first object,
+  // ignoring braces inside strings. This avoids trailing text/extra objects.
+  let depth = 0;
+  let inStr = false;
+  let esc = false;
+  let end = -1;
+  for (let i = start; i < cleaned.length; i++) {
+    const ch = cleaned[i];
+    if (inStr) {
+      if (esc) esc = false;
+      else if (ch === "\\") esc = true;
+      else if (ch === '"') inStr = false;
+    } else if (ch === '"') {
+      inStr = true;
+    } else if (ch === "{") {
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+  if (end === -1) throw new Error("Não foi possível interpretar o documento.");
   return JSON.parse(cleaned.slice(start, end + 1)) as ExtractedDocData;
 }
+
 
 export async function extractDocument(
   cfg: ProviderConfig,
