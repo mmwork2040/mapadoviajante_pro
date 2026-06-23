@@ -116,7 +116,7 @@ function LeadDetailPage() {
             <h2 className="mb-3 font-semibold">Detalhes</h2>
             <dl className="space-y-2 text-sm">
               <Row k="E-mail" v={lead.email} />
-              <Row k="Telefone" v={lead.phone} />
+              <Row k="Telefone" v={lead.phone ? maskPhone(lead.phone) : null} />>
               <Row k="Valor" v={formatCurrency(lead.value)} />
               <Row k="Origem" v={lead.origin} />
               <Row k="Criado em" v={formatDate(lead.created_at)} />
