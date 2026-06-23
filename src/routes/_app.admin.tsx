@@ -737,7 +737,7 @@ function NotificationsCard() {
 }
 
 function GmailCard() {
-  const [config, setConfig] = useState<GmailConfig>(() => getGmailConfig());
+  const [config, setConfig] = useState<GmailConfig>(DEFAULT_GMAIL_CONFIG);
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
