@@ -118,3 +118,80 @@ export const saveAgencyPaymentConfig = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+const chargeSchema = z.object({
+  customerName: z.string().min(1),
+  customerEmail: z.string().email().optional(),
+  customerCpfCnpj: z.string().min(1),
+  billingType: z.enum(["BOLETO", "PIX", "CREDIT_CARD"]).default("PIX"),
+  value: z.number().positive(),
+  dueDate: z.string(), // YYYY-MM-DD
+  description: z.string().optional(),
+});
+
+/** Cria uma cobrança no Asaas usando as credenciais da própria agência (admin). */
+export const createAsaasCharge = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => chargeSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const agencyId = await resolveAgencyId(context.supabase, context.userId);
+    if (!agencyId) throw new Error("Agência não encontrada para o usuário.");
+
+    const { data: cfg } = await (context.supabase as any)
+      .from("agency_payment_settings")
+      .select("asaas_api_key, asaas_environment, is_active")
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+
+    if (!cfg?.is_active || !cfg?.asaas_api_key) {
+      throw new Error("Pagamentos não configurados para esta agência.");
+    }
+
+    const base =
+      cfg.asaas_environment === "production"
+        ? "https://api.asaas.com/v3"
+        : "https://sandbox.asaas.com/api/v3";
+    const headers = {
+      "Content-Type": "application/json",
+      access_token: cfg.asaas_api_key as string,
+    };
+
+    // 1) Garante o cliente no Asaas
+    const custRes = await fetch(`${base}/customers`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        name: data.customerName,
+        email: data.customerEmail,
+        cpfCnpj: data.customerCpfCnpj,
+      }),
+    });
+    const customer = await custRes.json();
+    if (!custRes.ok) {
+      throw new Error(customer?.errors?.[0]?.description ?? "Falha ao criar cliente no Asaas.");
+    }
+
+    // 2) Cria a cobrança
+    const payRes = await fetch(`${base}/payments`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        customer: customer.id,
+        billingType: data.billingType,
+        value: data.value,
+        dueDate: data.dueDate,
+        description: data.description,
+      }),
+    });
+    const payment = await payRes.json();
+    if (!payRes.ok) {
+      throw new Error(payment?.errors?.[0]?.description ?? "Falha ao criar cobrança no Asaas.");
+    }
+
+    return {
+      ok: true as const,
+      id: payment.id as string,
+      status: payment.status as string,
+      invoiceUrl: payment.invoiceUrl as string | undefined,
+    };
+  });
