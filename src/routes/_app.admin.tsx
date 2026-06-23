@@ -415,14 +415,11 @@ function WebhookCard() {
 
   return (
     <div>
-      <label className="mb-4 flex items-center justify-between gap-2 text-sm">
-        <span className="text-muted-foreground">
-          {config.enabled ? "Habilitado" : "Desabilitado"}
-        </span>
+      <label className="mb-4 flex items-center gap-3 text-sm">
         <button
           type="button"
           onClick={() => update({ enabled: !config.enabled })}
-          className={`relative h-6 w-11 rounded-full transition-colors ${
+          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
             config.enabled ? "bg-primary" : "bg-muted"
           }`}
           aria-pressed={config.enabled}
@@ -433,7 +430,11 @@ function WebhookCard() {
             }`}
           />
         </button>
+        <span className="text-muted-foreground">
+          {config.enabled ? "Habilitado" : "Desabilitado"}
+        </span>
       </label>
+
 
 
       <p className="mb-4 text-xs text-muted-foreground">
