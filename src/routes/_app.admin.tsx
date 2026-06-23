@@ -847,14 +847,43 @@ function AiConfigCard() {
   );
 }
 
+function SectionHeader({
+  icon,
+  color,
+  title,
+  subtitle,
+}: {
+  icon: ReactNode;
+  color: string;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="mb-4 flex items-start gap-3">
+      <span
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+        style={{ backgroundColor: `${color}1f`, color }}
+      >
+        {icon}
+      </span>
+      <div>
+        <h3 className="font-bold leading-tight">{title}</h3>
+        <p className="text-sm text-muted-foreground">{subtitle}</p>
+      </div>
+    </div>
+  );
+}
+
 function SourceToggle({
   icon,
+  color,
   label,
   desc,
   checked,
   onToggle,
 }: {
   icon: ReactNode;
+  color: string;
   label: string;
   desc: string;
   checked: boolean;
@@ -864,23 +893,30 @@ function SourceToggle({
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 text-left hover:border-primary"
+      className={`flex w-full items-center gap-3 rounded-2xl border bg-card px-4 py-4 text-left transition-colors ${
+        checked ? "border-primary/40" : "border-border"
+      } hover:border-primary`}
     >
-      <span className="text-muted-foreground">{icon}</span>
-      <span className="flex-1">
-        <span className="block text-sm font-medium">{label}</span>
-        <span className="block text-xs text-muted-foreground">{desc}</span>
-      </span>
       <span
-        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
           checked ? "bg-primary" : "bg-muted"
         }`}
       >
         <span
-          className={`absolute top-0.5 h-4 w-4 rounded-full bg-background transition-transform ${
-            checked ? "translate-x-4" : "translate-x-0.5"
+          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+            checked ? "translate-x-5" : "translate-x-0.5"
           }`}
         />
+      </span>
+      <span
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: `${color}1f`, color }}
+      >
+        {icon}
+      </span>
+      <span className="flex-1">
+        <span className={`block text-sm font-bold ${checked ? "" : "text-muted-foreground"}`}>{label}</span>
+        <span className="block text-xs text-muted-foreground">{desc}</span>
       </span>
     </button>
   );
