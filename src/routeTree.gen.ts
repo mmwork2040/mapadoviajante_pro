@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AceitarConviteRouteImport } from './routes/aceitar-convite'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as ViajanteIdRouteImport } from './routes/viajante.$id'
@@ -31,6 +32,11 @@ const IntakeRoute = IntakeRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AceitarConviteRoute = AceitarConviteRouteImport.update({
+  id: '/aceitar-convite',
+  path: '/aceitar-convite',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -90,6 +96,7 @@ const AppLeadsLeadIdRoute = AppLeadsLeadIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/aceitar-convite': typeof AceitarConviteRoute
   '/auth': typeof AuthRoute
   '/intake': typeof IntakeRoute
   '/admin': typeof AppAdminRoute
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesByTo {
+  '/aceitar-convite': typeof AceitarConviteRoute
   '/auth': typeof AuthRoute
   '/intake': typeof IntakeRoute
   '/admin': typeof AppAdminRoute
@@ -118,6 +126,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/aceitar-convite': typeof AceitarConviteRoute
   '/auth': typeof AuthRoute
   '/intake': typeof IntakeRoute
   '/_app/admin': typeof AppAdminRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/aceitar-convite'
     | '/auth'
     | '/intake'
     | '/admin'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/roteiros/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/aceitar-convite'
     | '/auth'
     | '/intake'
     | '/admin'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/aceitar-convite'
     | '/auth'
     | '/intake'
     | '/_app/admin'
@@ -178,6 +190,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  AceitarConviteRoute: typeof AceitarConviteRoute
   AuthRoute: typeof AuthRoute
   IntakeRoute: typeof IntakeRoute
   ViajanteIdRoute: typeof ViajanteIdRoute
@@ -197,6 +210,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/aceitar-convite': {
+      id: '/aceitar-convite'
+      path: '/aceitar-convite'
+      fullPath: '/aceitar-convite'
+      preLoaderRoute: typeof AceitarConviteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -327,6 +347,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  AceitarConviteRoute: AceitarConviteRoute,
   AuthRoute: AuthRoute,
   IntakeRoute: IntakeRoute,
   ViajanteIdRoute: ViajanteIdRoute,

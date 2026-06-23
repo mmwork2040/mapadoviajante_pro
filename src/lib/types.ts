@@ -10,6 +10,7 @@ export interface AgencyMember {
   role: string; // admin | agent | ...
   avatar_color?: string | null;
   is_active?: boolean;
+  status?: string | null; // pending | active
 }
 
 export type LeadStatus = "new" | "contacted" | "negotiating" | "closed" | "lost";

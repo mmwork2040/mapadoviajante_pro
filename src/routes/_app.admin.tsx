@@ -35,11 +35,11 @@ import {
   fetchAiConfig,
   fetchTasks,
   fetchTeamMembers,
-  inviteTeamMember,
   saveAiConfig,
   updateMemberRole,
   updateTask,
 } from "@/lib/services";
+import { sendTeamInvite } from "@/lib/invites.functions";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
@@ -159,7 +159,14 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                   {initials(m.name)}
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">{m.name}</p>
+                  <p className="text-sm font-medium">
+                    {m.name}
+                    {m.status === "pending" && (
+                      <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        Convite pendente
+                      </span>
+                    )}
+                  </p>
                   <p className="text-xs text-muted-foreground">{m.email}</p>
                 </div>
                 {isAdmin ? (
@@ -327,13 +334,15 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const res = await inviteTeamMember(form);
+    const res = await sendTeamInvite({
+      data: { ...form, appUrl: window.location.origin },
+    });
     setSaving(false);
-    if (res) {
-      dispatchWebhook("member.invited", res);
-      toast.success("Membro adicionado à equipe!");
+    if (res.ok) {
+      dispatchWebhook("member.invited", { ...form });
+      toast.success(res.emailSent ? "Convite enviado por e-mail!" : res.message);
       onInvited();
-    } else toast.error("Erro ao convidar membro.");
+    } else toast.error(res.message || "Erro ao convidar membro.");
   }
 
   return (
