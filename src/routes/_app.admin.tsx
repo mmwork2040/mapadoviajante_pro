@@ -457,7 +457,7 @@ function WebhookCard() {
 
 
   useEffect(() => {
-    setConfig(getWebhookConfig());
+    getWebhookConfig().then(setConfig);
   }, []);
 
   function update(patch: Partial<WebhookConfig>) {
