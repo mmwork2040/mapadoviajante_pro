@@ -135,21 +135,24 @@ function F({
   onChange,
   type = "text",
   required,
+  format,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   required?: boolean;
+  format?: "currency";
 }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium">{label}</span>
       <input
-        type={type}
+        type={format ? "text" : type}
+        inputMode={format ? "numeric" : undefined}
         required={required}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={format === "currency" ? maskCurrency(String(Math.round((Number(value) || 0) * 100))) : value}
+        onChange={(e) => onChange(format === "currency" ? String(parseCurrency(e.target.value)) : e.target.value)}
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
       />
     </label>
