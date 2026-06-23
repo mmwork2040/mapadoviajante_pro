@@ -19,6 +19,7 @@ import {
 import { extractDocumentData, itineraryCopilot } from "@/lib/ai.functions";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
