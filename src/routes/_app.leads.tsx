@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info } from "lucide-react";
@@ -10,8 +10,13 @@ import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/leads")({
-  component: LeadsPage,
+  component: LeadsRoute,
 });
+
+function LeadsRoute() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  return pathname === "/leads" ? <LeadsPage /> : <Outlet />;
+}
 
 const COLUMNS: { key: LeadStatus; label: string; dot: string }[] = [
   { key: "new", label: "Novo", dot: "bg-blue-500" },
@@ -33,8 +38,11 @@ function LeadsPage() {
   });
 
   const move = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: LeadStatus }) =>
-      updateLead(id, { status }),
+    mutationFn: async ({ id, status }: { id: string; status: LeadStatus }) => {
+      const updated = await updateLead(id, { status });
+      if (!updated) throw new Error("Não foi possível mover o lead.");
+      return updated;
+    },
     onMutate: async ({ id, status }) => {
       await qc.cancelQueries({ queryKey: ["leads"] });
       const prev = qc.getQueryData<Lead[]>(["leads", { search }]);
@@ -47,11 +55,7 @@ function LeadsPage() {
       if (ctx?.prev) qc.setQueryData(["leads", { search }], ctx.prev);
       toast.error("Não foi possível mover o lead.");
     },
-    onSuccess: (res, vars) => {
-      if (!res) {
-        toast.error("Não foi possível mover o lead.");
-        return;
-      }
+    onSuccess: (_res, vars) => {
       dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
     },
     onSettled: () => {
@@ -107,6 +111,7 @@ function LeadsPage() {
                 key={col.key}
                 onDragOver={(e) => {
                   e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
                   if (overCol !== col.key) setOverCol(col.key);
                 }}
                 onDragLeave={(e) => {
@@ -188,6 +193,7 @@ function LeadCard({
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", lead.id);
+        e.dataTransfer.setData("application/x-lead-id", lead.id);
         onDragStart();
       }}
       onDragEnd={onDragEnd}
