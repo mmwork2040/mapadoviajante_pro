@@ -582,7 +582,7 @@ function NotificationsCard() {
   const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
 
   useEffect(() => {
-    setConfig(getNotifConfig());
+    getNotifConfig().then(setConfig);
   }, []);
 
   function update(patch: Partial<NotifConfig>) {
