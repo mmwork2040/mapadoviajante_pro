@@ -656,6 +656,27 @@ function NotificationsCard() {
         ))}
       </div>
 
+      <div>
+        <span className="mb-2 block text-sm font-medium">Eventos notificados</span>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Selecione ao menos um evento para habilitar o serviço.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {NOTIF_EVENTS.map((ev) => (
+            <label key={ev.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={config.events.includes(ev.id)}
+                onChange={() => toggleEvent(ev.id)}
+                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+              />
+              <span className="min-w-0">{ev.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+
       {!serverReady && (
         <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
           Para o envio funcionar, falta configurar a <strong>service account</strong> do Firebase no servidor.
