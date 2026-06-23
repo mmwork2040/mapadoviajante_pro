@@ -597,14 +597,18 @@ function NotificationsCard() {
     });
   }
 
-  function save() {
+  async function save() {
     if (!configIsComplete(config)) {
       toast.error("Preencha todos os campos e selecione ao menos um evento.");
       return;
     }
-    saveNotifConfig({ ...config, enabled: true });
-    setConfig((c) => ({ ...c, enabled: true }));
-    toast.success("Configuração de notificações salva e habilitada.");
+    try {
+      await saveNotifConfig({ ...config, enabled: true });
+      setConfig((c) => ({ ...c, enabled: true }));
+      toast.success("Configuração de notificações salva e habilitada.");
+    } catch {
+      toast.error("Não foi possível salvar a configuração.");
+    }
   }
 
   async function activate() {
