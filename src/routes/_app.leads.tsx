@@ -335,7 +335,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
 
           {step === 2 && (
             <Section icon={Gift} title="Benefícios & Fidelidade">
-              <ModalField label="Programas de Fidelidade" placeholder="Ex: Smiles, LATAM Pass" value={form.loyalty_programs} onChange={(v) => set({ loyalty_programs: v })} />
+              <ModalField label="Programas de Fidelidade" placeholder="Ex: Smiles, LATAM Pass" value={form.loyalty_programs} onChange={(v) => set({ loyalty_programs: v })} suggestions={LOYALTY_PROGRAMS} />
               <ModalField label="Pontos / Milhas" placeholder="Ex: 80.000 milhas" value={form.points_miles} onChange={(v) => set({ points_miles: v })} />
               <ModalSelect label="Possui Passaporte?" value={form.has_passport} onChange={(v) => set({ has_passport: v })} options={["Sim", "Não", "Vencido"]} />
               <ModalTextarea label="Preferências do cliente" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} />
