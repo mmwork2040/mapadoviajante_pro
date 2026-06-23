@@ -309,26 +309,45 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
 function CollapsibleSection({
   icon: Icon,
   title,
+  subtitle,
+  color = "#f97316",
+  defaultOpen = false,
+  action,
   children,
 }: {
   icon: typeof Webhook;
   title: string;
+  subtitle?: string;
+  color?: string;
+  defaultOpen?: boolean;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-2xl border border-border bg-card">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 p-5"
+        className="flex w-full items-center justify-between gap-3 p-5"
         aria-expanded={open}
       >
-        <span className="flex items-center gap-2">
-          <Icon className="h-5 w-5 text-primary" />
-          <span className="font-semibold">{title}</span>
+        <span className="flex items-start gap-3 text-left">
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{ backgroundColor: `${color}1f`, color }}
+          >
+            <Icon className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block font-bold leading-tight">{title}</span>
+            {subtitle && <span className="block text-sm text-muted-foreground">{subtitle}</span>}
+          </span>
         </span>
-        <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="flex items-center gap-2">
+          {action}
+          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
       </button>
       {open && <div className="px-5 pb-5">{children}</div>}
     </div>
