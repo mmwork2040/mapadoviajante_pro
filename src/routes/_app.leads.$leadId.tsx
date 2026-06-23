@@ -19,6 +19,7 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app/leads/$leadId")({
   component: LeadDetailPage,
