@@ -690,13 +690,21 @@ export async function deleteItineraryDay(id: string): Promise<boolean> {
   return !error;
 }
 
+// Mapeia o campo de UI `time` para a coluna real `time_start`.
+function mapActivityPayload(data: Partial<ItineraryActivity>): Record<string, unknown> {
+  const { time, ...rest } = data;
+  const payload: Record<string, unknown> = { ...rest };
+  if (time !== undefined) payload.time_start = time;
+  return payload;
+}
+
 export async function updateItineraryActivity(
   id: string,
   updates: Partial<ItineraryActivity>,
 ): Promise<ItineraryActivity | null> {
   const { data, error } = await supabase
     .from("crm_itinerary_activities")
-    .update(updates)
+    .update(mapActivityPayload(updates))
     .eq("id", id)
     .select()
     .maybeSingle();
@@ -712,7 +720,7 @@ export async function createItineraryActivity(
 ): Promise<ItineraryActivity | null> {
   const { data, error } = await supabase
     .from("crm_itinerary_activities")
-    .insert(activityData)
+    .insert(mapActivityPayload(activityData))
     .select()
     .single();
   if (error) {
@@ -721,6 +729,7 @@ export async function createItineraryActivity(
   }
   return data as ItineraryActivity;
 }
+
 
 export async function deleteItineraryActivity(id: string): Promise<boolean> {
   const { error } = await supabase.from("crm_itinerary_activities").delete().eq("id", id);
