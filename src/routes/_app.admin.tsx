@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_app/admin")({
   component: AdminPage,
 });
 
-const ROLES = ["admin", "agent", "viewer"];
+const ROLES = ["admin", "gerente", "consultor"];
 const PRIORITIES = ["low", "normal", "high"];
 
 function AdminPage() {
