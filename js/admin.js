@@ -1022,15 +1022,23 @@ function renderKBFiles() {
 function loadSystemConfigs() {
   // Load Email
   const emailConf = JSON.parse(localStorage.getItem('mapapro_email_config') || '{}');
-  if (emailConf.provider) document.getElementById('email-provider').value = emailConf.provider;
-  if (emailConf.apiKey) document.getElementById('email-api-key').value = emailConf.apiKey;
-  if (emailConf.sender) document.getElementById('email-sender').value = emailConf.sender;
+  const emailProvider = document.getElementById('email-provider');
+  const emailApiKey = document.getElementById('email-api-key');
+  const emailSender = document.getElementById('email-sender');
+
+  if (emailConf.provider && emailProvider) emailProvider.value = emailConf.provider;
+  if (emailConf.apiKey && emailApiKey) emailApiKey.value = emailConf.apiKey;
+  if (emailConf.sender && emailSender) emailSender.value = emailConf.sender;
 
   // Load Push
   const pushConf = JSON.parse(localStorage.getItem('mapapro_push_config') || '{}');
-  if (pushConf.serverKey) document.getElementById('firebase-server-key').value = pushConf.serverKey;
-  if (pushConf.senderId) document.getElementById('firebase-sender-id').value = pushConf.senderId;
-  if (pushConf.vapidKey) document.getElementById('firebase-vapid-key').value = pushConf.vapidKey;
+  const serverKey = document.getElementById('firebase-server-key');
+  const senderId = document.getElementById('firebase-sender-id');
+  const vapidKey = document.getElementById('firebase-vapid-key');
+
+  if (pushConf.serverKey && serverKey) serverKey.value = pushConf.serverKey;
+  if (pushConf.senderId && senderId) senderId.value = pushConf.senderId;
+  if (pushConf.vapidKey && vapidKey) vapidKey.value = pushConf.vapidKey;
 }
 
 function saveEmailConfig() {
