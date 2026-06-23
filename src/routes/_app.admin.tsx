@@ -389,7 +389,18 @@ function CollapsibleSection({
 function WebhookCard() {
   const [config, setConfig] = useState<WebhookConfig>(() => getWebhookConfig());
   const [saved, setSaved] = useState(false);
+  const [testing, setTesting] = useState(false);
   const disabled = !config.enabled;
+  const canTest = config.enabled && !!config.url.trim() && config.events.length > 0;
+
+  async function runTest() {
+    setTesting(true);
+    const res = await sendTestWebhook(config);
+    setTesting(false);
+    if (res.ok) toast.success(res.message);
+    else toast.error(res.message);
+  }
+
 
   useEffect(() => {
     setConfig(getWebhookConfig());
