@@ -183,6 +183,22 @@ const STEPS = [
 
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
 
+const LOYALTY_PROGRAMS = [
+  "Smiles (GOL)",
+  "LATAM Pass",
+  "TudoAzul (Azul)",
+  "Livelo",
+  "Esfera",
+  "Latam Pass + Multiplus",
+  "American Airlines AAdvantage",
+  "Delta SkyMiles",
+  "United MileagePlus",
+  "Emirates Skywards",
+  "TAP Miles&Go",
+  "Iberia Plus",
+  "Air France-KLM Flying Blue",
+];
+
 function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<WizardForm>(EMPTY_FORM);
