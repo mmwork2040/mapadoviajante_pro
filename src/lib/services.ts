@@ -713,6 +713,7 @@ function mapActivityPayload(data: Partial<ItineraryActivity>): Record<string, un
   const { time, ...rest } = data;
   const payload: Record<string, unknown> = { ...rest };
   if (time !== undefined) payload.time_start = time;
+  if (payload.type == null) payload.type = "activity";
   return payload;
 }
 
