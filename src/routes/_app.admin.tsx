@@ -205,9 +205,17 @@ function AdminPage() {
         </div>
       </div>
 
-      {isAdmin && <WebhookCard />}
+      {isAdmin && (
+        <CollapsibleSection icon={Webhook} title="Webhook">
+          <WebhookCard />
+        </CollapsibleSection>
+      )}
 
-      {isAdmin && <AiConfigCard />}
+      {isAdmin && (
+        <CollapsibleSection icon={Sparkles} title="Inteligência Artificial">
+          <AiConfigCard />
+        </CollapsibleSection>
+      )}
 
 
       <p className="text-xs text-muted-foreground">
