@@ -183,7 +183,13 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   }
 
   async function removeDay() {
-    if (!confirm("Excluir este dia?")) return;
+    const ok = await confirm({
+      title: "Excluir este dia?",
+      description: "Todas as atividades deste dia serão removidas. Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (!ok) return;
     await deleteItineraryDay(day.id);
     toast.success("Dia removido.");
     onChange();
