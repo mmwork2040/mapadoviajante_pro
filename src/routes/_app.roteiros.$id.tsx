@@ -154,19 +154,22 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
         data.people ? `${data.people} pessoa(s)` : "",
         data.description,
       ].filter(Boolean);
-      await createItineraryActivity({
+      const parsedCost = data.cost != null ? Number(String(data.cost).replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", ".")) : NaN;
+      const created = await createItineraryActivity({
         day_id: day.id,
         title: data.title || data.hotel_name || data.flight_number || "Item importado",
         time: data.time || null,
         duration: data.duration || null,
         location: data.location || null,
-        cost: data.cost ? Number(data.cost) : null,
+        cost: Number.isFinite(parsedCost) ? parsedCost : null,
         description: descParts.join(" · ") || null,
         type: data.type || "activity",
         sort_order: (day.activities?.length || 0) + 1,
       });
+      if (!created) throw new Error("Não foi possível salvar a atividade.");
       toast.success("Documento lido — atividade criada!");
       onChange();
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
     } finally {
