@@ -687,9 +687,10 @@ function NotificationsCard() {
         <button
           type="button"
           onClick={save}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          disabled={!configIsComplete(config)}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
         >
-          <Save className="h-4 w-4" /> Salvar
+          <Save className="h-4 w-4" /> Salvar e habilitar
         </button>
         <button
           type="button"
