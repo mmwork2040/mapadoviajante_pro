@@ -229,7 +229,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       destination: form.destination || null,
       value: parseCurrency(form.value),
       status: "new",
-      origin: form.origin || "direto",
+      origin: (form.origin === "Outro" ? form.origin_other.trim() : form.origin) || "direto",
       profile: {
         travel_dates: form.travel_dates,
         passengers: form.passengers,
