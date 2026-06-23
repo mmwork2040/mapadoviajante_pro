@@ -36,7 +36,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
       <aside
-        className={`hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200 md:flex ${
+        className={`hidden shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-in-out md:flex ${
           collapsed ? "w-20" : "w-64"
         }`}
       >
