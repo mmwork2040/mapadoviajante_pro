@@ -332,6 +332,19 @@ function VouchersCard({
   onChange: () => void;
 }) {
   const [form, setForm] = useState<Partial<Voucher>>({ type: "hotel" });
+  const [extracting, setExtracting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const extract = useServerFn(extractDocumentData);
+  const confirm = useConfirm();
+
+  const VOUCHER_TYPES = ["hotel", "voo", "transfer", "passeio", "ingresso", "carro", "seguro", "outro"];
+
+  function mapType(t?: string): string {
+    const v = (t || "").toLowerCase();
+    if (VOUCHER_TYPES.includes(v)) return v;
+    if (v === "voos") return "voo";
+    return "outro";
+  }
 
   async function add() {
     if (!form.title?.trim()) {
@@ -345,11 +358,76 @@ function VouchersCard({
     } else toast.error("Erro ao criar voucher.");
   }
 
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setExtracting(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const data = await extract({ data: { fileBase64: base64, mime: file.type } });
+      const notes = [
+        data.hotel_name,
+        data.room && `Quarto ${data.room}`,
+        data.flight_number && `Voo ${data.flight_number}`,
+        data.location,
+        data.date,
+        data.time,
+        data.people ? `${data.people} pessoa(s)` : "",
+        data.cost ? `Valor ${formatCurrency(Number(data.cost))}` : "",
+        data.description,
+      ]
+        .filter(Boolean)
+        .join(" · ");
+      setForm({
+        type: mapType(data.type),
+        title: data.title || data.hotel_name || data.flight_number || "Voucher importado",
+        provider: data.provider || "",
+        code: data.code || "",
+        notes,
+      });
+      toast.success("Documento lido — revise e adicione o voucher.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  async function removeVoucher(v: Voucher) {
+    const ok = await confirm({
+      title: "Excluir voucher?",
+      description: `"${v.title || "Voucher"}" será removido permanentemente.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (!ok) return;
+    await deleteVoucher(v.id);
+    onChange();
+  }
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <h2 className="mb-4 flex items-center gap-2 font-semibold">
-        <Ticket className="h-4 w-4" /> Vouchers
-      </h2>
+      <div className="mb-4 flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 font-semibold">
+          <Ticket className="h-4 w-4" /> Vouchers
+        </h2>
+        <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={extracting}
+          title="Enviar PDF/imagem (ingresso, passagem, hospedagem, reserva de carro) para a IA preencher"
+          className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
+        >
+          {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
+          Importar com IA
+        </button>
+      </div>
       <ul className="space-y-2">
         {vouchers.length === 0 && <li className="text-sm text-muted-foreground">Nenhum voucher.</li>}
         {vouchers.map((v) => (
@@ -363,10 +441,7 @@ function VouchersCard({
               </p>
             </div>
             <button
-              onClick={async () => {
-                await deleteVoucher(v.id);
-                onChange();
-              }}
+              onClick={() => removeVoucher(v)}
               className="text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-4 w-4" />
@@ -380,7 +455,7 @@ function VouchersCard({
           onChange={(e) => setForm({ ...form, type: e.target.value })}
           className="rounded-lg border border-input bg-background px-3 py-2 text-sm capitalize outline-none focus:border-primary"
         >
-          {["hotel", "voo", "transfer", "passeio", "seguro"].map((t) => (
+          {VOUCHER_TYPES.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
@@ -395,6 +470,7 @@ function VouchersCard({
     </div>
   );
 }
+
 
 function CopilotCard({ it }: { it: Itinerary }) {
   const [prompt, setPrompt] = useState("");
