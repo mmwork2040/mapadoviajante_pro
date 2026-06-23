@@ -137,6 +137,20 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   }
 
 
+  function mapActivityType(t?: string): string {
+    const v = (t || "").toLowerCase();
+    const allowed = ["flight", "hotel", "activity", "transfer", "restaurant", "note"];
+    if (allowed.includes(v)) return v;
+    const aliases: Record<string, string> = {
+      voo: "flight", voos: "flight", aviao: "flight", passagem: "flight",
+      hospedagem: "hotel", hotel: "hotel", pousada: "hotel",
+      transfer: "transfer", traslado: "transfer", carro: "transfer", transporte: "transfer",
+      restaurante: "restaurant", gastronomia: "restaurant", refeicao: "restaurant",
+      ingresso: "activity", passeio: "activity", tour: "activity", parque: "activity",
+    };
+    return aliases[v] || "activity";
+  }
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
