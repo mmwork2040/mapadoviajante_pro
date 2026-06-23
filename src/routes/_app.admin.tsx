@@ -351,11 +351,9 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    // Usa sempre um domínio público acessível ao convidado (o preview/sandbox
-    // do editor não abre fora do Lovable).
-    const origin = window.location.origin;
-    const isPreview = /lovableproject\.com$|id-preview|lovable\.dev$/.test(origin);
-    const appUrl = isPreview ? "https://crm.osegredodoviajante.com" : origin;
+    // Usa sempre o domínio público publicado (o preview/sandbox do editor
+    // não abre fora do Lovable).
+    const appUrl = "https://crmosegredodoviajante.lovable.app";
     const res = await sendTeamInvite({
       data: { ...form, appUrl },
     });
