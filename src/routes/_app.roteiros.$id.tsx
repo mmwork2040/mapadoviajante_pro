@@ -119,18 +119,23 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
 
   async function addActivity() {
     if (!title.trim()) return;
-    await createItineraryActivity({
-      day_id: day.id,
-      title,
-      time: time || null,
-      location: location || null,
-      sort_order: (day.activities?.length || 0) + 1,
-    });
-    setTitle("");
-    setTime("");
-    setLocation("");
-    onChange();
+    try {
+      await createItineraryActivity({
+        day_id: day.id,
+        title,
+        time: time || null,
+        location: location || null,
+        sort_order: (day.activities?.length || 0) + 1,
+      });
+      setTitle("");
+      setTime("");
+      setLocation("");
+      onChange();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao adicionar atividade.");
+    }
   }
+
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
