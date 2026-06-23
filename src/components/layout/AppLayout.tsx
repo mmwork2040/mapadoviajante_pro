@@ -18,7 +18,7 @@ import { useAuth } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 
 const NAV = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
+  { to: "/", label: "Página Inicial", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
   { to: "/biblioteca", label: "Biblioteca", icon: Images },
