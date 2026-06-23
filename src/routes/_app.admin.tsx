@@ -247,6 +247,18 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                     Reenviar
                   </button>
                 )}
+                {isAdmin && m.status === "pending" && (
+                  <button
+                    type="button"
+                    title="Revogar convite"
+                    disabled={revoke.isPending}
+                    onClick={() => handleRevokeInvite(m)}
+                    className="flex items-center gap-1 rounded-lg border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    {revoke.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                    Revogar
+                  </button>
+                )}
               </li>
             ))}
           </ul>
