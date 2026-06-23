@@ -403,6 +403,7 @@ export function ModalField({
   required,
   placeholder,
   full,
+  format,
 }: {
   label: string;
   value: string;
@@ -411,18 +412,28 @@ export function ModalField({
   required?: boolean;
   placeholder?: string;
   full?: boolean;
+  format?: "currency" | "phone" | "cpfcnpj";
 }) {
+  const masks = {
+    currency: maskCurrency,
+    phone: maskPhone,
+    cpfcnpj: maskCpfCnpj,
+  } as const;
+  const handleChange = (raw: string) => {
+    onChange(format ? masks[format](raw) : raw);
+  };
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
       <span className="mb-1 block text-sm font-semibold">
         {label} {required && <span className="text-primary">*</span>}
       </span>
       <input
-        type={type}
+        type={format ? "text" : type}
+        inputMode={format ? "numeric" : undefined}
         required={required}
         value={value}
         placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
         className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
       />
     </label>
