@@ -137,6 +137,20 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   }
 
 
+  function mapActivityType(t?: string): string {
+    const v = (t || "").toLowerCase();
+    const allowed = ["flight", "hotel", "activity", "transfer", "restaurant", "note"];
+    if (allowed.includes(v)) return v;
+    const aliases: Record<string, string> = {
+      voo: "flight", voos: "flight", aviao: "flight", passagem: "flight",
+      hospedagem: "hotel", hotel: "hotel", pousada: "hotel",
+      transfer: "transfer", traslado: "transfer", carro: "transfer", transporte: "transfer",
+      restaurante: "restaurant", gastronomia: "restaurant", refeicao: "restaurant",
+      ingresso: "activity", passeio: "activity", tour: "activity", parque: "activity",
+    };
+    return aliases[v] || "activity";
+  }
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -168,7 +182,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
         location: data.location || null,
         cost: Number.isFinite(parsedCost) ? parsedCost : null,
         description: descParts.join(" · ") || null,
-        type: data.type || "activity",
+        type: mapActivityType(data.type),
         sort_order: (day.activities?.length || 0) + 1,
       });
       if (!created) throw new Error("Não foi possível salvar a atividade.");
