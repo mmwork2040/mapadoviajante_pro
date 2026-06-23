@@ -88,7 +88,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 space-y-1 px-3">
-          {NAV.map(({ to, label, icon: Icon }) => {
+          {nav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link
@@ -208,7 +208,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Barra de navegação inferior (mobile) */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        {MOBILE_NAV.map(({ to, label, icon: Icon }) => {
+        {mobileNav.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link
