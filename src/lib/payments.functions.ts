@@ -52,7 +52,7 @@ export const getAgencyPaymentConfig = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<AgencyPaymentConfig> => {
     const agencyId = await resolveAgencyId(context.supabase, context.userId);
     if (!agencyId) return DEFAULT_PAYMENT_CONFIG;
-    const { data } = await context.supabase
+    const { data } = await (context.supabase as any)
       .from("agency_payment_settings")
       .select(
         "is_active, asaas_environment, asaas_api_key, asaas_webhook_token, monthly_price, yearly_price, trial_days, grace_period_days, first_layer_rate, second_layer_rate",
