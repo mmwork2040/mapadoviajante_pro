@@ -412,9 +412,30 @@ function WebhookCard() {
 }
 
 const AI_PROVIDERS = [
-  { id: "openai", label: "OpenAI", placeholder: "gpt-4o-mini" },
-  { id: "anthropic", label: "Anthropic", placeholder: "claude-3-5-sonnet-20241022" },
-  { id: "google", label: "Google Gemini", placeholder: "gemini-1.5-flash" },
+  {
+    id: "openai",
+    label: "OpenAI",
+    placeholder: "gpt-4o-mini",
+    models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo", "o1", "o1-mini"],
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    placeholder: "claude-3-5-sonnet-20241022",
+    models: [
+      "claude-3-5-sonnet-20241022",
+      "claude-3-5-haiku-20241022",
+      "claude-3-opus-20240229",
+      "claude-3-sonnet-20240229",
+      "claude-3-haiku-20240307",
+    ],
+  },
+  {
+    id: "google",
+    label: "Google Gemini",
+    placeholder: "gemini-1.5-flash",
+    models: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.0-pro"],
+  },
 ];
 
 function AiConfigCard() {
