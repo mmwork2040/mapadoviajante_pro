@@ -225,11 +225,12 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
       </ul>
       <div className="mt-3 flex gap-2">
         <input
+          type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          placeholder="09:00"
-          className="w-20 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+          className="w-28 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
         />
+
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
@@ -267,7 +268,7 @@ function ActivityRow({
     return (
       <li className="space-y-2 rounded-lg bg-muted/50 px-3 py-2">
         <div className="flex gap-2">
-          <input value={time} onChange={(e) => setTime(e.target.value)} placeholder="Hora" className="w-20 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
+          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-28 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" className="flex-1 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
         </div>
         <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Local" className="w-full rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
