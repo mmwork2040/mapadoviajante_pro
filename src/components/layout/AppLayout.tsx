@@ -29,6 +29,15 @@ const NAV = [
   { to: "/admin", label: "Administração", icon: ShieldCheck },
 ] as const;
 
+// Itens principais exibidos na barra de navegação inferior (mobile)
+const MOBILE_NAV = [
+  { to: "/", label: "Início", icon: LayoutDashboard },
+  { to: "/leads", label: "Leads", icon: Users },
+  { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
+  { to: "/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/admin", label: "Admin", icon: ShieldCheck },
+] as const;
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const { member, signOut } = useAuth();
   const { theme, toggle } = useTheme();
