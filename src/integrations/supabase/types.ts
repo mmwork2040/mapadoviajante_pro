@@ -2166,6 +2166,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      agency_has_members: { Args: { _agency_id: string }; Returns: boolean }
       deduct_extra_tokens: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
