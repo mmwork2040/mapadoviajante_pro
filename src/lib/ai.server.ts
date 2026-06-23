@@ -141,3 +141,13 @@ export async function extractDocument(
 
   return parseJsonLoose(text);
 }
+
+export async function askCopilot(cfg: ProviderConfig, prompt: string): Promise<string> {
+  let text = "";
+  if (cfg.provider === "openai") text = await callOpenAI(cfg, prompt);
+  else if (cfg.provider === "anthropic") text = await callAnthropic(cfg, prompt);
+  else if (cfg.provider === "google") text = await callGoogle(cfg, [{ text: prompt }]);
+  else throw new Error("Provedor não suportado.");
+  if (!text.trim()) throw new Error("Resposta vazia do provedor.");
+  return text.trim();
+}
