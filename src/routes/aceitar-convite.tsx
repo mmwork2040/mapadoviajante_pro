@@ -33,7 +33,7 @@ function AcceptInvitePage() {
   const location = useLocation();
   const token = new URLSearchParams(location.searchStr).get("token") ?? "";
   const { session, refreshMember } = useAuth();
-  const navigate = useNavigate();
+  
 
   const [info, setInfo] = useState<InviteInfo | null>(null);
   const [loadingInfo, setLoadingInfo] = useState(true);
