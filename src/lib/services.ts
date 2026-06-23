@@ -596,8 +596,13 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     .select("*, activities:crm_itinerary_activities(*)")
     .eq("itinerary_id", id)
     .order("sort_order", { ascending: true });
-  (days || []).forEach((day: ItineraryDay) => {
-    if (day.activities) day.activities.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  (days || []).forEach((day: ItineraryDay & { activities?: (ItineraryActivity & { time_start?: string | null })[] }) => {
+    if (day.activities) {
+      day.activities.forEach((a) => {
+        if (a.time == null && a.time_start != null) a.time = a.time_start;
+      });
+      day.activities.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+    }
   });
   const { data: vouchers } = await supabase.from("crm_vouchers").select("*").eq("itinerary_id", id);
   return { ...(itinerary as Itinerary), days: (days as ItineraryDay[]) || [], vouchers: (vouchers as Voucher[]) || [] };
