@@ -748,9 +748,10 @@ function GmailCard() {
   const connectedEmail = statusQ.data?.email;
 
   useEffect(() => {
-    const c = getGmailConfig();
-    setConfig(c);
-    setSubject((s) => s || c.defaultSubject);
+    getGmailConfig().then((c) => {
+      setConfig(c);
+      setSubject((s) => s || c.defaultSubject);
+    });
   }, []);
 
   function update(patch: Partial<GmailConfig>) {
