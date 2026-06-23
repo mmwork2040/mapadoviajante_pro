@@ -107,7 +107,11 @@ function ItineraryDetailPage() {
 function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void }) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
+  const [location, setLocation] = useState("");
   const [dayTitle, setDayTitle] = useState(day.title || `Dia ${day.day_number}`);
+  const [extracting, setExtracting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const extract = useServerFn(extractDocumentData);
 
   async function addActivity() {
     if (!title.trim()) return;
@@ -115,11 +119,49 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
       day_id: day.id,
       title,
       time: time || null,
+      location: location || null,
       sort_order: (day.activities?.length || 0) + 1,
     });
     setTitle("");
     setTime("");
+    setLocation("");
     onChange();
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setExtracting(true);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      const data = await extract({ data: { fileBase64: base64, mime: file.type } });
+      const parts = [
+        data.flight_number && `Voo ${data.flight_number}`,
+        data.hotel_name,
+        data.room && `Quarto ${data.room}`,
+        data.provider,
+        data.code && `Localizador ${data.code}`,
+        data.date,
+        data.description,
+      ].filter(Boolean);
+      setTitle(data.title || data.hotel_name || data.flight_number || "Item importado");
+      setTime(data.time || "");
+      setLocation(data.location || "");
+      if (parts.length) toast.success("Documento lido — revise e adicione.");
+      else toast.info("Documento lido, poucos dados encontrados.");
+      // Guarda detalhes na descrição via título caso necessário
+      if (data.description) setLocation(data.location || data.description.slice(0, 60));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
+    } finally {
+      setExtracting(false);
+    }
   }
 
   async function saveDayTitle() {
@@ -145,6 +187,16 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
           onBlur={saveDayTitle}
           className="flex-1 rounded-lg bg-transparent px-2 py-1 font-semibold outline-none hover:bg-muted/50 focus:bg-muted/50"
         />
+        <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={extracting}
+          title="Enviar documento para a IA preencher"
+          className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-60"
+        >
+          {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
+          IA
+        </button>
         <button onClick={removeDay} className="text-muted-foreground hover:text-destructive">
           <Trash2 className="h-4 w-4" />
         </button>
@@ -174,6 +226,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
     </div>
   );
 }
+
 
 function ActivityRow({
   activity,
