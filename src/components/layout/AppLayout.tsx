@@ -68,7 +68,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 }`}
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
-                {!collapsed && label}
+                {!collapsed && <span className="animate-fade-in whitespace-nowrap">{label}</span>}
               </Link>
             );
           })}
