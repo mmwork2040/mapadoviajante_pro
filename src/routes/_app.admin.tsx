@@ -286,6 +286,18 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                     Revogar
                   </button>
                 )}
+                {isAdmin && m.status !== "pending" && m.id !== member?.id && (
+                  <button
+                    type="button"
+                    title="Remover da equipe"
+                    disabled={remove.isPending}
+                    onClick={() => handleRemoveMember(m)}
+                    className="flex items-center gap-1 rounded-lg border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    {remove.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    Remover
+                  </button>
+                )}
               </li>
             ))}
           </ul>
