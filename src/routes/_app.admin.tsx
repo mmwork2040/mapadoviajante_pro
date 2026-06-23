@@ -17,6 +17,7 @@ import {
   saveNotifConfig,
   requestPushToken,
   configIsComplete,
+  NOTIF_EVENTS,
   type NotifConfig,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
