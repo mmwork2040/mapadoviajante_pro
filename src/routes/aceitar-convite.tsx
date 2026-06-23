@@ -9,9 +9,26 @@ const APP_URL = "https://crmosegredodoviajante.lovable.app";
 
 export const Route = createFileRoute("/aceitar-convite")({
   ssr: false,
+  pendingComponent: InviteLoading,
   head: () => ({ meta: [{ title: "Aceitar convite — O Segredo do Viajante" }] }),
   component: AcceptInvitePage,
 });
+
+function InviteLoading() {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4">
+      <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
+        <div className="mb-6 flex items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <RouteIcon className="h-5 w-5" />
+          </div>
+          <span className="text-xl font-extrabold tracking-tight">O Segredo do Viajante</span>
+        </div>
+        <p className="text-sm text-muted-foreground">Carregando convite…</p>
+      </div>
+    </div>
+  );
+}
 
 function AcceptInvitePage() {
   const location = useLocation();
