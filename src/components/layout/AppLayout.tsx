@@ -36,7 +36,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
       <aside
-        className={`hidden shrink-0 flex-col border-r border-sidebar-border bg-sidebar transition-all duration-200 md:flex ${
+        className={`hidden shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-in-out md:flex ${
           collapsed ? "w-20" : "w-64"
         }`}
       >
@@ -45,7 +45,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <RouteIcon className="h-5 w-5" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-extrabold tracking-tight">
+            <span className="animate-fade-in whitespace-nowrap text-lg font-extrabold tracking-tight">
               Mapa<span className="text-primary">PRO</span>
             </span>
           )}
@@ -68,7 +68,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 }`}
               >
                 <Icon className="h-[18px] w-[18px] shrink-0" />
-                {!collapsed && label}
+                {!collapsed && <span className="animate-fade-in whitespace-nowrap">{label}</span>}
               </Link>
             );
           })}
@@ -81,7 +81,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             }`}
           >
             <Bot className="h-4 w-4 shrink-0" />
-            {!collapsed && "Thay IA"}
+            {!collapsed && <span className="animate-fade-in whitespace-nowrap">Thay IA</span>}
           </div>
           {collapsed ? (
             <div
