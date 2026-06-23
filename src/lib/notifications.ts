@@ -27,7 +27,7 @@ export interface NotifConfig {
   events: NotifEventId[];
 }
 
-const DEFAULT_CONFIG: NotifConfig = {
+export const DEFAULT_CONFIG: NotifConfig = {
   enabled: false,
   apiKey: "",
   authDomain: "",
@@ -38,25 +38,18 @@ const DEFAULT_CONFIG: NotifConfig = {
   events: [],
 };
 
-
-function storageKey() {
-  return `notif_config_${getAgencyId() ?? "default"}`;
-}
-
-export function getNotifConfig(): NotifConfig {
-  if (typeof window === "undefined") return DEFAULT_CONFIG;
+export async function getNotifConfig(): Promise<NotifConfig> {
   try {
-    const raw = window.localStorage.getItem(storageKey());
-    if (!raw) return DEFAULT_CONFIG;
-    return { ...DEFAULT_CONFIG, ...(JSON.parse(raw) as Partial<NotifConfig>) };
+    const { value } = await getAgencyConfig({ data: { scope: "notifications" } });
+    if (!value) return DEFAULT_CONFIG;
+    return { ...DEFAULT_CONFIG, ...(JSON.parse(value) as Partial<NotifConfig>) };
   } catch {
     return DEFAULT_CONFIG;
   }
 }
 
-export function saveNotifConfig(config: NotifConfig) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(storageKey(), JSON.stringify(config));
+export async function saveNotifConfig(config: NotifConfig): Promise<void> {
+  await saveAgencyConfig({ data: { scope: "notifications", value: JSON.stringify(config) } });
 }
 
 export function configIsComplete(c: NotifConfig): boolean {
