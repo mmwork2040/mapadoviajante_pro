@@ -8,7 +8,6 @@ import { getInviteInfo, acceptInvite, type InviteInfo } from "@/lib/invites";
 const APP_URL = "https://crmosegredodoviajante.lovable.app";
 
 export const Route = createFileRoute("/aceitar-convite")({
-  ssr: false,
   pendingComponent: InviteLoading,
   head: () => ({ meta: [{ title: "Aceitar convite — O Segredo do Viajante" }] }),
   component: AcceptInvitePage,
