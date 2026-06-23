@@ -335,32 +335,27 @@ function WebhookCard() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Webhook className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold">Webhook</h2>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">
-            {config.enabled ? "Habilitado" : "Desabilitado"}
-          </span>
-          <button
-            type="button"
-            onClick={() => update({ enabled: !config.enabled })}
-            className={`relative h-6 w-11 rounded-full transition-colors ${
-              config.enabled ? "bg-primary" : "bg-muted"
+    <div>
+      <label className="mb-4 flex items-center justify-between gap-2 text-sm">
+        <span className="text-muted-foreground">
+          {config.enabled ? "Habilitado" : "Desabilitado"}
+        </span>
+        <button
+          type="button"
+          onClick={() => update({ enabled: !config.enabled })}
+          className={`relative h-6 w-11 rounded-full transition-colors ${
+            config.enabled ? "bg-primary" : "bg-muted"
+          }`}
+          aria-pressed={config.enabled}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+              config.enabled ? "translate-x-5" : "translate-x-0.5"
             }`}
-            aria-pressed={config.enabled}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                config.enabled ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </button>
-        </label>
-      </div>
+          />
+        </button>
+      </label>
+
 
       <p className="mb-4 text-xs text-muted-foreground">
         Quando desabilitado, nenhum evento é disparado e as opções abaixo ficam inativas.
