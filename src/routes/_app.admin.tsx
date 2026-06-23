@@ -35,7 +35,7 @@ import {
 } from "@/lib/services";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
-import { useAuth } from "@/lib/auth";
+import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
 import type { AiConfig, Task } from "@/lib/types";
 
