@@ -13,12 +13,12 @@ export const Route = createFileRoute("/_app/leads")({
   component: LeadsPage,
 });
 
-const COLUMNS: { key: LeadStatus; label: string }[] = [
-  { key: "new", label: "Novos" },
-  { key: "contacted", label: "Contatados" },
-  { key: "negotiating", label: "Negociando" },
-  { key: "closed", label: "Fechados" },
-  { key: "lost", label: "Perdidos" },
+const COLUMNS: { key: LeadStatus; label: string; dot: string }[] = [
+  { key: "new", label: "Novo", dot: "bg-blue-500" },
+  { key: "contacted", label: "Contatado", dot: "bg-sky-500" },
+  { key: "negotiating", label: "Em Negociação", dot: "bg-amber-400" },
+  { key: "closed", label: "Fechado", dot: "bg-emerald-500" },
+  { key: "lost", label: "Perdido", dot: "bg-red-500" },
 ];
 
 function LeadsPage() {
@@ -82,23 +82,36 @@ function LeadsPage() {
                 key={col.key}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => onDrop(e, col.key)}
-                className="flex flex-col rounded-2xl border border-border bg-muted/40 p-3"
+                className="flex flex-col"
               >
-                <div className="mb-3 flex items-center justify-between">
-                  <span className="text-sm font-semibold">{col.label}</span>
-                  <span className="rounded-full bg-card px-2 text-xs text-muted-foreground">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    <span className={`h-2.5 w-2.5 rounded-full ${col.dot}`} />
+                    {col.label}
+                  </span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
                     {items.length}
                   </span>
                 </div>
-                <div className="space-y-2">
-                  {items.map((l) => (
-                    <LeadCard key={l.id} lead={l} />
-                  ))}
-                </div>
+                <div className="mb-3 h-px bg-border" />
+                {items.length === 0 ? (
+                  <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-primary/50 bg-primary/5 p-4 text-center text-sm font-medium text-primary">
+                    Nenhum lead
+                    <br />
+                    nesta etapa
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {items.map((l) => (
+                      <LeadCard key={l.id} lead={l} />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
         </div>
+
       )}
 
       {open && (
