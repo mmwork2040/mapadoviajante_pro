@@ -35,6 +35,7 @@ import {
   fetchAiConfig,
   fetchTasks,
   fetchTeamMembers,
+  revokeMember,
   saveAiConfig,
   updateMemberRole,
   updateTask,
@@ -142,6 +143,27 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     resendInvite.mutate({ name: m.name || "", email: m.email || "", role: m.role || "consultor" });
   }
 
+  const revoke = useMutation({
+    mutationFn: (id: string) => revokeMember(id),
+    onSuccess: (ok) => {
+      if (!ok) return toast.error("Erro ao revogar convite.");
+      toast.success("Convite revogado.");
+      qc.invalidateQueries({ queryKey: ["team"] });
+    },
+    onError: () => toast.error("Erro ao revogar convite."),
+  });
+
+  async function handleRevokeInvite(m: { id: string; email?: string | null }) {
+    const ok = await confirm({
+      title: "Revogar convite?",
+      description: `O convite pendente para ${m.email || "este usuário"} será cancelado e o acesso bloqueado até um novo convite.`,
+      confirmLabel: "Revogar",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+    revoke.mutate(m.id);
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -223,6 +245,18 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                   >
                     {resendInvite.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                     Reenviar
+                  </button>
+                )}
+                {isAdmin && m.status === "pending" && (
+                  <button
+                    type="button"
+                    title="Revogar convite"
+                    disabled={revoke.isPending}
+                    onClick={() => handleRevokeInvite(m)}
+                    className="flex items-center gap-1 rounded-lg border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  >
+                    {revoke.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
+                    Revogar
                   </button>
                 )}
               </li>
