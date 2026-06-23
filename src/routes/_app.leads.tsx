@@ -151,19 +151,54 @@ function LeadsPage() {
   );
 }
 
-function LeadCard({ lead }: { lead: Lead }) {
+function LeadCard({
+  lead,
+  dragging,
+  onDragStart,
+  onDragEnd,
+}: {
+  lead: Lead;
+  dragging: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
+}) {
+  const navigate = useNavigate();
+  const movedRef = useRef(false);
+
   return (
-    <Link
-      to="/leads/$leadId"
-      params={{ leadId: lead.id }}
+    <div
+      role="button"
+      tabIndex={0}
       draggable
-      onDragStart={(e) => e.dataTransfer.setData("text/plain", lead.id)}
-      className="block cursor-grab rounded-xl border border-border bg-card p-3 shadow-sm transition hover:shadow-md active:cursor-grabbing"
+      onDragStart={(e) => {
+        movedRef.current = true;
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", lead.id);
+        onDragStart();
+      }}
+      onDragEnd={() => {
+        onDragEnd();
+        // allow click again shortly after the drag completes
+        setTimeout(() => (movedRef.current = false), 0);
+      }}
+      onClick={() => {
+        if (movedRef.current) return;
+        navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
+        }
+      }}
+      className={`block cursor-grab rounded-xl border border-border bg-card p-3 shadow-sm transition hover:shadow-md hover:border-primary/40 active:cursor-grabbing ${
+        dragging ? "opacity-50 ring-2 ring-primary" : ""
+      }`}
     >
       <p className="font-medium">{lead.name}</p>
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
       <p className="mt-2 text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
-    </Link>
+    </div>
   );
 }
 
