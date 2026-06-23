@@ -1,4 +1,5 @@
 import { getAgencyId } from "@/lib/services";
+import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
 
 // ── Eventos disponíveis para disparo ───────────────────────────
 export const WEBHOOK_EVENTS = [
@@ -21,36 +22,30 @@ export interface WebhookConfig {
   events: WebhookEventId[];
 }
 
-const DEFAULT_CONFIG: WebhookConfig = {
+export const DEFAULT_CONFIG: WebhookConfig = {
   enabled: false,
   url: "",
   secret: "",
   events: WEBHOOK_EVENTS.map((e) => e.id),
 };
 
-function storageKey() {
-  return `webhook_config_${getAgencyId() ?? "default"}`;
-}
-
-export function getWebhookConfig(): WebhookConfig {
-  if (typeof window === "undefined") return DEFAULT_CONFIG;
+export async function getWebhookConfig(): Promise<WebhookConfig> {
   try {
-    const raw = window.localStorage.getItem(storageKey());
-    if (!raw) return DEFAULT_CONFIG;
-    return { ...DEFAULT_CONFIG, ...(JSON.parse(raw) as Partial<WebhookConfig>) };
+    const { value } = await getAgencyConfig({ data: { scope: "webhook" } });
+    if (!value) return DEFAULT_CONFIG;
+    return { ...DEFAULT_CONFIG, ...(JSON.parse(value) as Partial<WebhookConfig>) };
   } catch {
     return DEFAULT_CONFIG;
   }
 }
 
-export function saveWebhookConfig(config: WebhookConfig) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(storageKey(), JSON.stringify(config));
+export async function saveWebhookConfig(config: WebhookConfig): Promise<void> {
+  await saveAgencyConfig({ data: { scope: "webhook", value: JSON.stringify(config) } });
 }
 
 // ── Disparo de eventos ─────────────────────────────────────────
 export async function dispatchWebhook(event: WebhookEventId, payload: unknown) {
-  const config = getWebhookConfig();
+  const config = await getWebhookConfig();
   if (!config.enabled || !config.url) return;
   if (!config.events.includes(event)) return;
 

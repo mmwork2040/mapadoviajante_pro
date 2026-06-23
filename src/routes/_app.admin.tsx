@@ -10,6 +10,7 @@ import {
   getWebhookConfig,
   saveWebhookConfig,
   sendTestWebhook,
+  DEFAULT_CONFIG as DEFAULT_WEBHOOK_CONFIG,
   type WebhookConfig,
 } from "@/lib/webhook";
 import {
@@ -18,10 +19,16 @@ import {
   requestPushToken,
   configIsComplete,
   NOTIF_EVENTS,
+  DEFAULT_CONFIG as DEFAULT_NOTIF_CONFIG,
   type NotifConfig,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
-import { getGmailConfig, saveGmailConfig, type GmailConfig } from "@/lib/gmail-config";
+import {
+  getGmailConfig,
+  saveGmailConfig,
+  DEFAULT_CONFIG as DEFAULT_GMAIL_CONFIG,
+  type GmailConfig,
+} from "@/lib/gmail-config";
 import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
   createTask,
@@ -434,7 +441,7 @@ function CollapsibleSection({
 
 
 function WebhookCard() {
-  const [config, setConfig] = useState<WebhookConfig>(() => getWebhookConfig());
+  const [config, setConfig] = useState<WebhookConfig>(DEFAULT_WEBHOOK_CONFIG);
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const disabled = !config.enabled;
@@ -450,7 +457,7 @@ function WebhookCard() {
 
 
   useEffect(() => {
-    setConfig(getWebhookConfig());
+    getWebhookConfig().then(setConfig);
   }, []);
 
   function update(patch: Partial<WebhookConfig>) {
@@ -466,10 +473,14 @@ function WebhookCard() {
     });
   }
 
-  function save() {
-    saveWebhookConfig(config);
-    setSaved(true);
-    toast.success("Configuração de webhook salva.");
+  async function save() {
+    try {
+      await saveWebhookConfig(config);
+      setSaved(true);
+      toast.success("Configuração de webhook salva.");
+    } catch {
+      toast.error("Não foi possível salvar a configuração.");
+    }
   }
 
   return (
@@ -567,7 +578,7 @@ function WebhookCard() {
 }
 
 function NotificationsCard() {
-  const [config, setConfig] = useState<NotifConfig>(() => getNotifConfig());
+  const [config, setConfig] = useState<NotifConfig>(DEFAULT_NOTIF_CONFIG);
   const [token, setToken] = useState<string>("");
   const [activating, setActivating] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -575,7 +586,7 @@ function NotificationsCard() {
   const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
 
   useEffect(() => {
-    setConfig(getNotifConfig());
+    getNotifConfig().then(setConfig);
   }, []);
 
   function update(patch: Partial<NotifConfig>) {
@@ -590,14 +601,18 @@ function NotificationsCard() {
     });
   }
 
-  function save() {
+  async function save() {
     if (!configIsComplete(config)) {
       toast.error("Preencha todos os campos e selecione ao menos um evento.");
       return;
     }
-    saveNotifConfig({ ...config, enabled: true });
-    setConfig((c) => ({ ...c, enabled: true }));
-    toast.success("Configuração de notificações salva e habilitada.");
+    try {
+      await saveNotifConfig({ ...config, enabled: true });
+      setConfig((c) => ({ ...c, enabled: true }));
+      toast.success("Configuração de notificações salva e habilitada.");
+    } catch {
+      toast.error("Não foi possível salvar a configuração.");
+    }
   }
 
   async function activate() {
@@ -730,7 +745,7 @@ function NotificationsCard() {
 }
 
 function GmailCard() {
-  const [config, setConfig] = useState<GmailConfig>(() => getGmailConfig());
+  const [config, setConfig] = useState<GmailConfig>(DEFAULT_GMAIL_CONFIG);
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -741,18 +756,23 @@ function GmailCard() {
   const connectedEmail = statusQ.data?.email;
 
   useEffect(() => {
-    const c = getGmailConfig();
-    setConfig(c);
-    setSubject((s) => s || c.defaultSubject);
+    getGmailConfig().then((c) => {
+      setConfig(c);
+      setSubject((s) => s || c.defaultSubject);
+    });
   }, []);
 
   function update(patch: Partial<GmailConfig>) {
     setConfig((c) => ({ ...c, ...patch }));
   }
 
-  function save() {
-    saveGmailConfig(config);
-    toast.success("Configuração de e-mail salva.");
+  async function save() {
+    try {
+      await saveGmailConfig(config);
+      toast.success("Configuração de e-mail salva.");
+    } catch {
+      toast.error("Não foi possível salvar a configuração.");
+    }
   }
 
   async function submit() {
