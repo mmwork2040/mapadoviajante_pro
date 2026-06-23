@@ -20,6 +20,7 @@ import {
   type NotifConfig,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
+import { getGmailConfig, saveGmailConfig, type GmailConfig } from "@/lib/gmail-config";
 import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
   createTask,
