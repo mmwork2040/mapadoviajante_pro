@@ -15,6 +15,7 @@ export const Route = createFileRoute("/_app/biblioteca")({
 
 function LibraryPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Destination | null>(null);
   const { data: items = [], isLoading, isError, refetch } = useQuery({
@@ -25,7 +26,13 @@ function LibraryPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["destinations"] });
 
   async function remove(d: Destination) {
-    if (!confirm(`Excluir "${d.title || d.name}"?`)) return;
+    const ok2 = await confirm({
+      title: "Excluir destino?",
+      description: `"${d.title || d.name}" será removido da biblioteca.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (!ok2) return;
     const ok = await deleteDestination(d.id);
     if (ok) {
       toast.success("Destino excluído.");
