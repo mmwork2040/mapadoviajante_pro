@@ -21,7 +21,7 @@ import {
   updateMemberRole,
   updateTask,
 } from "@/lib/services";
-import { testAiConnection } from "@/lib/ai.functions";
+import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
