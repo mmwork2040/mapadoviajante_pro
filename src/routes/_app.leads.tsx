@@ -457,9 +457,17 @@ export function ModalField({
         required={required}
         value={value}
         placeholder={placeholder}
+        list={listId}
         onChange={(e) => handleChange(e.target.value)}
         className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
       />
+      {suggestions && (
+        <datalist id={listId}>
+          {suggestions.map((s) => (
+            <option key={s} value={s} />
+          ))}
+        </datalist>
+      )}
     </label>
   );
 }
