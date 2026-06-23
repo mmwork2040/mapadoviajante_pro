@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, ListChecks } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, ListChecks, Bell, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -12,6 +12,15 @@ import {
   sendTestWebhook,
   type WebhookConfig,
 } from "@/lib/webhook";
+import {
+  getNotifConfig,
+  saveNotifConfig,
+  requestPushToken,
+  configIsComplete,
+  type NotifConfig,
+} from "@/lib/notifications";
+import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
+import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
   createTask,
   fetchAiConfig,
