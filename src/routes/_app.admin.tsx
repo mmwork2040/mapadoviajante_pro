@@ -9,6 +9,7 @@ import {
   dispatchWebhook,
   getWebhookConfig,
   saveWebhookConfig,
+  sendTestWebhook,
   type WebhookConfig,
 } from "@/lib/webhook";
 import {
