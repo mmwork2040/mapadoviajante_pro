@@ -1,56 +1,59 @@
-## Objetivo
+# Mobile, PWA, Notificações (Firebase) e E-mail (Gmail)
 
-Permitir montar roteiros a partir de um lead, com etapas (ex.: Dia 1, Dia 2) e itens/checklists dentro de cada etapa, suportar múltiplos roteiros por lead, visualizar como kanban e fazer upload de documentos que a IA interpreta para preencher dados (voo, hotel, dia, hora).**configurada pela própria agência** (não Lovable AI), que só funciona depois de testada/conectada no admin.
+## 1. PWA instalável
+- Adicionar `public/manifest.webmanifest` (nome, short_name, theme/background color, `display: standalone`, ícones 192/512).
+- Gerar ícones do app (maskable + normal) em `public/`.
+- Inserir tags `<link rel="manifest">`, `theme-color` e `apple-touch-icon` no head de `src/routes/__root.tsx`.
+- Sem service worker / offline (conforme escolhido: apenas instalável).
 
-A base já existe no banco: `crm_itineraries` (tem `lead_id`), `crm_itinerary_days` (etapas) e `crm_itinerary_activities` (itens). Vamos aproveitar e ampliar.`crm_ai_config` (provider, model, api_key, system_prompt, max_tokens).
+## 2. Responsividade mobile geral
+- Revisar e ajustar as páginas principais para telas pequenas: Início, Leads, Roteiros, Biblioteca, Financeiro, Admin.
+- Aplicar padrões responsivos: grids que colapsam (`grid-cols-1 sm:grid-cols-...`), `min-w-0`/`truncate` em cabeçalhos, tabelas com scroll horizontal, paddings reduzidos no mobile.
+- Ajustar o `AppLayout` (header/main) para respiro adequado no mobile e espaço para a barra inferior.
 
-## 1. Criar roteiro a partir de um lead
+## 3. Barra de navegação inferior (mobile)
+- Em `src/components/layout/AppLayout.tsx`, substituir a navegação horizontal do header no mobile por uma **bottom navigation** fixa (`fixed bottom-0`, `md:hidden`).
+- Itens (derivados do menu atual): Início, Leads (com badge contador), Roteiros, Financeiro, Admin. Biblioteca fica acessível pelas telas internas para não sobrecarregar a barra.
+- Adicionar `padding-bottom` no conteúdo para não ficar atrás da barra; respeitar safe-area do iOS.
 
-- No modal "Novo Roteiro" (`src/routes/_app.roteiros.tsx`), substituir o campo livre "Cliente" por um seletor de Lead (busca em 
-  - Selecionar provider (OpenAI, Anthropic, Google Gemini, etc.), model, API key e prompt do sistema.
-  - Botão "Testar conexão" que faz uma chamada simples à LLM escolhida via server function e só marca como "conectada" se passar.
-  - Salvar em `crm_ai_config`. A API key fica no banco (campo `api_key_encrypted`) por agência.
-- Ao escolher o lead, preencher automaticamente 
+## 4. Notificações push via Firebase (FCM)
+- Nova seção "Notificações" na página Administração (mesmo estilo `CollapsibleSection`, ícone `Bell`, subtítulo descritivo).
+- UI para: habilitar/desabilitar, solicitar permissão do navegador, registrar token do dispositivo e enviar notificação de teste.
+- Adicionar `firebase` (web SDK) e `public/firebase-messaging-sw.js` (service worker de mensagens, isolado do PWA).
+- Tabela `device_tokens` (user_id, token, created_at) com RLS + GRANTs para guardar tokens.
+- Server function para enviar push via FCM HTTP v1.
 
-### Detalhe técnico
+## 5. Envio de e-mail via Gmail API (conta única)
+- Conectar o connector **Gmail** (`google_mail`) — conta única do dono, via gateway.
+- Nova seção "E-mail (Gmail)" em Administração: status da conexão, remetente, e botão de envio de teste.
+- Server function que monta o e-mail (RFC 2822, base64url) e envia via gateway `users/me/messages/send`.
 
-- Migração: adicionar coluna `checklist jsonb default '[]'` em `crm_itinerary_activities` (formato 
-  - `testAiConnection`: chama o endpoint do provider configurado com a credencial da agência.
-  - `extractDocumentData`: envia o documento para o provider e retorna JSON estruturado.
-- Migração: adicionar `status text default 'disconnected'` (e `last_tested_at`) em `crm_ai_config` para registrar se foi testada.
+## Segredos necessários (Firebase)
+Para o push funcionar, você precisará fornecer as credenciais do seu projeto Firebase:
+- Config web (apiKey, authDomain, projectId, messagingSenderId, appId) e a **VAPID key**.
+- A **service account** do Firebase (para a server function enviar push).
+O Gmail é conectado pelo fluxo de connector (sem colar chaves).
 
-## 3. Múltiplos roteiros por lead + Kanban
+## Detalhes técnicos
+- Stack: TanStack Start; server logic em `createServerFn` (não edge functions).
+- Realtime do badge de leads já existente é mantido.
+- Service worker de mensagens FCM é exceção à regra de "sem service worker" do PWA e não registra cache de app.
 
-- Na página de detalhe do lead (`_app.leads.$leadId.tsx`), nova seção "Roteiros" listando todos os roteiros daquele lead com botão "Novo Roteiro" já pré-vinculado.`fetchLeads`), preenchendo `lead_id`, `client_name`, `destination`, `budget`.
-- Visão Kanban dos roteiros do lead por 
+```text
+mobile layout
++------------------+
+|     conteúdo     |
+|                  |
++------------------+
+| 🏠  👥  🗺️  💰  🛡️ |  <- bottom nav (md:hidden)
++------------------+
+```
 
-## 4. Upload de documento + leitura por IA
+## Ordem de execução
+1. PWA (manifest + ícones + head)
+2. Bottom nav + responsividade do layout
+3. Responsividade das páginas
+4. Seção Gmail + connector + server fn
+5. Seção Notificações + Firebase + tabela + server fn
 
-- Criar bucket de storage privado `itinerary-docs` para anexos do roteiro.`crm_itinerary_activity`.
-- Botão "Enviar documento" na etapa/roteiro: faz upload e chama uma server function que envia o arquivo para a Lovable AI (Gemini, multimodal) com um prompt que extrai dados estruturados (tipo: voo/hotel/transfer; número do voo, data, hora, hotel, quarto, etc.).`src/routes/_app.roteiros.$id.tsx`), adicionar checklist dentro de cada item.
-- Retornar os campos extraídos e abrir um formulário pré-preenchido para o usuário confirmar antes de criar o item na etapa correspondente.`checklist jsonb default '[]'` em `crm_itinerary_activities` (formato `[{text, done}]`).
-
-## 4. Múltiplos roteiros por lead + Kanban
-
-- Na página do lead (`_app.leads.$leadId.tsx`), seção "Roteiros" listando todos os roteiros do lead, com botão "Novo Roteiro" já vinculado.
-- Visão kanban por `status` (rascunho / em andamento / confirmado / concluído) com drag-and-drop (mesmo padrão dos leads).
-
-## 5. Upload de documento + leitura pela LLM configurada
-
-- Bucket de storage privado `itinerary-docs`.
-- Botão "Enviar documento" na etapa: faz upload, chama `extractDocumentData` (usando a LLM da agência) que extrai tipo (voo/hotel/transfer), número do voo, data, hora, hotel, quarto, etc.
-- Retorno abre um item pré-preenchido para o usuário confirmar antes de salvar na etapa. Se a IA não estiver conectada, o botão fica desabilitado com aviso.
-
-## Ordem de entrega
-
-1. Migração (checklist nas atividades) + bucket de storage.
-2. Seletor de lead no modal de criação de roteiro.
-3. Seção "Roteiros" + Kanban na página do lead.
-4. Checklists nos itens das etapas.
-5. Upload de documento + extração por IA com confirmação.
-6. Upload de documento + extração pela LLM com confirmação.
-
-## Pergunta
-
-1. Quais providers de LLM devo oferecer inicialmente (OpenAI, Anthropic, Google Gemini)?
-2. A IA deve apenas sugerir os dados extraídos para você confirmar antes de criar o item (recomendado), certo?
+Observação: por ser uma entrega extensa, posso executar por etapas. As notificações Firebase dependem das credenciais do seu projeto Firebase para ficarem 100% funcionais.
