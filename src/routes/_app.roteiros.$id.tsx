@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 import {
   createItineraryActivity,
@@ -15,6 +16,7 @@ import {
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
+import { extractDocumentData } from "@/lib/ai.functions";
 import { formatCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
