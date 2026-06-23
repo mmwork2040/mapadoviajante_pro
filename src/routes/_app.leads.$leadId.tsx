@@ -87,7 +87,13 @@ function LeadDetailPage() {
   });
 
   async function remove() {
-    if (!confirm("Excluir este lead?")) return;
+    const ok2 = await confirm({
+      title: "Excluir este lead?",
+      description: "Todos os dados deste lead serão removidos permanentemente.",
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (!ok2) return;
     const ok = await deleteLead(leadId);
     if (ok) {
       dispatchWebhook("lead.deleted", { id: leadId });
