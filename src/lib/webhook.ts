@@ -45,7 +45,7 @@ export async function saveWebhookConfig(config: WebhookConfig): Promise<void> {
 
 // ── Disparo de eventos ─────────────────────────────────────────
 export async function dispatchWebhook(event: WebhookEventId, payload: unknown) {
-  const config = getWebhookConfig();
+  const config = await getWebhookConfig();
   if (!config.enabled || !config.url) return;
   if (!config.events.includes(event)) return;
 
