@@ -388,6 +388,101 @@ function VouchersCard({
   );
 }
 
+function CopilotCard({ it }: { it: Itinerary }) {
+  const [prompt, setPrompt] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const ask = useServerFn(itineraryCopilot);
+
+  function buildContext(question: string): string {
+    const dias = (it.days || [])
+      .map((d) => {
+        const acts = (d.activities || [])
+          .map((a) => `  - ${[a.time, a.title, a.location].filter(Boolean).join(" ")}`)
+          .join("\n");
+        return `${d.title || `Dia ${d.day_number}`}\n${acts || "  (sem atividades)"}`;
+      })
+      .join("\n");
+    return `Roteiro: ${it.title}
+Destino: ${it.destination || "—"}
+Cliente: ${it.client_name || "—"}
+Orçamento: ${formatCurrency(it.budget)}
+Dias atuais:
+${dias || "(nenhum dia ainda)"}
+
+Pedido do consultor: ${question}`;
+  }
+
+  async function run(q?: string) {
+    const question = (q ?? prompt).trim();
+    if (!question) return;
+    setLoading(true);
+    setAnswer("");
+    try {
+      const res = await ask({ data: { prompt: buildContext(question) } });
+      setAnswer(res.text);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro no copiloto.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const suggestions = [
+    "Sugira um roteiro dia a dia para este destino",
+    "Quais passeios imperdíveis combinam com o orçamento?",
+    "Monte uma sugestão de gastronomia local",
+  ];
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <h2 className="mb-3 flex items-center gap-2 font-semibold">
+        <Sparkles className="h-4 w-4 text-primary" /> Copiloto de IA
+      </h2>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Peça ajuda para elaborar o roteiro para o lead com base nas informações atuais.
+      </p>
+      <div className="mb-3 flex flex-wrap gap-2">
+        {suggestions.map((s) => (
+          <button
+            key={s}
+            onClick={() => run(s)}
+            disabled={loading}
+            className="rounded-full border border-border px-3 py-1 text-xs hover:bg-muted disabled:opacity-60"
+          >
+            {s}
+          </button>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <textarea
+          value={prompt}
+          onChange={(e) => setPrompt(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run();
+          }}
+          rows={2}
+          placeholder="Ex: monte um roteiro de 4 dias com foco em família…"
+          className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+        />
+        <button
+          onClick={() => run()}
+          disabled={loading}
+          className="flex items-center gap-1 self-end rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+        >
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        </button>
+      </div>
+      {answer && (
+        <div className="mt-4 whitespace-pre-wrap rounded-lg bg-muted/50 p-4 text-sm leading-relaxed">
+          {answer}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function EditItineraryModal({
   it,
   onClose,
