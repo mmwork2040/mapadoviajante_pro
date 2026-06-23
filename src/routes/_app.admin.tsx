@@ -702,60 +702,102 @@ function AiConfigCard() {
       </button>
 
       {/* ── Base de conhecimento ─────────────────────────────── */}
-      <div className="mt-8 border-t border-border pt-6">
-        <h3 className="text-base font-semibold">Base de Conhecimento</h3>
-        <p className="mb-4 text-xs text-muted-foreground">
-          Instrua a IA e forneça materiais para gerar respostas mais precisas.
-        </p>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Orientações (personalidade, tom e regras)</span>
+      <div className="mt-8 space-y-8 border-t border-border pt-6">
+        {/* Orientações */}
+        <div>
+          <SectionHeader
+            icon={<MessageSquare className="h-5 w-5" />}
+            color="#7c5cff"
+            title="Orientações para a Thay"
+            subtitle="Defina a personalidade, tom de voz e regras de negócio que a IA deve seguir"
+          />
           <textarea
             value={form.system_prompt || ""}
-            onChange={(e) => update({ system_prompt: e.target.value })}
+            onChange={(e) => update({ system_prompt: e.target.value.slice(0, 2000) })}
             rows={6}
-            placeholder="Ex: Você é a Thay, assistente de viagens da agência. Use tom amigável e profissional. Sempre mencione os diferenciais da agência…"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            placeholder="Ex: Você é a Thay, assistente de viagens da agência O Segredo do Viajante. Sempre sugira destinos do Caribe e Europa. Use tom amigável e profissional. Mencione os diferenciais da agência: atendimento personalizado, guias exclusivos e suporte 24h durante a viagem…"
+            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary"
           />
-          <span className="mt-1 block text-xs text-muted-foreground">
-            Salvo ao testar e conectar. Define como a IA se comporta.
-          </span>
-        </label>
+          <div className="mt-2 flex items-center justify-between">
+            <span className="text-xs text-muted-foreground">
+              {(form.system_prompt || "").length} / 2.000 caracteres
+            </span>
+            <button
+              type="button"
+              onClick={saveOrientacoes}
+              disabled={saveMut.isPending}
+              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              <Save className="h-4 w-4" /> Salvar orientações
+            </button>
+          </div>
+        </div>
 
-        <div className="mt-5">
-          <span className="mb-2 block text-sm font-medium">Fontes de Conhecimento</span>
-          <div className="space-y-2">
+        {/* Fontes de Conhecimento */}
+        <div>
+          <SectionHeader
+            icon={<Database className="h-5 w-5" />}
+            color="#10b981"
+            title="Fontes de Conhecimento"
+            subtitle="Escolha quais dados a Thay pode consultar para gerar sugestões"
+          />
+          <div className="space-y-3">
             <SourceToggle
-              icon={<BookOpen className="h-4 w-4" />}
+              icon={<BookOpen className="h-5 w-5" />}
+              color="#f97316"
               label="Biblioteca de Roteiros"
               desc="Permite à IA consultar os roteiros cadastrados."
               checked={!!dataSources.library}
               onToggle={() => toggleSource("library")}
             />
             <SourceToggle
-              icon={<DollarSign className="h-4 w-4" />}
+              icon={<Users className="h-5 w-5" />}
+              color="#3b82f6"
+              label="Base de Leads"
+              desc="Contexto do cliente para personalizar respostas."
+              checked={!!dataSources.leads}
+              onToggle={() => toggleSource("leads")}
+            />
+            <SourceToggle
+              icon={<PieChart className="h-5 w-5" />}
+              color="#10b981"
               label="Dados Financeiros"
-              desc="Permite à IA consultar transações recentes."
+              desc="Comissões, receitas e custos."
               checked={!!dataSources.finance}
               onToggle={() => toggleSource("finance")}
             />
           </div>
         </div>
 
-        <div className="mt-5">
-          <span className="mb-2 block text-sm font-medium">Materiais de Referência</span>
+        {/* Materiais de Referência */}
+        <div>
+          <SectionHeader
+            icon={<FolderOpen className="h-5 w-5" />}
+            color="#3b82f6"
+            title="Materiais de Referência"
+            subtitle="Suba PDFs, guias, tabelas de preços e documentos para a Thay consultar"
+          />
           <label
-            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-input bg-background px-4 py-6 text-center text-sm text-muted-foreground hover:border-primary ${
+            className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-input bg-muted/30 px-4 py-12 text-center hover:border-primary ${
               uploading ? "pointer-events-none opacity-60" : ""
             }`}
           >
             {uploading ? (
-              <Loader2 className="mb-2 h-5 w-5 animate-spin" />
+              <Loader2 className="mb-3 h-8 w-8 animate-spin text-primary" />
             ) : (
-              <Upload className="mb-2 h-5 w-5" />
+              <UploadCloud className="mb-3 h-8 w-8 text-primary" />
             )}
-            <span>{uploading ? "Processando documento…" : "Clique para enviar documentos"}</span>
-            <span className="mt-1 text-xs">PDF, DOC, TXT, XLSX, CSV ou imagem — até 10MB</span>
+            <span className="text-sm font-semibold text-foreground">
+              {uploading ? (
+                "Processando documento…"
+              ) : (
+                <>
+                  Arraste arquivos aqui{" "}
+                  <span className="font-normal text-muted-foreground">ou clique para selecionar</span>
+                </>
+              )}
+            </span>
+            <span className="mt-1 text-xs text-muted-foreground">PDF, DOC, TXT, XLSX, CSV — máx. 10 MB cada</span>
             <input
               type="file"
               multiple
