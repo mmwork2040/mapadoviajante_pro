@@ -53,6 +53,13 @@ export function parseCurrency(value: string | number | null | undefined): number
   return Number(digits) / 100;
 }
 
+/** Mask numeric miles/points with thousands separators, e.g. "80000" -> "80.000" */
+export function maskMiles(value: string | number | null | undefined): string {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  if (!digits) return "";
+  return new Intl.NumberFormat("pt-BR").format(Number(digits));
+}
+
 /** Mask Brazilian phone numbers: (11) 99999-9999 or (11) 9999-9999 */
 export function maskPhone(value: string | null | undefined): string {
   const d = String(value ?? "").replace(/\D/g, "").slice(0, 11);
