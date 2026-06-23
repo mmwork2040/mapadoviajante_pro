@@ -40,6 +40,12 @@ import {
   updateTask,
 } from "@/lib/services";
 import { sendTeamInvite } from "@/lib/invites.functions";
+import {
+  getAgencyPaymentConfig,
+  saveAgencyPaymentConfig,
+  DEFAULT_PAYMENT_CONFIG,
+  type AgencyPaymentConfig,
+} from "@/lib/payments.functions";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
