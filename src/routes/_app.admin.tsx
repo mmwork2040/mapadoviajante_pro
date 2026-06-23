@@ -327,13 +327,15 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    const res = await inviteTeamMember(form);
+    const res = await sendTeamInvite({
+      data: { ...form, appUrl: window.location.origin },
+    });
     setSaving(false);
-    if (res) {
-      dispatchWebhook("member.invited", res);
-      toast.success("Membro adicionado à equipe!");
+    if (res.ok) {
+      dispatchWebhook("member.invited", { ...form });
+      toast.success(res.emailSent ? "Convite enviado por e-mail!" : res.message);
       onInvited();
-    } else toast.error("Erro ao convidar membro.");
+    } else toast.error(res.message || "Erro ao convidar membro.");
   }
 
   return (
