@@ -20,13 +20,29 @@ function encodeRawEmail(to: string, subject: string, body: string): string {
     .replace(/=+$/, "");
 }
 
-/** Verifica se a conexão Gmail está disponível no projeto. */
+/** Verifica se a conexão Gmail está disponível e retorna o e-mail conectado. */
 export const getGmailStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => {
-    const connected = Boolean(process.env.LOVABLE_API_KEY && process.env.GOOGLE_MAIL_API_KEY);
-    return { connected };
+    const lovableKey = process.env.LOVABLE_API_KEY;
+    const connKey = process.env.GOOGLE_MAIL_API_KEY;
+    const connected = Boolean(lovableKey && connKey);
+    if (!connected) return { connected: false, email: null as string | null };
+    try {
+      const res = await fetch(`${GATEWAY_URL}/users/me/profile`, {
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "X-Connection-Api-Key": connKey as string,
+        },
+      });
+      if (!res.ok) return { connected: true, email: null as string | null };
+      const data = (await res.json()) as { emailAddress?: string };
+      return { connected: true, email: data.emailAddress ?? null };
+    } catch {
+      return { connected: true, email: null as string | null };
+    }
   });
+
 
 /** Envia um e-mail via Gmail API (conta única do connector). */
 export const sendGmail = createServerFn({ method: "POST" })
