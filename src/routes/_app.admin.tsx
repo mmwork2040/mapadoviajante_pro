@@ -128,6 +128,8 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     },
     onError: () => toast.error("Erro ao reenviar convite."),
   });
+
+  return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Administração</h1>
