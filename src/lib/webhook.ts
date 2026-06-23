@@ -1,4 +1,5 @@
 import { getAgencyId } from "@/lib/services";
+import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
 
 // ── Eventos disponíveis para disparo ───────────────────────────
 export const WEBHOOK_EVENTS = [
