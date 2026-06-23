@@ -314,7 +314,7 @@ function FF({
       <input
         type={format ? "text" : type}
         inputMode={format ? "numeric" : undefined}
-        value={format === "currency" ? maskCurrency(value) : value}
+        value={format === "currency" ? maskCurrency(String(Math.round((Number(value) || 0) * 100))) : value}
         onChange={(e) => onChange(format === "currency" ? String(parseCurrency(e.target.value)) : e.target.value)}
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
       />
