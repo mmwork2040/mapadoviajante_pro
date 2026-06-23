@@ -16,7 +16,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 
