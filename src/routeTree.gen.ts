@@ -19,6 +19,7 @@ import { Route as AppLeadsRouteImport } from './routes/_app.leads'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
+import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
 import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
 import { Route as AppLeadsLeadIdRouteImport } from './routes/_app.leads.$leadId'
 
@@ -71,6 +72,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRoteirosIndexRoute = AppRoteirosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoteirosRoute,
+} as any)
 const AppRoteirosIdRoute = AppRoteirosIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/viajante/$id': typeof ViajanteIdRoute
   '/leads/$leadId': typeof AppLeadsLeadIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
+  '/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -102,11 +109,11 @@ export interface FileRoutesByTo {
   '/biblioteca': typeof AppBibliotecaRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRouteWithChildren
-  '/roteiros': typeof AppRoteirosRouteWithChildren
   '/viajante/$id': typeof ViajanteIdRoute
   '/': typeof AppIndexRoute
   '/leads/$leadId': typeof AppLeadsLeadIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
+  '/roteiros': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,6 +129,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_app/leads/$leadId': typeof AppLeadsLeadIdRoute
   '/_app/roteiros/$id': typeof AppRoteirosIdRoute
+  '/_app/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +145,7 @@ export interface FileRouteTypes {
     | '/viajante/$id'
     | '/leads/$leadId'
     | '/roteiros/$id'
+    | '/roteiros/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -145,11 +154,11 @@ export interface FileRouteTypes {
     | '/biblioteca'
     | '/financeiro'
     | '/leads'
-    | '/roteiros'
     | '/viajante/$id'
     | '/'
     | '/leads/$leadId'
     | '/roteiros/$id'
+    | '/roteiros'
   id:
     | '__root__'
     | '/_app'
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_app/leads/$leadId'
     | '/_app/roteiros/$id'
+    | '/_app/roteiros/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -245,6 +255,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/roteiros/': {
+      id: '/_app/roteiros/'
+      path: '/'
+      fullPath: '/roteiros/'
+      preLoaderRoute: typeof AppRoteirosIndexRouteImport
+      parentRoute: typeof AppRoteirosRoute
+    }
     '/_app/roteiros/$id': {
       id: '/_app/roteiros/$id'
       path: '/$id'
@@ -276,10 +293,12 @@ const AppLeadsRouteWithChildren = AppLeadsRoute._addFileChildren(
 
 interface AppRoteirosRouteChildren {
   AppRoteirosIdRoute: typeof AppRoteirosIdRoute
+  AppRoteirosIndexRoute: typeof AppRoteirosIndexRoute
 }
 
 const AppRoteirosRouteChildren: AppRoteirosRouteChildren = {
   AppRoteirosIdRoute: AppRoteirosIdRoute,
+  AppRoteirosIndexRoute: AppRoteirosIndexRoute,
 }
 
 const AppRoteirosRouteWithChildren = AppRoteirosRoute._addFileChildren(
