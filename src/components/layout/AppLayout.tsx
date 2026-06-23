@@ -39,13 +39,16 @@ const MOBILE_NAV = [
 ] as const;
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { member, signOut } = useAuth();
+  const { session, member, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
+  const showAdmin = isSuperAdminEmail(session?.user?.email);
+  const nav = showAdmin ? NAV : NAV.filter((i) => i.to !== "/admin");
+  const mobileNav = showAdmin ? MOBILE_NAV : MOBILE_NAV.filter((i) => i.to !== "/admin");
 
   useEffect(() => {
     const channel = supabase
