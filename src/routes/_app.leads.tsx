@@ -5,7 +5,7 @@ import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Che
 import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency } from "@/lib/ui";
+import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
