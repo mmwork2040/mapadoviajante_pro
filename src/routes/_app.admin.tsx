@@ -117,6 +117,18 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     onError: () => toast.error("Erro ao alterar cargo."),
   });
 
+  const resendInvite = useMutation({
+    mutationFn: (m: { name: string; email: string; role: string }) =>
+      sendTeamInvite({
+        data: { ...m, appUrl: "https://crmosegredodoviajante.lovable.app" },
+      }),
+    onSuccess: (res) => {
+      if (res.ok) toast.success(res.emailSent ? "Convite reenviado por e-mail!" : res.message);
+      else toast.error(res.message || "Erro ao reenviar convite.");
+    },
+    onError: () => toast.error("Erro ao reenviar convite."),
+  });
+
   return (
     <div className="space-y-6">
       <div>
@@ -187,6 +199,18 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                   </select>
                 ) : (
                   <span className="text-xs capitalize text-muted-foreground">{m.role}</span>
+                )}
+                {isAdmin && m.status === "pending" && (
+                  <button
+                    type="button"
+                    title="Reenviar convite"
+                    disabled={resendInvite.isPending}
+                    onClick={() => resendInvite.mutate({ name: m.name || "", email: m.email || "", role: m.role || "consultor" })}
+                    className="flex items-center gap-1 rounded-lg border border-input px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                  >
+                    {resendInvite.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    Reenviar
+                  </button>
                 )}
               </li>
             ))}
