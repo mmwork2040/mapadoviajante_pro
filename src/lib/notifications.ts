@@ -110,6 +110,20 @@ export async function requestPushToken(config: NotifConfig): Promise<{ ok: boole
 
   try {
     const registration = await navigator.serviceWorker.register(swUrl);
+
+    // Aguarda o Service Worker ficar ativo antes de tentar obter o token,
+    // senão o PushManager.subscribe falha ("no active Service Worker").
+    await navigator.serviceWorker.ready;
+    if (!registration.active) {
+      await new Promise<void>((resolve) => {
+        const sw = registration.installing || registration.waiting;
+        if (!sw) return resolve();
+        sw.addEventListener("statechange", () => {
+          if (sw.state === "activated") resolve();
+        });
+      });
+    }
+
     const messaging = getMessaging(app);
     const token = await getToken(messaging, {
       vapidKey: config.vapidKey,
