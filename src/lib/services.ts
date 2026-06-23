@@ -69,35 +69,19 @@ export async function autoProvisionAgency(
     "-" +
     Date.now().toString(36);
 
-  const { data: agency, error: agErr } = await supabase
-    .from("agencies")
-    .insert({ name: agencyName, slug, email: userEmail })
-    .select()
-    .single();
-  if (agErr || !agency) {
-    console.error("autoProvisionAgency — agency:", agErr);
-    return null;
-  }
-
-  const avatarInitials = userName
-    ? userName.split(" ").map((w) => w[0]).join("").substring(0, 2).toUpperCase()
-    : "??";
-
-  const { data: member, error: memErr } = await supabase
-    .from("agency_members")
-    .insert({
-      agency_id: agency.id,
-      user_id: userId,
-      name: userName || "Novo Usuário",
-      email: userEmail,
-      role: "admin",
-      avatar_color: "#ff7a1a",
-      is_active: true,
+  // Provisionamento atômico via RPC SECURITY DEFINER (cria agência + membro admin
+  // numa única transação, evitando agências órfãs e escalonamento de privilégio).
+  const { data: member, error } = await supabase
+    .rpc("provision_agency", {
+      _name: agencyName,
+      _slug: slug,
+      _email: userEmail,
+      _user_name: userName || "Novo Usuário",
+      _avatar_color: "#ff7a1a",
     })
-    .select()
     .single();
-  if (memErr || !member) {
-    console.error("autoProvisionAgency — member:", memErr, avatarInitials);
+  if (error || !member) {
+    console.error("autoProvisionAgency — provision_agency:", error);
     return null;
   }
 
