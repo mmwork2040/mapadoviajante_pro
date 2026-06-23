@@ -143,7 +143,19 @@ export interface AiConfig {
   api_key_encrypted?: string | null;
   system_prompt?: string | null;
   max_tokens?: number | null;
-  knowledge_sources?: { status?: string; last_tested_at?: string } | null;
+  knowledge_sources?: {
+    status?: string;
+    last_tested_at?: string;
+    data_sources?: { library?: boolean; finance?: boolean };
+    documents?: KnowledgeDoc[];
+  } | null;
+}
+
+export interface KnowledgeDoc {
+  id: string;
+  name: string;
+  size?: number;
+  text: string;
 }
 
 export interface ExtractedDocData {

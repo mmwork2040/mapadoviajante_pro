@@ -177,3 +177,40 @@ export async function askCopilot(cfg: ProviderConfig, prompt: string): Promise<s
   if (!text.trim()) throw new Error("Resposta vazia do provedor.");
   return text.trim();
 }
+
+const KNOWLEDGE_PROMPT = `Você recebe um documento (PDF, planilha, imagem ou texto) que servirá como base de conhecimento para uma IA de uma agência de viagens.
+Extraia e organize TODO o conteúdo textual relevante (preços, regras, destinos, descrições, tabelas) em texto corrido limpo, em português.
+Responda APENAS com o texto extraído, sem comentários adicionais.`;
+
+// Extrai o texto de um documento para usar como base de conhecimento embutida.
+export async function extractKnowledgeText(
+  cfg: ProviderConfig,
+  fileBase64: string,
+  mime: string,
+): Promise<string> {
+  const isImage = mime.startsWith("image/");
+  const dataUrl = `data:${mime};base64,${fileBase64}`;
+  let text = "";
+
+  if (cfg.provider === "openai") {
+    const filePart = isImage
+      ? { type: "image_url", image_url: { url: dataUrl } }
+      : { type: "file", file: { filename: "documento", file_data: dataUrl } };
+    text = await callOpenAI({ ...cfg, maxTokens: 4096 }, [{ type: "text", text: KNOWLEDGE_PROMPT }, filePart]);
+  } else if (cfg.provider === "anthropic") {
+    const filePart = isImage
+      ? { type: "image", source: { type: "base64", media_type: mime, data: fileBase64 } }
+      : { type: "document", source: { type: "base64", media_type: mime, data: fileBase64 } };
+    text = await callAnthropic({ ...cfg, maxTokens: 4096 }, [{ type: "text", text: KNOWLEDGE_PROMPT }, filePart]);
+  } else if (cfg.provider === "google") {
+    text = await callGoogle({ ...cfg, maxTokens: 4096 }, [
+      { text: KNOWLEDGE_PROMPT },
+      { inline_data: { mime_type: mime, data: fileBase64 } },
+    ]);
+  } else {
+    throw new Error("Provedor não suportado.");
+  }
+
+  if (!text.trim()) throw new Error("Não foi possível extrair o conteúdo do documento.");
+  return text.trim();
+}

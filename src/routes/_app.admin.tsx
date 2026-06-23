@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, DollarSign, FileText, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -21,7 +21,7 @@ import {
   updateMemberRole,
   updateTask,
 } from "@/lib/services";
-import { testAiConnection } from "@/lib/ai.functions";
+import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
@@ -475,10 +475,19 @@ const AI_PROVIDERS = [
 function AiConfigCard() {
   const qc = useQueryClient();
   const test = useServerFn(testAiConnection);
+  const extractDoc = useServerFn(extractKnowledgeDoc);
   const { data: config } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
 
-  const [form, setForm] = useState<AiConfig>({ provider: "openai", model: "", api_key_encrypted: "", system_prompt: "", max_tokens: 1024 });
+  const [form, setForm] = useState<AiConfig>({
+    provider: "openai",
+    model: "",
+    api_key_encrypted: "",
+    system_prompt: "",
+    max_tokens: 1024,
+    knowledge_sources: { status: "disconnected", data_sources: {}, documents: [] },
+  });
   const [testing, setTesting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (config) {
@@ -488,22 +497,106 @@ function AiConfigCard() {
         api_key_encrypted: config.api_key_encrypted || "",
         system_prompt: config.system_prompt || "",
         max_tokens: config.max_tokens || 1024,
-        knowledge_sources: config.knowledge_sources || null,
+        knowledge_sources: {
+          status: config.knowledge_sources?.status || "disconnected",
+          last_tested_at: config.knowledge_sources?.last_tested_at,
+          data_sources: config.knowledge_sources?.data_sources || {},
+          documents: config.knowledge_sources?.documents || [],
+        },
       });
     }
   }, [config]);
 
-  const status = form.knowledge_sources?.status === "connected" ? "connected" : "disconnected";
+  const ks = form.knowledge_sources ?? {};
+  const status = ks.status === "connected" ? "connected" : "disconnected";
+  const documents = ks.documents ?? [];
+  const dataSources = ks.data_sources ?? {};
 
+  // Alterações de credencial invalidam a conexão, mas preservam base de conhecimento.
   function update(patch: Partial<AiConfig>) {
-    // Qualquer alteração de credencial invalida a conexão até novo teste
-    setForm((c) => ({ ...c, ...patch, knowledge_sources: { status: "disconnected" } }));
+    setForm((c) => ({
+      ...c,
+      ...patch,
+      knowledge_sources: { ...(c.knowledge_sources ?? {}), status: "disconnected" },
+    }));
   }
 
   const saveMut = useMutation({
     mutationFn: (cfg: Partial<AiConfig>) => saveAiConfig(cfg),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["ai-config"] }),
   });
+
+  // Persiste apenas as partes da base de conhecimento sem mexer no status.
+  async function persistKnowledge(nextKs: NonNullable<AiConfig["knowledge_sources"]>) {
+    const merged = { ...form, knowledge_sources: nextKs };
+    setForm(merged);
+    await saveMut.mutateAsync(merged);
+  }
+
+  function toggleSource(key: "library" | "finance") {
+    const next = {
+      ...ks,
+      data_sources: { ...dataSources, [key]: !dataSources[key] },
+    };
+    void persistKnowledge(next).catch(() =>
+      toast.error("Não foi possível salvar as fontes de conhecimento."),
+    );
+  }
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || !files.length) return;
+    if (!form.model.trim() || !(form.api_key_encrypted || "").trim()) {
+      toast.error("Configure e conecte a IA antes de subir documentos.");
+      return;
+    }
+    setUploading(true);
+    try {
+      const added: NonNullable<AiConfig["knowledge_sources"]>["documents"] = [];
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) {
+          toast.error(`${file.name} excede 10MB.`);
+          continue;
+        }
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(String(r.result).split(",")[1] || "");
+          r.onerror = reject;
+          r.readAsDataURL(file);
+        });
+        const res = await extractDoc({
+          data: {
+            provider: form.provider,
+            model: form.model,
+            apiKey: form.api_key_encrypted || "",
+            fileBase64: base64,
+            mime: file.type || "application/octet-stream",
+          },
+        });
+        added.push({
+          id: crypto.randomUUID(),
+          name: file.name,
+          size: file.size,
+          text: res.text,
+        });
+      }
+      if (added.length) {
+        await persistKnowledge({ ...ks, documents: [...documents, ...added] });
+        toast.success(`${added.length} documento(s) adicionado(s) à base.`);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao processar documento.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeDoc(id: string) {
+    try {
+      await persistKnowledge({ ...ks, documents: documents.filter((d) => d.id !== id) });
+    } catch {
+      toast.error("Não foi possível remover o documento.");
+    }
+  }
 
   async function runTest() {
     if (!form.model.trim() || !(form.api_key_encrypted || "").trim()) {
@@ -516,12 +609,12 @@ function AiConfigCard() {
         data: { provider: form.provider, model: form.model, apiKey: form.api_key_encrypted || "" },
       });
       if (res.ok) {
-        const ks = { status: "connected", last_tested_at: new Date().toISOString() };
-        await saveMut.mutateAsync({ ...form, knowledge_sources: ks });
-        setForm((c) => ({ ...c, knowledge_sources: ks }));
+        const nextKs = { ...ks, status: "connected", last_tested_at: new Date().toISOString() };
+        await saveMut.mutateAsync({ ...form, knowledge_sources: nextKs });
+        setForm((c) => ({ ...c, knowledge_sources: nextKs }));
         toast.success("IA conectada e configuração salva!");
       } else {
-        await saveMut.mutateAsync({ ...form, knowledge_sources: { status: "disconnected" } });
+        await saveMut.mutateAsync({ ...form, knowledge_sources: { ...ks, status: "disconnected" } });
         toast.error(`Falha na conexão: ${res.message}`);
       }
     } catch (e) {
@@ -536,7 +629,6 @@ function AiConfigCard() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-end">
-
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
             status === "connected"
@@ -597,15 +689,6 @@ function AiConfigCard() {
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
           />
         </label>
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Instruções do sistema (opcional)</span>
-          <textarea
-            value={form.system_prompt || ""}
-            onChange={(e) => update({ system_prompt: e.target.value })}
-            rows={2}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-        </label>
       </div>
 
       <button
@@ -617,7 +700,138 @@ function AiConfigCard() {
         {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
         {testing ? "Testando…" : "Testar e conectar"}
       </button>
+
+      {/* ── Base de conhecimento ─────────────────────────────── */}
+      <div className="mt-8 border-t border-border pt-6">
+        <h3 className="text-base font-semibold">Base de Conhecimento</h3>
+        <p className="mb-4 text-xs text-muted-foreground">
+          Instrua a IA e forneça materiais para gerar respostas mais precisas.
+        </p>
+
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Orientações (personalidade, tom e regras)</span>
+          <textarea
+            value={form.system_prompt || ""}
+            onChange={(e) => update({ system_prompt: e.target.value })}
+            rows={6}
+            placeholder="Ex: Você é a Thay, assistente de viagens da agência. Use tom amigável e profissional. Sempre mencione os diferenciais da agência…"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+          <span className="mt-1 block text-xs text-muted-foreground">
+            Salvo ao testar e conectar. Define como a IA se comporta.
+          </span>
+        </label>
+
+        <div className="mt-5">
+          <span className="mb-2 block text-sm font-medium">Fontes de Conhecimento</span>
+          <div className="space-y-2">
+            <SourceToggle
+              icon={<BookOpen className="h-4 w-4" />}
+              label="Biblioteca de Roteiros"
+              desc="Permite à IA consultar os roteiros cadastrados."
+              checked={!!dataSources.library}
+              onToggle={() => toggleSource("library")}
+            />
+            <SourceToggle
+              icon={<DollarSign className="h-4 w-4" />}
+              label="Dados Financeiros"
+              desc="Permite à IA consultar transações recentes."
+              checked={!!dataSources.finance}
+              onToggle={() => toggleSource("finance")}
+            />
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <span className="mb-2 block text-sm font-medium">Materiais de Referência</span>
+          <label
+            className={`flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-input bg-background px-4 py-6 text-center text-sm text-muted-foreground hover:border-primary ${
+              uploading ? "pointer-events-none opacity-60" : ""
+            }`}
+          >
+            {uploading ? (
+              <Loader2 className="mb-2 h-5 w-5 animate-spin" />
+            ) : (
+              <Upload className="mb-2 h-5 w-5" />
+            )}
+            <span>{uploading ? "Processando documento…" : "Clique para enviar documentos"}</span>
+            <span className="mt-1 text-xs">PDF, DOC, TXT, XLSX, CSV ou imagem — até 10MB</span>
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.doc,.docx,.txt,.xls,.xlsx,.csv,image/*"
+              className="hidden"
+              disabled={uploading}
+              onChange={(e) => {
+                void handleFiles(e.target.files);
+                e.target.value = "";
+              }}
+            />
+          </label>
+
+          {documents.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {documents.map((d) => (
+                <li
+                  key={d.id}
+                  className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                >
+                  <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 truncate">{d.name}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeDoc(d.id)}
+                    className="text-muted-foreground hover:text-destructive"
+                    aria-label="Remover documento"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </div>
+  );
+}
+
+function SourceToggle({
+  icon,
+  label,
+  desc,
+  checked,
+  onToggle,
+}: {
+  icon: ReactNode;
+  label: string;
+  desc: string;
+  checked: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-3 py-2 text-left hover:border-primary"
+    >
+      <span className="text-muted-foreground">{icon}</span>
+      <span className="flex-1">
+        <span className="block text-sm font-medium">{label}</span>
+        <span className="block text-xs text-muted-foreground">{desc}</span>
+      </span>
+      <span
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
+          checked ? "bg-primary" : "bg-muted"
+        }`}
+      >
+        <span
+          className={`absolute top-0.5 h-4 w-4 rounded-full bg-background transition-transform ${
+            checked ? "translate-x-4" : "translate-x-0.5"
+          }`}
+        />
+      </span>
+    </button>
   );
 }
 
