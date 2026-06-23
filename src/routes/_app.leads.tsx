@@ -209,7 +209,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       email: form.email || null,
       phone: form.phone || null,
       destination: form.destination || null,
-      value: Number(form.value) || 0,
+      value: parseCurrency(form.value),
       status: "new",
       origin: form.origin || "direto",
       profile: {
