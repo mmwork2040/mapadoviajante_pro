@@ -42,8 +42,7 @@ export const getAgencyConfig = createServerFn({ method: "GET" })
   .handler(async ({ data, context }): Promise<{ value: string | null }> => {
     const member = await resolveAgency(context.supabase, context.userId);
     if (!member) return { value: null };
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
+    const { data: row } = await context.supabase
       .from("system_settings")
       .select("value")
       .eq("key", settingsKey(member.agencyId, data.scope as Scope))
@@ -72,8 +71,7 @@ export const saveAgencyConfig = createServerFn({ method: "POST" })
     } catch {
       throw new Error("Configuração inválida.");
     }
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("system_settings").upsert(
+    const { error } = await context.supabase.from("system_settings").upsert(
       {
         key: settingsKey(member.agencyId, data.scope as Scope),
         value: parsed as never,
