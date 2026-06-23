@@ -568,9 +568,22 @@ function NotificationsCard() {
     setConfig((c) => ({ ...c, ...patch }));
   }
 
+  function toggleEvent(id: NotifConfig["events"][number]) {
+    update({
+      events: config.events.includes(id)
+        ? config.events.filter((e) => e !== id)
+        : [...config.events, id],
+    });
+  }
+
   function save() {
-    saveNotifConfig(config);
-    toast.success("Configuração de notificações salva.");
+    if (!configIsComplete(config)) {
+      toast.error("Preencha todos os campos e selecione ao menos um evento.");
+      return;
+    }
+    saveNotifConfig({ ...config, enabled: true });
+    setConfig((c) => ({ ...c, enabled: true }));
+    toast.success("Configuração de notificações salva e habilitada.");
   }
 
   async function activate() {
