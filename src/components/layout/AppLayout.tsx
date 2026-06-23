@@ -45,7 +45,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <RouteIcon className="h-5 w-5" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-extrabold tracking-tight">
+            <span className="animate-fade-in whitespace-nowrap text-lg font-extrabold tracking-tight">
               Mapa<span className="text-primary">PRO</span>
             </span>
           )}
