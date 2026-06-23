@@ -114,7 +114,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
           </div>
           <div className="grid grid-cols-2 gap-3">
             <F label="Passageiros" type="number" value={String(form.passengers ?? "")} onChange={(v) => setForm({ ...form, passengers: Number(v) })} />
-            <F label="Orçamento" type="number" value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
+            <F label="Orçamento" format="currency" value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
           </div>
           <button
             type="submit"
