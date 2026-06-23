@@ -1,59 +1,41 @@
-# Mobile, PWA, Notificações (Firebase) e E-mail (Gmail)
+# Multi-tenant: billing e taxas por agência
 
-## 1. PWA instalável
-- Adicionar `public/manifest.webmanifest` (nome, short_name, theme/background color, `display: standalone`, ícones 192/512).
-- Gerar ícones do app (maskable + normal) em `public/`.
-- Inserir tags `<link rel="manifest">`, `theme-color` e `apple-touch-icon` no head de `src/routes/__root.tsx`.
-- Sem service worker / offline (conforme escolhido: apenas instalável).
+## Situação atual (verificada no código)
+O sistema **já é multi-tenant** no essencial:
+- Dados do CRM isolados por `agency_id` com RLS via `get_user_agency_id()`.
+- Webhook, Notificações e Gmail já salvos por agência em `system_settings` (`agency_cfg:{agencyId}:scope`).
+- IA por agência em `crm_ai_config`.
 
-## 2. Responsividade mobile geral
-- Revisar e ajustar as páginas principais para telas pequenas: Início, Leads, Roteiros, Biblioteca, Financeiro, Admin.
-- Aplicar padrões responsivos: grids que colapsam (`grid-cols-1 sm:grid-cols-...`), `min-w-0`/`truncate` em cabeçalhos, tabelas com scroll horizontal, paddings reduzidos no mobile.
-- Ajustar o `AppLayout` (header/main) para respiro adequado no mobile e espaço para a barra inferior.
+O que falta de verdade: **pagamentos por agência**. As tabelas globais `settings` (taxas) e `payment_settings` (Asaas) existem mas **não são usadas** no app.
 
-## 3. Barra de navegação inferior (mobile)
-- Em `src/components/layout/AppLayout.tsx`, substituir a navegação horizontal do header no mobile por uma **bottom navigation** fixa (`fixed bottom-0`, `md:hidden`).
-- Itens (derivados do menu atual): Início, Leads (com badge contador), Roteiros, Financeiro, Admin. Biblioteca fica acessível pelas telas internas para não sobrecarregar a barra.
-- Adicionar `padding-bottom` no conteúdo para não ficar atrás da barra; respeitar safe-area do iOS.
+## Objetivo
+Cada agência passa a ter suas próprias credenciais Asaas e suas próprias taxas, isoladas das demais.
 
-## 4. Notificações push via Firebase (FCM)
-- Nova seção "Notificações" na página Administração (mesmo estilo `CollapsibleSection`, ícone `Bell`, subtítulo descritivo).
-- UI para: habilitar/desabilitar, solicitar permissão do navegador, registrar token do dispositivo e enviar notificação de teste.
-- Adicionar `firebase` (web SDK) e `public/firebase-messaging-sw.js` (service worker de mensagens, isolado do PWA).
-- Tabela `device_tokens` (user_id, token, created_at) com RLS + GRANTs para guardar tokens.
-- Server function para enviar push via FCM HTTP v1.
+## 1. Banco de dados (migration)
+- Adicionar `scope` `"payment"` e `"rates"` ao fluxo de config por agência (mesma tabela `system_settings`, sem mudança de schema), **ou** criar tabela dedicada `agency_payment_settings`:
+  - `id`, `agency_id` (unique, FK lógica), `asaas_api_key_encrypted`, `asaas_environment` (`sandbox`/`production`), `asaas_webhook_token`, `monthly_price`, `yearly_price`, `trial_days`, `grace_period_days`, `first_layer_rate`, `second_layer_rate`, `is_active`, timestamps.
+  - GRANTs para `authenticated` e `service_role`.
+  - RLS: SELECT/UPDATE só `agency_id = get_user_agency_id()` + `user_has_role('admin')` para escrita.
+- A chave Asaas **não** fica legível no client: leitura/uso só via server function (admin), nunca exposta ao browser.
 
-## 5. Envio de e-mail via Gmail API (conta única)
-- Conectar o connector **Gmail** (`google_mail`) — conta única do dono, via gateway.
-- Nova seção "E-mail (Gmail)" em Administração: status da conexão, remetente, e botão de envio de teste.
-- Server function que monta o e-mail (RFC 2822, base64url) e envia via gateway `users/me/messages/send`.
+## 2. Server functions
+- Estender `settings.functions.ts` com scopes `payment` e `rates` (ou criar `payments.functions.ts`):
+  - `getAgencyPaymentConfig` / `saveAgencyPaymentConfig` (admin-only via `requireSupabaseAuth` + checagem de cargo).
+  - Para chamadas reais ao Asaas (criar cobrança/assinatura), uma server function que lê a chave da agência no servidor e chama a API Asaas.
+- Webhook do Asaas: rota pública `src/routes/api/public/asaas-webhook.ts`, identifica a agência pelo `asaas_webhook_token`, valida e grava com `supabaseAdmin`.
 
-## Segredos necessários (Firebase)
-Para o push funcionar, você precisará fornecer as credenciais do seu projeto Firebase:
-- Config web (apiKey, authDomain, projectId, messagingSenderId, appId) e a **VAPID key**.
-- A **service account** do Firebase (para a server function enviar push).
-O Gmail é conectado pelo fluxo de connector (sem colar chaves).
+## 3. UI (página Admin)
+- Nova seção "Pagamentos (Asaas)" em `_app.admin.tsx`: ambiente, API key (write-only), preços, trial, período de carência, taxas (`first/second layer`).
+- Visível apenas para admin da agência.
+
+## 4. Taxas
+- Mover `first_layer_rate`/`second_layer_rate` para a config por agência (scope `rates`) e usar nos cálculos financeiros onde necessário.
 
 ## Detalhes técnicos
-- Stack: TanStack Start; server logic em `createServerFn` (não edge functions).
-- Realtime do badge de leads já existente é mantido.
-- Service worker de mensagens FCM é exceção à regra de "sem service worker" do PWA e não registra cache de app.
+- Reusar o padrão existente de `getAgencyConfig`/`saveAgencyConfig`.
+- Asaas API key tratada como segredo por-agência no banco (criptografada), nunca enviada ao client.
+- Webhook em `/api/public/*` com verificação de token por agência.
 
-```text
-mobile layout
-+------------------+
-|     conteúdo     |
-|                  |
-+------------------+
-| 🏠  👥  🗺️  💰  🛡️ |  <- bottom nav (md:hidden)
-+------------------+
-```
-
-## Ordem de execução
-1. PWA (manifest + ícones + head)
-2. Bottom nav + responsividade do layout
-3. Responsividade das páginas
-4. Seção Gmail + connector + server fn
-5. Seção Notificações + Firebase + tabela + server fn
-
-Observação: por ser uma entrega extensa, posso executar por etapas. As notificações Firebase dependem das credenciais do seu projeto Firebase para ficarem 100% funcionais.
+## Confirmar antes de executar
+1. Prefere reusar `system_settings` (mais simples) ou tabela dedicada `agency_payment_settings` (mais limpo)?
+2. Já tem credenciais Asaas para testar, ou começamos só com a estrutura?

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, ListChecks, Bell, Mail, Send } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, ListChecks, Bell, Mail, Send, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -40,6 +40,12 @@ import {
   updateTask,
 } from "@/lib/services";
 import { sendTeamInvite } from "@/lib/invites.functions";
+import {
+  getAgencyPaymentConfig,
+  saveAgencyPaymentConfig,
+  DEFAULT_PAYMENT_CONFIG,
+  type AgencyPaymentConfig,
+} from "@/lib/payments.functions";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
@@ -305,6 +311,17 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
           subtitle="Envie e-mails pela conta Gmail conectada à agência"
         >
           <GmailCard />
+        </CollapsibleSection>
+      )}
+
+      {isAdmin && (
+        <CollapsibleSection
+          icon={CreditCard}
+          color="#16a34a"
+          title="Pagamentos (Asaas)"
+          subtitle="Use as credenciais Asaas da sua agência para cobrar clientes"
+        >
+          <PaymentsCard />
         </CollapsibleSection>
       )}
 
@@ -931,6 +948,179 @@ function GmailCard() {
     </div>
   );
 }
+
+
+function PaymentsCard() {
+  const getCfg = useServerFn(getAgencyPaymentConfig);
+  const saveCfg = useServerFn(saveAgencyPaymentConfig);
+  const qc = useQueryClient();
+  const cfgQ = useQuery({ queryKey: ["payment-config"], queryFn: () => getCfg() });
+  const [cfg, setCfg] = useState<AgencyPaymentConfig>(DEFAULT_PAYMENT_CONFIG);
+  const [apiKey, setApiKey] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (cfgQ.data) setCfg(cfgQ.data);
+  }, [cfgQ.data]);
+
+  function update(patch: Partial<AgencyPaymentConfig>) {
+    setCfg((c) => ({ ...c, ...patch }));
+  }
+
+  async function save() {
+    setSaving(true);
+    try {
+      await saveCfg({
+        data: {
+          isActive: cfg.isActive,
+          environment: cfg.environment,
+          apiKey,
+          monthlyPrice: cfg.monthlyPrice,
+          yearlyPrice: cfg.yearlyPrice,
+          trialDays: cfg.trialDays,
+          gracePeriodDays: cfg.gracePeriodDays,
+          firstLayerRate: cfg.firstLayerRate,
+          secondLayerRate: cfg.secondLayerRate,
+        },
+      });
+      setApiKey("");
+      toast.success("Configuração de pagamentos salva.");
+      qc.invalidateQueries({ queryKey: ["payment-config"] });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const webhookUrl = cfg.webhookToken
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/api/public/asaas-webhook?token=${cfg.webhookToken}`
+    : null;
+
+  function num(v: string): number | null {
+    if (v.trim() === "") return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  return (
+    <div className="space-y-4">
+      <label className="flex items-center gap-3 text-sm font-medium">
+        <button
+          type="button"
+          onClick={() => update({ isActive: !cfg.isActive })}
+          className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${cfg.isActive ? "bg-primary" : "bg-muted"}`}
+          aria-pressed={cfg.isActive}
+        >
+          <span
+            className={`h-5 w-5 rounded-full bg-white transition-transform ${cfg.isActive ? "translate-x-[22px]" : "translate-x-0.5"}`}
+          />
+        </button>
+        {cfg.isActive ? "Pagamentos habilitados" : "Pagamentos desabilitados"}
+      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Ambiente</span>
+          <select
+            value={cfg.environment}
+            onChange={(e) => update({ environment: e.target.value as "sandbox" | "production" })}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="sandbox">Sandbox (teste)</option>
+            <option value="production">Produção</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">
+            Chave de API Asaas {cfg.hasApiKey && "(configurada)"}
+          </span>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={cfg.hasApiKey ? "•••••• (deixe em branco para manter)" : "Cole a chave Asaas"}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Preço mensal (R$)</span>
+          <input
+            type="number"
+            value={cfg.monthlyPrice ?? ""}
+            onChange={(e) => update({ monthlyPrice: num(e.target.value) })}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Preço anual (R$)</span>
+          <input
+            type="number"
+            value={cfg.yearlyPrice ?? ""}
+            onChange={(e) => update({ yearlyPrice: num(e.target.value) })}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Dias de teste</span>
+          <input
+            type="number"
+            value={cfg.trialDays}
+            onChange={(e) => update({ trialDays: num(e.target.value) ?? 0 })}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Carência (dias)</span>
+          <input
+            type="number"
+            value={cfg.gracePeriodDays}
+            onChange={(e) => update({ gracePeriodDays: num(e.target.value) ?? 0 })}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Taxa 1ª camada (%)</span>
+          <input
+            type="number"
+            value={cfg.firstLayerRate ?? ""}
+            onChange={(e) => update({ firstLayerRate: num(e.target.value) })}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Taxa 2ª camada (%)</span>
+          <input
+            type="number"
+            value={cfg.secondLayerRate ?? ""}
+            onChange={(e) => update({ secondLayerRate: num(e.target.value) })}
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
+
+      {webhookUrl && (
+        <div className="rounded-lg border border-border bg-muted/40 p-3 text-xs">
+          <p className="mb-1 font-medium text-muted-foreground">URL do webhook (configure no Asaas):</p>
+          <code className="break-all">{webhookUrl}</code>
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? "Salvando…" : "Salvar"}
+      </button>
+    </div>
+  );
+}
+
+
+
 
 
 const AI_PROVIDERS = [
