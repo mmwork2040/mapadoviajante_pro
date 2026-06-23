@@ -473,9 +473,9 @@ function WebhookCard() {
                   disabled={disabled}
                   checked={config.events.includes(ev.id)}
                   onChange={() => toggleEvent(ev.id)}
-                  className="h-4 w-4 accent-primary"
+                  className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
                 />
-                <span>{ev.label}</span>
+                <span className="min-w-0">{ev.label}</span>
               </label>
             ))}
           </div>
@@ -485,7 +485,8 @@ function WebhookCard() {
       <button
         type="button"
         onClick={save}
-        className="mt-5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        disabled={disabled || !config.url.trim() || config.events.length === 0}
+        className="mt-5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {saved ? "Salvo ✓" : "Salvar configuração"}
       </button>

@@ -1,6 +1,7 @@
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   LayoutDashboard,
   Users,
@@ -33,8 +34,26 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
+  const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("leads-badge")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "crm_leads" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["leads"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
 
 
   return (
