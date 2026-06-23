@@ -22,7 +22,7 @@ export interface WebhookConfig {
   events: WebhookEventId[];
 }
 
-const DEFAULT_CONFIG: WebhookConfig = {
+export const DEFAULT_CONFIG: WebhookConfig = {
   enabled: false,
   url: "",
   secret: "",
