@@ -168,7 +168,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
         location: data.location || null,
         cost: Number.isFinite(parsedCost) ? parsedCost : null,
         description: descParts.join(" · ") || null,
-        type: data.type || "activity",
+        type: mapActivityType(data.type),
         sort_order: (day.activities?.length || 0) + 1,
       });
       if (!created) throw new Error("Não foi possível salvar a atividade.");
