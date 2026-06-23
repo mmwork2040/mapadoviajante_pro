@@ -10,6 +10,7 @@ import {
   getWebhookConfig,
   saveWebhookConfig,
   sendTestWebhook,
+  DEFAULT_CONFIG as DEFAULT_WEBHOOK_CONFIG,
   type WebhookConfig,
 } from "@/lib/webhook";
 import {
@@ -18,10 +19,16 @@ import {
   requestPushToken,
   configIsComplete,
   NOTIF_EVENTS,
+  DEFAULT_CONFIG as DEFAULT_NOTIF_CONFIG,
   type NotifConfig,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
-import { getGmailConfig, saveGmailConfig, type GmailConfig } from "@/lib/gmail-config";
+import {
+  getGmailConfig,
+  saveGmailConfig,
+  DEFAULT_CONFIG as DEFAULT_GMAIL_CONFIG,
+  type GmailConfig,
+} from "@/lib/gmail-config";
 import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
   createTask,
