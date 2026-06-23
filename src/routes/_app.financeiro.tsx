@@ -280,7 +280,7 @@ function NewTxModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
             </select>
           </label>
           <FF label="Descrição" value={form.description || ""} onChange={(v) => setForm({ ...form, description: v })} />
-          <FF label="Valor" type="number" value={String(form.amount ?? "")} onChange={(v) => setForm({ ...form, amount: Number(v) })} />
+          <FF label="Valor" format="currency" value={String(form.amount ?? "")} onChange={(v) => setForm({ ...form, amount: Number(v) })} />
           <FF label="Data" type="date" value={form.transaction_date || ""} onChange={(v) => setForm({ ...form, transaction_date: v })} />
           <button
             type="submit"
