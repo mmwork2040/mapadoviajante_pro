@@ -40,14 +40,14 @@ export const getAgencyConfig = createServerFn({ method: "GET" })
   )
   .handler(async ({ data, context }) => {
     const member = await resolveAgency(context.supabase, context.userId);
-    if (!member) return { value: null as unknown };
+    if (!member) return { value: null as Record<string, unknown> | null };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("key", settingsKey(member.agencyId, data.scope as Scope))
       .maybeSingle();
-    return { value: (row?.value ?? null) as unknown };
+    return { value: (row?.value ?? null) as Record<string, unknown> | null };
   });
 
 /** Salva a configuração de uma seção da Administração para a agência do usuário. */
