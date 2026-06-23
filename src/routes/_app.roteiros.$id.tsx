@@ -262,12 +262,29 @@ function ActivityRow({
     );
   }
 
+  const done = activity.type === "done";
+
+  async function toggleDone() {
+    await updateItineraryActivity(activity.id, { type: done ? null : "done" });
+    onChange();
+  }
+
   return (
     <li className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
-      <span>
-        {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
-        {activity.title}
-        {activity.location && <span className="ml-2 text-xs text-muted-foreground">· {activity.location}</span>}
+      <span className="flex items-center gap-2">
+        <button
+          onClick={toggleDone}
+          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+            done ? "border-primary bg-primary text-primary-foreground" : "border-input"
+          }`}
+        >
+          {done && <Check className="h-3 w-3" />}
+        </button>
+        <span className={done ? "text-muted-foreground line-through" : ""}>
+          {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
+          {activity.title}
+          {activity.location && <span className="ml-2 text-xs text-muted-foreground">· {activity.location}</span>}
+        </span>
       </span>
       <span className="flex gap-1">
         <button onClick={() => setEdit(true)} className="text-muted-foreground hover:text-primary">
@@ -286,6 +303,7 @@ function ActivityRow({
     </li>
   );
 }
+
 
 function VouchersCard({
   itineraryId,
