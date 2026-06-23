@@ -744,8 +744,9 @@ export async function createItineraryActivity(
     .single();
   if (error) {
     console.error("createItineraryActivity:", error);
-    return null;
+    throw new Error(error.message || "Erro ao salvar atividade.");
   }
+
   return data as ItineraryActivity;
 }
 
