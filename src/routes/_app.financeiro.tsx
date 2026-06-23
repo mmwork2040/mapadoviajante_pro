@@ -300,19 +300,22 @@ function FF({
   value,
   onChange,
   type = "text",
+  format,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  format?: "currency";
 }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium">{label}</span>
       <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        type={format ? "text" : type}
+        inputMode={format ? "numeric" : undefined}
+        value={format === "currency" ? maskCurrency(value) : value}
+        onChange={(e) => onChange(format === "currency" ? String(parseCurrency(e.target.value)) : e.target.value)}
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
       />
     </label>
