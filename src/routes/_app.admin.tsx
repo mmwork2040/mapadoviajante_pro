@@ -412,9 +412,30 @@ function WebhookCard() {
 }
 
 const AI_PROVIDERS = [
-  { id: "openai", label: "OpenAI", placeholder: "gpt-4o-mini" },
-  { id: "anthropic", label: "Anthropic", placeholder: "claude-3-5-sonnet-20241022" },
-  { id: "google", label: "Google Gemini", placeholder: "gemini-1.5-flash" },
+  {
+    id: "openai",
+    label: "OpenAI",
+    placeholder: "gpt-4o-mini",
+    models: ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-4", "gpt-3.5-turbo", "o1", "o1-mini"],
+  },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    placeholder: "claude-3-5-sonnet-20241022",
+    models: [
+      "claude-3-5-sonnet-20241022",
+      "claude-3-5-haiku-20241022",
+      "claude-3-opus-20240229",
+      "claude-3-sonnet-20240229",
+      "claude-3-haiku-20240307",
+    ],
+  },
+  {
+    id: "google",
+    label: "Google Gemini",
+    placeholder: "gemini-1.5-flash",
+    models: ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-1.0-pro"],
+  },
 ];
 
 function AiConfigCard() {
@@ -515,12 +536,25 @@ function AiConfigCard() {
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium">Modelo</span>
-          <input
-            value={form.model}
-            onChange={(e) => update({ model: e.target.value })}
-            placeholder={provider?.placeholder}
+          <select
+            value={provider?.models.includes(form.model) ? form.model : "__custom"}
+            onChange={(e) => update({ model: e.target.value === "__custom" ? "" : e.target.value })}
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
+          >
+            <option value="" disabled>Selecione um modelo</option>
+            {provider?.models.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+            <option value="__custom">Outro (personalizado)…</option>
+          </select>
+          {!provider?.models.includes(form.model) && (
+            <input
+              value={form.model}
+              onChange={(e) => update({ model: e.target.value })}
+              placeholder={provider?.placeholder}
+              className="mt-2 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          )}
         </label>
         <label className="block">
           <span className="mb-1 block text-sm font-medium">Credencial (API key)</span>
