@@ -45,7 +45,6 @@ function AcceptInvitePage() {
   const autoAcceptStarted = useRef(false);
 
   useEffect(() => {
-    if (token) sessionStorage.setItem("invite_token", token);
     getInviteInfo(token).then((i) => {
       setInfo(i);
       if (i.name) setName(i.name);
