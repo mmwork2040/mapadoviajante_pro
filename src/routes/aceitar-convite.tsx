@@ -82,7 +82,7 @@ function AcceptInvitePage() {
     if (!info?.email) return;
     setError("");
     setBusy(true);
-    sessionStorage.setItem("invite_token", token);
+    sessionStorage.removeItem("invite_token");
     try {
       if (mode === "signup") {
         const { data, error: signErr } = await supabase.auth.signUp({
