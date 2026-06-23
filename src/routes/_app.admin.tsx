@@ -345,7 +345,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
 }
 
 function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: () => void }) {
-  const [form, setForm] = useState({ name: "", email: "", role: "agent" });
+  const [form, setForm] = useState({ name: "", email: "", role: "consultor" });
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
