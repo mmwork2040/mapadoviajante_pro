@@ -17,6 +17,7 @@ import {
   saveNotifConfig,
   requestPushToken,
   configIsComplete,
+  NOTIF_EVENTS,
   type NotifConfig,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
@@ -567,9 +568,22 @@ function NotificationsCard() {
     setConfig((c) => ({ ...c, ...patch }));
   }
 
+  function toggleEvent(id: NotifConfig["events"][number]) {
+    update({
+      events: config.events.includes(id)
+        ? config.events.filter((e) => e !== id)
+        : [...config.events, id],
+    });
+  }
+
   function save() {
-    saveNotifConfig(config);
-    toast.success("Configuração de notificações salva.");
+    if (!configIsComplete(config)) {
+      toast.error("Preencha todos os campos e selecione ao menos um evento.");
+      return;
+    }
+    saveNotifConfig({ ...config, enabled: true });
+    setConfig((c) => ({ ...c, enabled: true }));
+    toast.success("Configuração de notificações salva e habilitada.");
   }
 
   async function activate() {
@@ -642,6 +656,27 @@ function NotificationsCard() {
         ))}
       </div>
 
+      <div>
+        <span className="mb-2 block text-sm font-medium">Eventos notificados</span>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Selecione ao menos um evento para habilitar o serviço.
+        </p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {NOTIF_EVENTS.map((ev) => (
+            <label key={ev.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={config.events.includes(ev.id)}
+                onChange={() => toggleEvent(ev.id)}
+                className="h-4 w-4 shrink-0 cursor-pointer accent-primary"
+              />
+              <span className="min-w-0">{ev.label}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+
       {!serverReady && (
         <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
           Para o envio funcionar, falta configurar a <strong>service account</strong> do Firebase no servidor.
@@ -652,9 +687,10 @@ function NotificationsCard() {
         <button
           type="button"
           onClick={save}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+          disabled={!configIsComplete(config)}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
         >
-          <Save className="h-4 w-4" /> Salvar
+          <Save className="h-4 w-4" /> Salvar e habilitar
         </button>
         <button
           type="button"

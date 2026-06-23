@@ -2,6 +2,19 @@ import { initializeApp, getApps, deleteApp, type FirebaseApp } from "firebase/ap
 import { getMessaging, getToken } from "firebase/messaging";
 import { getAgencyId } from "@/lib/services";
 
+// ── Eventos que podem gerar notificações ───────────────────────
+export const NOTIF_EVENTS = [
+  { id: "lead.created", label: "Lead criado" },
+  { id: "lead.status_changed", label: "Status do lead alterado" },
+  { id: "task.created", label: "Tarefa criada" },
+  { id: "task.completed", label: "Tarefa concluída" },
+  { id: "transaction.created", label: "Transação registrada" },
+  { id: "itinerary.created", label: "Roteiro criado" },
+  { id: "member.invited", label: "Membro convidado" },
+] as const;
+
+export type NotifEventId = (typeof NOTIF_EVENTS)[number]["id"];
+
 export interface NotifConfig {
   enabled: boolean;
   apiKey: string;
@@ -10,6 +23,7 @@ export interface NotifConfig {
   messagingSenderId: string;
   appId: string;
   vapidKey: string;
+  events: NotifEventId[];
 }
 
 const DEFAULT_CONFIG: NotifConfig = {
@@ -20,7 +34,9 @@ const DEFAULT_CONFIG: NotifConfig = {
   messagingSenderId: "",
   appId: "",
   vapidKey: "",
+  events: [],
 };
+
 
 function storageKey() {
   return `notif_config_${getAgencyId() ?? "default"}`;
@@ -43,7 +59,7 @@ export function saveNotifConfig(config: NotifConfig) {
 }
 
 export function configIsComplete(c: NotifConfig): boolean {
-  return Boolean(c.apiKey && c.authDomain && c.projectId && c.messagingSenderId && c.appId && c.vapidKey);
+  return Boolean(c.apiKey && c.authDomain && c.projectId && c.messagingSenderId && c.appId && c.vapidKey && c.events.length > 0);
 }
 
 /** Solicita permissão, registra o SW do FCM e retorna o token do dispositivo. */
