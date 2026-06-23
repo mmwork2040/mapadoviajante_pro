@@ -596,7 +596,8 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     .select("*, activities:crm_itinerary_activities(*)")
     .eq("itinerary_id", id)
     .order("sort_order", { ascending: true });
-  (days || []).forEach((day: ItineraryDay) => {
+  (days || []).forEach((day: ItineraryDay & { label?: string | null }) => {
+    if (day.title == null && day.label != null) day.title = day.label;
     if (day.activities) {
       day.activities.forEach((a) => {
         const raw = a as ItineraryActivity & { time_start?: string | null };
