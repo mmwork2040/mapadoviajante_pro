@@ -425,6 +425,7 @@ export function ModalField({
   placeholder,
   full,
   format,
+  suggestions,
 }: {
   label: string;
   value: string;
@@ -434,7 +435,9 @@ export function ModalField({
   placeholder?: string;
   full?: boolean;
   format?: "currency" | "phone" | "cpfcnpj";
+  suggestions?: string[];
 }) {
+  const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
   const masks = {
     currency: maskCurrency,
     phone: maskPhone,
