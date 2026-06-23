@@ -163,27 +163,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Main */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-5 backdrop-blur">
-          <nav className="flex items-center gap-1 overflow-x-auto md:hidden">
-            {NAV.map(({ to, label, icon: Icon }) => {
-              const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
-              return (
-                <Link
-                  key={to}
-                  to={to}
-                  aria-label={label}
-                  className={`relative rounded-lg p-2 ${active ? "bg-accent text-accent-foreground" : "text-muted-foreground"}`}
-                >
-                  <Icon className="h-5 w-5" />
-                  {to === "/leads" && leadsCount > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                      {leadsCount}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-5">
+          {/* Marca no mobile (a navegação fica na barra inferior) */}
+          <div className="flex items-center gap-2 md:hidden">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+              <RouteIcon className="h-4 w-4" />
+            </div>
+            <span className="text-base font-extrabold tracking-tight">
+              Mapa<span className="text-primary">PRO</span>
+            </span>
+          </div>
           <button
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
@@ -191,17 +180,55 @@ export function AppLayout({ children }: { children: ReactNode }) {
           >
             {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
           </button>
-          <button
-            onClick={() => signOut()}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
-          >
-            <LogOut className="h-4 w-4" />
-            Sair
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggle}
+              aria-label="Alternar tema"
+              className="rounded-lg p-2 text-muted-foreground hover:bg-muted md:hidden"
+            >
+              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden sm:inline">Sair</span>
+            </button>
+          </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1240px] flex-1 px-5 py-6">{children}</main>
+        <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-5 pb-24 sm:px-5 sm:py-6 md:pb-6">
+          {children}
+        </main>
       </div>
+
+      {/* Barra de navegação inferior (mobile) */}
+      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+        {MOBILE_NAV.map(({ to, label, icon: Icon }) => {
+          const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+          return (
+            <Link
+              key={to}
+              to={to}
+              aria-label={label}
+              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+                active ? "text-primary" : "text-muted-foreground"
+              }`}
+            >
+              <span className="relative">
+                <Icon className="h-5 w-5" />
+                {to === "/leads" && leadsCount > 0 && (
+                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {leadsCount}
+                  </span>
+                )}
+              </span>
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
     </div>
   );
 }
