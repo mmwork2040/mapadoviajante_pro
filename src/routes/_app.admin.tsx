@@ -165,6 +165,32 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     revoke.mutate(m.id);
   }
 
+  const remove = useMutation({
+    mutationFn: (id: string) => removeMember(id),
+    onSuccess: (res) => {
+      if (!res.ok) return toast.error(res.error || "Erro ao remover membro.");
+      toast.success(
+        res.action === "blocked"
+          ? "Membro bloqueado (possui histórico de atividades)."
+          : "Membro removido da agência.",
+      );
+      qc.invalidateQueries({ queryKey: ["team"] });
+    },
+    onError: () => toast.error("Erro ao remover membro."),
+  });
+
+  async function handleRemoveMember(m: { id: string; name?: string | null; email?: string | null }) {
+    const ok = await confirm({
+      title: "Remover membro?",
+      description: `${m.name || m.email || "Este usuário"} será removido da equipe. Se houver atividades em seu nome, o acesso será apenas bloqueado; caso contrário, será excluído por completo.`,
+      confirmLabel: "Remover",
+      cancelLabel: "Cancelar",
+      destructive: true,
+    });
+    if (!ok) return;
+    remove.mutate(m.id);
+  }
+
   return (
     <div className="space-y-6">
       <div>
