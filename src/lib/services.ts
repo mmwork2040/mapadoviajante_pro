@@ -114,6 +114,21 @@ export async function updateMemberRole(id: string, role: string): Promise<boolea
   return true;
 }
 
+/** Revoke a still-pending invite by removing the member row. The person loses
+ * access until they are invited again (which creates a fresh row + token). */
+export async function revokeMember(id: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("agency_members")
+    .delete()
+    .eq("id", id)
+    .eq("status", "pending");
+  if (error) {
+    console.error("revokeMember:", error);
+    return false;
+  }
+  return true;
+}
+
 
 
 // ── Leads ──────────────────────────────────────────────────────
