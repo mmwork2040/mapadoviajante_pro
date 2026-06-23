@@ -157,6 +157,15 @@ export async function updateMemberRole(id: string, role: string): Promise<boolea
 
 
 // ── Leads ──────────────────────────────────────────────────────
+const CONTACTED_PROFILE_STATUS_KEY = "__crm_status";
+
+function normalizeLead(lead: Lead): Lead {
+  const profile = (lead.profile || {}) as Record<string, unknown>;
+  return profile[CONTACTED_PROFILE_STATUS_KEY] === "contacted"
+    ? { ...lead, status: "contacted" }
+    : lead;
+}
+
 export async function fetchLeads(filters: {
   status?: string;
   destination?: string;
@@ -181,7 +190,7 @@ export async function fetchLeads(filters: {
     console.error("fetchLeads:", error);
     throw new Error("Não foi possível carregar os leads.");
   }
-  return (data as Lead[]) || [];
+  return ((data as Lead[]) || []).map(normalizeLead);
 }
 
 export async function fetchLeadById(leadId: string): Promise<Lead | null> {
@@ -192,11 +201,13 @@ export async function fetchLeadById(leadId: string): Promise<Lead | null> {
     console.error("fetchLeadById:", error);
     throw new Error("Não foi possível carregar o lead.");
   }
-  return (data as Lead) || null;
+  return data ? normalizeLead(data as Lead) : null;
 }
 
 export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> {
   if (!_agencyId) await loadAgencyContext();
+  const profile = { ...(leadData.profile || {}) } as Record<string, unknown>;
+  if (leadData.status === "contacted") profile[CONTACTED_PROFILE_STATUS_KEY] = "contacted";
   const { data, error } = await supabase
     .from("crm_leads")
     .insert({
@@ -207,10 +218,10 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
       phone: leadData.phone || null,
       destination: leadData.destination || null,
       value: leadData.value || 0,
-      status: leadData.status || "new",
+      status: leadData.status === "contacted" ? "new" : leadData.status || "new",
       origin: leadData.origin || "direto",
       notes: leadData.notes || null,
-      profile: leadData.profile || {},
+      profile,
       checklists: leadData.checklists || {},
     })
     .select()
@@ -219,17 +230,34 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
     console.error("createLead:", error);
     return null;
   }
-  return data as Lead;
+  return normalizeLead(data as Lead);
 }
 
 export async function updateLead(leadId: string, updates: Partial<Lead>): Promise<Lead | null> {
-  const normalizedUpdates = { ...updates };
+  const normalizedUpdates = { ...updates } as Partial<Lead>;
 
-  // O banco original ainda não aceita o estágio "contacted" no CHECK constraint.
-  // Enquanto a migração não é aplicada, salvamos como "new" para evitar erro e
-  // manter a interface funcional.
-  if (normalizedUpdates.status === "contacted") {
-    normalizedUpdates.status = "new";
+  if (updates.status) {
+    const { data: current, error: currentError } = await supabase
+      .from("crm_leads")
+      .select("profile")
+      .eq("id", leadId)
+      .maybeSingle();
+
+    if (currentError) {
+      console.error("updateLead profile:", currentError);
+      return null;
+    }
+
+    const profile = { ...((current?.profile || {}) as Record<string, unknown>) };
+
+    if (updates.status === "contacted") {
+      normalizedUpdates.status = "new";
+      profile[CONTACTED_PROFILE_STATUS_KEY] = "contacted";
+    } else {
+      delete profile[CONTACTED_PROFILE_STATUS_KEY];
+    }
+
+    normalizedUpdates.profile = profile;
   }
 
   const { data, error } = await supabase
@@ -242,7 +270,7 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     console.error("updateLead:", error);
     return null;
   }
-  return data as Lead;
+  return normalizeLead(data as Lead);
 }
 
 export async function deleteLead(leadId: string): Promise<boolean> {
