@@ -35,7 +35,7 @@ import {
 } from "@/lib/services";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
-import { useAuth } from "@/lib/auth";
+import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
 import type { AiConfig, Task } from "@/lib/types";
 
@@ -47,8 +47,22 @@ const ROLES = ["admin", "agent", "viewer"];
 const PRIORITIES = ["low", "normal", "high"];
 
 function AdminPage() {
+  const { session, member } = useAuth();
+  if (!isSuperAdminEmail(session?.user?.email)) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center text-center">
+        <h1 className="text-xl font-bold">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          A área de Administração está disponível apenas para os administradores do sistema.
+        </p>
+      </div>
+    );
+  }
+  return <AdminContent member={member} />;
+}
+
+function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"] }) {
   const qc = useQueryClient();
-  const { member } = useAuth();
   const isAdmin = member?.role === "admin";
   const [inviteOpen, setInviteOpen] = useState(false);
   const [task, setTask] = useState<Partial<Task>>({ priority: "normal" });

@@ -27,6 +27,16 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// Apenas estes e-mails têm acesso irrestrito à área de Administração.
+export const SUPER_ADMIN_EMAILS = [
+  "celiogomesalves@gmail.com",
+  "lukasgabriel1036@gmail.com",
+];
+
+export function isSuperAdminEmail(email?: string | null) {
+  return !!email && SUPER_ADMIN_EMAILS.includes(email.toLowerCase());
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [member, setMember] = useState<AgencyMember | null>(null);

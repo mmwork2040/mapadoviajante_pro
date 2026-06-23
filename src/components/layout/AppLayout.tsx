@@ -16,7 +16,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from "lucide-react";
-import { useAuth } from "@/lib/auth";
+import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 
@@ -39,13 +39,16 @@ const MOBILE_NAV = [
 ] as const;
 
 export function AppLayout({ children }: { children: ReactNode }) {
-  const { member, signOut } = useAuth();
+  const { session, member, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
+  const showAdmin = isSuperAdminEmail(session?.user?.email);
+  const nav = showAdmin ? NAV : NAV.filter((i) => i.to !== "/admin");
+  const mobileNav = showAdmin ? MOBILE_NAV : MOBILE_NAV.filter((i) => i.to !== "/admin");
 
   useEffect(() => {
     const channel = supabase
@@ -85,7 +88,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 space-y-1 px-3">
-          {NAV.map(({ to, label, icon: Icon }) => {
+          {nav.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
             return (
               <Link
@@ -205,7 +208,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Barra de navegação inferior (mobile) */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        {MOBILE_NAV.map(({ to, label, icon: Icon }) => {
+        {mobileNav.map(({ to, label, icon: Icon }) => {
           const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
           return (
             <Link
