@@ -35,6 +35,7 @@ import {
   fetchAiConfig,
   fetchTasks,
   fetchTeamMembers,
+  revokeMember,
   saveAiConfig,
   updateMemberRole,
   updateTask,
