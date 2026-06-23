@@ -136,6 +136,7 @@ type WizardForm = {
   phone: string;
   value: string;
   origin: string;
+  origin_other: string;
   destination: string;
   travel_dates: string;
   passengers: string;
