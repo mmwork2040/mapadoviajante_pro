@@ -441,7 +441,7 @@ function CollapsibleSection({
 
 
 function WebhookCard() {
-  const [config, setConfig] = useState<WebhookConfig>(() => getWebhookConfig());
+  const [config, setConfig] = useState<WebhookConfig>(DEFAULT_WEBHOOK_CONFIG);
   const [saved, setSaved] = useState(false);
   const [testing, setTesting] = useState(false);
   const disabled = !config.enabled;
