@@ -205,7 +205,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                     type="button"
                     title="Reenviar convite"
                     disabled={resendInvite.isPending}
-                    onClick={() => resendInvite.mutate({ name: m.name, email: m.email, role: m.role || "consultor" })}
+                    onClick={() => resendInvite.mutate({ name: m.name || "", email: m.email || "", role: m.role || "consultor" })}
                     className="flex items-center gap-1 rounded-lg border border-input px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
                   >
                     {resendInvite.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
