@@ -143,6 +143,27 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     resendInvite.mutate({ name: m.name || "", email: m.email || "", role: m.role || "consultor" });
   }
 
+  const revoke = useMutation({
+    mutationFn: (id: string) => revokeMember(id),
+    onSuccess: (ok) => {
+      if (!ok) return toast.error("Erro ao revogar convite.");
+      toast.success("Convite revogado.");
+      qc.invalidateQueries({ queryKey: ["team"] });
+    },
+    onError: () => toast.error("Erro ao revogar convite."),
+  });
+
+  async function handleRevokeInvite(m: { id: string; email?: string | null }) {
+    const ok = await confirm({
+      title: "Revogar convite?",
+      description: `O convite pendente para ${m.email || "este usuário"} será cancelado e o acesso bloqueado até um novo convite.`,
+      confirmLabel: "Revogar",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+    revoke.mutate(m.id);
+  }
+
   return (
     <div className="space-y-6">
       <div>
