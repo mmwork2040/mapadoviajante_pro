@@ -56,9 +56,31 @@ export async function requestPushToken(config: NotifConfig): Promise<{ ok: boole
     return { ok: false, message: "Preencha todos os campos da configuração do Firebase." };
   }
 
+  // Em preview/iframe os navegadores bloqueiam o pedido de permissão.
+  const inIframe = window.self !== window.top;
+  if (inIframe) {
+    return {
+      ok: false,
+      message:
+        "Abra o app publicado em uma aba (fora do preview/iframe) para ativar as notificações.",
+    };
+  }
+
+  if (Notification.permission === "denied") {
+    return {
+      ok: false,
+      message:
+        "Permissão bloqueada. Habilite as notificações nas configurações do navegador (ícone de cadeado na barra de endereço) e tente novamente.",
+    };
+  }
+
   const permission = await Notification.requestPermission();
   if (permission !== "granted") {
-    return { ok: false, message: "Permissão de notificações negada." };
+    return {
+      ok: false,
+      message:
+        "Permissão de notificações negada. Habilite nas configurações do navegador para este site.",
+    };
   }
 
   // Registra o SW passando a config via query params
