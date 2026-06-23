@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -11,6 +11,8 @@ import {
   Sun,
   LogOut,
   Bot,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
@@ -28,6 +30,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { member, signOut } = useAuth();
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">
