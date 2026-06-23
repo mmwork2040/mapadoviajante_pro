@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check } from "lucide-react";
+import { useState } from "react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info } from "lucide-react";
 import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
@@ -35,8 +35,26 @@ function LeadsPage() {
   const move = useMutation({
     mutationFn: ({ id, status }: { id: string; status: LeadStatus }) =>
       updateLead(id, { status }),
-    onSuccess: (_res, vars) => {
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["leads"] });
+      const prev = qc.getQueryData<Lead[]>(["leads", { search }]);
+      qc.setQueryData<Lead[]>(["leads", { search }], (old) =>
+        (old ?? []).map((l) => (l.id === id ? { ...l, status } : l)),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["leads", { search }], ctx.prev);
+      toast.error("Não foi possível mover o lead.");
+    },
+    onSuccess: (res, vars) => {
+      if (!res) {
+        toast.error("Não foi possível mover o lead.");
+        return;
+      }
       dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
   });
@@ -163,38 +181,32 @@ function LeadCard({
   onDragEnd: () => void;
 }) {
   const navigate = useNavigate();
-  const movedRef = useRef(false);
 
   return (
     <div
-      role="button"
-      tabIndex={0}
       draggable
       onDragStart={(e) => {
-        movedRef.current = true;
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", lead.id);
         onDragStart();
       }}
-      onDragEnd={() => {
-        onDragEnd();
-        // allow click again shortly after the drag completes
-        setTimeout(() => (movedRef.current = false), 0);
-      }}
-      onClick={() => {
-        if (movedRef.current) return;
-        navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
-      }}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
-        }
-      }}
-      className={`block cursor-grab rounded-xl border border-border bg-card p-3 shadow-sm transition hover:shadow-md hover:border-primary/40 active:cursor-grabbing ${
+      onDragEnd={onDragEnd}
+      className={`group relative cursor-grab rounded-xl border border-border bg-card p-3 pr-9 shadow-sm transition hover:shadow-md hover:border-primary/40 active:cursor-grabbing ${
         dragging ? "opacity-50 ring-2 ring-primary" : ""
       }`}
     >
+      <button
+        type="button"
+        aria-label="Ver detalhes do lead"
+        title="Ver detalhes"
+        onClick={(e) => {
+          e.stopPropagation();
+          navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
+        }}
+        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+      >
+        <Info className="h-4 w-4" />
+      </button>
       <p className="font-medium">{lead.name}</p>
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
       <p className="mt-2 text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
