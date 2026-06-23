@@ -115,6 +115,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   const [extracting, setExtracting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const extract = useServerFn(extractDocumentData);
+  const confirm = useConfirm();
 
   async function addActivity() {
     if (!title.trim()) return;
