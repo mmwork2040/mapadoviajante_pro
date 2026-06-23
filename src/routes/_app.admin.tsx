@@ -503,12 +503,9 @@ function AiConfigCard() {
   const provider = AI_PROVIDERS.find((p) => p.id === form.provider);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold">Inteligência Artificial</h2>
-        </div>
+    <div>
+      <div className="mb-4 flex items-center justify-end">
+
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
             status === "connected"
