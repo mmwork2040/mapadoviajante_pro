@@ -185,6 +185,29 @@ const STEPS = [
 
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
 
+const AIRLINES = [
+  "LATAM",
+  "GOL",
+  "Azul",
+  "American Airlines",
+  "Delta Air Lines",
+  "United Airlines",
+  "Emirates",
+  "Qatar Airways",
+  "Air France",
+  "KLM",
+  "Lufthansa",
+  "TAP Air Portugal",
+  "Iberia",
+  "British Airways",
+  "Turkish Airlines",
+  "Copa Airlines",
+  "Avianca",
+  "Aerolíneas Argentinas",
+  "Air Canada",
+  "Etihad Airways",
+];
+
 const LOYALTY_PROGRAMS = [
   "Smiles (GOL)",
   "LATAM Pass",
