@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { Toaster } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ConfirmProvider } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app")({
   ssr: false,
@@ -30,11 +31,11 @@ function ProtectedLayout() {
   if (!session) return null;
 
   return (
-    <>
+    <ConfirmProvider>
       <AppLayout>
         <Outlet />
       </AppLayout>
       <Toaster richColors position="top-right" />
-    </>
+    </ConfirmProvider>
   );
 }

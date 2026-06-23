@@ -19,6 +19,7 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app/leads/$leadId")({
   component: LeadDetailPage,
@@ -50,6 +51,7 @@ function LeadDetailPage() {
   const { leadId } = useParams({ from: "/_app/leads/$leadId" });
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [note, setNote] = useState("");
 
   const { data: lead, isLoading, isError, refetch } = useQuery({
@@ -85,7 +87,13 @@ function LeadDetailPage() {
   });
 
   async function remove() {
-    if (!confirm("Excluir este lead?")) return;
+    const ok2 = await confirm({
+      title: "Excluir este lead?",
+      description: "Todos os dados deste lead serão removidos permanentemente.",
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (!ok2) return;
     const ok = await deleteLead(leadId);
     if (ok) {
       dispatchWebhook("lead.deleted", { id: leadId });
