@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -85,134 +85,163 @@ function AdminPage() {
         <p className="text-sm text-muted-foreground">Equipe e tarefas da agência.</p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Equipe</h2>
-            {isAdmin && (
-              <button
-                onClick={() => setInviteOpen(true)}
-                className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-              >
-                <UserPlus className="h-4 w-4" /> Convidar
-              </button>
-            )}
-          </div>
-          {teamQ.isError ? (
-            <QueryError message="Não foi possível carregar a equipe." onRetry={() => teamQ.refetch()} />
-          ) : (
-            <ul className="space-y-3">
-              {team.map((m) => (
-                <li key={m.id} className="flex items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white"
-                    style={{ backgroundColor: m.avatar_color || "#ff7a1a" }}
+      <CollapsibleSection
+        icon={Users}
+        color="#3b82f6"
+        title="Equipe"
+        subtitle="Gerencie os membros e cargos da agência"
+        defaultOpen
+        action={
+          isAdmin ? (
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setInviteOpen(true);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.stopPropagation();
+                  setInviteOpen(true);
+                }
+              }}
+              className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            >
+              <UserPlus className="h-4 w-4" /> Convidar
+            </span>
+          ) : undefined
+        }
+      >
+        {teamQ.isError ? (
+          <QueryError message="Não foi possível carregar a equipe." onRetry={() => teamQ.refetch()} />
+        ) : (
+          <ul className="space-y-3">
+            {team.map((m) => (
+              <li key={m.id} className="flex items-center gap-3">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white"
+                  style={{ backgroundColor: m.avatar_color || "#ff7a1a" }}
+                >
+                  {initials(m.name)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">{m.name}</p>
+                  <p className="text-xs text-muted-foreground">{m.email}</p>
+                </div>
+                {isAdmin ? (
+                  <select
+                    value={m.role}
+                    onChange={(e) => changeRole.mutate({ id: m.id, role: e.target.value })}
+                    className="rounded-lg border border-input bg-background px-2 py-1 text-xs capitalize outline-none focus:border-primary"
                   >
-                    {initials(m.name)}
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{m.name}</p>
-                    <p className="text-xs text-muted-foreground">{m.email}</p>
-                  </div>
-                  {isAdmin ? (
-                    <select
-                      value={m.role}
-                      onChange={(e) => changeRole.mutate({ id: m.id, role: e.target.value })}
-                      className="rounded-lg border border-input bg-background px-2 py-1 text-xs capitalize outline-none focus:border-primary"
-                    >
-                      {ROLES.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="text-xs capitalize text-muted-foreground">{m.role}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+                    {ROLES.map((r) => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="text-xs capitalize text-muted-foreground">{m.role}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CollapsibleSection>
 
-        <div className="rounded-2xl border border-border bg-card p-5">
-          <h2 className="mb-4 font-semibold">Tarefas</h2>
-          <div className="mb-4 space-y-2">
-            <input
-              value={task.title || ""}
-              onChange={(e) => setTask({ ...task, title: e.target.value })}
-              placeholder="Nova tarefa…"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-            <div className="flex gap-2">
-              <select
-                value={task.priority || "normal"}
-                onChange={(e) => setTask({ ...task, priority: e.target.value })}
-                className="rounded-lg border border-input bg-background px-2 py-2 text-sm capitalize outline-none focus:border-primary"
-              >
-                {PRIORITIES.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-              <select
-                value={task.assigned_to || ""}
-                onChange={(e) => setTask({ ...task, assigned_to: e.target.value || null })}
-                className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
-              >
-                <option value="">Sem responsável</option>
-                {team.map((m) => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-              <input
-                type="date"
-                value={task.due_date || ""}
-                onChange={(e) => setTask({ ...task, due_date: e.target.value || null })}
-                className="rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
-              />
-              <button
-                onClick={() => task.title?.trim() && addTask.mutate()}
-                className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
-              >
-                <Plus className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-          {tasksQ.isError ? (
-            <QueryError message="Não foi possível carregar as tarefas." onRetry={() => tasksQ.refetch()} />
-          ) : (
-            <ul className="space-y-2">
-              {tasks.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma tarefa.</li>}
-              {tasks.map((t) => (
-                <li key={t.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2">
-                  <button
-                    onClick={() => toggle.mutate({ id: t.id, completed: !t.completed })}
-                    className={`flex h-5 w-5 items-center justify-center rounded border ${
-                      t.completed ? "border-primary bg-primary text-primary-foreground" : "border-input"
-                    }`}
-                  >
-                    {t.completed && <Check className="h-3.5 w-3.5" />}
-                  </button>
-                  <span className={`flex-1 text-sm ${t.completed ? "text-muted-foreground line-through" : ""}`}>
-                    {t.title}
-                    {t.priority && t.priority !== "normal" && (
-                      <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs capitalize">{t.priority}</span>
-                    )}
-                  </span>
-                  {t.due_date && <span className="text-xs text-muted-foreground">{formatDate(t.due_date)}</span>}
-                </li>
+      <CollapsibleSection
+        icon={ListChecks}
+        color="#10b981"
+        title="Tarefas"
+        subtitle="Organize e acompanhe as tarefas da equipe"
+        defaultOpen
+      >
+        <div className="mb-4 space-y-2">
+          <input
+            value={task.title || ""}
+            onChange={(e) => setTask({ ...task, title: e.target.value })}
+            placeholder="Nova tarefa…"
+            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+          <div className="flex gap-2">
+            <select
+              value={task.priority || "normal"}
+              onChange={(e) => setTask({ ...task, priority: e.target.value })}
+              className="rounded-lg border border-input bg-background px-2 py-2 text-sm capitalize outline-none focus:border-primary"
+            >
+              {PRIORITIES.map((p) => (
+                <option key={p} value={p}>{p}</option>
               ))}
-            </ul>
-          )}
+            </select>
+            <select
+              value={task.assigned_to || ""}
+              onChange={(e) => setTask({ ...task, assigned_to: e.target.value || null })}
+              className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
+            >
+              <option value="">Sem responsável</option>
+              {team.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+            <input
+              type="date"
+              value={task.due_date || ""}
+              onChange={(e) => setTask({ ...task, due_date: e.target.value || null })}
+              className="rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
+            />
+            <button
+              onClick={() => task.title?.trim() && addTask.mutate()}
+              className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
+            >
+              <Plus className="h-4 w-4" />
+            </button>
+          </div>
         </div>
-      </div>
+        {tasksQ.isError ? (
+          <QueryError message="Não foi possível carregar as tarefas." onRetry={() => tasksQ.refetch()} />
+        ) : (
+          <ul className="space-y-2">
+            {tasks.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma tarefa.</li>}
+            {tasks.map((t) => (
+              <li key={t.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2">
+                <button
+                  onClick={() => toggle.mutate({ id: t.id, completed: !t.completed })}
+                  className={`flex h-5 w-5 items-center justify-center rounded border ${
+                    t.completed ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                  }`}
+                >
+                  {t.completed && <Check className="h-3.5 w-3.5" />}
+                </button>
+                <span className={`flex-1 text-sm ${t.completed ? "text-muted-foreground line-through" : ""}`}>
+                  {t.title}
+                  {t.priority && t.priority !== "normal" && (
+                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs capitalize">{t.priority}</span>
+                  )}
+                </span>
+                {t.due_date && <span className="text-xs text-muted-foreground">{formatDate(t.due_date)}</span>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CollapsibleSection>
 
       {isAdmin && (
-        <CollapsibleSection icon={Webhook} title="Webhook">
+        <CollapsibleSection
+          icon={Webhook}
+          color="#f97316"
+          title="Webhook"
+          subtitle="Integre eventos da agência com sistemas externos"
+        >
           <WebhookCard />
         </CollapsibleSection>
       )}
 
       {isAdmin && (
-        <CollapsibleSection icon={Sparkles} title="Inteligência Artificial">
+        <CollapsibleSection
+          icon={Sparkles}
+          color="#7c5cff"
+          title="Inteligência Artificial"
+          subtitle="Configure e instrua a IA com base de conhecimento"
+        >
           <AiConfigCard />
         </CollapsibleSection>
       )}
@@ -309,26 +338,45 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
 function CollapsibleSection({
   icon: Icon,
   title,
+  subtitle,
+  color = "#f97316",
+  defaultOpen = false,
+  action,
   children,
 }: {
   icon: typeof Webhook;
   title: string;
+  subtitle?: string;
+  color?: string;
+  defaultOpen?: boolean;
+  action?: React.ReactNode;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-2xl border border-border bg-card">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-2 p-5"
+        className="flex w-full items-center justify-between gap-3 p-5"
         aria-expanded={open}
       >
-        <span className="flex items-center gap-2">
-          <Icon className="h-5 w-5 text-primary" />
-          <span className="font-semibold">{title}</span>
+        <span className="flex items-start gap-3 text-left">
+          <span
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl"
+            style={{ backgroundColor: `${color}1f`, color }}
+          >
+            <Icon className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block font-bold leading-tight">{title}</span>
+            {subtitle && <span className="block text-sm text-muted-foreground">{subtitle}</span>}
+          </span>
         </span>
-        <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        <span className="flex items-center gap-2">
+          {action}
+          <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
       </button>
       {open && <div className="px-5 pb-5">{children}</div>}
     </div>
