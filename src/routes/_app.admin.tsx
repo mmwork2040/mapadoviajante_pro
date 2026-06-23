@@ -306,6 +306,37 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
   );
 }
 
+function CollapsibleSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof Webhook;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 p-5"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-2">
+          <Icon className="h-5 w-5 text-primary" />
+          <span className="font-semibold">{title}</span>
+        </span>
+        <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="px-5 pb-5">{children}</div>}
+    </div>
+  );
+}
+
+
+
 function WebhookCard() {
   const [config, setConfig] = useState<WebhookConfig>(() => getWebhookConfig());
   const [saved, setSaved] = useState(false);
