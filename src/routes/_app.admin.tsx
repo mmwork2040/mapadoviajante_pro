@@ -419,14 +419,14 @@ function WebhookCard() {
         <button
           type="button"
           onClick={() => update({ enabled: !config.enabled })}
-          className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
             config.enabled ? "bg-primary" : "bg-muted"
           }`}
           aria-pressed={config.enabled}
         >
           <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-              config.enabled ? "translate-x-5" : "translate-x-0.5"
+            className={`inline-block h-5 w-5 rounded-full bg-white transition-transform ${
+              config.enabled ? "translate-x-[22px]" : "translate-x-0.5"
             }`}
           />
         </button>
@@ -434,6 +434,7 @@ function WebhookCard() {
           {config.enabled ? "Habilitado" : "Desabilitado"}
         </span>
       </label>
+
 
 
 
