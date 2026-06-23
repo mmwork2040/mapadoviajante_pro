@@ -31,11 +31,11 @@ function ProtectedLayout() {
   if (!session) return null;
 
   return (
-    <>
+    <ConfirmProvider>
       <AppLayout>
         <Outlet />
       </AppLayout>
       <Toaster richColors position="top-right" />
-    </>
+    </ConfirmProvider>
   );
 }
