@@ -473,10 +473,14 @@ function WebhookCard() {
     });
   }
 
-  function save() {
-    saveWebhookConfig(config);
-    setSaved(true);
-    toast.success("Configuração de webhook salva.");
+  async function save() {
+    try {
+      await saveWebhookConfig(config);
+      setSaved(true);
+      toast.success("Configuração de webhook salva.");
+    } catch {
+      toast.error("Não foi possível salvar a configuração.");
+    }
   }
 
   return (
