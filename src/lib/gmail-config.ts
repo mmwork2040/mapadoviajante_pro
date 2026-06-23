@@ -1,4 +1,4 @@
-import { getAgencyId } from "@/lib/services";
+import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
 
 export interface GmailConfig {
   enabled: boolean;
@@ -8,7 +8,7 @@ export interface GmailConfig {
   signature: string;
 }
 
-const DEFAULT_CONFIG: GmailConfig = {
+export const DEFAULT_CONFIG: GmailConfig = {
   enabled: false,
   senderName: "",
   replyTo: "",
@@ -16,22 +16,16 @@ const DEFAULT_CONFIG: GmailConfig = {
   signature: "",
 };
 
-function storageKey() {
-  return `gmail_config_${getAgencyId() ?? "default"}`;
-}
-
-export function getGmailConfig(): GmailConfig {
-  if (typeof window === "undefined") return DEFAULT_CONFIG;
+export async function getGmailConfig(): Promise<GmailConfig> {
   try {
-    const raw = window.localStorage.getItem(storageKey());
-    if (!raw) return DEFAULT_CONFIG;
-    return { ...DEFAULT_CONFIG, ...(JSON.parse(raw) as Partial<GmailConfig>) };
+    const { value } = await getAgencyConfig({ data: { scope: "gmail" } });
+    if (!value) return DEFAULT_CONFIG;
+    return { ...DEFAULT_CONFIG, ...(JSON.parse(value) as Partial<GmailConfig>) };
   } catch {
     return DEFAULT_CONFIG;
   }
 }
 
-export function saveGmailConfig(config: GmailConfig) {
-  if (typeof window === "undefined") return;
-  window.localStorage.setItem(storageKey(), JSON.stringify(config));
+export async function saveGmailConfig(config: GmailConfig): Promise<void> {
+  await saveAgencyConfig({ data: { scope: "gmail", value: JSON.stringify(config) } });
 }
