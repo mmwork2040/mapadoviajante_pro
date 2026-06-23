@@ -73,3 +73,36 @@ export async function dispatchWebhook(event: WebhookEventId, payload: unknown) {
     console.warn("Falha ao disparar webhook:", err);
   }
 }
+
+// ── Teste manual do webhook ────────────────────────────────────
+export async function sendTestWebhook(config: WebhookConfig) {
+  if (!config.url.trim()) {
+    return { ok: false, message: "Informe a URL do webhook." };
+  }
+  try {
+    const res = await fetch(config.url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(config.secret ? { "X-Webhook-Secret": config.secret } : {}),
+      },
+      body: JSON.stringify({
+        event: "webhook.test",
+        agency_id: getAgencyId(),
+        timestamp: new Date().toISOString(),
+        data: { message: "Teste de configuração do webhook." },
+      }),
+    });
+    return {
+      ok: res.ok,
+      message: res.ok
+        ? `Webhook respondeu com status ${res.status}.`
+        : `Falha: o webhook respondeu com status ${res.status}.`,
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      message: `Erro ao enviar: ${err instanceof Error ? err.message : "desconhecido"}`,
+    };
+  }
+}

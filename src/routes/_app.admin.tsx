@@ -9,6 +9,7 @@ import {
   dispatchWebhook,
   getWebhookConfig,
   saveWebhookConfig,
+  sendTestWebhook,
   type WebhookConfig,
 } from "@/lib/webhook";
 import {
@@ -388,7 +389,18 @@ function CollapsibleSection({
 function WebhookCard() {
   const [config, setConfig] = useState<WebhookConfig>(() => getWebhookConfig());
   const [saved, setSaved] = useState(false);
+  const [testing, setTesting] = useState(false);
   const disabled = !config.enabled;
+  const canTest = config.enabled && !!config.url.trim() && config.events.length > 0;
+
+  async function runTest() {
+    setTesting(true);
+    const res = await sendTestWebhook(config);
+    setTesting(false);
+    if (res.ok) toast.success(res.message);
+    else toast.error(res.message);
+  }
+
 
   useEffect(() => {
     setConfig(getWebhookConfig());
@@ -484,14 +496,25 @@ function WebhookCard() {
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={save}
-        disabled={disabled || !config.url.trim() || config.events.length === 0}
-        className="mt-5 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {saved ? "Salvo ✓" : "Salvar configuração"}
-      </button>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={disabled || !config.url.trim() || config.events.length === 0}
+          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saved ? "Salvo ✓" : "Salvar configuração"}
+        </button>
+        <button
+          type="button"
+          onClick={runTest}
+          disabled={!canTest || testing}
+          className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {testing ? "Enviando…" : "Testar webhook"}
+        </button>
+      </div>
+
     </div>
   );
 }
