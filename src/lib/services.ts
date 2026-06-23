@@ -596,7 +596,8 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     .select("*, activities:crm_itinerary_activities(*)")
     .eq("itinerary_id", id)
     .order("sort_order", { ascending: true });
-  (days || []).forEach((day: ItineraryDay) => {
+  (days || []).forEach((day: ItineraryDay & { label?: string | null }) => {
+    if (day.title == null && day.label != null) day.title = day.label;
     if (day.activities) {
       day.activities.forEach((a) => {
         const raw = a as ItineraryActivity & { time_start?: string | null };
@@ -664,8 +665,20 @@ export async function deleteItinerary(id: string): Promise<boolean> {
   return true;
 }
 
+// A tabela usa a coluna `label`; a UI usa `title`.
+function mapDayPayload(data: Partial<ItineraryDay>): Record<string, unknown> {
+  const { title, ...rest } = data;
+  const payload: Record<string, unknown> = { ...rest };
+  if (title !== undefined) payload.label = title;
+  return payload;
+}
+
 export async function createItineraryDay(dayData: Partial<ItineraryDay>): Promise<ItineraryDay | null> {
-  const { data, error } = await supabase.from("crm_itinerary_days").insert(dayData).select().single();
+  const { data, error } = await supabase
+    .from("crm_itinerary_days")
+    .insert(mapDayPayload(dayData))
+    .select()
+    .single();
   if (error) {
     console.error("createItineraryDay:", error);
     return null;
@@ -679,7 +692,7 @@ export async function updateItineraryDay(
 ): Promise<ItineraryDay | null> {
   const { data, error } = await supabase
     .from("crm_itinerary_days")
-    .update(updates)
+    .update(mapDayPayload(updates))
     .eq("id", id)
     .select()
     .maybeSingle();
@@ -726,7 +739,7 @@ export async function createItineraryActivity(
 ): Promise<ItineraryActivity | null> {
   const { data, error } = await supabase
     .from("crm_itinerary_activities")
-    .insert(mapActivityPayload(activityData))
+    .insert({ type: "activity", ...mapActivityPayload(activityData) })
     .select()
     .single();
   if (error) {
