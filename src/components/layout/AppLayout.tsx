@@ -137,7 +137,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
               );
             })}
           </nav>
-          <div className="hidden md:block" />
+          <button
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
+            className="hidden rounded-lg p-2 text-muted-foreground hover:bg-muted md:block"
+          >
+            {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+          </button>
           <button
             onClick={() => signOut()}
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
