@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -205,9 +205,17 @@ function AdminPage() {
         </div>
       </div>
 
-      {isAdmin && <WebhookCard />}
+      {isAdmin && (
+        <CollapsibleSection icon={Webhook} title="Webhook">
+          <WebhookCard />
+        </CollapsibleSection>
+      )}
 
-      {isAdmin && <AiConfigCard />}
+      {isAdmin && (
+        <CollapsibleSection icon={Sparkles} title="Inteligência Artificial">
+          <AiConfigCard />
+        </CollapsibleSection>
+      )}
 
 
       <p className="text-xs text-muted-foreground">
@@ -298,6 +306,37 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
   );
 }
 
+function CollapsibleSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof Webhook;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="rounded-2xl border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex w-full items-center justify-between gap-2 p-5"
+        aria-expanded={open}
+      >
+        <span className="flex items-center gap-2">
+          <Icon className="h-5 w-5 text-primary" />
+          <span className="font-semibold">{title}</span>
+        </span>
+        <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && <div className="px-5 pb-5">{children}</div>}
+    </div>
+  );
+}
+
+
+
 function WebhookCard() {
   const [config, setConfig] = useState<WebhookConfig>(() => getWebhookConfig());
   const [saved, setSaved] = useState(false);
@@ -327,32 +366,27 @@ function WebhookCard() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Webhook className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold">Webhook</h2>
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">
-            {config.enabled ? "Habilitado" : "Desabilitado"}
-          </span>
-          <button
-            type="button"
-            onClick={() => update({ enabled: !config.enabled })}
-            className={`relative h-6 w-11 rounded-full transition-colors ${
-              config.enabled ? "bg-primary" : "bg-muted"
+    <div>
+      <label className="mb-4 flex items-center justify-between gap-2 text-sm">
+        <span className="text-muted-foreground">
+          {config.enabled ? "Habilitado" : "Desabilitado"}
+        </span>
+        <button
+          type="button"
+          onClick={() => update({ enabled: !config.enabled })}
+          className={`relative h-6 w-11 rounded-full transition-colors ${
+            config.enabled ? "bg-primary" : "bg-muted"
+          }`}
+          aria-pressed={config.enabled}
+        >
+          <span
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
+              config.enabled ? "translate-x-5" : "translate-x-0.5"
             }`}
-            aria-pressed={config.enabled}
-          >
-            <span
-              className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-transform ${
-                config.enabled ? "translate-x-5" : "translate-x-0.5"
-              }`}
-            />
-          </button>
-        </label>
-      </div>
+          />
+        </button>
+      </label>
+
 
       <p className="mb-4 text-xs text-muted-foreground">
         Quando desabilitado, nenhum evento é disparado e as opções abaixo ficam inativas.
@@ -500,12 +534,9 @@ function AiConfigCard() {
   const provider = AI_PROVIDERS.find((p) => p.id === form.provider);
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-primary" />
-          <h2 className="font-semibold">Inteligência Artificial</h2>
-        </div>
+    <div>
+      <div className="mb-4 flex items-center justify-end">
+
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
             status === "connected"
