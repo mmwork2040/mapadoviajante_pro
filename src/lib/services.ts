@@ -223,9 +223,18 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
 }
 
 export async function updateLead(leadId: string, updates: Partial<Lead>): Promise<Lead | null> {
+  const normalizedUpdates = { ...updates };
+
+  // O banco original ainda não aceita o estágio "contacted" no CHECK constraint.
+  // Enquanto a migração não é aplicada, salvamos como "new" para evitar erro e
+  // manter a interface funcional.
+  if (normalizedUpdates.status === "contacted") {
+    normalizedUpdates.status = "new";
+  }
+
   const { data, error } = await supabase
     .from("crm_leads")
-    .update({ ...updates, last_activity_at: new Date().toISOString() })
+    .update({ ...normalizedUpdates, last_activity_at: new Date().toISOString() })
     .eq("id", leadId)
     .select()
     .single();
