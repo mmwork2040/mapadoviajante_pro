@@ -129,6 +129,9 @@ export interface ItineraryActivity {
   description?: string | null;
   location?: string | null;
   type?: string | null;
+  cost?: number | null;
+  duration?: string | null;
+  maps_url?: string | null;
   sort_order?: number;
 }
 
