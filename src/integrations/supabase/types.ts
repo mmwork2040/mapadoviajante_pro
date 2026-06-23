@@ -210,6 +210,65 @@ export type Database = {
           },
         ]
       }
+      agency_payment_settings: {
+        Row: {
+          agency_id: string
+          asaas_api_key: string | null
+          asaas_environment: string
+          asaas_webhook_token: string
+          created_at: string
+          first_layer_rate: number | null
+          grace_period_days: number
+          id: string
+          is_active: boolean
+          monthly_price: number | null
+          second_layer_rate: number | null
+          trial_days: number
+          updated_at: string
+          yearly_price: number | null
+        }
+        Insert: {
+          agency_id: string
+          asaas_api_key?: string | null
+          asaas_environment?: string
+          asaas_webhook_token?: string
+          created_at?: string
+          first_layer_rate?: number | null
+          grace_period_days?: number
+          id?: string
+          is_active?: boolean
+          monthly_price?: number | null
+          second_layer_rate?: number | null
+          trial_days?: number
+          updated_at?: string
+          yearly_price?: number | null
+        }
+        Update: {
+          agency_id?: string
+          asaas_api_key?: string | null
+          asaas_environment?: string
+          asaas_webhook_token?: string
+          created_at?: string
+          first_layer_rate?: number | null
+          grace_period_days?: number
+          id?: string
+          is_active?: boolean
+          monthly_price?: number | null
+          second_layer_rate?: number | null
+          trial_days?: number
+          updated_at?: string
+          yearly_price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_payment_settings_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: true
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_usage_logs: {
         Row: {
           created_at: string | null

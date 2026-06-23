@@ -56,7 +56,7 @@ export const Route = createFileRoute("/_app/admin")({
   component: AdminPage,
 });
 
-const ROLES = ["admin", "agent", "viewer"];
+const ROLES = ["admin", "gerente", "consultor"];
 const PRIORITIES = ["low", "normal", "high"];
 
 function AdminPage() {
@@ -345,7 +345,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
 }
 
 function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: () => void }) {
-  const [form, setForm] = useState({ name: "", email: "", role: "agent" });
+  const [form, setForm] = useState({ name: "", email: "", role: "consultor" });
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
