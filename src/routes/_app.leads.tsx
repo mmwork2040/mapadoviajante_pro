@@ -25,6 +25,8 @@ function LeadsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overCol, setOverCol] = useState<LeadStatus | null>(null);
   const { data: leads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["leads", { search }],
     queryFn: () => fetchLeads({ search: search || undefined }),
@@ -41,8 +43,13 @@ function LeadsPage() {
 
   function onDrop(e: React.DragEvent, status: LeadStatus) {
     e.preventDefault();
-    const id = e.dataTransfer.getData("text/plain");
-    if (id) move.mutate({ id, status });
+    setOverCol(null);
+    setDragId(null);
+    const id = e.dataTransfer.getData("text/plain") || dragId;
+    if (id) {
+      const current = leads.find((l) => l.id === id);
+      if (current && current.status !== status) move.mutate({ id, status });
+    }
   }
 
   return (
