@@ -161,12 +161,14 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string
+          invite_token: string | null
           is_active: boolean | null
           name: string
           phone: string | null
           role: string
+          status: string
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           agency_id: string
@@ -174,12 +176,14 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          invite_token?: string | null
           is_active?: boolean | null
           name: string
           phone?: string | null
           role: string
+          status?: string
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           agency_id?: string
@@ -187,12 +191,14 @@ export type Database = {
           created_at?: string | null
           email?: string | null
           id?: string
+          invite_token?: string | null
           is_active?: boolean | null
           name?: string
           phone?: string | null
           role?: string
+          status?: string
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -2166,12 +2172,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_agency_invite: { Args: { _token: string }; Returns: undefined }
       agency_has_members: { Args: { _agency_id: string }; Returns: boolean }
       deduct_extra_tokens: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
       }
       ensure_admin_user: { Args: never; Returns: undefined }
+      get_invite_info: {
+        Args: { _token: string }
+        Returns: {
+          agency_name: string
+          email: string
+          name: string
+        }[]
+      }
       get_user_agency_id: { Args: never; Returns: string }
       get_user_member_id: { Args: never; Returns: string }
       has_role: {
@@ -2206,6 +2221,16 @@ export type Database = {
           similarity: number
           source: string
           url: string
+        }[]
+      }
+      my_pending_invite: {
+        Args: never
+        Returns: {
+          agency_id: string
+          agency_name: string
+          email: string
+          id: string
+          name: string
         }[]
       }
       public_stock_search: {
