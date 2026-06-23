@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, DollarSign, FileText, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -803,7 +803,7 @@ function SourceToggle({
   checked,
   onToggle,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   desc: string;
   checked: boolean;
