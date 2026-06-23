@@ -225,11 +225,12 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
       </ul>
       <div className="mt-3 flex gap-2">
         <input
+          type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
-          placeholder="09:00"
-          className="w-20 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+          className="w-28 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
         />
+
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
