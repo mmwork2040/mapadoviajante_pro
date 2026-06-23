@@ -178,7 +178,7 @@ export async function fetchLeads(filters: {
     .eq("agency_id", _agencyId)
     .order("last_activity_at", { ascending: false });
 
-  if (filters.status) query = query.eq("status", filters.status === "contacted" ? "new" : filters.status);
+  if (filters.status && filters.status !== "contacted") query = query.eq("status", filters.status);
   if (filters.destination) query = query.eq("destination", filters.destination);
   if (filters.search)
     query = query.or(
@@ -207,27 +207,42 @@ export async function fetchLeadById(leadId: string): Promise<Lead | null> {
 
 export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> {
   if (!_agencyId) await loadAgencyContext();
-  const profile = { ...(leadData.profile || {}) } as Record<string, unknown>;
-  if (leadData.status === "contacted") profile[CONTACTED_PROFILE_STATUS_KEY] = "contacted";
+
+  const payload = {
+    agency_id: _agencyId,
+    assigned_to: leadData.assigned_to || _memberId,
+    name: leadData.name,
+    email: leadData.email || null,
+    phone: leadData.phone || null,
+    destination: leadData.destination || null,
+    value: leadData.value || 0,
+    status: leadData.status || "new",
+    origin: leadData.origin || "direto",
+    notes: leadData.notes || null,
+    profile: leadData.profile || {},
+    checklists: leadData.checklists || {},
+  };
+
   const { data, error } = await supabase
     .from("crm_leads")
-    .insert({
-      agency_id: _agencyId,
-      assigned_to: leadData.assigned_to || _memberId,
-      name: leadData.name,
-      email: leadData.email || null,
-      phone: leadData.phone || null,
-      destination: leadData.destination || null,
-      value: leadData.value || 0,
-      status: leadData.status === "contacted" ? "new" : leadData.status || "new",
-      origin: leadData.origin || "direto",
-      notes: leadData.notes || null,
-      profile,
-      checklists: leadData.checklists || {},
-    })
+    .insert(payload)
     .select()
     .single();
   if (error) {
+    if (leadData.status === "contacted" && error.code === "23514") {
+      const fallbackProfile = { ...(leadData.profile || {}) } as Record<string, unknown>;
+      fallbackProfile[CONTACTED_PROFILE_STATUS_KEY] = "contacted";
+      const { data: fallback, error: fallbackError } = await supabase
+        .from("crm_leads")
+        .insert({ ...payload, status: "new", profile: fallbackProfile })
+        .select()
+        .single();
+      if (fallbackError) {
+        console.error("createLead fallback:", fallbackError);
+        return null;
+      }
+      return normalizeLead(fallback as Lead);
+    }
     console.error("createLead:", error);
     return null;
   }
@@ -237,7 +252,7 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
 export async function updateLead(leadId: string, updates: Partial<Lead>): Promise<Lead | null> {
   const normalizedUpdates = { ...updates } as Partial<Lead>;
 
-  if (updates.status) {
+  if (updates.status && updates.status !== "contacted") {
     const { data: current, error: currentError } = await supabase
       .from("crm_leads")
       .select("profile")
@@ -250,14 +265,7 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     }
 
     const profile = { ...((current?.profile || {}) as Record<string, unknown>) };
-
-    if (updates.status === "contacted") {
-      normalizedUpdates.status = "new";
-      profile[CONTACTED_PROFILE_STATUS_KEY] = "contacted";
-    } else {
-      delete profile[CONTACTED_PROFILE_STATUS_KEY];
-    }
-
+    delete profile[CONTACTED_PROFILE_STATUS_KEY];
     normalizedUpdates.profile = profile;
   }
 
@@ -268,6 +276,35 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     .select()
     .single();
   if (error) {
+    if (updates.status === "contacted" && error.code === "23514") {
+      const { data: current, error: currentError } = await supabase
+        .from("crm_leads")
+        .select("profile")
+        .eq("id", leadId)
+        .maybeSingle();
+
+      if (currentError) {
+        console.error("updateLead fallback profile:", currentError);
+        return null;
+      }
+
+      const profile = { ...((current?.profile || {}) as Record<string, unknown>) };
+      profile[CONTACTED_PROFILE_STATUS_KEY] = "contacted";
+
+      const { data: fallback, error: fallbackError } = await supabase
+        .from("crm_leads")
+        .update({ ...updates, status: "new", profile, last_activity_at: new Date().toISOString() })
+        .eq("id", leadId)
+        .select()
+        .single();
+
+      if (fallbackError) {
+        console.error("updateLead fallback:", fallbackError);
+        return null;
+      }
+
+      return normalizeLead(fallback as Lead);
+    }
     console.error("updateLead:", error);
     return null;
   }
