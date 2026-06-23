@@ -151,6 +151,7 @@ export interface ExtractedDocData {
   title?: string;
   date?: string;
   time?: string;
+  duration?: string;
   location?: string;
   description?: string;
   flight_number?: string;
@@ -158,6 +159,8 @@ export interface ExtractedDocData {
   room?: string;
   provider?: string;
   code?: string;
+  cost?: number;
+  people?: number;
 }
 
 export interface Voucher {
