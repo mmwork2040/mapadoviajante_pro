@@ -724,6 +724,7 @@ function GmailCard() {
   const send = useServerFn(sendGmail);
   const statusQ = useQuery({ queryKey: ["gmail-status"], queryFn: () => getGmailStatus() });
   const connected = statusQ.data?.connected;
+  const connectedEmail = statusQ.data?.email;
 
   useEffect(() => {
     const c = getGmailConfig();
