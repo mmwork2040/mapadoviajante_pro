@@ -596,10 +596,11 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     .select("*, activities:crm_itinerary_activities(*)")
     .eq("itinerary_id", id)
     .order("sort_order", { ascending: true });
-  (days || []).forEach((day: ItineraryDay & { activities?: (ItineraryActivity & { time_start?: string | null })[] }) => {
+  (days || []).forEach((day: ItineraryDay) => {
     if (day.activities) {
       day.activities.forEach((a) => {
-        if (a.time == null && a.time_start != null) a.time = a.time_start;
+        const raw = a as ItineraryActivity & { time_start?: string | null };
+        if (raw.time == null && raw.time_start != null) raw.time = raw.time_start;
       });
       day.activities.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     }
