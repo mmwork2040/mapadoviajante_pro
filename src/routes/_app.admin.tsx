@@ -117,7 +117,17 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     onError: () => toast.error("Erro ao alterar cargo."),
   });
 
-  return (
+  const resendInvite = useMutation({
+    mutationFn: (m: { name: string; email: string; role: string }) =>
+      sendTeamInvite({
+        data: { ...m, appUrl: "https://crmosegredodoviajante.lovable.app" },
+      }),
+    onSuccess: (res) => {
+      if (res.ok) toast.success(res.emailSent ? "Convite reenviado por e-mail!" : res.message);
+      else toast.error(res.message || "Erro ao reenviar convite.");
+    },
+    onError: () => toast.error("Erro ao reenviar convite."),
+  });
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Administração</h1>
