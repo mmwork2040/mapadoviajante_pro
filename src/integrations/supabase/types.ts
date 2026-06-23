@@ -2292,6 +2292,36 @@ export type Database = {
           name: string
         }[]
       }
+      provision_agency: {
+        Args: {
+          _avatar_color?: string
+          _email: string
+          _name: string
+          _slug: string
+          _user_name: string
+        }
+        Returns: {
+          agency_id: string
+          avatar_color: string | null
+          created_at: string | null
+          email: string | null
+          id: string
+          invite_token: string | null
+          is_active: boolean | null
+          name: string
+          phone: string | null
+          role: string
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "agency_members"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       public_stock_search: {
         Args: { _company: string; _term: string }
         Returns: {
