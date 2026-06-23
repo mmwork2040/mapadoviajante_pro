@@ -7,6 +7,7 @@ import { createDestination, deleteDestination, fetchDestinations, updateDestinat
 import { formatCurrency } from "@/lib/ui";
 import type { Destination } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app/biblioteca")({
   component: LibraryPage,
