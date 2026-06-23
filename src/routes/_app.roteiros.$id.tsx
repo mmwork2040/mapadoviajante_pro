@@ -141,28 +141,35 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
         reader.readAsDataURL(file);
       });
       const data = await extract({ data: { fileBase64: base64, mime: file.type } });
-      const parts = [
+      const descParts = [
         data.flight_number && `Voo ${data.flight_number}`,
         data.hotel_name,
         data.room && `Quarto ${data.room}`,
         data.provider,
         data.code && `Localizador ${data.code}`,
-        data.date,
+        data.people ? `${data.people} pessoa(s)` : "",
         data.description,
       ].filter(Boolean);
-      setTitle(data.title || data.hotel_name || data.flight_number || "Item importado");
-      setTime(data.time || "");
-      setLocation(data.location || "");
-      if (parts.length) toast.success("Documento lido — revise e adicione.");
-      else toast.info("Documento lido, poucos dados encontrados.");
-      // Guarda detalhes na descrição via título caso necessário
-      if (data.description) setLocation(data.location || data.description.slice(0, 60));
+      await createItineraryActivity({
+        day_id: day.id,
+        title: data.title || data.hotel_name || data.flight_number || "Item importado",
+        time: data.time || null,
+        duration: data.duration || null,
+        location: data.location || null,
+        cost: data.cost ? Number(data.cost) : null,
+        description: descParts.join(" · ") || null,
+        type: data.type || "activity",
+        sort_order: (day.activities?.length || 0) + 1,
+      });
+      toast.success("Documento lido — atividade criada!");
+      onChange();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
     } finally {
       setExtracting(false);
     }
   }
+
 
   async function saveDayTitle() {
     if (dayTitle === (day.title || `Dia ${day.day_number}`)) return;
