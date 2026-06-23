@@ -1,5 +1,6 @@
 import { type ReactNode, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
+import { fetchLeads } from "@/lib/services";
 
 const NAV = [
   { to: "/", label: "Página Inicial", icon: LayoutDashboard },
