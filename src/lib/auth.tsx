@@ -124,31 +124,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error.message };
     }
     if (data.user && data.session) {
-      const m = await autoProvisionAgency(data.user.id, name, email);
-      if (!m) return { error: "Erro ao configurar sua agência. Tente novamente." };
-      setMember(m);
+      // hydrateMember respeita convites pendentes antes de provisionar uma nova agência.
+      await hydrateMember(data.session);
       return {};
     }
     return { needsConfirmation: true };
-  }, []);
+  }, [hydrateMember]);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
     setAgencyContext(null);
     setMember(null);
+    setPendingInvite(null);
   }, []);
 
   const refreshMember = useCallback(async () => {
-    const m = await loadAgencyContext();
-    setMember(m);
-  }, []);
+    const { data } = await supabase.auth.getSession();
+    await hydrateMember(data.session);
+  }, [hydrateMember]);
+
+  const acceptPendingInvite = useCallback(async () => {
+    if (!pendingInvite) return { ok: false, error: "Nenhum convite pendente." };
+    const res = await acceptInvite("");
+    if (!res.ok) return res;
+    const { data } = await supabase.auth.getSession();
+    await hydrateMember(data.session);
+    return { ok: true };
+  }, [pendingInvite, hydrateMember]);
 
   return (
-    <AuthContext.Provider value={{ session, member, loading, signIn, signUp, signOut, refreshMember }}>
+    <AuthContext.Provider
+      value={{ session, member, pendingInvite, loading, signIn, signUp, signOut, refreshMember, acceptPendingInvite }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
+
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
