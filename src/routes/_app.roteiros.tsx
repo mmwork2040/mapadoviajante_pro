@@ -5,7 +5,7 @@ import { Plus, X, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { createItinerary, fetchItineraries } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, formatDate } from "@/lib/ui";
+import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
@@ -114,7 +114,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
           </div>
           <div className="grid grid-cols-2 gap-3">
             <F label="Passageiros" type="number" value={String(form.passengers ?? "")} onChange={(v) => setForm({ ...form, passengers: Number(v) })} />
-            <F label="Orçamento" type="number" value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
+            <F label="Orçamento" format="currency" value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
           </div>
           <button
             type="submit"
@@ -135,21 +135,24 @@ function F({
   onChange,
   type = "text",
   required,
+  format,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   required?: boolean;
+  format?: "currency";
 }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium">{label}</span>
       <input
-        type={type}
+        type={format ? "text" : type}
+        inputMode={format ? "numeric" : undefined}
         required={required}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={format === "currency" ? maskCurrency(String(Math.round((Number(value) || 0) * 100))) : value}
+        onChange={(e) => onChange(format === "currency" ? String(parseCurrency(e.target.value)) : e.target.value)}
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
       />
     </label>

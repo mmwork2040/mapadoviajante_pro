@@ -5,7 +5,7 @@ import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Che
 import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency } from "@/lib/ui";
+import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
@@ -209,7 +209,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       email: form.email || null,
       phone: form.phone || null,
       destination: form.destination || null,
-      value: Number(form.value) || 0,
+      value: parseCurrency(form.value),
       status: "new",
       origin: form.origin || "direto",
       profile: {
@@ -296,8 +296,8 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
             <Section icon={User} title="Dados de Contato">
               <ModalField label="Nome Completo" required placeholder="Ex: Família Santos" value={form.name} onChange={(v) => set({ name: v })} full />
               <ModalField label="E-mail" type="email" placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} />
-              <ModalField label="WhatsApp" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
-              <ModalField label="Orçamento Estimado (R$)" type="number" placeholder="0,00" value={form.value} onChange={(v) => set({ value: v })} />
+              <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
+              <ModalField label="Orçamento Estimado (R$)" format="currency" placeholder="R$ 0,00" value={form.value} onChange={(v) => set({ value: v })} />
               <ModalSelect label="Como nos encontrou?" value={form.origin} onChange={(v) => set({ origin: v })} options={ORIGINS} />
             </Section>
           )}
@@ -403,6 +403,7 @@ export function ModalField({
   required,
   placeholder,
   full,
+  format,
 }: {
   label: string;
   value: string;
@@ -411,18 +412,28 @@ export function ModalField({
   required?: boolean;
   placeholder?: string;
   full?: boolean;
+  format?: "currency" | "phone" | "cpfcnpj";
 }) {
+  const masks = {
+    currency: maskCurrency,
+    phone: maskPhone,
+    cpfcnpj: maskCpfCnpj,
+  } as const;
+  const handleChange = (raw: string) => {
+    onChange(format ? masks[format](raw) : raw);
+  };
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
       <span className="mb-1 block text-sm font-semibold">
         {label} {required && <span className="text-primary">*</span>}
       </span>
       <input
-        type={type}
+        type={format ? "text" : type}
+        inputMode={format ? "numeric" : undefined}
         required={required}
         value={value}
         placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
         className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
       />
     </label>

@@ -14,7 +14,7 @@ import {
 import { Bar } from "react-chartjs-2";
 import { createTransaction, fetchTransactions } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, formatDate } from "@/lib/ui";
+import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Transaction, TxType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 
@@ -280,7 +280,7 @@ function NewTxModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
             </select>
           </label>
           <FF label="Descrição" value={form.description || ""} onChange={(v) => setForm({ ...form, description: v })} />
-          <FF label="Valor" type="number" value={String(form.amount ?? "")} onChange={(v) => setForm({ ...form, amount: Number(v) })} />
+          <FF label="Valor" format="currency" value={String(form.amount ?? "")} onChange={(v) => setForm({ ...form, amount: Number(v) })} />
           <FF label="Data" type="date" value={form.transaction_date || ""} onChange={(v) => setForm({ ...form, transaction_date: v })} />
           <button
             type="submit"
@@ -300,19 +300,22 @@ function FF({
   value,
   onChange,
   type = "text",
+  format,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  format?: "currency";
 }) {
   return (
     <label className="block">
       <span className="mb-1 block text-sm font-medium">{label}</span>
       <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        type={format ? "text" : type}
+        inputMode={format ? "numeric" : undefined}
+        value={format === "currency" ? maskCurrency(String(Math.round((Number(value) || 0) * 100))) : value}
+        onChange={(e) => onChange(format === "currency" ? String(parseCurrency(e.target.value)) : e.target.value)}
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
       />
     </label>
