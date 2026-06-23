@@ -43,22 +43,47 @@ export function isSuperAdminEmail(email?: string | null) {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [member, setMember] = useState<AgencyMember | null>(null);
+  const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const [loading, setLoading] = useState(true);
 
   const hydrateMember = useCallback(async (sess: Session | null) => {
     if (!sess) {
       setAgencyContext(null);
       setMember(null);
+      setPendingInvite(null);
       return;
     }
     let m = await loadAgencyContext();
+
+    // 1) Convite via link (token guardado pela página /aceitar-convite)
+    if (!m && typeof window !== "undefined") {
+      const token = sessionStorage.getItem("invite_token");
+      if (token) {
+        await acceptInvite(token);
+        sessionStorage.removeItem("invite_token");
+        m = await loadAgencyContext();
+      }
+    }
+
+    // 2) Existe convite pendente para este e-mail? Não provisiona nova agência.
     if (!m) {
-      // Provisiona agência se ainda não existir (ex.: confirmação por e-mail)
+      const invite = await getMyPendingInvite();
+      if (invite) {
+        setPendingInvite(invite);
+        setMember(null);
+        return;
+      }
+    }
+
+    // 3) Usuário novo, sem convite → provisiona a própria agência.
+    if (!m) {
       const meta = sess.user.user_metadata as { name?: string } | undefined;
       m = await autoProvisionAgency(sess.user.id, meta?.name || sess.user.email || "Novo Usuário", sess.user.email || "");
     }
+    setPendingInvite(null);
     setMember(m);
   }, []);
+
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
