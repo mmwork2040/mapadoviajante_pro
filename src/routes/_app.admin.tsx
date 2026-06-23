@@ -533,7 +533,7 @@ function AiConfigCard() {
     await saveMut.mutateAsync(merged);
   }
 
-  function toggleSource(key: "library" | "finance") {
+  function toggleSource(key: "library" | "leads" | "finance") {
     const next = {
       ...ks,
       data_sources: { ...dataSources, [key]: !dataSources[key] },
@@ -541,6 +541,15 @@ function AiConfigCard() {
     void persistKnowledge(next).catch(() =>
       toast.error("Não foi possível salvar as fontes de conhecimento."),
     );
+  }
+
+  async function saveOrientacoes() {
+    try {
+      await saveMut.mutateAsync(form);
+      toast.success("Orientações salvas.");
+    } catch {
+      toast.error("Não foi possível salvar as orientações.");
+    }
   }
 
   async function handleFiles(files: FileList | null) {
