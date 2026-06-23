@@ -59,7 +59,7 @@ export function saveNotifConfig(config: NotifConfig) {
 }
 
 export function configIsComplete(c: NotifConfig): boolean {
-  return Boolean(c.apiKey && c.authDomain && c.projectId && c.messagingSenderId && c.appId && c.vapidKey);
+  return Boolean(c.apiKey && c.authDomain && c.projectId && c.messagingSenderId && c.appId && c.vapidKey && c.events.length > 0);
 }
 
 /** Solicita permissão, registra o SW do FCM e retorna o token do dispositivo. */
