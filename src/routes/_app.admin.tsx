@@ -50,6 +50,7 @@ import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { AiConfig, Task } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/admin")({
@@ -76,6 +77,7 @@ function AdminPage() {
 
 function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"] }) {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const isAdmin = member?.role === "admin";
   const [inviteOpen, setInviteOpen] = useState(false);
   const [task, setTask] = useState<Partial<Task>>({ priority: "normal" });
@@ -128,6 +130,17 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     },
     onError: () => toast.error("Erro ao reenviar convite."),
   });
+
+  async function handleResendInvite(m: { name: string; email?: string | null; role: string }) {
+    const ok = await confirm({
+      title: "Reenviar convite?",
+      description: `Enviar novamente o convite pendente para ${m.email || "este usuário"}?`,
+      confirmLabel: "Reenviar",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+    resendInvite.mutate({ name: m.name || "", email: m.email || "", role: m.role || "consultor" });
+  }
 
   return (
     <div className="space-y-6">
@@ -205,7 +218,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                     type="button"
                     title="Reenviar convite"
                     disabled={resendInvite.isPending}
-                    onClick={() => resendInvite.mutate({ name: m.name || "", email: m.email || "", role: m.role || "consultor" })}
+                    onClick={() => handleResendInvite(m)}
                     className="flex items-center gap-1 rounded-lg border border-input px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
                   >
                     {resendInvite.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
