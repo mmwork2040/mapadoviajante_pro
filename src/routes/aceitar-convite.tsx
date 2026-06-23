@@ -1,4 +1,4 @@
-import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Route as RouteIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +33,7 @@ function AcceptInvitePage() {
   const location = useLocation();
   const token = new URLSearchParams(location.searchStr).get("token") ?? "";
   const { session, refreshMember } = useAuth();
-  const navigate = useNavigate();
+  
 
   const [info, setInfo] = useState<InviteInfo | null>(null);
   const [loadingInfo, setLoadingInfo] = useState(true);
@@ -59,15 +59,22 @@ function AcceptInvitePage() {
       const res = await acceptInvite(token);
       sessionStorage.removeItem("invite_token");
       if (res.ok) {
-        await refreshMember();
-        navigate({ to: "/", replace: true });
-      } else {
-        setError(res.error ?? "Não foi possível aceitar o convite.");
+        try {
+          await refreshMember();
+        } catch {
+          /* contexto será recarregado no reload abaixo */
+        }
+        // Recarrega na raiz para garantir contexto de agência atualizado.
+        window.location.assign(`${APP_URL}/`);
+        return;
       }
+      setError(res.error ?? "Não foi possível aceitar o convite.");
+    } catch {
+      setError("Não foi possível aceitar o convite. Tente novamente.");
     } finally {
       setBusy(false);
     }
-  }, [token, refreshMember, navigate]);
+  }, [token, refreshMember]);
 
   // Se já estiver logado com o e-mail certo, aceita direto uma única vez.
   useEffect(() => {
