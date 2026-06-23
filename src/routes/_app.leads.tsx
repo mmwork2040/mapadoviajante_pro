@@ -13,12 +13,12 @@ export const Route = createFileRoute("/_app/leads")({
   component: LeadsPage,
 });
 
-const COLUMNS: { key: LeadStatus; label: string }[] = [
-  { key: "new", label: "Novos" },
-  { key: "contacted", label: "Contatados" },
-  { key: "negotiating", label: "Negociando" },
-  { key: "closed", label: "Fechados" },
-  { key: "lost", label: "Perdidos" },
+const COLUMNS: { key: LeadStatus; label: string; dot: string }[] = [
+  { key: "new", label: "Novo", dot: "bg-blue-500" },
+  { key: "contacted", label: "Contatado", dot: "bg-sky-500" },
+  { key: "negotiating", label: "Em Negociação", dot: "bg-amber-400" },
+  { key: "closed", label: "Fechado", dot: "bg-emerald-500" },
+  { key: "lost", label: "Perdido", dot: "bg-red-500" },
 ];
 
 function LeadsPage() {
