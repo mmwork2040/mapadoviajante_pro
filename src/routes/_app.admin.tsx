@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, ListChecks } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, ListChecks, Bell, Mail, Send } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -12,6 +12,15 @@ import {
   sendTestWebhook,
   type WebhookConfig,
 } from "@/lib/webhook";
+import {
+  getNotifConfig,
+  saveNotifConfig,
+  requestPushToken,
+  configIsComplete,
+  type NotifConfig,
+} from "@/lib/notifications";
+import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
+import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
   createTask,
   fetchAiConfig,
@@ -244,6 +253,28 @@ function AdminPage() {
           subtitle="Configure e instrua a IA com base de conhecimento"
         >
           <AiConfigCard />
+        </CollapsibleSection>
+      )}
+
+      {isAdmin && (
+        <CollapsibleSection
+          icon={Bell}
+          color="#0ea5e9"
+          title="Notificações"
+          subtitle="Configure notificações push via Firebase (FCM)"
+        >
+          <NotificationsCard />
+        </CollapsibleSection>
+      )}
+
+      {isAdmin && (
+        <CollapsibleSection
+          icon={Mail}
+          color="#ea4335"
+          title="E-mail (Gmail)"
+          subtitle="Envie e-mails pela conta Gmail conectada à agência"
+        >
+          <GmailCard />
         </CollapsibleSection>
       )}
 
@@ -515,6 +546,214 @@ function WebhookCard() {
         </button>
       </div>
 
+    </div>
+  );
+}
+
+function NotificationsCard() {
+  const [config, setConfig] = useState<NotifConfig>(() => getNotifConfig());
+  const [token, setToken] = useState<string>("");
+  const [activating, setActivating] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const sendPush = useServerFn(sendTestPush);
+  const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
+
+  useEffect(() => {
+    setConfig(getNotifConfig());
+  }, []);
+
+  function update(patch: Partial<NotifConfig>) {
+    setConfig((c) => ({ ...c, ...patch }));
+  }
+
+  function save() {
+    saveNotifConfig(config);
+    toast.success("Configuração de notificações salva.");
+  }
+
+  async function activate() {
+    setActivating(true);
+    const res = await requestPushToken(config);
+    setActivating(false);
+    if (res.ok && res.token) {
+      setToken(res.token);
+      toast.success(res.message);
+    } else {
+      toast.error(res.message);
+    }
+  }
+
+  async function runTest() {
+    if (!token) {
+      toast.error("Ative as notificações neste dispositivo primeiro.");
+      return;
+    }
+    setTesting(true);
+    const res = await sendPush({
+      data: { token, title: "Teste de notificação", body: "As notificações estão funcionando! 🎉" },
+    });
+    setTesting(false);
+    res.ok ? toast.success(res.message) : toast.error(res.message);
+  }
+
+  const fields: { key: keyof NotifConfig; label: string; placeholder: string }[] = [
+    { key: "apiKey", label: "API Key", placeholder: "AIza..." },
+    { key: "authDomain", label: "Auth Domain", placeholder: "seu-app.firebaseapp.com" },
+    { key: "projectId", label: "Project ID", placeholder: "seu-app" },
+    { key: "messagingSenderId", label: "Messaging Sender ID", placeholder: "1234567890" },
+    { key: "appId", label: "App ID", placeholder: "1:1234567890:web:abc123" },
+    { key: "vapidKey", label: "VAPID Key (Web Push)", placeholder: "B*****" },
+  ];
+
+  const serverReady = statusQ.data?.configured;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Cole a configuração web do seu projeto Firebase para habilitar notificações push neste navegador/dispositivo.
+      </p>
+
+      <label className="flex items-center gap-3 text-sm font-medium">
+        <button
+          type="button"
+          onClick={() => update({ enabled: !config.enabled })}
+          className={`inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${config.enabled ? "bg-primary" : "bg-muted"}`}
+          aria-pressed={config.enabled}
+        >
+          <span
+            className={`h-5 w-5 rounded-full bg-white transition-transform ${config.enabled ? "translate-x-[22px]" : "translate-x-0.5"}`}
+          />
+        </button>
+        {config.enabled ? "Habilitado" : "Desabilitado"}
+      </label>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {fields.map((f) => (
+          <label key={f.key} className="block">
+            <span className="mb-1 block text-xs font-medium text-muted-foreground">{f.label}</span>
+            <input
+              value={(config[f.key] as string) || ""}
+              onChange={(e) => update({ [f.key]: e.target.value } as Partial<NotifConfig>)}
+              placeholder={f.placeholder}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+            />
+          </label>
+        ))}
+      </div>
+
+      {!serverReady && (
+        <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+          Para o envio funcionar, falta configurar a <strong>service account</strong> do Firebase no servidor.
+        </p>
+      )}
+
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={save}
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        >
+          <Save className="h-4 w-4" /> Salvar
+        </button>
+        <button
+          type="button"
+          onClick={activate}
+          disabled={activating || !config.enabled || !configIsComplete(config)}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+        >
+          {activating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
+          {activating ? "Ativando…" : "Ativar neste dispositivo"}
+        </button>
+        <button
+          type="button"
+          onClick={runTest}
+          disabled={testing || !token || !serverReady}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+        >
+          {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {testing ? "Enviando…" : "Enviar teste"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function GmailCard() {
+  const [to, setTo] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [sending, setSending] = useState(false);
+  const send = useServerFn(sendGmail);
+  const statusQ = useQuery({ queryKey: ["gmail-status"], queryFn: () => getGmailStatus() });
+  const connected = statusQ.data?.connected;
+
+  async function submit() {
+    if (!to.trim() || !subject.trim() || !body.trim()) {
+      toast.error("Preencha destinatário, assunto e mensagem.");
+      return;
+    }
+    setSending(true);
+    const res = await send({ data: { to: to.trim(), subject: subject.trim(), body } });
+    setSending(false);
+    if (res.ok) {
+      toast.success(res.message);
+      setSubject("");
+      setBody("");
+    } else {
+      toast.error(res.message);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-2 text-sm">
+        <span
+          className={`inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-500" : "bg-muted-foreground"}`}
+        />
+        <span className="text-muted-foreground">
+          {connected ? "Conta Gmail conectada." : "Gmail não conectado."}
+        </span>
+      </div>
+
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">Destinatário</span>
+        <input
+          type="email"
+          value={to}
+          onChange={(e) => setTo(e.target.value)}
+          placeholder="cliente@email.com"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+        />
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">Assunto</span>
+        <input
+          value={subject}
+          onChange={(e) => setSubject(e.target.value)}
+          placeholder="Assunto do e-mail"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+        />
+      </label>
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">Mensagem</span>
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={5}
+          placeholder="Escreva a mensagem (HTML permitido)…"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+        />
+      </label>
+
+      <button
+        type="button"
+        onClick={submit}
+        disabled={sending || !connected}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+      >
+        {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        {sending ? "Enviando…" : "Enviar e-mail"}
+      </button>
     </div>
   );
 }

@@ -1,0 +1,25 @@
+{
+  "name": "Mapa do Viajante PRO",
+  "short_name": "MapaPRO",
+  "description": "CRM Copilot para Agências de Viagem — leads, roteiros e vendas em um só lugar.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1220",
+  "theme_color": "#f97316",
+  "icons": [
+    {
+      "src": "/pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
