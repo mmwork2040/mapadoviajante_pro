@@ -77,7 +77,7 @@ type CopilotInput = { prompt: string };
 
 type KnowledgeState = {
   status?: string;
-  data_sources?: { library?: boolean; finance?: boolean };
+  data_sources?: { library?: boolean; leads?: boolean; finance?: boolean };
   documents?: { name: string; text: string }[];
 };
 
@@ -108,6 +108,23 @@ async function buildKnowledgeContext(
             .map(
               (i: Record<string, unknown>) =>
                 `- ${i.title ?? "Roteiro"} | ${i.destination ?? ""} | ${i.start_date ?? ""}–${i.end_date ?? ""}`,
+            )
+            .join("\n"),
+      );
+    }
+  }
+  if (sources.leads) {
+    const { data: leads } = await supabase
+      .from("crm_leads")
+      .select("name, email, phone, status, destination")
+      .limit(40);
+    if (leads?.length) {
+      blocks.push(
+        "BASE DE LEADS:\n" +
+          leads
+            .map(
+              (l: Record<string, unknown>) =>
+                `- ${l.name ?? "Lead"} | ${l.status ?? ""} | ${l.destination ?? ""} | ${l.email ?? ""} ${l.phone ?? ""}`,
             )
             .join("\n"),
       );
