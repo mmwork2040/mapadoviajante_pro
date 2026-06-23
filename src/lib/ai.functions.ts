@@ -113,6 +113,23 @@ async function buildKnowledgeContext(
       );
     }
   }
+  if (sources.leads) {
+    const { data: leads } = await supabase
+      .from("crm_leads")
+      .select("name, email, phone, status, destination")
+      .limit(40);
+    if (leads?.length) {
+      blocks.push(
+        "BASE DE LEADS:\n" +
+          leads
+            .map(
+              (l: Record<string, unknown>) =>
+                `- ${l.name ?? "Lead"} | ${l.status ?? ""} | ${l.destination ?? ""} | ${l.email ?? ""} ${l.phone ?? ""}`,
+            )
+            .join("\n"),
+      );
+    }
+  }
   if (sources.finance) {
     const { data: txs } = await supabase
       .from("crm_transactions")
