@@ -314,6 +314,17 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         </CollapsibleSection>
       )}
 
+      {isAdmin && (
+        <CollapsibleSection
+          icon={CreditCard}
+          color="#16a34a"
+          title="Pagamentos (Asaas)"
+          subtitle="Use as credenciais Asaas da sua agência para cobrar clientes"
+        >
+          <PaymentsCard />
+        </CollapsibleSection>
+      )}
+
 
       <p className="text-xs text-muted-foreground">
         Logado como <strong>{member?.name}</strong> ({member?.role}).
