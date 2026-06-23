@@ -574,7 +574,7 @@ function WebhookCard() {
 }
 
 function NotificationsCard() {
-  const [config, setConfig] = useState<NotifConfig>(() => getNotifConfig());
+  const [config, setConfig] = useState<NotifConfig>(DEFAULT_NOTIF_CONFIG);
   const [token, setToken] = useState<string>("");
   const [activating, setActivating] = useState(false);
   const [testing, setTesting] = useState(false);
