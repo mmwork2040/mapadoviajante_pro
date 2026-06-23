@@ -47,9 +47,19 @@ export function configIsComplete(c: NotifConfig): boolean {
 }
 
 /** Solicita permissão, registra o SW do FCM e retorna o token do dispositivo. */
-export async function requestPushToken(config: NotifConfig): Promise<{ ok: boolean; token?: string; message: string }> {
+export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: boolean; token?: string; message: string }> {
+  // Remove espaços/quebras de linha acidentais ao colar os valores do Firebase.
+  const config: NotifConfig = {
+    ...rawConfig,
+    apiKey: rawConfig.apiKey?.trim(),
+    authDomain: rawConfig.authDomain?.trim(),
+    projectId: rawConfig.projectId?.trim(),
+    messagingSenderId: rawConfig.messagingSenderId?.trim(),
+    appId: rawConfig.appId?.trim(),
+    vapidKey: rawConfig.vapidKey?.trim(),
+  };
   if (typeof window === "undefined") return { ok: false, message: "Indisponível no servidor." };
-  if (!("Notification" in window) || !("serviceWorker" in navigator)) {
+  if (!("Notification" in window) || !("serviceWorker" in navigator) || !("PushManager" in window)) {
     return { ok: false, message: "Este navegador não suporta notificações push." };
   }
   if (!configIsComplete(config)) {
