@@ -81,7 +81,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             }`}
           >
             <Bot className="h-4 w-4 shrink-0" />
-            {!collapsed && "Thay IA"}
+            {!collapsed && <span className="animate-fade-in whitespace-nowrap">Thay IA</span>}
           </div>
           {collapsed ? (
             <div
