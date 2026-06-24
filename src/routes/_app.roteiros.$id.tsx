@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import {
   createItineraryActivity,
@@ -39,6 +39,8 @@ function ItineraryDetailPage() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["itinerary", id] });
 
+  const confirm = useConfirm();
+
   const addDay = useMutation({
     mutationFn: () =>
       createItineraryDay({
@@ -50,6 +52,38 @@ function ItineraryDetailPage() {
     onSuccess: refresh,
     onError: () => toast.error("Erro ao adicionar dia."),
   });
+
+  const clearItinerary = useMutation({
+    mutationFn: async () => {
+      for (const day of it?.days || []) {
+        await deleteItineraryDay(day.id);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Roteiro limpo. Comece novamente!");
+      refresh();
+    },
+    onError: () => toast.error("Erro ao limpar o roteiro."),
+  });
+
+  const advanceStatus = useMutation({
+    mutationFn: async (next: string) => updateItinerary(id, { status: next }),
+    onSuccess: () => {
+      toast.success("Status atualizado!");
+      refresh();
+    },
+    onError: () => toast.error("Erro ao atualizar o status."),
+  });
+
+  async function handleClear() {
+    const ok = await confirm({
+      title: "Limpar roteiro?",
+      description: "Todos os dias e atividades serão removidos para você refazer o roteiro. Esta ação não pode ser desfeita.",
+      confirmLabel: "Limpar tudo",
+      destructive: true,
+    });
+    if (ok) clearItinerary.mutate();
+  }
 
   if (isError) return <QueryError message="Não foi possível carregar o roteiro." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
@@ -68,7 +102,29 @@ function ItineraryDetailPage() {
             {it.destination} · {it.client_name} · {formatCurrency(it.budget)} · <span className="capitalize">{it.status}</span>
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {(() => {
+            const idx = STATUS_OPTIONS.indexOf(it.status || "draft");
+            const next = idx >= 0 && idx < STATUS_OPTIONS.length - 1 ? STATUS_OPTIONS[idx + 1] : null;
+            return next && it.status !== "cancelled" ? (
+              <button
+                onClick={() => advanceStatus.mutate(next)}
+                disabled={advanceStatus.isPending}
+                className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                <ArrowRight className="h-4 w-4" /> Avançar para <span className="capitalize">{next}</span>
+              </button>
+            ) : null;
+          })()}
+          {it.status === "draft" && (it.days?.length || 0) > 0 && (
+            <button
+              onClick={handleClear}
+              disabled={clearItinerary.isPending}
+              className="flex items-center gap-1 rounded-lg border border-destructive px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
+            >
+              <Eraser className="h-4 w-4" /> Limpar roteiro
+            </button>
+          )}
           <button
             onClick={() => setEditing(true)}
             className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
