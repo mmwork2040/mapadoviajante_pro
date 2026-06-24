@@ -203,7 +203,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         color="#3b82f6"
         title="Equipe"
         subtitle="Gerencie os membros e cargos da agência"
-        defaultOpen
+
         action={
           isAdmin ? (
             <span
@@ -309,7 +309,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         color="#10b981"
         title="Tarefas"
         subtitle="Organize e acompanhe as tarefas da equipe"
-        defaultOpen
+
       >
         <div className="mb-4 space-y-2">
           <input
