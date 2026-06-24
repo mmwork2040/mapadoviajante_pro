@@ -100,7 +100,7 @@ function ItineraryDetailPage() {
 
       <VouchersCard itineraryId={id} vouchers={it.vouchers || []} onChange={refresh} />
 
-      <CopilotCard it={it} />
+      <ItineraryChat it={it} onChange={refresh} />
 
       {editing && <EditItineraryModal it={it} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); refresh(); }} />}
     </div>
