@@ -309,7 +309,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         color="#10b981"
         title="Tarefas"
         subtitle="Organize e acompanhe as tarefas da equipe"
-        defaultOpen
+
       >
         <div className="mb-4 space-y-2">
           <input
