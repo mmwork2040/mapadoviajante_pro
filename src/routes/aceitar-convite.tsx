@@ -53,6 +53,11 @@ function AcceptInvitePage() {
     });
   }, [token]);
 
+  const goHome = useCallback(() => {
+    // Recarrega na raiz do mesmo domínio para garantir contexto atualizado.
+    window.location.replace(`${window.location.origin}/`);
+  }, []);
+
   const confirmInvite = useCallback(async () => {
     setError("");
     setBusy(true);
@@ -65,8 +70,7 @@ function AcceptInvitePage() {
         } catch {
           /* contexto será recarregado no reload abaixo */
         }
-        // Recarrega na raiz para garantir contexto de agência atualizado.
-        window.location.assign(`${APP_URL}/`);
+        goHome();
         return;
       }
       setError(res.error ?? "Não foi possível aceitar o convite.");
@@ -75,7 +79,12 @@ function AcceptInvitePage() {
     } finally {
       setBusy(false);
     }
-  }, [token, refreshMember]);
+  }, [token, refreshMember, goHome]);
+
+  // Se o usuário já pertence a uma agência (convite já aceito), vai para a home.
+  useEffect(() => {
+    if (session && member) goHome();
+  }, [session, member, goHome]);
 
   // Se já estiver logado com o e-mail certo, aceita direto uma única vez.
   useEffect(() => {
@@ -83,6 +92,7 @@ function AcceptInvitePage() {
     autoAcceptStarted.current = true;
     void confirmInvite();
   }, [session, info?.valid, token, confirmInvite]);
+
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
