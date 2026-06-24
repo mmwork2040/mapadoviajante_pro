@@ -168,6 +168,51 @@ export async function extractDocument(
   return parseJsonLoose(text);
 }
 
+type InputFile = { base64: string; mime: string; name?: string };
+
+// Envia um prompt de texto + vários arquivos (imagens/PDFs) ao provedor e retorna o texto.
+export async function askWithFiles(
+  cfg: ProviderConfig,
+  prompt: string,
+  files: InputFile[],
+): Promise<string> {
+  let text = "";
+
+  if (cfg.provider === "openai") {
+    const parts: unknown[] = [{ type: "text", text: prompt }];
+    for (const f of files) {
+      const dataUrl = `data:${f.mime};base64,${f.base64}`;
+      parts.push(
+        f.mime.startsWith("image/")
+          ? { type: "image_url", image_url: { url: dataUrl } }
+          : { type: "file", file: { filename: f.name || "documento.pdf", file_data: dataUrl } },
+      );
+    }
+    text = await callOpenAI(cfg, parts);
+  } else if (cfg.provider === "anthropic") {
+    const parts: unknown[] = [{ type: "text", text: prompt }];
+    for (const f of files) {
+      parts.push(
+        f.mime.startsWith("image/")
+          ? { type: "image", source: { type: "base64", media_type: f.mime, data: f.base64 } }
+          : { type: "document", source: { type: "base64", media_type: f.mime, data: f.base64 } },
+      );
+    }
+    text = await callAnthropic(cfg, parts);
+  } else if (cfg.provider === "google") {
+    const parts: unknown[] = [{ text: prompt }];
+    for (const f of files) {
+      parts.push({ inline_data: { mime_type: f.mime, data: f.base64 } });
+    }
+    text = await callGoogle(cfg, parts);
+  } else {
+    throw new Error("Provedor não suportado.");
+  }
+
+  if (!text.trim()) throw new Error("Resposta vazia do provedor.");
+  return text.trim();
+}
+
 export async function askCopilot(cfg: ProviderConfig, prompt: string): Promise<string> {
   let text = "";
   if (cfg.provider === "openai") text = await callOpenAI(cfg, prompt);
