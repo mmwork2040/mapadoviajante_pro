@@ -192,3 +192,106 @@ export const itineraryCopilot = createServerFn({ method: "POST" })
     );
     return { text };
   });
+
+type PlannerFile = { base64: string; mime: string; name?: string };
+type PlannerInput = {
+  message: string;
+  context: string;
+  files: PlannerFile[];
+};
+
+export type PlannedActivity = {
+  time?: string;
+  title: string;
+  location?: string;
+  type?: string;
+  description?: string;
+  duration?: string;
+  cost?: number;
+};
+export type PlannedDay = {
+  title?: string;
+  date?: string;
+  activities: PlannedActivity[];
+};
+export type PlannerResult = { reply: string; days: PlannedDay[] };
+
+const PLANNER_PROMPT = `Você é um assistente especialista em montar roteiros de viagem para uma agência.
+Você recebe o contexto do roteiro atual, uma mensagem do consultor e, opcionalmente, documentos e imagens enviados (passagens aéreas, reservas de hotel, vouchers, ingressos, fotos com informações).
+Analise CADA arquivo: extraia datas, horários, destinos, números de voo, embarque/desembarque, hotéis e demais informações úteis e DISTRIBUA tudo em dias do roteiro, na ordem cronológica correta.
+Imagens sem informação relevante para o roteiro devem ser ignoradas. Quando faltarem informações, complemente com sugestões úteis para preencher todos os dias.
+Responda SEMPRE apenas com um JSON válido, sem texto extra, no formato:
+{
+  "reply": "resumo amigável em português do que você montou e o que sugere",
+  "days": [
+    {
+      "title": "Dia 1 - Embarque",
+      "date": "AAAA-MM-DD ou vazio",
+      "activities": [
+        {
+          "time": "HH:MM ou vazio",
+          "title": "título curto da atividade",
+          "location": "local/aeroporto/cidade ou vazio",
+          "type": "flight|hotel|transfer|restaurant|activity|note",
+          "description": "detalhes (voo, localizador, etc) ou vazio",
+          "duration": "ex: 2h ou vazio",
+          "cost": valor numérico ou 0
+        }
+      ]
+    }
+  ]
+}`;
+
+function parsePlannerJson(text: string): PlannerResult {
+  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) throw new Error("Não foi possível interpretar a resposta da IA.");
+  const parsed = JSON.parse(cleaned.slice(start, end + 1)) as Partial<PlannerResult>;
+  return {
+    reply: typeof parsed.reply === "string" ? parsed.reply : "",
+    days: Array.isArray(parsed.days)
+      ? parsed.days
+          .filter((d): d is PlannedDay => !!d && Array.isArray(d.activities))
+          .map((d) => ({
+            title: d.title || "",
+            date: d.date || "",
+            activities: d.activities.filter((a) => a && a.title),
+          }))
+      : [],
+  };
+}
+
+export const itineraryPlanner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: PlannerInput) => {
+    if (!d?.message?.trim() && !(d?.files?.length)) throw new Error("Envie uma mensagem ou um documento.");
+    return { message: d.message || "", context: d.context || "", files: d.files || [] };
+  })
+  .handler(async ({ data, context }): Promise<PlannerResult> => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+
+    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
+
+    const { askWithFiles } = await import("./ai.server");
+    const text = await askWithFiles(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: Math.max(cfg.max_tokens ?? 0, 4096),
+      },
+      prompt,
+      data.files,
+    );
+    return parsePlannerJson(text);
+  });
