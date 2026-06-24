@@ -785,12 +785,28 @@ export async function deleteItineraryActivity(id: string): Promise<boolean> {
 }
 
 export async function createVoucher(voucherData: Partial<Voucher>): Promise<Voucher | null> {
-  const { data, error } = await supabase.from("crm_vouchers").insert(voucherData).select().single();
+  const row = {
+    itinerary_id: voucherData.itinerary_id,
+    name: voucherData.title || "Voucher",
+    category: voucherData.type ?? null,
+    confirmation_code: voucherData.code ?? null,
+    notes: voucherData.notes ?? null,
+  };
+  const { data, error } = await supabase.from("crm_vouchers").insert(row).select().single();
   if (error) {
     console.error("createVoucher:", error);
     return null;
   }
-  return data as Voucher;
+  return {
+    id: data.id,
+    itinerary_id: data.itinerary_id,
+    type: data.category,
+    title: data.name,
+    provider: null,
+    code: data.confirmation_code,
+    details: data.file_url,
+    notes: data.notes,
+  } as Voucher;
 }
 
 export async function deleteVoucher(id: string): Promise<boolean> {
