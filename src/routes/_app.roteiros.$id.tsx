@@ -457,27 +457,39 @@ function VouchersCard({
           Importar com IA
         </button>
       </div>
-      <ul className="space-y-2">
-        {vouchers.length === 0 && <li className="text-sm text-muted-foreground">Nenhum voucher.</li>}
-        {vouchers.map((v) => (
-          <li key={v.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
-            <div>
-              <p className="font-medium">
-                {v.title} {v.type && <span className="ml-1 rounded bg-muted px-1.5 py-0.5 text-xs capitalize">{v.type}</span>}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                {[v.provider, v.code, v.notes || v.details].filter(Boolean).join(" · ") || "—"}
-              </p>
-            </div>
-            <button
-              onClick={() => removeVoucher(v)}
-              className="text-muted-foreground hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </li>
+      {vouchers.length === 0 && <p className="text-sm text-muted-foreground">Nenhum voucher.</p>}
+      <div className="space-y-4">
+        {Object.entries(
+          vouchers.reduce<Record<string, Voucher[]>>((acc, v) => {
+            const key = (v.type || "outro").toLowerCase();
+            (acc[key] ||= []).push(v);
+            return acc;
+          }, {}),
+        ).map(([type, items]) => (
+          <div key={type}>
+            <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              <span className="capitalize">{type}</span>
+              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">{items.length}</span>
+            </h3>
+            <ul className="space-y-2">
+              {items.map((v) => (
+                <li key={v.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-medium">{v.title}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {[v.provider, v.code, v.notes || v.details].filter(Boolean).join(" · ") || "—"}
+                    </p>
+                  </div>
+                  <button onClick={() => removeVoucher(v)} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
         ))}
-      </ul>
+      </div>
+
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <select
           value={form.type || ""}
