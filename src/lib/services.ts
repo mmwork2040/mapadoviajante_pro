@@ -625,7 +625,17 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     }
   });
   const { data: vouchers } = await supabase.from("crm_vouchers").select("*").eq("itinerary_id", id);
-  return { ...(itinerary as Itinerary), days: (days as ItineraryDay[]) || [], vouchers: (vouchers as Voucher[]) || [] };
+  const mappedVouchers: Voucher[] = (vouchers || []).map((v: Record<string, unknown>) => ({
+    id: v.id as string,
+    itinerary_id: v.itinerary_id as string,
+    type: (v.category as string) ?? null,
+    title: (v.name as string) ?? null,
+    provider: null,
+    code: (v.confirmation_code as string) ?? null,
+    details: (v.file_url as string) ?? null,
+    notes: (v.notes as string) ?? null,
+  }));
+  return { ...(itinerary as Itinerary), days: (days as ItineraryDay[]) || [], vouchers: mappedVouchers };
 }
 
 export async function createItinerary(d: Partial<Itinerary>): Promise<Itinerary | null> {
