@@ -625,7 +625,17 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     }
   });
   const { data: vouchers } = await supabase.from("crm_vouchers").select("*").eq("itinerary_id", id);
-  return { ...(itinerary as Itinerary), days: (days as ItineraryDay[]) || [], vouchers: (vouchers as Voucher[]) || [] };
+  const mappedVouchers: Voucher[] = (vouchers || []).map((v: Record<string, unknown>) => ({
+    id: v.id as string,
+    itinerary_id: v.itinerary_id as string,
+    type: (v.category as string) ?? null,
+    title: (v.name as string) ?? null,
+    provider: null,
+    code: (v.confirmation_code as string) ?? null,
+    details: (v.file_url as string) ?? null,
+    notes: (v.notes as string) ?? null,
+  }));
+  return { ...(itinerary as Itinerary), days: (days as ItineraryDay[]) || [], vouchers: mappedVouchers };
 }
 
 export async function createItinerary(d: Partial<Itinerary>): Promise<Itinerary | null> {
@@ -775,12 +785,28 @@ export async function deleteItineraryActivity(id: string): Promise<boolean> {
 }
 
 export async function createVoucher(voucherData: Partial<Voucher>): Promise<Voucher | null> {
-  const { data, error } = await supabase.from("crm_vouchers").insert(voucherData).select().single();
+  const row = {
+    itinerary_id: voucherData.itinerary_id,
+    name: voucherData.title || "Voucher",
+    category: voucherData.type ?? null,
+    confirmation_code: voucherData.code ?? null,
+    notes: voucherData.notes ?? null,
+  };
+  const { data, error } = await supabase.from("crm_vouchers").insert(row).select().single();
   if (error) {
     console.error("createVoucher:", error);
     return null;
   }
-  return data as Voucher;
+  return {
+    id: data.id,
+    itinerary_id: data.itinerary_id,
+    type: data.category,
+    title: data.name,
+    provider: null,
+    code: data.confirmation_code,
+    details: data.file_url,
+    notes: data.notes,
+  } as Voucher;
 }
 
 export async function deleteVoucher(id: string): Promise<boolean> {
