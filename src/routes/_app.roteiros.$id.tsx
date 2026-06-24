@@ -39,6 +39,8 @@ function ItineraryDetailPage() {
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["itinerary", id] });
 
+  const confirm = useConfirm();
+
   const addDay = useMutation({
     mutationFn: () =>
       createItineraryDay({
@@ -50,6 +52,38 @@ function ItineraryDetailPage() {
     onSuccess: refresh,
     onError: () => toast.error("Erro ao adicionar dia."),
   });
+
+  const clearItinerary = useMutation({
+    mutationFn: async () => {
+      for (const day of it?.days || []) {
+        await deleteItineraryDay(day.id);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Roteiro limpo. Comece novamente!");
+      refresh();
+    },
+    onError: () => toast.error("Erro ao limpar o roteiro."),
+  });
+
+  const advanceStatus = useMutation({
+    mutationFn: async (next: string) => updateItinerary(id, { status: next }),
+    onSuccess: () => {
+      toast.success("Status atualizado!");
+      refresh();
+    },
+    onError: () => toast.error("Erro ao atualizar o status."),
+  });
+
+  async function handleClear() {
+    const ok = await confirm({
+      title: "Limpar roteiro?",
+      description: "Todos os dias e atividades serão removidos para você refazer o roteiro. Esta ação não pode ser desfeita.",
+      confirmLabel: "Limpar tudo",
+      destructive: true,
+    });
+    if (ok) clearItinerary.mutate();
+  }
 
   if (isError) return <QueryError message="Não foi possível carregar o roteiro." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
