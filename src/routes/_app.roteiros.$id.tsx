@@ -16,7 +16,7 @@ import {
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
-import { extractDocumentData, itineraryCopilot } from "@/lib/ai.functions";
+import { extractDocumentData, itineraryPlanner } from "@/lib/ai.functions";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
