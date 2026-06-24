@@ -501,13 +501,24 @@ function VouchersCard({
 }
 
 
-function CopilotCard({ it }: { it: Itinerary }) {
-  const [prompt, setPrompt] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
-  const ask = useServerFn(itineraryCopilot);
+type ChatMsg = { role: "user" | "assistant"; text: string; files?: string[] };
 
-  function buildContext(question: string): string {
+function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState("");
+  const [pending, setPending] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [messages, setMessages] = useState<ChatMsg[]>([
+    {
+      role: "assistant",
+      text: "Olá! Envie passagens aéreas, reservas ou imagens com informações da viagem e eu monto os dias do roteiro automaticamente. Você também pode pedir sugestões.",
+    },
+  ]);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const plan = useServerFn(itineraryPlanner);
+
+  function buildContext(): string {
     const dias = (it.days || [])
       .map((d) => {
         const acts = (d.activities || [])
@@ -521,79 +532,204 @@ Destino: ${it.destination || "—"}
 Cliente: ${it.client_name || "—"}
 Orçamento: ${formatCurrency(it.budget)}
 Dias atuais:
-${dias || "(nenhum dia ainda)"}
-
-Pedido do consultor: ${question}`;
+${dias || "(nenhum dia ainda)"}`;
   }
 
-  async function run(q?: string) {
-    const question = (q ?? prompt).trim();
-    if (!question) return;
+  function fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function mapType(t?: string): string {
+    const v = (t || "").toLowerCase();
+    const allowed = ["flight", "hotel", "activity", "transfer", "restaurant", "note"];
+    if (allowed.includes(v)) return v;
+    const aliases: Record<string, string> = {
+      voo: "flight", aviao: "flight", passagem: "flight",
+      hospedagem: "hotel", pousada: "hotel",
+      traslado: "transfer", carro: "transfer", transporte: "transfer",
+      restaurante: "restaurant", refeicao: "restaurant",
+      ingresso: "activity", passeio: "activity", tour: "activity",
+    };
+    return aliases[v] || "activity";
+  }
+
+  async function send() {
+    const text = input.trim();
+    if (!text && pending.length === 0) return;
+    const fileNames = pending.map((f) => f.name);
+    setMessages((m) => [...m, { role: "user", text: text || "(documentos enviados)", files: fileNames }]);
+    setInput("");
     setLoading(true);
-    setAnswer("");
     try {
-      const res = await ask({ data: { prompt: buildContext(question) } });
-      setAnswer(res.text);
+      const files = await Promise.all(
+        pending.map(async (f) => ({ base64: await fileToBase64(f), mime: f.type, name: f.name })),
+      );
+      setPending([]);
+      const res = await plan({ data: { message: text, context: buildContext(), files } });
+
+      let createdDays = 0;
+      let createdActs = 0;
+      const baseCount = it.days?.length || 0;
+      for (let i = 0; i < res.days.length; i++) {
+        const d = res.days[i];
+        const day = await createItineraryDay({
+          itinerary_id: it.id,
+          day_number: baseCount + i + 1,
+          title: d.title || `Dia ${baseCount + i + 1}`,
+          date: d.date || null,
+          sort_order: baseCount + i + 1,
+        });
+        if (!day) continue;
+        createdDays++;
+        for (let j = 0; j < d.activities.length; j++) {
+          const a = d.activities[j];
+          try {
+            await createItineraryActivity({
+              day_id: day.id,
+              title: a.title,
+              time: a.time || null,
+              location: a.location || null,
+              duration: a.duration || null,
+              cost: typeof a.cost === "number" && a.cost > 0 ? a.cost : null,
+              description: a.description || null,
+              type: mapType(a.type),
+              sort_order: j + 1,
+            });
+            createdActs++;
+          } catch {
+            /* ignora atividade individual com erro */
+          }
+        }
+      }
+
+      const summary =
+        createdDays > 0
+          ? `${res.reply}\n\n✓ ${createdDays} dia(s) e ${createdActs} atividade(s) adicionados ao roteiro.`
+          : res.reply || "Não encontrei informações suficientes para montar os dias.";
+      setMessages((m) => [...m, { role: "assistant", text: summary }]);
+      if (createdDays > 0) onChange();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro no copiloto.");
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: err instanceof Error ? err.message : "Erro ao gerar o roteiro." },
+      ]);
     } finally {
       setLoading(false);
+      requestAnimationFrame(() => scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight }));
     }
   }
 
-  const suggestions = [
-    "Sugira um roteiro dia a dia para este destino",
-    "Quais passeios imperdíveis combinam com o orçamento?",
-    "Monte uma sugestão de gastronomia local",
-  ];
+  function onPick(e: React.ChangeEvent<HTMLInputElement>) {
+    const list = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (list.length) setPending((p) => [...p, ...list]);
+  }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <h2 className="mb-3 flex items-center gap-2 font-semibold">
-        <Sparkles className="h-4 w-4 text-primary" /> Copiloto de IA
-      </h2>
-      <p className="mb-3 text-xs text-muted-foreground">
-        Peça ajuda para elaborar o roteiro para o lead com base nas informações atuais.
-      </p>
-      <div className="mb-3 flex flex-wrap gap-2">
-        {suggestions.map((s) => (
-          <button
-            key={s}
-            onClick={() => run(s)}
-            disabled={loading}
-            className="rounded-full border border-border px-3 py-1 text-xs hover:bg-muted disabled:opacity-60"
-          >
-            {s}
-          </button>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run();
-          }}
-          rows={2}
-          placeholder="Ex: monte um roteiro de 4 dias com foco em família…"
-          className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-        />
-        <button
-          onClick={() => run()}
-          disabled={loading}
-          className="flex items-center gap-1 self-end rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        </button>
-      </div>
-      {answer && (
-        <div className="mt-4 whitespace-pre-wrap rounded-lg bg-muted/50 p-4 text-sm leading-relaxed">
-          {answer}
+    <>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90"
+        title="Assistente de roteiro"
+      >
+        {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+      </button>
+
+      {open && (
+        <div className="fixed bottom-24 right-6 z-40 flex h-[32rem] w-[min(24rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+          <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+            <Bot className="h-5 w-5 text-primary" />
+            <div>
+              <p className="text-sm font-semibold">Assistente de Roteiro</p>
+              <p className="text-xs text-muted-foreground">Gera os dias a partir dos seus documentos</p>
+            </div>
+          </div>
+
+          <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto p-4">
+            {messages.map((m, i) => (
+              <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+                <div
+                  className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                    m.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                  }`}
+                >
+                  {m.text}
+                  {m.files && m.files.length > 0 && (
+                    <div className="mt-1 space-y-0.5 text-xs opacity-80">
+                      {m.files.map((f, k) => (
+                        <div key={k} className="flex items-center gap-1">
+                          <Paperclip className="h-3 w-3" /> {f}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+            {loading && (
+              <div className="flex justify-start">
+                <div className="flex items-center gap-2 rounded-2xl bg-muted px-3 py-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Analisando…
+                </div>
+              </div>
+            )}
+          </div>
+
+          {pending.length > 0 && (
+            <div className="flex flex-wrap gap-1 border-t border-border px-3 py-2">
+              {pending.map((f, i) => (
+                <span key={i} className="flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs">
+                  <Paperclip className="h-3 w-3" /> {f.name}
+                  <button onClick={() => setPending((p) => p.filter((_, k) => k !== i))} className="hover:text-destructive">
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="flex items-end gap-2 border-t border-border p-3">
+            <input ref={fileRef} type="file" multiple accept="image/*,application/pdf" onChange={onPick} className="hidden" />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={loading}
+              title="Anexar documentos/imagens"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border hover:bg-muted disabled:opacity-60"
+            >
+              <Paperclip className="h-4 w-4" />
+            </button>
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              rows={1}
+              placeholder="Peça ajuda ou envie documentos…"
+              className="flex-1 resize-none rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <button
+              onClick={send}
+              disabled={loading}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
+
 
 
 function EditItineraryModal({
