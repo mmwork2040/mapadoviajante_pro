@@ -125,9 +125,14 @@ function LeadDetailPage() {
           <h1 className="text-2xl font-bold">{lead.name}</h1>
           <p className="text-sm text-muted-foreground">{lead.destination || "Sem destino"}</p>
         </div>
-        <button onClick={remove} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
-          <Trash2 className="h-4 w-4" /> Excluir
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setEditOpen(true)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted">
+            <Pencil className="h-4 w-4" /> Editar
+          </button>
+          <button onClick={remove} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
+            <Trash2 className="h-4 w-4" /> Excluir
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
