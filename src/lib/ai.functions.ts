@@ -344,7 +344,35 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
       }
     }
 
-    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
+    let pastItineraries = "";
+    if (data.leadId) {
+      const { data: its } = await context.supabase
+        .from("crm_itineraries")
+        .select("id,title,status,start_date,end_date,passengers,notes,crm_itinerary_days(title,description,crm_itinerary_activities(title,description,location,time))")
+        .eq("lead_id", data.leadId)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      if (its && its.length) {
+        const parts: string[] = [];
+        for (const it of its as any[]) {
+          const dayLines: string[] = [];
+          for (const d of (it.crm_itinerary_days ?? [])) {
+            const acts = (d.crm_itinerary_activities ?? [])
+              .map((a: any) => `    • ${[a.time, a.title, a.location].filter(Boolean).join(" — ")}${a.description ? `: ${a.description}` : ""}`)
+              .join("\n");
+            dayLines.push(`  - ${d.title || "Dia"}${d.description ? ` (${d.description})` : ""}${acts ? `\n${acts}` : ""}`);
+          }
+          parts.push(
+            `Roteiro "${it.title || "Sem título"}" [${it.status}]${it.start_date ? ` ${it.start_date}→${it.end_date ?? ""}` : ""}${it.passengers ? ` · ${it.passengers} pax` : ""}${it.notes ? `\n  Obs: ${it.notes}` : ""}${dayLines.length ? `\n${dayLines.join("\n")}` : ""}`,
+          );
+        }
+        if (parts.length) {
+          pastItineraries = `\n\nOUTROS ROTEIROS DESTE LEAD (use como referência de preferências, estilo, destinos, ritmo, hotéis e observações já validadas — não copie cegamente, adapte ao roteiro atual):\n${parts.join("\n\n")}`;
+        }
+      }
+    }
+
+    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}${pastItineraries}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
 
 
     const { askWithFiles } = await import("./ai.server");
