@@ -416,9 +416,11 @@ export function NewLeadModal({
                 <UserPlus className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">Novo Viajante</h2>
+                <h2 className="text-xl font-bold">{editing ? "Editar Viajante" : "Novo Viajante"}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Preencha os dados para criar o perfil completo do cliente
+                  {editing
+                    ? "Revise e atualize todos os dados do cliente"
+                    : "Preencha os dados para criar o perfil completo do cliente"}
                 </p>
               </div>
             </div>
