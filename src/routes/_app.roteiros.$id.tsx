@@ -607,6 +607,21 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
     if (parts.length) msg += `\n\nJá tenho registrado: ${parts.join(", ")}.`;
     else msg += "\n\nAinda não há dados básicos preenchidos (destino, datas, passageiros).";
 
+    let sugeridos = 0;
+    if (it.start_date && it.end_date) {
+      const ini = new Date(it.start_date);
+      const fim = new Date(it.end_date);
+      const diff = Math.round((fim.getTime() - ini.getTime()) / 86400000) + 1;
+      if (diff > 0) sugeridos = diff;
+    }
+    if (sugeridos > 0) {
+      const pct = Math.min(100, Math.round((totalDias / sugeridos) * 100));
+      const filled = Math.round((pct / 100) * 10);
+      const barra = "█".repeat(filled) + "░".repeat(10 - filled);
+      msg += `\n\nProgresso: ${totalDias}/${sugeridos} dias  ${barra} ${pct}%`;
+    }
+
+
     if (totalDias > 0) {
       msg += `\n\nO roteiro tem ${totalDias} dia(s) e ${totalAtivs} atividade(s) montados:`;
       (it.days || []).forEach((d) => {
