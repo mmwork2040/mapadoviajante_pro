@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Send, Trash2, Plus, Check, Map } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Plus, Check, Map, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
   createItinerary,
   createLeadActivity,
+  deleteItinerary,
   deleteLead,
   fetchItinerariesByLead,
   fetchLeadActivities,
@@ -20,6 +21,7 @@ import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { NewLeadModal } from "@/routes/_app.leads";
 
 export const Route = createFileRoute("/_app/leads/$leadId")({
   component: LeadDetailPage,
