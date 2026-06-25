@@ -597,7 +597,9 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
       .join("\n");
     return `Roteiro: ${it.title}
 Destino: ${it.destination || "—"}
-Cliente: ${it.client_name || "—"}
+Cliente: ${it.client_name || it.lead?.name || "—"}
+Datas: ${it.start_date || "—"} a ${it.end_date || "—"}
+Quantidade de passageiros: ${it.passengers ?? "—"}
 Orçamento: ${formatCurrency(it.budget)}
 Dias atuais:
 ${dias || "(nenhum dia ainda)"}`;
