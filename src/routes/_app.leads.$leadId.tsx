@@ -250,56 +250,6 @@ function LeadDetailPage() {
   );
 }
 
-function ProfileCard({
-  profile,
-  onSave,
-}: {
-  profile: Record<string, string>;
-  onSave: (p: Record<string, string>) => void;
-}) {
-  const [draft, setDraft] = useState<Record<string, string>>(profile);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(profile);
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <h2 className="mb-3 font-semibold">Perfil do viajante</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {PROFILE_FIELDS.map((f) => (
-          <label key={f.key} className="block">
-            <span className="mb-1 block text-sm font-medium">{f.label}</span>
-            <input
-              type={f.type === "date" ? "date" : "text"}
-              inputMode={f.type === "currency" ? "numeric" : undefined}
-              value={
-                f.type === "currency"
-                  ? formatCurrencyInput(draft[f.key] || "")
-                  : draft[f.key] || ""
-              }
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  [f.key]:
-                    f.type === "currency"
-                      ? e.target.value.replace(/\D/g, "")
-                      : e.target.value,
-                })
-              }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </label>
-        ))}
-      </div>
-      {dirty && (
-        <button
-          onClick={() => onSave(draft)}
-          className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-        >
-          Salvar perfil
-        </button>
-      )}
-    </div>
-  );
-}
-
 function ChecklistCard({
   checklists,
   onSave,
