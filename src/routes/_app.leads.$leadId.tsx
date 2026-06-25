@@ -432,21 +432,30 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
               </p>
               <div className="space-y-2">
                 {items.map((it) => (
-                  <Link
-                    key={it.id}
-                    to="/roteiros/$id"
-                    params={{ id: it.id }}
-                    draggable
-                    onDragStart={() => setDragId(it.id)}
-                    onDragEnd={() => {
-                      setDragId(null);
-                      setOverCol(null);
-                    }}
-                    className="block cursor-grab rounded-lg border border-border bg-card p-2 text-sm hover:border-primary active:cursor-grabbing"
-                  >
-                    <p className="font-medium">{it.title}</p>
-                    <p className="text-xs text-muted-foreground">{formatCurrency(it.budget)}</p>
-                  </Link>
+                  <div key={it.id} className="group relative">
+                    <Link
+                      to="/roteiros/$id"
+                      params={{ id: it.id }}
+                      draggable
+                      onDragStart={() => setDragId(it.id)}
+                      onDragEnd={() => {
+                        setDragId(null);
+                        setOverCol(null);
+                      }}
+                      className="block cursor-grab rounded-lg border border-border bg-card p-2 pr-8 text-sm hover:border-primary active:cursor-grabbing"
+                    >
+                      <p className="font-medium">{it.title}</p>
+                      <p className="text-xs text-muted-foreground">{formatCurrency(it.budget)}</p>
+                    </Link>
+                    <button
+                      type="button"
+                      aria-label="Excluir roteiro"
+                      onClick={() => handleRemoveItinerary(it.id, it.title)}
+                      className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 ))}
                 {items.length === 0 && (
                   <p className="px-1 py-2 text-xs text-muted-foreground/60">—</p>
