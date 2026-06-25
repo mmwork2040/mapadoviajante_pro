@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, X, MapPin } from "lucide-react";
+import { Plus, X, MapPin, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { createItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
+import { createItinerary, deleteItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app/roteiros/")({
   component: ItinerariesPage,
@@ -15,11 +16,33 @@ export const Route = createFileRoute("/_app/roteiros/")({
 
 function ItinerariesPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
+
+  const remove = useMutation({
+    mutationFn: (it: Itinerary) => deleteItinerary(it.id),
+    onSuccess: (_d, it) => {
+      dispatchWebhook("itinerary.deleted", it);
+      toast.success("Roteiro excluído.");
+      qc.invalidateQueries({ queryKey: ["itineraries"] });
+    },
+    onError: () => toast.error("Erro ao excluir roteiro."),
+  });
+
+  async function handleDelete(it: Itinerary) {
+    const ok = await confirm({
+      title: "Excluir roteiro",
+      description: `Tem certeza que deseja excluir "${it.title}"? Esta ação não pode ser desfeita.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (ok) remove.mutate(it);
+  }
+
 
   return (
     <div className="space-y-6">
@@ -45,23 +68,32 @@ function ItinerariesPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((it) => (
-            <Link
-              key={it.id}
-              to="/roteiros/$id"
-              params={{ id: it.id }}
-              className="rounded-2xl border border-border bg-card p-5 transition hover:shadow-md"
-            >
-              <div className="flex items-center gap-2 text-primary">
-                <MapPin className="h-4 w-4" />
-                <span className="text-xs font-medium uppercase">{it.status}</span>
-              </div>
-              <h3 className="mt-2 font-semibold">{it.title}</h3>
-              <p className="text-sm text-muted-foreground">{it.destination || "—"}</p>
-              <div className="mt-3 flex justify-between text-xs text-muted-foreground">
-                <span>{formatDate(it.start_date)}</span>
-                <span className="font-semibold text-foreground">{formatCurrency(it.budget)}</span>
-              </div>
-            </Link>
+            <div key={it.id} className="group relative">
+              <Link
+                to="/roteiros/$id"
+                params={{ id: it.id }}
+                className="block rounded-2xl border border-border bg-card p-5 transition hover:shadow-md"
+              >
+                <div className="flex items-center gap-2 text-primary">
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-xs font-medium uppercase">{it.status}</span>
+                </div>
+                <h3 className="mt-2 pr-8 font-semibold">{it.title}</h3>
+                <p className="text-sm text-muted-foreground">{it.destination || "—"}</p>
+                <div className="mt-3 flex justify-between text-xs text-muted-foreground">
+                  <span>{formatDate(it.start_date)}</span>
+                  <span className="font-semibold text-foreground">{formatCurrency(it.budget)}</span>
+                </div>
+              </Link>
+              <button
+                onClick={() => handleDelete(it)}
+                disabled={remove.isPending}
+                title="Excluir roteiro"
+                className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           ))}
         </div>
       )}
