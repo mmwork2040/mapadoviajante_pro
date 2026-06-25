@@ -16,11 +16,33 @@ export const Route = createFileRoute("/_app/roteiros/")({
 
 function ItinerariesPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
+
+  const remove = useMutation({
+    mutationFn: (it: Itinerary) => deleteItinerary(it.id),
+    onSuccess: (_d, it) => {
+      dispatchWebhook("itinerary.deleted", it);
+      toast.success("Roteiro excluído.");
+      qc.invalidateQueries({ queryKey: ["itineraries"] });
+    },
+    onError: () => toast.error("Erro ao excluir roteiro."),
+  });
+
+  async function handleDelete(it: Itinerary) {
+    const ok = await confirm({
+      title: "Excluir roteiro",
+      description: `Tem certeza que deseja excluir "${it.title}"? Esta ação não pode ser desfeita.`,
+      confirmText: "Excluir",
+      destructive: true,
+    });
+    if (ok) remove.mutate(it);
+  }
+
 
   return (
     <div className="space-y-6">
