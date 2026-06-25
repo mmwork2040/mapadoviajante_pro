@@ -328,6 +328,7 @@ const ITINERARY_COLUMNS: { key: string; label: string }[] = [
 
 function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName: string; lead: Lead }) {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
   const { data: itineraries = [] } = useQuery({
