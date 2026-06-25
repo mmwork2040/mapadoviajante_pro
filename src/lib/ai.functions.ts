@@ -320,28 +320,65 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
         .maybeSingle();
       if (lead) {
         const lines: string[] = [];
-        const push = (label: string, val: unknown) => {
-          if (val === null || val === undefined || val === "") return;
-          lines.push(`- ${label}: ${typeof val === "object" ? JSON.stringify(val) : String(val)}`);
+        const profile = (lead.profile && typeof lead.profile === "object" ? lead.profile : {}) as Record<string, unknown>;
+        const fmt = (val: unknown) =>
+          typeof val === "object" ? JSON.stringify(val) : String(val);
+        const section = (title: string, fields: Array<[string, unknown]>) => {
+          const valid = fields.filter(([, v]) => v !== null && v !== undefined && v !== "");
+          if (!valid.length) return;
+          lines.push(`\n[${title}]`);
+          for (const [label, v] of valid) lines.push(`- ${label}: ${fmt(v)}`);
         };
-        push("Nome", lead.name);
-        push("Email", lead.email);
-        push("Telefone", lead.phone);
-        push("Destino de interesse", lead.destination);
-        push("Orçamento/valor", lead.value);
-        push("Origem", lead.origin);
-        push("Status do lead", lead.status);
-        push("Observações", lead.notes);
-        if (lead.profile && typeof lead.profile === "object") {
-          push("Perfil/preferências (datas, período, hotéis, voos, etc.)", lead.profile);
-        }
+
+        section("PESSOAL", [
+          ["Nome", lead.name],
+          ["Email", lead.email],
+          ["Telefone/WhatsApp", lead.phone],
+          ["Origem do lead", lead.origin],
+          ["Status do lead", lead.status],
+          ["Orçamento estimado", lead.value],
+        ]);
+        section("VIAGEM", [
+          ["Destino de interesse", lead.destination],
+          ["Datas/Período da viagem", profile.travel_dates],
+          ["Quantidade de passageiros", profile.passengers],
+          ["Tipo de viagem", profile.trip_type],
+          ["Observações da viagem", profile.trip_notes],
+          ["Preferências", profile.preferences],
+        ]);
+        section("BENEFÍCIOS", [
+          ["Programas de fidelidade", profile.loyalty_programs],
+          ["Pontos/Milhas", profile.points_miles],
+          ["Possui passaporte", profile.has_passport],
+        ]);
+        section("VOOS & HOTEL", [
+          ["Classe de voo", profile.flight_class],
+          ["Companhia aérea preferida", profile.airline_pref],
+          ["Categoria de hotel", profile.hotel_category],
+          ["Tipo de quarto", profile.room_type],
+          ["Observações de hotel", profile.hotel_notes],
+        ]);
+
+        // Captura quaisquer campos extras do perfil não mapeados acima
+        const mapped = new Set([
+          "travel_dates", "passengers", "trip_type", "trip_notes", "preferences",
+          "loyalty_programs", "points_miles", "has_passport", "flight_class",
+          "airline_pref", "hotel_category", "room_type", "hotel_notes",
+        ]);
+        const extras = Object.entries(profile).filter(
+          ([k, v]) => !mapped.has(k) && v !== null && v !== undefined && v !== "",
+        );
+        if (extras.length) section("OUTROS DADOS", extras);
+        if (lead.notes) section("ANOTAÇÕES", [["Observações", lead.notes]]);
         if (lead.checklists && typeof lead.checklists === "object") {
-          push("Checklists", lead.checklists);
+          section("CHECKLISTS", [["Checklists", lead.checklists]]);
         }
+
         if (lines.length) {
-          leadKnowledge = `\n\nBASE DE CONHECIMENTO DO LEAD (use estes dados já preenchidos para compor o roteiro — datas/período, orçamento, hotéis, voos e preferências):\n${lines.join("\n")}`;
+          leadKnowledge = `\n\nBASE DE CONHECIMENTO DO LEAD — todos os campos preenchidos em todas as abas (PESSOAL, VIAGEM, BENEFÍCIOS, VOOS & HOTEL). Use SEMPRE estes dados como base ao compor o roteiro:${lines.join("\n")}`;
         }
       }
+
     }
 
     let pastItineraries = "";
