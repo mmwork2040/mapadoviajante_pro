@@ -35,19 +35,6 @@ const STATUSES: { key: LeadStatus; label: string }[] = [
   { key: "lost", label: "Perdido" },
 ];
 
-const PROFILE_FIELDS: { key: string; label: string; type?: "date" | "currency" }[] = [
-  { key: "birthday", label: "Aniversário", type: "date" },
-  { key: "document", label: "Documento" },
-  { key: "city", label: "Cidade" },
-  { key: "preferences", label: "Preferências" },
-  { key: "budget_range", label: "Faixa de orçamento", type: "currency" },
-];
-
-function formatCurrencyInput(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return "";
-  return formatCurrency(Number(digits) / 100);
-}
 
 function LeadDetailPage() {
   const { leadId } = useParams({ from: "/_app/leads/$leadId" });
