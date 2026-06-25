@@ -608,11 +608,21 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
     else msg += "\n\nAinda não há dados básicos preenchidos (destino, datas, passageiros).";
 
     if (totalDias > 0) {
-      msg += `\n\nO roteiro tem ${totalDias} dia(s) e ${totalAtivs} atividade(s) montados.`;
-      msg += " Posso ajustar, sugerir passeios ou completar dias vazios.";
+      msg += `\n\nO roteiro tem ${totalDias} dia(s) e ${totalAtivs} atividade(s) montados:`;
+      (it.days || []).forEach((d) => {
+        const acts = (d.activities || [])
+          .map((a) => [a.time, a.title || a.location].filter(Boolean).join(" "))
+          .filter(Boolean);
+        const titulo = d.title || `Dia ${d.day_number}`;
+        msg += acts.length
+          ? `\n- **${titulo}**: ${acts.join("; ")}`
+          : `\n- **${titulo}**: (sem atividades)`;
+      });
+      msg += "\n\nPosso ajustar, sugerir passeios ou completar dias vazios.";
     } else {
       msg += "\n\nNenhum dia foi montado ainda. Envie passagens/reservas ou me diga o que precisa que eu monto os dias.";
     }
+
 
     const faltam: string[] = [];
     if (!it.destination) faltam.push("destino");
