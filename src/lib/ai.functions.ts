@@ -297,7 +297,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: PlannerInput) => {
     if (!d?.message?.trim() && !(d?.files?.length)) throw new Error("Envie uma mensagem ou um documento.");
-    return { message: d.message || "", context: d.context || "", files: d.files || [] };
+    return { message: d.message || "", context: d.context || "", files: d.files || [], leadId: d.leadId ?? null };
   })
   .handler(async ({ data, context }): Promise<PlannerResult> => {
     const { data: cfg, error } = await context.supabase
@@ -311,7 +311,41 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
       throw new Error("A IA precisa ser testada e conectada nas configurações.");
     }
 
-    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
+    let leadKnowledge = "";
+    if (data.leadId) {
+      const { data: lead } = await context.supabase
+        .from("crm_leads")
+        .select("*")
+        .eq("id", data.leadId)
+        .maybeSingle();
+      if (lead) {
+        const lines: string[] = [];
+        const push = (label: string, val: unknown) => {
+          if (val === null || val === undefined || val === "") return;
+          lines.push(`- ${label}: ${typeof val === "object" ? JSON.stringify(val) : String(val)}`);
+        };
+        push("Nome", lead.name);
+        push("Email", lead.email);
+        push("Telefone", lead.phone);
+        push("Destino de interesse", lead.destination);
+        push("Orçamento/valor", lead.value);
+        push("Origem", lead.origin);
+        push("Status do lead", lead.status);
+        push("Observações", lead.notes);
+        if (lead.profile && typeof lead.profile === "object") {
+          push("Perfil/preferências (datas, período, hotéis, voos, etc.)", lead.profile);
+        }
+        if (lead.checklists && typeof lead.checklists === "object") {
+          push("Checklists", lead.checklists);
+        }
+        if (lines.length) {
+          leadKnowledge = `\n\nBASE DE CONHECIMENTO DO LEAD (use estes dados já preenchidos para compor o roteiro — datas/período, orçamento, hotéis, voos e preferências):\n${lines.join("\n")}`;
+        }
+      }
+    }
+
+    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
+
 
     const { askWithFiles } = await import("./ai.server");
     const text = await askWithFiles(
