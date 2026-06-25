@@ -531,7 +531,7 @@ export function NewLeadModal({
                 disabled={saving}
                 className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
-                {saving ? "Salvando…" : "Criar Viajante"} <Check className="h-4 w-4" />
+                {saving ? "Salvando…" : editing ? "Salvar Alterações" : "Criar Viajante"} <Check className="h-4 w-4" />
               </button>
             ) : (
               <button
