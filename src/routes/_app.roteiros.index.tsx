@@ -37,7 +37,7 @@ function ItinerariesPage() {
     const ok = await confirm({
       title: "Excluir roteiro",
       description: `Tem certeza que deseja excluir "${it.title}"? Esta ação não pode ser desfeita.`,
-      confirmText: "Excluir",
+      confirmLabel: "Excluir",
       destructive: true,
     });
     if (ok) remove.mutate(it);
