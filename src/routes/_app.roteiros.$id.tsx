@@ -27,6 +27,12 @@ export const Route = createFileRoute("/_app/roteiros/$id")({
 });
 
 const STATUS_OPTIONS = ["draft", "active", "completed", "cancelled"];
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Rascunho",
+  active: "Em andamento",
+  completed: "Concluído",
+  cancelled: "Cancelado",
+};
 
 function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
