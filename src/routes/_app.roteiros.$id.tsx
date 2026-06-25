@@ -583,15 +583,53 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
   const [input, setInput] = useState("");
   const [pending, setPending] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    {
-      role: "assistant",
-      text: "Olá! Envie passagens aéreas, reservas ou imagens com informações da viagem e eu monto os dias do roteiro automaticamente. Você também pode pedir sugestões.",
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const greeted = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const plan = useServerFn(itineraryPlanner);
+
+  function buildGreeting(): string {
+    const nome = it.client_name || it.lead?.name;
+    const parts: string[] = [];
+    if (it.destination) parts.push(`destino **${it.destination}**`);
+    if (it.start_date || it.end_date)
+      parts.push(`datas ${it.start_date || "?"} a ${it.end_date || "?"}`);
+    if (it.passengers) parts.push(`${it.passengers} passageiro(s)`);
+    if (it.budget) parts.push(`orçamento ${formatCurrency(it.budget)}`);
+    const totalDias = it.days?.length || 0;
+    const totalAtivs = (it.days || []).reduce((s, d) => s + (d.activities?.length || 0), 0);
+
+    let msg = nome
+      ? `Olá! Vamos trabalhar no roteiro de **${nome}**.`
+      : "Olá! Vamos trabalhar neste roteiro.";
+
+    if (parts.length) msg += `\n\nJá tenho registrado: ${parts.join(", ")}.`;
+    else msg += "\n\nAinda não há dados básicos preenchidos (destino, datas, passageiros).";
+
+    if (totalDias > 0) {
+      msg += `\n\nO roteiro tem ${totalDias} dia(s) e ${totalAtivs} atividade(s) montados.`;
+      msg += " Posso ajustar, sugerir passeios ou completar dias vazios.";
+    } else {
+      msg += "\n\nNenhum dia foi montado ainda. Envie passagens/reservas ou me diga o que precisa que eu monto os dias.";
+    }
+
+    const faltam: string[] = [];
+    if (!it.destination) faltam.push("destino");
+    if (!it.start_date && !it.end_date) faltam.push("datas");
+    if (!it.passengers) faltam.push("passageiros");
+    if (faltam.length) msg += `\n\nPara gerar o roteiro, preciso ainda de: ${faltam.join(", ")}.`;
+
+    return msg;
+  }
+
+  useEffect(() => {
+    if (open && !greeted.current) {
+      greeted.current = true;
+      setMessages([{ role: "assistant", text: buildGreeting() }]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   function buildContext(): string {
     const dias = (it.days || [])
