@@ -5,6 +5,7 @@ import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
 export const WEBHOOK_EVENTS = [
   { id: "lead.created", label: "Lead criado" },
   { id: "lead.status_changed", label: "Status do lead alterado" },
+  { id: "lead.updated", label: "Lead atualizado" },
   { id: "lead.deleted", label: "Lead excluído" },
   { id: "task.created", label: "Tarefa criada" },
   { id: "task.completed", label: "Tarefa concluída" },
