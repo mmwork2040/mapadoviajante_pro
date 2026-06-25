@@ -55,6 +55,7 @@ function LeadDetailPage() {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const [note, setNote] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: lead, isLoading, isError, refetch } = useQuery({
     queryKey: ["lead", leadId],
