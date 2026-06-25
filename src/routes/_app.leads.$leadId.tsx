@@ -371,6 +371,28 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
     onError: () => toast.error("Erro ao criar roteiro."),
   });
 
+  const removeItinerary = useMutation({
+    mutationFn: (id: string) => deleteItinerary(id),
+    onSuccess: (ok, id) => {
+      if (!ok) return toast.error("Erro ao excluir roteiro.");
+      dispatchWebhook("itinerary.deleted", { id });
+      toast.success("Roteiro excluído.");
+      qc.invalidateQueries({ queryKey: ["lead-itineraries", leadId] });
+    },
+    onError: () => toast.error("Erro ao excluir roteiro."),
+  });
+
+  async function handleRemoveItinerary(id: string, title: string) {
+    const ok = await confirm({
+      title: "Excluir roteiro?",
+      description: `O roteiro "${title}" e todos os seus dias e atividades serão removidos permanentemente.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (ok) removeItinerary.mutate(id);
+  }
+
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-4 flex items-center justify-between">
