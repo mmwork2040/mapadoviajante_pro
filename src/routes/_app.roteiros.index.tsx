@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, X, MapPin } from "lucide-react";
+import { Plus, X, MapPin, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { createItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
+import { createItinerary, deleteItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { useConfirm } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app/roteiros/")({
   component: ItinerariesPage,
