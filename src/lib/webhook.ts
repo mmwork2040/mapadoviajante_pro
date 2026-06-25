@@ -11,6 +11,7 @@ export const WEBHOOK_EVENTS = [
   { id: "task.completed", label: "Tarefa concluída" },
   { id: "transaction.created", label: "Transação registrada" },
   { id: "itinerary.created", label: "Roteiro criado" },
+  { id: "itinerary.deleted", label: "Roteiro excluído" },
   { id: "member.invited", label: "Membro convidado" },
 ] as const;
 
