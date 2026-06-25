@@ -210,7 +210,7 @@ function LeadDetailPage() {
         </div>
 
         <div className="space-y-4 lg:col-span-2">
-          <ProfileCard profile={profile} onSave={(p) => update.mutate({ profile: p })} />
+          
           <ChecklistCard checklists={checklists} onSave={(c) => update.mutate({ checklists: c })} />
 
           <ItinerariesPanel leadId={leadId} leadName={lead.name} lead={lead} />
