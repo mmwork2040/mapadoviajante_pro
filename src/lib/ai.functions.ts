@@ -198,6 +198,7 @@ type PlannerInput = {
   message: string;
   context: string;
   files: PlannerFile[];
+  leadId?: string | null;
 };
 
 export type PlannedActivity = {
