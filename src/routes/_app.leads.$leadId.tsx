@@ -109,7 +109,6 @@ function LeadDetailPage() {
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!lead) return <p>Lead não encontrado.</p>;
 
-  const profile = (lead.profile || {}) as Record<string, string>;
   const checklists = (lead.checklists || {}) as Record<string, boolean>;
   const income = txs.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
   const expense = txs.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
