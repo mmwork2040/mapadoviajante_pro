@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ArrowLeft, Send, Trash2, Plus, Check, Map } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Plus, Check, Map, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
   createItinerary,
   createLeadActivity,
+  deleteItinerary,
   deleteLead,
   fetchItinerariesByLead,
   fetchLeadActivities,
@@ -20,6 +21,7 @@ import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { NewLeadModal } from "@/routes/_app.leads";
 
 export const Route = createFileRoute("/_app/leads/$leadId")({
   component: LeadDetailPage,
@@ -33,19 +35,6 @@ const STATUSES: { key: LeadStatus; label: string }[] = [
   { key: "lost", label: "Perdido" },
 ];
 
-const PROFILE_FIELDS: { key: string; label: string; type?: "date" | "currency" }[] = [
-  { key: "birthday", label: "Aniversário", type: "date" },
-  { key: "document", label: "Documento" },
-  { key: "city", label: "Cidade" },
-  { key: "preferences", label: "Preferências" },
-  { key: "budget_range", label: "Faixa de orçamento", type: "currency" },
-];
-
-function formatCurrencyInput(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return "";
-  return formatCurrency(Number(digits) / 100);
-}
 
 function LeadDetailPage() {
   const { leadId } = useParams({ from: "/_app/leads/$leadId" });
@@ -53,6 +42,7 @@ function LeadDetailPage() {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const [note, setNote] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
 
   const { data: lead, isLoading, isError, refetch } = useQuery({
     queryKey: ["lead", leadId],
@@ -106,7 +96,6 @@ function LeadDetailPage() {
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!lead) return <p>Lead não encontrado.</p>;
 
-  const profile = (lead.profile || {}) as Record<string, string>;
   const checklists = (lead.checklists || {}) as Record<string, boolean>;
   const income = txs.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
   const expense = txs.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
@@ -122,9 +111,14 @@ function LeadDetailPage() {
           <h1 className="text-2xl font-bold">{lead.name}</h1>
           <p className="text-sm text-muted-foreground">{lead.destination || "Sem destino"}</p>
         </div>
-        <button onClick={remove} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
-          <Trash2 className="h-4 w-4" /> Excluir
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setEditOpen(true)} className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted">
+            <Pencil className="h-4 w-4" /> Editar
+          </button>
+          <button onClick={remove} className="flex items-center gap-1 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/10">
+            <Trash2 className="h-4 w-4" /> Excluir
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -202,7 +196,7 @@ function LeadDetailPage() {
         </div>
 
         <div className="space-y-4 lg:col-span-2">
-          <ProfileCard profile={profile} onSave={(p) => update.mutate({ profile: p })} />
+          
           <ChecklistCard checklists={checklists} onSave={(c) => update.mutate({ checklists: c })} />
 
           <ItinerariesPanel leadId={leadId} leadName={lead.name} lead={lead} />
@@ -240,55 +234,17 @@ function LeadDetailPage() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
 
-function ProfileCard({
-  profile,
-  onSave,
-}: {
-  profile: Record<string, string>;
-  onSave: (p: Record<string, string>) => void;
-}) {
-  const [draft, setDraft] = useState<Record<string, string>>(profile);
-  const dirty = JSON.stringify(draft) !== JSON.stringify(profile);
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <h2 className="mb-3 font-semibold">Perfil do viajante</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {PROFILE_FIELDS.map((f) => (
-          <label key={f.key} className="block">
-            <span className="mb-1 block text-sm font-medium">{f.label}</span>
-            <input
-              type={f.type === "date" ? "date" : "text"}
-              inputMode={f.type === "currency" ? "numeric" : undefined}
-              value={
-                f.type === "currency"
-                  ? formatCurrencyInput(draft[f.key] || "")
-                  : draft[f.key] || ""
-              }
-              onChange={(e) =>
-                setDraft({
-                  ...draft,
-                  [f.key]:
-                    f.type === "currency"
-                      ? e.target.value.replace(/\D/g, "")
-                      : e.target.value,
-                })
-              }
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </label>
-        ))}
-      </div>
-      {dirty && (
-        <button
-          onClick={() => onSave(draft)}
-          className="mt-3 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-        >
-          Salvar perfil
-        </button>
+      {editOpen && (
+        <NewLeadModal
+          lead={lead}
+          onClose={() => setEditOpen(false)}
+          onCreated={() => {
+            setEditOpen(false);
+            qc.invalidateQueries({ queryKey: ["lead", leadId] });
+            qc.invalidateQueries({ queryKey: ["leads"] });
+          }}
+        />
       )}
     </div>
   );
@@ -372,6 +328,7 @@ const ITINERARY_COLUMNS: { key: string; label: string }[] = [
 
 function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName: string; lead: Lead }) {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
   const { data: itineraries = [] } = useQuery({
@@ -414,6 +371,28 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
     onError: () => toast.error("Erro ao criar roteiro."),
   });
 
+  const removeItinerary = useMutation({
+    mutationFn: (id: string) => deleteItinerary(id),
+    onSuccess: (ok, id) => {
+      if (!ok) return toast.error("Erro ao excluir roteiro.");
+      dispatchWebhook("itinerary.deleted", { id });
+      toast.success("Roteiro excluído.");
+      qc.invalidateQueries({ queryKey: ["lead-itineraries", leadId] });
+    },
+    onError: () => toast.error("Erro ao excluir roteiro."),
+  });
+
+  async function handleRemoveItinerary(id: string, title: string) {
+    const ok = await confirm({
+      title: "Excluir roteiro?",
+      description: `O roteiro "${title}" e todos os seus dias e atividades serão removidos permanentemente.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (ok) removeItinerary.mutate(id);
+  }
+
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-4 flex items-center justify-between">
@@ -453,21 +432,30 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
               </p>
               <div className="space-y-2">
                 {items.map((it) => (
-                  <Link
-                    key={it.id}
-                    to="/roteiros/$id"
-                    params={{ id: it.id }}
-                    draggable
-                    onDragStart={() => setDragId(it.id)}
-                    onDragEnd={() => {
-                      setDragId(null);
-                      setOverCol(null);
-                    }}
-                    className="block cursor-grab rounded-lg border border-border bg-card p-2 text-sm hover:border-primary active:cursor-grabbing"
-                  >
-                    <p className="font-medium">{it.title}</p>
-                    <p className="text-xs text-muted-foreground">{formatCurrency(it.budget)}</p>
-                  </Link>
+                  <div key={it.id} className="group relative">
+                    <Link
+                      to="/roteiros/$id"
+                      params={{ id: it.id }}
+                      draggable
+                      onDragStart={() => setDragId(it.id)}
+                      onDragEnd={() => {
+                        setDragId(null);
+                        setOverCol(null);
+                      }}
+                      className="block cursor-grab rounded-lg border border-border bg-card p-2 pr-8 text-sm hover:border-primary active:cursor-grabbing"
+                    >
+                      <p className="font-medium">{it.title}</p>
+                      <p className="text-xs text-muted-foreground">{formatCurrency(it.budget)}</p>
+                    </Link>
+                    <button
+                      type="button"
+                      aria-label="Excluir roteiro"
+                      onClick={() => handleRemoveItinerary(it.id, it.title)}
+                      className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 ))}
                 {items.length === 0 && (
                   <p className="px-1 py-2 text-xs text-muted-foreground/60">—</p>

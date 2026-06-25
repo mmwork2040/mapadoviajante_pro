@@ -314,9 +314,44 @@ const LOYALTY_PROGRAMS = [
   "Air France-KLM Flying Blue",
 ];
 
-function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+function leadToForm(lead: Lead): WizardForm {
+  const p = (lead.profile || {}) as Record<string, string>;
+  return {
+    name: lead.name || "",
+    email: lead.email || "",
+    phone: lead.phone || "",
+    value: lead.value ? maskCurrency(String(Math.round(Number(lead.value) * 100))) : "",
+    origin: ORIGINS.includes(lead.origin || "") ? lead.origin || "" : lead.origin ? "Outro" : "",
+    origin_other: ORIGINS.includes(lead.origin || "") ? "" : lead.origin || "",
+    destination: lead.destination || "",
+    travel_dates: p.travel_dates || "",
+    passengers: p.passengers || "",
+    trip_type: p.trip_type || "",
+    trip_notes: p.trip_notes || "",
+    loyalty_programs: p.loyalty_programs || "",
+    points_miles: p.points_miles || "",
+    has_passport: p.has_passport || "",
+    preferences: p.preferences || "",
+    flight_class: p.flight_class || "",
+    airline_pref: p.airline_pref || "",
+    hotel_category: p.hotel_category || "",
+    room_type: p.room_type || "",
+    hotel_notes: p.hotel_notes || "",
+  };
+}
+
+export function NewLeadModal({
+  onClose,
+  onCreated,
+  lead,
+}: {
+  onClose: () => void;
+  onCreated: () => void;
+  lead?: Lead;
+}) {
+  const editing = !!lead;
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<WizardForm>(EMPTY_FORM);
+  const [form, setForm] = useState<WizardForm>(lead ? leadToForm(lead) : EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<WizardForm>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -335,13 +370,12 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
       return;
     }
     setSaving(true);
-    const res = await createLead({
+    const payload = {
       name: form.name.trim(),
       email: form.email || null,
       phone: form.phone || null,
       destination: form.destination || null,
       value: parseCurrency(form.value),
-      status: "new",
       origin: (form.origin === "Outro" ? form.origin_other.trim() : form.origin) || "direto",
       profile: {
         travel_dates: form.travel_dates,
@@ -358,13 +392,16 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
         room_type: form.room_type,
         hotel_notes: form.hotel_notes,
       },
-    });
+    };
+    const res = editing
+      ? await updateLead(lead!.id, payload)
+      : await createLead({ ...payload, status: "new" });
     setSaving(false);
     if (res) {
-      dispatchWebhook("lead.created", res);
-      toast.success("Viajante criado!");
+      dispatchWebhook(editing ? "lead.updated" : "lead.created", res);
+      toast.success(editing ? "Viajante atualizado!" : "Viajante criado!");
       onCreated();
-    } else toast.error("Erro ao criar viajante.");
+    } else toast.error(editing ? "Erro ao atualizar viajante." : "Erro ao criar viajante.");
   }
 
   const isLast = step === STEPS.length - 1;
@@ -379,9 +416,11 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
                 <UserPlus className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">Novo Viajante</h2>
+                <h2 className="text-xl font-bold">{editing ? "Editar Viajante" : "Novo Viajante"}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Preencha os dados para criar o perfil completo do cliente
+                  {editing
+                    ? "Revise e atualize todos os dados do cliente"
+                    : "Preencha os dados para criar o perfil completo do cliente"}
                 </p>
               </div>
             </div>
@@ -492,7 +531,7 @@ function NewLeadModal({ onClose, onCreated }: { onClose: () => void; onCreated: 
                 disabled={saving}
                 className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
-                {saving ? "Salvando…" : "Criar Viajante"} <Check className="h-4 w-4" />
+                {saving ? "Salvando…" : editing ? "Salvar Alterações" : "Criar Viajante"} <Check className="h-4 w-4" />
               </button>
             ) : (
               <button
