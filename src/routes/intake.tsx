@@ -17,8 +17,9 @@ const FORM_SRC =
   "https://vibeform-studio.vercel.app/f/5c10e7f7-7ee1-48bc-a138-0ac0d9a79844?db=https%3A%2F%2Fddulmdacvcnkdkzwmsbz.supabase.co&key=sb_publishable_YDG_GPuhlQSsI5PAtkNDYQ_2ti_rODr";
 
 function IntakePage() {
-  // Cache-buster gerado a cada montagem para sempre carregar o formulário atualizado
-  const freshSrc = `${FORM_SRC}&_t=${Date.now()}`;
+  // Cache-buster fixado no momento da montagem: cada abertura da página
+  // recria o iframe do zero, sem reaproveitar conteúdo em cache.
+  const [freshSrc] = useState(() => `${FORM_SRC}&_t=${Date.now()}`);
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4 py-10">
       <div className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-xl sm:p-8">
