@@ -35,7 +35,8 @@ function IntakePage() {
         <p className="mt-1 text-sm text-muted-foreground">Preencha e receba uma proposta personalizada.</p>
 
         <iframe
-          src="https://vibeform-studio.vercel.app/f/5c10e7f7-7ee1-48bc-a138-0ac0d9a79844?db=https%3A%2F%2Fddulmdacvcnkdkzwmsbz.supabase.co&key=sb_publishable_YDG_GPuhlQSsI5PAtkNDYQ_2ti_rODr"
+          key={freshSrc}
+          src={freshSrc}
           title="Formulário de captação"
           width="100%"
           height="600"
