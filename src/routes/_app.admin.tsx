@@ -29,6 +29,13 @@ import {
   DEFAULT_CONFIG as DEFAULT_GMAIL_CONFIG,
   type GmailConfig,
 } from "@/lib/gmail-config";
+import {
+  getFormConfig,
+  saveFormConfig,
+  extractIframeSrc,
+  DEFAULT_CONFIG as DEFAULT_FORM_CONFIG,
+  type FormConfig,
+} from "@/lib/form-config";
 import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
   createTask,
