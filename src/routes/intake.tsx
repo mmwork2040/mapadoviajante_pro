@@ -15,7 +15,7 @@ export const Route = createFileRoute("/intake")({
 });
 
 const FORM_SRC =
-  "https://vibeform-studio.vercel.app/f/5c10e7f7-7ee1-48bc-a138-0ac0d9a79844?db=https%3A%2F%2Fddulmdacvcnkdkzwmsbz.supabase.co&key=sb_publishable_YDG_GPuhlQSsI5PAtkNDYQ_2ti_rODr";
+  "https://vibeform-studio.vercel.app/f/5c10e7f7-7ee1-48bc-a138-0ac0d9a79844?db=https%3A%2F%2Fddulmdacvcnkdkzwmsbz.supabase.co&key=sb_publishable_YDG_GPuhlQSsI5PAtkNDYQ_2ti_rODr&header=0";
 
 function IntakePage() {
   // Cache-buster fixado no momento da montagem: cada abertura da página
