@@ -55,15 +55,21 @@ function IntakePage() {
         <h1 className="text-2xl font-bold">Vamos planejar sua viagem ✈️</h1>
         <p className="mt-1 text-sm text-muted-foreground">Preencha e receba uma proposta personalizada.</p>
 
-        <iframe
-          key={freshSrc}
-          src={freshSrc}
-          title="Formulário de captação"
-          width="100%"
-          height="600"
-          className="mt-6 w-full rounded-[10px] border-none"
-          style={{ overflow: "hidden" }}
-        />
+        {freshSrc ? (
+          <iframe
+            key={freshSrc}
+            src={freshSrc}
+            title="Formulário de captação"
+            width="100%"
+            height="600"
+            className="mt-6 w-full rounded-[10px] border-none"
+            style={{ overflow: "hidden" }}
+          />
+        ) : (
+          <div className="mt-6 flex h-[600px] w-full items-center justify-center rounded-[10px] bg-muted/40">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        )}
 
         <Link
           to="/auth"
