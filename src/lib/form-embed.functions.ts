@@ -10,7 +10,13 @@ import { z } from "zod";
 export const getPublicFormEmbed = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ agency: z.string().optional() }).parse(data ?? {}))
   .handler(async ({ data }): Promise<{ src: string | null }> => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { createClient } = await import("@supabase/supabase-js");
+    const supabaseAdmin = createClient(
+      process.env.SUPABASE_URL!,
+      process.env.SUPABASE_PUBLISHABLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+
 
     // Resolve a agência: por slug (param `a`) ou a primeira cadastrada.
     let agencyId: string | null = null;
