@@ -29,6 +29,13 @@ import {
   DEFAULT_CONFIG as DEFAULT_GMAIL_CONFIG,
   type GmailConfig,
 } from "@/lib/gmail-config";
+import {
+  getFormConfig,
+  saveFormConfig,
+  extractIframeSrc,
+  DEFAULT_CONFIG as DEFAULT_FORM_CONFIG,
+  type FormConfig,
+} from "@/lib/form-config";
 import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
   createTask,
@@ -434,6 +441,19 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
           <PaymentsCard />
         </CollapsibleSection>
       )}
+
+      {isAdmin && (
+        <CollapsibleSection
+          icon={FileText}
+          color="#2563eb"
+          title="Formulários"
+          subtitle="Defina o código iframe do formulário usado na página de captação"
+        >
+          <FormsCard />
+        </CollapsibleSection>
+      )}
+
+
 
 
       <p className="text-xs text-muted-foreground">
@@ -1062,6 +1082,71 @@ function GmailCard() {
     </div>
   );
 }
+
+
+function FormsCard() {
+  const [config, setConfig] = useState<FormConfig>(DEFAULT_FORM_CONFIG);
+  const [saving, setSaving] = useState(false);
+  const previewSrc = extractIframeSrc(config.embedCode);
+
+  useEffect(() => {
+    getFormConfig().then(setConfig);
+  }, []);
+
+  async function save() {
+    if (config.embedCode.trim() && !extractIframeSrc(config.embedCode)) {
+      toast.error("Não foi possível encontrar o src do iframe. Cole o código completo.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveFormConfig({ embedCode: config.embedCode.trim() });
+      toast.success("Formulário salvo. A página de captação já usa este código.");
+    } catch {
+      toast.error("Não foi possível salvar o formulário.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Cole o código <code>&lt;iframe&gt;</code> do seu formulário. O sistema lê o endereço dele
+        para exibir na página pública de captação (<code>/intake</code>).
+      </p>
+
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">Código do iframe</span>
+        <textarea
+          value={config.embedCode}
+          onChange={(e) => setConfig((c) => ({ ...c, embedCode: e.target.value }))}
+          rows={5}
+          placeholder='<iframe src="https://..." width="100%" height="600"></iframe>'
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+        />
+      </label>
+
+      {previewSrc && (
+        <p className="break-all text-xs text-muted-foreground">
+          Endereço detectado: <span className="font-medium text-foreground">{previewSrc}</span>
+        </p>
+      )}
+
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? "Salvando…" : "Salvar"}
+      </button>
+    </div>
+  );
+}
+
+
 
 
 function PaymentsCard() {
