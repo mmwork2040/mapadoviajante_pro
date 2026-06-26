@@ -442,6 +442,19 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         </CollapsibleSection>
       )}
 
+      {isAdmin && (
+        <CollapsibleSection
+          icon={FileText}
+          color="#2563eb"
+          title="Formulários"
+          subtitle="Defina o código iframe do formulário usado na página de captação"
+        >
+          <FormsCard />
+        </CollapsibleSection>
+      )}
+
+
+
 
       <p className="text-xs text-muted-foreground">
         Logado como <strong>{member?.name}</strong> ({member?.role}).
