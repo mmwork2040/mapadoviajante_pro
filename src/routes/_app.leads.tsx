@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info } from "lucide-react";
 import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead } from "@/lib/services";
@@ -354,6 +354,14 @@ export function NewLeadModal({
   const [form, setForm] = useState<WizardForm>(lead ? leadToForm(lead) : EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<WizardForm>) => setForm((f) => ({ ...f, ...patch }));
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   function next() {
     if (step === 0 && !form.name.trim()) {
