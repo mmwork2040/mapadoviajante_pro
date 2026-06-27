@@ -355,6 +355,14 @@ export function NewLeadModal({
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<WizardForm>) => setForm((f) => ({ ...f, ...patch }));
 
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   function next() {
     if (step === 0 && !form.name.trim()) {
       toast.error("Informe o nome completo.");
