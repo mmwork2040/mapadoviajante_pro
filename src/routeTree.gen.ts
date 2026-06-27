@@ -21,6 +21,7 @@ import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
+import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
 import { Route as AppLeadsLeadIdRouteImport } from './routes/_app.leads.$leadId'
@@ -84,6 +85,11 @@ const AppRoteirosIndexRoute = AppRoteirosIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoteirosRoute,
 } as any)
+const ApiPublicN8nLeadRoute = ApiPublicN8nLeadRouteImport.update({
+  id: '/api/public/n8n-lead',
+  path: '/api/public/n8n-lead',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   id: '/api/public/asaas-webhook',
   path: '/api/public/asaas-webhook',
@@ -114,6 +120,7 @@ export interface FileRoutesByFullPath {
   '/leads/$leadId': typeof AppLeadsLeadIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -129,6 +136,7 @@ export interface FileRoutesByTo {
   '/leads/$leadId': typeof AppLeadsLeadIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/roteiros': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesById {
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   '/_app/leads/$leadId': typeof AppLeadsLeadIdRoute
   '/_app/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/_app/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRouteTypes {
@@ -165,6 +174,7 @@ export interface FileRouteTypes {
     | '/leads/$leadId'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/n8n-lead'
     | '/roteiros/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -180,6 +190,7 @@ export interface FileRouteTypes {
     | '/leads/$leadId'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/n8n-lead'
     | '/roteiros'
   id:
     | '__root__'
@@ -197,6 +208,7 @@ export interface FileRouteTypes {
     | '/_app/leads/$leadId'
     | '/_app/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/n8n-lead'
     | '/_app/roteiros/'
   fileRoutesById: FileRoutesById
 }
@@ -207,6 +219,7 @@ export interface RootRouteChildren {
   IntakeRoute: typeof IntakeRoute
   ViajanteIdRoute: typeof ViajanteIdRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
+  ApiPublicN8nLeadRoute: typeof ApiPublicN8nLeadRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -295,6 +308,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRoteirosIndexRouteImport
       parentRoute: typeof AppRoteirosRoute
     }
+    '/api/public/n8n-lead': {
+      id: '/api/public/n8n-lead'
+      path: '/api/public/n8n-lead'
+      fullPath: '/api/public/n8n-lead'
+      preLoaderRoute: typeof ApiPublicN8nLeadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/asaas-webhook': {
       id: '/api/public/asaas-webhook'
       path: '/api/public/asaas-webhook'
@@ -372,6 +392,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntakeRoute: IntakeRoute,
   ViajanteIdRoute: ViajanteIdRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
+  ApiPublicN8nLeadRoute: ApiPublicN8nLeadRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
