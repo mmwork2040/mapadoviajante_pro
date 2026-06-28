@@ -157,7 +157,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             agency_id: agencyId,
             name,
             email,
-            phone: s(d.whatsapp) ?? s(d.phone),
+            phone: s(d.whatsapp) ?? s(d.telefone) ?? s(d.phone),
             destination,
             value: value ?? 0,
             origin: s(d.utm_source) ?? s(d.servico) ?? "n8n",
