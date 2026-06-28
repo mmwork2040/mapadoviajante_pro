@@ -34,11 +34,32 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           return new Response("Unauthorized", { status: 401 });
         }
 
+        // Lê o corpo como texto e tenta parsear de forma tolerante:
+        // remove BOM/espaços, aceita JSON puro, ou form-urlencoded.
         let raw: any;
+        const body = (await request.text()).replace(/^\uFEFF/, "").trim();
+        if (!body) {
+          return new Response("Empty body", { status: 400 });
+        }
         try {
-          raw = await request.json();
+          raw = JSON.parse(body);
         } catch {
-          return new Response("Invalid JSON", { status: 400 });
+          const ct = request.headers.get("content-type") ?? "";
+          if (ct.includes("application/x-www-form-urlencoded")) {
+            raw = Object.fromEntries(new URLSearchParams(body));
+          } else {
+            // Tenta extrair o primeiro bloco JSON de um texto misto.
+            const m = body.match(/[{[][\s\S]*[}\]]/);
+            if (m) {
+              try {
+                raw = JSON.parse(m[0]);
+              } catch {
+                return new Response("Invalid JSON", { status: 400 });
+              }
+            } else {
+              return new Response("Invalid JSON", { status: 400 });
+            }
+          }
         }
 
         // Aceita o payload direto, dentro de { body } ou como array [{...}].
