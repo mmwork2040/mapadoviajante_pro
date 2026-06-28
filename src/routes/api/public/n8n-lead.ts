@@ -103,13 +103,14 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           trip_type: s(d.tipo_viajante) ?? s(d.perfil_viajante),
           loyalty_programs: s(d.milhas_programa),
           points_miles: s(d.conhecimento_milhas),
-          hotel_category: s(d.hospedagem),
+          hotel_category: s(d.hospedagem) ?? s(d.tipo_hospedagem),
           preferences: [
             s(d.restaurantes) && `Restaurantes: ${s(d.restaurantes)}`,
             s(d.sala_vip) && `Sala VIP: ${s(d.sala_vip)}`,
-            s(d.mala) && `Mala: ${s(d.mala)}`,
+            (s(d.mala) ?? s(d.despachar_mala)) && `Mala: ${s(d.mala) ?? s(d.despachar_mala)}`,
             s(d.flexibilidade) && `Flexibilidade: ${s(d.flexibilidade)}`,
           ]
+
             .filter(Boolean)
             .join(" | ") || undefined,
           departure_airport: s(d.aeroporto_partida),
