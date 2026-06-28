@@ -18,10 +18,24 @@ function isNewKey(v: string) {
 }
 
 function cleanSecretValue(value: string) {
-  return value
+  const cleaned = value
     .trim()
-    .replace(/^['"]|['"]$/g, "")
+    .replace(/^['"`]|['"`]$/g, "")
+    .replace(/^Bearer\s+/i, "")
     .trim();
+
+  const envAssignment = cleaned.match(
+    /(?:SUPABASE_SERVICE_ROLE_KEY|N8N_SUPABASE_SERVICE_KEY)\s*=\s*['"]?([^'"\s]+)['"]?/,
+  );
+  if (envAssignment?.[1]) return envAssignment[1].trim();
+
+  const secretKey = cleaned.match(/\bsb_secret_[A-Za-z0-9_-]+\b/);
+  if (secretKey?.[0]) return secretKey[0];
+
+  const jwt = cleaned.match(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/);
+  if (jwt?.[0]) return jwt[0];
+
+  return cleaned;
 }
 
 function getJwtRole(key: string): string | null {
@@ -43,27 +57,15 @@ function getJwtRole(key: string): string | null {
   }
 }
 
-function getServiceKey() {
-  const candidates = [
-    process.env.SUPABASE_SERVICE_ROLE_KEY,
-    process.env.N8N_SUPABASE_SERVICE_KEY,
+function getServiceKeyCandidates() {
+  return [
+    { name: "SUPABASE_SERVICE_ROLE_KEY", raw: process.env.SUPABASE_SERVICE_ROLE_KEY },
+    { name: "N8N_SUPABASE_SERVICE_KEY", raw: process.env.N8N_SUPABASE_SERVICE_KEY },
   ]
-    .filter((key): key is string => Boolean(key))
-    .map(cleanSecretValue)
-    .filter(Boolean);
-
-  return candidates.find((key) => getJwtRole(key) === "service_role") ?? null;
-}
-
-function getKeyDiagnostics() {
-  return ["SUPABASE_SERVICE_ROLE_KEY", "N8N_SUPABASE_SERVICE_KEY"].map((name) => {
-    const raw = process.env[name];
-    const key = raw ? cleanSecretValue(raw) : "";
-    return {
-      name,
-      present: Boolean(raw),
-      role: key ? getJwtRole(key) : null,
-      format: key.startsWith("sb_secret_")
+    .map(({ name, raw }) => {
+      const key = raw ? cleanSecretValue(raw) : "";
+      const role = key ? getJwtRole(key) : null;
+      const format = key.startsWith("sb_secret_")
         ? "sb_secret"
         : key.startsWith("sb_publishable_")
           ? "sb_publishable"
@@ -71,9 +73,36 @@ function getKeyDiagnostics() {
             ? "jwt"
             : key
               ? "unknown"
-              : "missing",
-    };
-  });
+              : "missing";
+      return { name, present: Boolean(raw), key, role, format };
+    })
+    .filter((candidate) => candidate.key);
+}
+
+function getServiceKey() {
+  const candidates = getServiceKeyCandidates();
+
+  return (
+    candidates.find((candidate) => candidate.role === "service_role")?.key ??
+    candidates.find((candidate) => candidate.format === "sb_secret")?.key ??
+    candidates.find(
+      (candidate) => candidate.role !== "anon" && candidate.format !== "sb_publishable",
+    )?.key ??
+    null
+  );
+}
+
+function getKeyDiagnostics() {
+  const candidates = getServiceKeyCandidates();
+  const names = new Set(candidates.map((candidate) => candidate.name));
+  const missing = ["SUPABASE_SERVICE_ROLE_KEY", "N8N_SUPABASE_SERVICE_KEY"]
+    .filter((name) => !names.has(name))
+    .map((name) => ({ name, present: false, role: null, format: "missing" }));
+
+  return [
+    ...candidates.map(({ name, present, role, format }) => ({ name, present, role, format })),
+    ...missing,
+  ];
 }
 
 function getAdminClient() {
