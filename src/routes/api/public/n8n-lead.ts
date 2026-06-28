@@ -78,13 +78,21 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           return new Response("No agency found", { status: 422 });
         }
 
-        const dataIda = s(d.data_ida);
-        const dataVolta = s(d.data_volta);
+        // Aceita "período" (ex: "2026-10-01 à 2026-10-11") além de data_ida/data_volta.
+        const periodo = s(d["período"]) ?? s(d.periodo);
+        let dataIda = s(d.data_ida);
+        let dataVolta = s(d.data_volta);
+        if ((!dataIda || !dataVolta) && periodo) {
+          const parts = periodo.split(/\s*(?:à|a|até|-|—|–)\s*/i).map((x) => x.trim());
+          dataIda = dataIda ?? parts[0];
+          dataVolta = dataVolta ?? parts[1];
+        }
         const travelDates =
           dataIda || dataVolta
             ? [dataIda, dataVolta].filter(Boolean).join(" a ")
-            : s(d.travel_dates);
+            : (periodo ?? s(d.travel_dates));
         const passengers = num(d.viajantes) ?? num(d.passageiros);
+
 
         const notesParts = [s(d.observacoes), s(d.nao_abre_mao)].filter(Boolean);
 
