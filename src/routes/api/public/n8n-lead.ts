@@ -99,7 +99,11 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           return new Response("Missing 'nome'", { status: 400 });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const supabaseAdmin = getAdminClient();
+        if (!supabaseAdmin) {
+          console.error("n8n-lead: missing SUPABASE_SERVICE_ROLE_KEY");
+          return new Response("Server not configured", { status: 503 });
+        }
 
         // Resolve a agência: por id, por slug, ou a primeira cadastrada.
         let agencyId = s(d.agency_id);
