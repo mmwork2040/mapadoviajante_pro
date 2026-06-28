@@ -121,13 +121,33 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
 
         const value = num(d.orcamento_total) ?? num(d.orcamento_passagem_valor);
         const destination = s(d.destino) ?? s(d.destination);
+        const email = s(d.email);
+
+        // Verifica se o lead já existe (mesma agência, mesmo e-mail).
+        if (email) {
+          const { data: existing } = await (supabaseAdmin as any)
+            .from("crm_leads")
+            .select("id")
+            .eq("agency_id", agencyId)
+            .ilike("email", email)
+            .maybeSingle();
+          if (existing?.id) {
+            return Response.json({
+              ok: true,
+              lead_id: existing.id,
+              itinerary_id: null,
+              ready_for_itinerary: false,
+              already_exists: true,
+            });
+          }
+        }
 
         const { data: lead, error } = await (supabaseAdmin as any)
           .from("crm_leads")
           .insert({
             agency_id: agencyId,
             name,
-            email: s(d.email),
+            email,
             phone: s(d.whatsapp) ?? s(d.phone),
             destination,
             value: value ?? 0,
@@ -143,6 +163,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           console.error("n8n-lead insert error", error);
           return new Response("Insert failed", { status: 500 });
         }
+
 
         // Cria um roteiro em rascunho se houver dados mínimos.
         const readyForItinerary = Boolean(destination && travelDates && passengers);
