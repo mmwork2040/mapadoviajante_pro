@@ -17,9 +17,29 @@ function isNewKey(v: string) {
   return v.startsWith("sb_publishable_") || v.startsWith("sb_secret_");
 }
 
+function getJwtRole(key: string): string | null {
+  try {
+    if (isNewKey(key)) return key.startsWith("sb_secret_") ? "service_role" : "anon";
+    const [, payload] = key.split(".");
+    if (!payload) return null;
+    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof decoded?.role === "string" ? decoded.role : null;
+  } catch {
+    return null;
+  }
+}
+
+function getServiceKey() {
+  const candidates = [
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    process.env.N8N_SUPABASE_SERVICE_KEY,
+  ].filter((key): key is string => Boolean(key));
+
+  return candidates.find((key) => getJwtRole(key) === "service_role") ?? null;
+}
+
 function getAdminClient() {
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.N8N_SUPABASE_SERVICE_KEY;
+  const key = getServiceKey();
   if (!key) return null;
   return createClient(SUPABASE_URL, key, {
     global: {
@@ -101,8 +121,8 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
 
         const supabaseAdmin = getAdminClient();
         if (!supabaseAdmin) {
-          console.error("n8n-lead: missing SUPABASE_SERVICE_ROLE_KEY");
-          return new Response("Server not configured", { status: 503 });
+          console.error("n8n-lead: missing valid service_role key");
+          return new Response("Server not configured: invalid service_role key", { status: 503 });
         }
 
         // Resolve a agência: por id, por slug, ou a primeira cadastrada.
