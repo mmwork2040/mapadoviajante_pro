@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
 
 // Endpoint público para o n8n enviar leads (HTTP Request node).
 //   POST /api/public/n8n-lead
@@ -6,8 +7,35 @@ import { createFileRoute } from "@tanstack/react-router";
 //   Body: JSON do formulário (campos em português, conforme webhook do n8n).
 //
 // A rota /api/public/* não exige autenticação; por isso validamos o segredo
-// compartilhado e usamos o cliente admin (service role) para gravar, já que o
-// n8n não possui sessão de usuário.
+// compartilhado e usamos a service role key para gravar, já que o n8n não
+// possui sessão de usuário.
+
+const SUPABASE_URL =
+  process.env.SUPABASE_URL ?? "https://ddulmdacvcnkdkzwmsbz.supabase.co";
+
+function isNewKey(v: string) {
+  return v.startsWith("sb_publishable_") || v.startsWith("sb_secret_");
+}
+
+function getAdminClient() {
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.N8N_SUPABASE_SERVICE_KEY;
+  if (!key) return null;
+  return createClient(SUPABASE_URL, key, {
+    global: {
+      fetch: (input, init) => {
+        const headers = new Headers(init?.headers);
+        if (isNewKey(key) && headers.get("Authorization") === `Bearer ${key}`) {
+          headers.delete("Authorization");
+        }
+        headers.set("apikey", key);
+        return fetch(input as any, { ...init, headers });
+      },
+    },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
 
 function s(v: unknown): string | undefined {
   if (v === null || v === undefined) return undefined;
