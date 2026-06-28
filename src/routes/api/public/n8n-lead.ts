@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createClient } from "@supabase/supabase-js";
 
 // Endpoint público para o n8n enviar leads (HTTP Request node).
 //   POST /api/public/n8n-lead
@@ -9,120 +8,6 @@ import { createClient } from "@supabase/supabase-js";
 // A rota /api/public/* não exige autenticação; por isso validamos o segredo
 // compartilhado e usamos a service role key para gravar, já que o n8n não
 // possui sessão de usuário.
-
-const SUPABASE_URL =
-  process.env.SUPABASE_URL ?? "https://ddulmdacvcnkdkzwmsbz.supabase.co";
-
-function isNewKey(v: string) {
-  return v.startsWith("sb_publishable_") || v.startsWith("sb_secret_");
-}
-
-function cleanSecretValue(value: string) {
-  const cleaned = value
-    .trim()
-    .replace(/^['"`]|['"`]$/g, "")
-    .replace(/^Bearer\s+/i, "")
-    .trim();
-
-  const envAssignment = cleaned.match(
-    /(?:SUPABASE_SERVICE_ROLE_KEY|N8N_SUPABASE_SERVICE_KEY)\s*=\s*['"]?([^'"\s]+)['"]?/,
-  );
-  if (envAssignment?.[1]) return envAssignment[1].trim();
-
-  const secretKey = cleaned.match(/\bsb_secret_[A-Za-z0-9_-]+\b/);
-  if (secretKey?.[0]) return secretKey[0];
-
-  const jwt = cleaned.match(/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/);
-  if (jwt?.[0]) return jwt[0];
-
-  return cleaned;
-}
-
-function getJwtRole(key: string): string | null {
-  try {
-    key = cleanSecretValue(key);
-    if (isNewKey(key)) return key.startsWith("sb_secret_") ? "service_role" : "anon";
-    const [, payload] = key.split(".");
-    if (!payload) return null;
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
-    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
-    const json =
-      typeof atob === "function"
-        ? atob(padded)
-        : Buffer.from(padded, "base64").toString("utf8");
-    const decoded = JSON.parse(json);
-    return typeof decoded?.role === "string" ? decoded.role : null;
-  } catch {
-    return null;
-  }
-}
-
-function getServiceKeyCandidates() {
-  return [
-    { name: "SUPABASE_SERVICE_ROLE_KEY", raw: process.env.SUPABASE_SERVICE_ROLE_KEY },
-    { name: "N8N_SUPABASE_SERVICE_KEY", raw: process.env.N8N_SUPABASE_SERVICE_KEY },
-  ]
-    .map(({ name, raw }) => {
-      const key = raw ? cleanSecretValue(raw) : "";
-      const role = key ? getJwtRole(key) : null;
-      const format = key.startsWith("sb_secret_")
-        ? "sb_secret"
-        : key.startsWith("sb_publishable_")
-          ? "sb_publishable"
-          : key.split(".").length === 3
-            ? "jwt"
-            : key
-              ? "unknown"
-              : "missing";
-      return { name, present: Boolean(raw), key, role, format };
-    })
-    .filter((candidate) => candidate.key);
-}
-
-function getServiceKey() {
-  const candidates = getServiceKeyCandidates();
-
-  return (
-    candidates.find((candidate) => candidate.role === "service_role")?.key ??
-    candidates.find((candidate) => candidate.format === "sb_secret")?.key ??
-    candidates.find(
-      (candidate) => candidate.role !== "anon" && candidate.format !== "sb_publishable",
-    )?.key ??
-    null
-  );
-}
-
-function getKeyDiagnostics() {
-  const candidates = getServiceKeyCandidates();
-  const names = new Set(candidates.map((candidate) => candidate.name));
-  const missing = ["SUPABASE_SERVICE_ROLE_KEY", "N8N_SUPABASE_SERVICE_KEY"]
-    .filter((name) => !names.has(name))
-    .map((name) => ({ name, present: false, role: null, format: "missing" }));
-
-  return [
-    ...candidates.map(({ name, present, role, format }) => ({ name, present, role, format })),
-    ...missing,
-  ];
-}
-
-function getAdminClient() {
-  const key = getServiceKey();
-  if (!key) return null;
-  return createClient(SUPABASE_URL, key, {
-    global: {
-      fetch: (input, init) => {
-        const headers = new Headers(init?.headers);
-        if (isNewKey(key) && headers.get("Authorization") === `Bearer ${key}`) {
-          headers.delete("Authorization");
-        }
-        headers.set("apikey", key);
-        return fetch(input as any, { ...init, headers });
-      },
-    },
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
 
 function s(v: unknown): string | undefined {
   if (v === null || v === undefined) return undefined;
@@ -186,14 +71,14 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           return new Response("Missing 'nome'", { status: 400 });
         }
 
-        const supabaseAdmin = getAdminClient();
-        if (!supabaseAdmin) {
-          const diagnostics = getKeyDiagnostics();
-          console.error("n8n-lead: missing valid service_role key", diagnostics);
+        let supabaseAdmin: Awaited<ReturnType<typeof import("@/integrations/supabase/client.server")>>["supabaseAdmin"];
+        try {
+          ({ supabaseAdmin } = await import("@/integrations/supabase/client.server"));
+        } catch (error) {
+          console.error("n8n-lead: supabase admin client unavailable", error);
           return Response.json(
             {
-              error: "Server not configured: invalid service_role key",
-              details: diagnostics,
+              error: "Server not configured: missing SUPABASE_SERVICE_ROLE_KEY",
             },
             { status: 503 },
           );
