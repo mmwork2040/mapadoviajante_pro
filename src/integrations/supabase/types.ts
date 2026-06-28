@@ -2246,6 +2246,7 @@ export type Database = {
           name: string
         }[]
       }
+      get_shared_itinerary: { Args: { _id: string }; Returns: Json }
       get_user_agency_id: { Args: never; Returns: string }
       get_user_member_id: { Args: never; Returns: string }
       has_role: {
