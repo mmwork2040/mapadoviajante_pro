@@ -1,7 +1,7 @@
 import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Calendar, Users } from "lucide-react";
-import { fetchItineraryById } from "@/lib/services";
+import { fetchPublicItinerary } from "@/lib/services";
 import { formatDate } from "@/lib/ui";
 
 export const Route = createFileRoute("/viajante/$id")({
@@ -13,7 +13,7 @@ function TravelerView() {
   const { id } = useParams({ from: "/viajante/$id" });
   const { data: it, isLoading } = useQuery({
     queryKey: ["traveler-itinerary", id],
-    queryFn: () => fetchItineraryById(id),
+    queryFn: () => fetchPublicItinerary(id),
   });
 
   if (isLoading)
