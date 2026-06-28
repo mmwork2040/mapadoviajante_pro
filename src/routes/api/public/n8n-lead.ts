@@ -17,8 +17,16 @@ function isNewKey(v: string) {
   return v.startsWith("sb_publishable_") || v.startsWith("sb_secret_");
 }
 
+function cleanSecretValue(value: string) {
+  return value
+    .trim()
+    .replace(/^['"]|['"]$/g, "")
+    .trim();
+}
+
 function getJwtRole(key: string): string | null {
   try {
+    key = cleanSecretValue(key);
     if (isNewKey(key)) return key.startsWith("sb_secret_") ? "service_role" : "anon";
     const [, payload] = key.split(".");
     if (!payload) return null;
@@ -39,9 +47,33 @@ function getServiceKey() {
   const candidates = [
     process.env.SUPABASE_SERVICE_ROLE_KEY,
     process.env.N8N_SUPABASE_SERVICE_KEY,
-  ].filter((key): key is string => Boolean(key));
+  ]
+    .filter((key): key is string => Boolean(key))
+    .map(cleanSecretValue)
+    .filter(Boolean);
 
   return candidates.find((key) => getJwtRole(key) === "service_role") ?? null;
+}
+
+function getKeyDiagnostics() {
+  return ["SUPABASE_SERVICE_ROLE_KEY", "N8N_SUPABASE_SERVICE_KEY"].map((name) => {
+    const raw = process.env[name];
+    const key = raw ? cleanSecretValue(raw) : "";
+    return {
+      name,
+      present: Boolean(raw),
+      role: key ? getJwtRole(key) : null,
+      format: key.startsWith("sb_secret_")
+        ? "sb_secret"
+        : key.startsWith("sb_publishable_")
+          ? "sb_publishable"
+          : key.split(".").length === 3
+            ? "jwt"
+            : key
+              ? "unknown"
+              : "missing",
+    };
+  });
 }
 
 function getAdminClient() {
@@ -127,8 +159,15 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
 
         const supabaseAdmin = getAdminClient();
         if (!supabaseAdmin) {
-          console.error("n8n-lead: missing valid service_role key");
-          return new Response("Server not configured: invalid service_role key", { status: 503 });
+          const diagnostics = getKeyDiagnostics();
+          console.error("n8n-lead: missing valid service_role key", diagnostics);
+          return Response.json(
+            {
+              error: "Server not configured: invalid service_role key",
+              details: diagnostics,
+            },
+            { status: 503 },
+          );
         }
 
         // Resolve a agência: por id, por slug, ou a primeira cadastrada.
