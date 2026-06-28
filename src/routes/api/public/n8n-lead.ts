@@ -22,7 +22,13 @@ function getJwtRole(key: string): string | null {
     if (isNewKey(key)) return key.startsWith("sb_secret_") ? "service_role" : "anon";
     const [, payload] = key.split(".");
     if (!payload) return null;
-    const decoded = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(normalized.length + ((4 - (normalized.length % 4)) % 4), "=");
+    const json =
+      typeof atob === "function"
+        ? atob(padded)
+        : Buffer.from(padded, "base64").toString("utf8");
+    const decoded = JSON.parse(json);
     return typeof decoded?.role === "string" ? decoded.role : null;
   } catch {
     return null;
