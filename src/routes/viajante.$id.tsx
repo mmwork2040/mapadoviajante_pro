@@ -13,7 +13,7 @@ function TravelerView() {
   const { id } = useParams({ from: "/viajante/$id" });
   const { data: it, isLoading } = useQuery({
     queryKey: ["traveler-itinerary", id],
-    queryFn: () => fetchItineraryById(id),
+    queryFn: () => fetchPublicItinerary(id),
   });
 
   if (isLoading)
