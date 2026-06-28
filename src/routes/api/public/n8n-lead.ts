@@ -71,7 +71,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           return new Response("Missing 'nome'", { status: 400 });
         }
 
-        let supabaseAdmin: Awaited<ReturnType<typeof import("@/integrations/supabase/client.server")>>["supabaseAdmin"];
+        let supabaseAdmin: (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
         try {
           ({ supabaseAdmin } = await import("@/integrations/supabase/client.server"));
         } catch (error) {
