@@ -600,6 +600,16 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
   return (data as Itinerary[]) || [];
 }
 
+export async function fetchPublicItinerary(id: string): Promise<Itinerary | null> {
+  const { data, error } = await supabase.rpc("get_shared_itinerary", { _id: id });
+  if (error) {
+    console.error("fetchPublicItinerary:", error);
+    return null;
+  }
+  if (!data) return null;
+  return data as unknown as Itinerary;
+}
+
 export async function fetchItineraryById(id: string): Promise<Itinerary | null> {
   let itQuery = supabase.from("crm_itineraries").select("*").eq("id", id);
   if (_agencyId) itQuery = itQuery.eq("agency_id", _agencyId);
