@@ -665,12 +665,14 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
   }
 
   useEffect(() => {
-    if (open && !greeted.current) {
+    if (open) {
+      // A cada abertura, refaz a leitura geral do lead e dos roteiros atuais.
       greeted.current = true;
       setMessages([{ role: "assistant", text: buildGreeting() }]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
 
   function buildContext(): string {
     const dias = (it.days || [])
