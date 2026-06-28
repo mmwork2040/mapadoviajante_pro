@@ -110,21 +110,29 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
         if (!agencyId) {
           const slug = s(d.agency_slug) ?? s(d.agency);
           if (slug) {
-            const { data: ag } = await (supabaseAdmin as any)
+            const { data: ag, error: agErr } = await (supabaseAdmin as any)
               .from("agencies")
               .select("id")
               .eq("slug", slug)
               .maybeSingle();
+            if (agErr) {
+              console.error("n8n-lead agency-by-slug error", agErr);
+              return new Response(`Agency lookup failed: ${agErr.message}`, { status: 500 });
+            }
             agencyId = ag?.id ?? undefined;
           }
         }
         if (!agencyId) {
-          const { data: ag } = await (supabaseAdmin as any)
+          const { data: ag, error: agErr } = await (supabaseAdmin as any)
             .from("agencies")
             .select("id")
             .order("created_at", { ascending: true })
             .limit(1)
             .maybeSingle();
+          if (agErr) {
+            console.error("n8n-lead agency-first error", agErr);
+            return new Response(`Agency lookup failed: ${agErr.message}`, { status: 500 });
+          }
           agencyId = ag?.id ?? undefined;
         }
         if (!agencyId) {
