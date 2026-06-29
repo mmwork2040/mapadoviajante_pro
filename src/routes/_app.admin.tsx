@@ -1163,6 +1163,69 @@ function FormsCard() {
   );
 }
 
+function N8nCard() {
+  const [config, setConfig] = useState<N8nConfig>(DEFAULT_N8N_CONFIG);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    getN8nConfig().then(setConfig);
+  }, []);
+
+  async function save() {
+    if (!config.secret.trim()) {
+      toast.error("Informe o segredo do webhook.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveN8nConfig({ secret: config.secret.trim() });
+      toast.success("Segredo salvo. O webhook do n8n já usa este valor.");
+    } catch {
+      toast.error("Não foi possível salvar o segredo.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const endpoint =
+    (typeof window !== "undefined" ? window.location.origin : "") + "/api/public/n8n-lead";
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Defina o segredo que o n8n envia no header <code>x-webhook-secret</code>. O sistema
+        valida por este valor e identifica a sua agência automaticamente.
+      </p>
+
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">
+          Segredo do webhook (x-webhook-secret)
+        </span>
+        <input
+          value={config.secret}
+          onChange={(e) => setConfig((c) => ({ ...c, secret: e.target.value }))}
+          placeholder="Cole ou digite um segredo forte"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+        />
+      </label>
+
+      <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground">
+        <p className="mb-1 font-medium text-foreground">Endpoint (configure no n8n):</p>
+        <code className="break-all">{endpoint}</code>
+      </div>
+
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? "Salvando…" : "Salvar"}
+      </button>
+    </div>
+  );
+}
 
 
 
