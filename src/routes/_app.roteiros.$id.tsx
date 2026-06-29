@@ -11,6 +11,9 @@ import {
   useDraggable,
   useDroppable,
   pointerWithin,
+  rectIntersection,
+  closestCenter,
+  type CollisionDetection,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
@@ -68,6 +71,16 @@ const ACTIVITY_TYPES: {
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
+
+const kanbanCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+
+  const rectCollisions = rectIntersection(args);
+  if (rectCollisions.length > 0) return rectCollisions;
+
+  return closestCenter(args);
+};
 
 function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: typeof Plane }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `new:${type}` });
@@ -297,7 +310,7 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={kanbanCollisionDetection} onDragEnd={handleDragEnd}>
         <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Arraste para o dia:
@@ -449,7 +462,12 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({ id: `day:${day.id}` });
 
   return (
-    <div className="flex w-80 shrink-0 flex-col rounded-2xl border border-border bg-card p-5">
+    <div
+      ref={setDroppableRef}
+      className={`flex min-h-[24rem] w-80 shrink-0 flex-col rounded-2xl border border-border bg-card p-5 transition-colors sm:w-80 ${
+        isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
+      }`}
+    >
 
       <div className="mb-3 flex items-center justify-between gap-2">
         <input
@@ -474,8 +492,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
       </div>
       <SortableContext items={sorted.map((a) => `act:${a.id}`)} strategy={verticalListSortingStrategy}>
         <ul
-          ref={setDroppableRef}
-          className={`min-h-[3rem] space-y-2 rounded-xl p-1 transition-colors ${
+          className={`min-h-[8rem] flex-1 space-y-2 rounded-xl p-1 transition-colors ${
             isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
           }`}
         >
