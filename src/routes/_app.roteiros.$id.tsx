@@ -616,27 +616,34 @@ function DayCard({
       }`}
     >
 
-      <div className="mb-3 flex items-center justify-between gap-2">
+      <div className="mb-3 flex flex-col gap-2">
         <input
           value={dayTitle}
           onChange={(e) => setDayTitle(e.target.value)}
           onBlur={saveDayTitle}
-          className="flex-1 rounded-lg bg-transparent px-2 py-1 font-semibold outline-none hover:bg-muted/50 focus:bg-muted/50"
+          className="w-full min-w-0 rounded-lg bg-transparent px-2 py-1 font-semibold outline-none hover:bg-muted/50 focus:bg-muted/50"
         />
-        <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={extracting}
-          title="Enviar documento para a IA preencher"
-          className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-60"
-        >
-          {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
-          IA
-        </button>
-        <button onClick={removeDay} className="text-muted-foreground hover:text-destructive">
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <div className="flex items-center justify-end gap-1">
+          <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={extracting}
+            title="Enviar documento para a IA preencher"
+            className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-60"
+          >
+            {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
+            IA
+          </button>
+          <button
+            onClick={removeDay}
+            title="Excluir dia"
+            className="flex items-center rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
       <SortableContext items={sorted.map((a) => `act:${a.id}`)} strategy={verticalListSortingStrategy}>
         <ul
           className={`min-h-[8rem] flex-1 space-y-2 rounded-xl p-1 transition-colors ${
