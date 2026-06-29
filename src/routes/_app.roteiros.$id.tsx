@@ -141,6 +141,87 @@ function ItineraryDetailPage() {
     if (ok) clearItinerary.mutate();
   }
 
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const days = it?.days || [];
+
+    // Resolve target day and insertion index from the drop target.
+    let targetDayId: string | null = null;
+    let targetIndex = -1;
+    if (overId.startsWith("day:")) {
+      targetDayId = overId.slice(4);
+      const d = days.find((x) => x.id === targetDayId);
+      targetIndex = d?.activities?.length ?? 0;
+    } else if (overId.startsWith("act:")) {
+      const overActId = overId.slice(4);
+      const d = days.find((x) => (x.activities || []).some((a) => a.id === overActId));
+      if (d) {
+        targetDayId = d.id;
+        targetIndex = (d.activities || []).findIndex((a) => a.id === overActId);
+      }
+    }
+    if (!targetDayId) return;
+    const targetDay = days.find((x) => x.id === targetDayId);
+    if (!targetDay) return;
+
+    try {
+      // Drop a new block from the palette.
+      if (activeId.startsWith("new:")) {
+        const type = activeId.slice(4);
+        const meta = ACTIVITY_TYPES.find((t) => t.type === type);
+        const list = [...(targetDay.activities || [])];
+        const created = await createItineraryActivity({
+          day_id: targetDayId,
+          title: meta?.defaultTitle || "Novo item",
+          type,
+          sort_order: targetIndex,
+        });
+        if (!created) throw new Error("erro");
+        list.splice(Math.max(0, targetIndex), 0, created);
+        await Promise.all(
+          list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+        );
+        onChangeRefresh();
+        return;
+      }
+
+      // Move/reorder an existing activity.
+      if (activeId.startsWith("act:")) {
+        const movingId = activeId.slice(4);
+        const sourceDay = days.find((x) => (x.activities || []).some((a) => a.id === movingId));
+        if (!sourceDay) return;
+        const moving = (sourceDay.activities || []).find((a) => a.id === movingId)!;
+
+        if (sourceDay.id === targetDayId) {
+          const list = (targetDay.activities || []).filter((a) => a.id !== movingId);
+          list.splice(Math.max(0, targetIndex), 0, moving);
+          await Promise.all(list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })));
+        } else {
+          const srcList = (sourceDay.activities || []).filter((a) => a.id !== movingId);
+          const dstList = [...(targetDay.activities || [])];
+          dstList.splice(Math.max(0, targetIndex), 0, moving);
+          await updateItineraryActivity(movingId, { day_id: targetDayId });
+          await Promise.all([
+            ...srcList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+            ...dstList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+          ]);
+        }
+        onChangeRefresh();
+      }
+    } catch {
+      toast.error("Não foi possível mover o item.");
+    }
+  }
+
+  const onChangeRefresh = refresh;
+
+
+
   if (isError) return <QueryError message="Não foi possível carregar o roteiro." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
   if (!it) return <p>Roteiro não encontrado.</p>;
