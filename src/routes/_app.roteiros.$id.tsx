@@ -332,6 +332,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [newType, setNewType] = useState<string>("activity");
   const [dayTitle, setDayTitle] = useState(day.title || `Dia ${day.day_number}`);
   const [extracting, setExtracting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
