@@ -722,12 +722,12 @@ function SortableActivity({
       ref={setNodeRef}
       data-kanban-activity={activity.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-1 ${isDragging ? "opacity-60" : ""}`}
+      className={`flex min-w-0 items-center gap-1 ${isDragging ? "opacity-60" : ""}`}
     >
       <button
         {...listeners}
         {...attributes}
-        className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        className="shrink-0 cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
         title="Arrastar"
       >
         <GripVertical className="h-4 w-4" />
@@ -796,7 +796,7 @@ function ActivityRow({
   const TypeIcon = meta?.icon;
 
   return (
-    <div className="flex-1 space-y-1">
+    <div className="min-w-0 flex-1 space-y-1">
       <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
         <span className="flex items-center gap-2">
           <button
