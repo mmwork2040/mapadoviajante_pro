@@ -49,7 +49,41 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
-function ItineraryDetailPage() {
+type ActivityType = "flight" | "hotel" | "activity" | "transfer" | "restaurant";
+
+const ACTIVITY_TYPES: {
+  type: ActivityType;
+  label: string;
+  icon: typeof Plane;
+  defaultTitle: string;
+}[] = [
+  { type: "flight", label: "Voo", icon: Plane, defaultTitle: "Novo voo" },
+  { type: "hotel", label: "Hospedagem", icon: BedDouble, defaultTitle: "Nova hospedagem" },
+  { type: "activity", label: "Atividade", icon: MapPin, defaultTitle: "Nova atividade" },
+  { type: "transfer", label: "Transfer", icon: Car, defaultTitle: "Novo transfer" },
+  { type: "restaurant", label: "Restaurante", icon: Utensils, defaultTitle: "Refeição" },
+];
+
+const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
+  ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
+);
+
+function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: typeof Plane }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `new:${type}` });
+  return (
+    <button
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`flex cursor-grab items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-sm hover:border-primary hover:text-primary active:cursor-grabbing ${
+        isDragging ? "opacity-50" : ""
+      }`}
+    >
+      <Icon className="h-4 w-4" /> {label}
+    </button>
+  );
+}
+
   const { id } = useParams({ from: "/_app/roteiros/$id" });
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
