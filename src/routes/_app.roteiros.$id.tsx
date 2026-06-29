@@ -739,9 +739,15 @@ function SortableActivity({
 function ActivityRow({
   activity,
   onChange,
+  agencyId,
+  leadId,
+  itineraryId,
 }: {
   activity: NonNullable<ItineraryDay["activities"]>[number];
   onChange: () => void;
+  agencyId: string;
+  leadId: string | null;
+  itineraryId: string;
 }) {
   const [edit, setEdit] = useState(false);
   const [title, setTitle] = useState(activity.title);
