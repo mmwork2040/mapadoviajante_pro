@@ -445,6 +445,24 @@ function ItineraryDetailPage() {
   );
 }
 
+function AddDayDropzone({ onClick }: { onClick: () => void }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "new-day" });
+  return (
+    <button
+      ref={setNodeRef}
+      data-add-day="true"
+      onClick={onClick}
+      className={`flex w-64 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-4 text-sm font-medium transition-colors ${
+        isOver
+          ? "border-primary bg-primary/5 text-primary"
+          : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+      }`}
+    >
+      <Plus className="h-5 w-5" /> Adicionar dia
+    </button>
+  );
+}
+
 function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void }) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
