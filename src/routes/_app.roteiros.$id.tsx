@@ -447,7 +447,8 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({ id: `day:${day.id}` });
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-5">
+    <div className="flex w-80 shrink-0 flex-col rounded-2xl border border-border bg-card p-5">
+
       <div className="mb-3 flex items-center justify-between gap-2">
         <input
           value={dayTitle}
