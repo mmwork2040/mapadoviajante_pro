@@ -227,15 +227,21 @@ function ItineraryDetailPage() {
     dragStartPoint.current = null;
     const days = it?.days || [];
 
-    if (!resolvedOverId && activeId.startsWith("new:") && days.length === 0) {
+    // Drop a palette block onto an empty board OR onto the "Adicionar dia" card:
+    // create a new day and place the item in it.
+    const wantsNewDay =
+      activeId.startsWith("new:") &&
+      (resolvedOverId === "new-day" || (!resolvedOverId && days.length === 0));
+    if (wantsNewDay) {
       try {
         const type = activeId.slice(4);
         const meta = ACTIVITY_TYPES.find((t) => t.type === type);
+        const nextNumber = days.length + 1;
         const day = await createItineraryDay({
           itinerary_id: id,
-          day_number: 1,
-          title: "Dia 1",
-          sort_order: 1,
+          day_number: nextNumber,
+          title: `Dia ${nextNumber}`,
+          sort_order: nextNumber,
         });
         if (!day) throw new Error("erro");
         await createItineraryActivity({
@@ -246,12 +252,12 @@ function ItineraryDetailPage() {
         });
         refresh();
       } catch {
-        toast.error("Não foi possível criar o primeiro dia.");
+        toast.error("Não foi possível criar o dia.");
       }
       return;
     }
 
-    if (!resolvedOverId) return;
+    if (!resolvedOverId || resolvedOverId === "new-day") return;
     const overId = resolvedOverId;
 
     // Resolve target day and insertion index from the drop target.
