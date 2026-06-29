@@ -733,6 +733,80 @@ export type Database = {
           },
         ]
       }
+      crm_lead_documents: {
+        Row: {
+          activity_id: string | null
+          agency_id: string
+          category: string | null
+          content: string | null
+          created_at: string
+          file_path: string
+          id: string
+          itinerary_id: string | null
+          lead_id: string | null
+          mime_type: string | null
+          name: string
+          size: number | null
+        }
+        Insert: {
+          activity_id?: string | null
+          agency_id: string
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          file_path: string
+          id?: string
+          itinerary_id?: string | null
+          lead_id?: string | null
+          mime_type?: string | null
+          name: string
+          size?: number | null
+        }
+        Update: {
+          activity_id?: string | null
+          agency_id?: string
+          category?: string | null
+          content?: string | null
+          created_at?: string
+          file_path?: string
+          id?: string
+          itinerary_id?: string | null
+          lead_id?: string | null
+          mime_type?: string | null
+          name?: string
+          size?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_lead_documents_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "crm_itinerary_activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_documents_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_documents_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "crm_itineraries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_lead_documents_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_leads: {
         Row: {
           agency_id: string
