@@ -218,15 +218,40 @@ function ItineraryDetailPage() {
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
+    const activeId = String(active.id);
     const start = dragStartPoint.current;
     const point = start ? { x: start.x + event.delta.x, y: start.y + event.delta.y } : null;
     const resolvedOverId = over ? String(over.id) : getDropIdFromPoint(point) || lastOverId.current;
     lastOverId.current = null;
     dragStartPoint.current = null;
-    if (!resolvedOverId) return;
-    const activeId = String(active.id);
-    const overId = resolvedOverId;
     const days = it?.days || [];
+
+    if (!resolvedOverId && activeId.startsWith("new:") && days.length === 0) {
+      try {
+        const type = activeId.slice(4);
+        const meta = ACTIVITY_TYPES.find((t) => t.type === type);
+        const day = await createItineraryDay({
+          itinerary_id: id,
+          day_number: 1,
+          title: "Dia 1",
+          sort_order: 1,
+        });
+        if (!day) throw new Error("erro");
+        await createItineraryActivity({
+          day_id: day.id,
+          title: meta?.defaultTitle || "Novo item",
+          type,
+          sort_order: 0,
+        });
+        refresh();
+      } catch {
+        toast.error("Não foi possível criar o primeiro dia.");
+      }
+      return;
+    }
+
+    if (!resolvedOverId) return;
+    const overId = resolvedOverId;
 
     // Resolve target day and insertion index from the drop target.
     let targetDayId: string | null = null;
