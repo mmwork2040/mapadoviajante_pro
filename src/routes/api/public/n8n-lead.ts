@@ -26,13 +26,18 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.N8N_LEAD_WEBHOOK_SECRET;
+        const envSecret = process.env.N8N_LEAD_WEBHOOK_SECRET;
         const provided =
           request.headers.get("x-webhook-secret") ??
           new URL(request.url).searchParams.get("secret");
-        if (!secret || provided !== secret) {
+        if (!provided) {
           return new Response("Unauthorized", { status: 401 });
         }
+        // O segredo pode vir do env (global) ou da configuração da agência
+        // (Administração → Integração n8n). A validação por banco acontece
+        // após carregar o supabaseAdmin, pois identifica também a agência.
+        const envMatch = Boolean(envSecret) && provided === envSecret;
+
 
         // Lê o corpo como texto e tenta parsear de forma tolerante:
         // remove BOM/espaços, aceita JSON puro, ou form-urlencoded.
