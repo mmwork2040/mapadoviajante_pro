@@ -36,6 +36,12 @@ import {
   DEFAULT_CONFIG as DEFAULT_FORM_CONFIG,
   type FormConfig,
 } from "@/lib/form-config";
+import {
+  getN8nConfig,
+  saveN8nConfig,
+  DEFAULT_N8N_CONFIG,
+  type N8nConfig,
+} from "@/lib/n8n-config";
 import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
   createTask,
