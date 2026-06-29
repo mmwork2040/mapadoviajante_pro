@@ -788,40 +788,144 @@ function ActivityRow({
   const TypeIcon = meta?.icon;
 
   return (
-    <div className="flex flex-1 items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
-      <span className="flex items-center gap-2">
-        <button
-          onClick={toggleDone}
-          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-            done ? "border-primary bg-primary text-primary-foreground" : "border-input"
-          }`}
-        >
-          {done && <Check className="h-3 w-3" />}
-        </button>
-        {TypeIcon && <TypeIcon className="h-4 w-4 shrink-0 text-primary" />}
-        <span className={done ? "text-muted-foreground line-through" : ""}>
-          {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
-          {activity.title}
-          {activity.location && <span className="ml-2 text-xs text-muted-foreground">· {activity.location}</span>}
+    <div className="flex-1 space-y-1">
+      <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
+        <span className="flex items-center gap-2">
+          <button
+            onClick={toggleDone}
+            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+              done ? "border-primary bg-primary text-primary-foreground" : "border-input"
+            }`}
+          >
+            {done && <Check className="h-3 w-3" />}
+          </button>
+          {TypeIcon && <TypeIcon className="h-4 w-4 shrink-0 text-primary" />}
+          <span className={done ? "text-muted-foreground line-through" : ""}>
+            {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
+            {activity.title}
+            {activity.location && <span className="ml-2 text-xs text-muted-foreground">· {activity.location}</span>}
+          </span>
         </span>
-      </span>
-      <span className="flex gap-1">
-        <button onClick={() => setEdit(true)} className="text-muted-foreground hover:text-primary">
-          <Pencil className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={async () => {
-            await deleteItineraryActivity(activity.id);
-            onChange();
-          }}
-          className="text-muted-foreground hover:text-destructive"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </span>
+        <span className="flex gap-1">
+          <button onClick={() => setEdit(true)} className="text-muted-foreground hover:text-primary">
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={async () => {
+              await deleteItineraryActivity(activity.id);
+              onChange();
+            }}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </span>
+      </div>
+      <ActivityDocuments
+        activityId={activity.id}
+        agencyId={agencyId}
+        leadId={leadId}
+        itineraryId={itineraryId}
+      />
     </div>
   );
 }
+
+function ActivityDocuments({
+  activityId,
+  agencyId,
+  leadId,
+  itineraryId,
+}: {
+  activityId: string;
+  agencyId: string;
+  leadId: string | null;
+  itineraryId: string;
+}) {
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [category, setCategory] = useState<string>(DOCUMENT_CATEGORIES[0].value);
+  const [uploading, setUploading] = useState(false);
+  const { data: docs = [] } = useQuery({
+    queryKey: ["activity-docs", activityId],
+    queryFn: () => fetchActivityDocuments(activityId),
+  });
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      await uploadLeadDocument({ file, agencyId, leadId, itineraryId, activityId, category });
+      toast.success("Documento anexado à biblioteca do lead.");
+      qc.invalidateQueries({ queryKey: ["activity-docs", activityId] });
+      if (leadId) qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao anexar documento.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function open(doc: LeadDocument) {
+    const url = await getDocumentUrl(doc.file_path);
+    if (url) window.open(url, "_blank");
+    else toast.error("Não foi possível abrir o documento.");
+  }
+
+  async function remove(doc: LeadDocument) {
+    const ok = await deleteLeadDocument(doc);
+    if (ok) {
+      toast.success("Documento removido.");
+      qc.invalidateQueries({ queryKey: ["activity-docs", activityId] });
+      if (leadId) qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
+    } else {
+      toast.error("Erro ao remover documento.");
+    }
+  }
+
+  return (
+    <div className="ml-1 space-y-1">
+      {docs.map((doc) => (
+        <div key={doc.id} className="flex items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
+          <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+          <button onClick={() => open(doc)} className="flex-1 truncate text-left hover:underline" title={doc.name}>
+            {doc.category && <span className="mr-1 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
+            {doc.name}
+          </button>
+          <button onClick={() => open(doc)} className="text-muted-foreground hover:text-primary" title="Abrir">
+            <Download className="h-3 w-3" />
+          </button>
+          <button onClick={() => remove(doc)} className="text-muted-foreground hover:text-destructive" title="Remover">
+            <X className="h-3 w-3" />
+          </button>
+        </div>
+      ))}
+      <div className="flex items-center gap-1">
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value)}
+          className="rounded border border-input bg-background px-1 py-0.5 text-[11px] outline-none focus:border-primary"
+        >
+          {DOCUMENT_CATEGORIES.map((c) => (
+            <option key={c.value} value={c.value}>{c.label}</option>
+          ))}
+        </select>
+        <input ref={fileRef} type="file" onChange={handleFile} className="hidden" accept="image/*,application/pdf" />
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
+        >
+          {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
+          Anexar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
 
 
