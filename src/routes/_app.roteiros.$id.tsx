@@ -632,7 +632,8 @@ function DayCard({
             className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-60"
           >
             {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
-            IA
+            Importar com IA
+
           </button>
           <button
             onClick={removeDay}
