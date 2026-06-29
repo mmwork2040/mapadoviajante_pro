@@ -15,6 +15,7 @@ import {
   closestCenter,
   type CollisionDetection,
   type DragEndEvent,
+  type DragOverEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -158,12 +159,19 @@ function ItineraryDetailPage() {
   }
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const lastOverId = useRef<string | null>(null);
+
+  function handleDragOver(event: DragOverEvent) {
+    if (event.over) lastOverId.current = String(event.over.id);
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over) return;
+    const resolvedOverId = over ? String(over.id) : lastOverId.current;
+    lastOverId.current = null;
+    if (!resolvedOverId) return;
     const activeId = String(active.id);
-    const overId = String(over.id);
+    const overId = resolvedOverId;
     const days = it?.days || [];
 
     // Resolve target day and insertion index from the drop target.
@@ -311,7 +319,18 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={kanbanCollisionDetection} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={kanbanCollisionDetection}
+        onDragStart={() => {
+          lastOverId.current = null;
+        }}
+        onDragOver={handleDragOver}
+        onDragCancel={() => {
+          lastOverId.current = null;
+        }}
+        onDragEnd={handleDragEnd}
+      >
         <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Arraste para o dia:
