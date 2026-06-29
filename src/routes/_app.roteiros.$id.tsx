@@ -186,7 +186,7 @@ function ItineraryDetailPage() {
         await Promise.all(
           list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
         );
-        onChangeRefresh();
+        refresh();
         return;
       }
 
@@ -211,14 +211,13 @@ function ItineraryDetailPage() {
             ...dstList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
           ]);
         }
-        onChangeRefresh();
+        refresh();
       }
     } catch {
       toast.error("Não foi possível mover o item.");
     }
   }
 
-  const onChangeRefresh = refresh;
 
 
 
