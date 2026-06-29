@@ -8,6 +8,7 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/leads")({
   component: LeadsRoute,
@@ -35,7 +36,27 @@ function LeadsPage() {
   const { data: leads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["leads", { search }],
     queryFn: () => fetchLeads({ search: search || undefined }),
+    refetchInterval: 15000,
+    refetchOnWindowFocus: true,
   });
+
+  // Realtime: novos leads (ex.: criados via webhook do n8n) atualizam a lista.
+  useEffect(() => {
+    const channel = supabase
+      .channel("leads-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "crm_leads" },
+        () => {
+          qc.invalidateQueries({ queryKey: ["leads"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
 
   const move = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: LeadStatus }) => {
