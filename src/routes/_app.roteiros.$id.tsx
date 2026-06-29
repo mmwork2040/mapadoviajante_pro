@@ -478,7 +478,19 @@ function AddDayDropzone({ onClick }: { onClick: () => void }) {
   );
 }
 
-function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void }) {
+function DayCard({
+  day,
+  onChange,
+  agencyId,
+  leadId,
+  itineraryId,
+}: {
+  day: ItineraryDay;
+  onChange: () => void;
+  agencyId: string;
+  leadId: string | null;
+  itineraryId: string;
+}) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
