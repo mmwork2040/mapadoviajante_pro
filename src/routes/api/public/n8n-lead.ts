@@ -89,8 +89,31 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           );
         }
 
-        // Resolve a agência: por id, por slug, ou a primeira cadastrada.
-        let agencyId = s(d.agency_id);
+        // Valida o segredo pela configuração da agência, quando não bate com o env.
+        // A chave em system_settings é "agency_cfg:{agencyId}:n8n" e o valor
+        // contém { secret }. O segredo também identifica a agência.
+        let secretAgencyId: string | undefined;
+        if (!envMatch) {
+          const { data: rows, error: cfgErr } = await (supabaseAdmin as any)
+            .from("system_settings")
+            .select("key,value")
+            .like("key", "agency_cfg:%:n8n");
+          if (cfgErr) {
+            console.error("n8n-lead secret-lookup error", cfgErr);
+            return new Response("Auth lookup failed", { status: 500 });
+          }
+          const match = (rows ?? []).find(
+            (r: any) => s(r?.value?.secret) && r.value.secret === provided,
+          );
+          if (!match) {
+            return new Response("Unauthorized", { status: 401 });
+          }
+          const parts = String(match.key).split(":");
+          secretAgencyId = parts[1];
+        }
+
+        // Resolve a agência: pelo segredo, por id, por slug, ou a primeira cadastrada.
+        let agencyId = secretAgencyId ?? s(d.agency_id);
         if (!agencyId) {
           const slug = s(d.agency_slug) ?? s(d.agency);
           if (slug) {
