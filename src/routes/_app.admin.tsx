@@ -459,6 +459,17 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         </CollapsibleSection>
       )}
 
+      {isAdmin && (
+        <CollapsibleSection
+          icon={Webhook}
+          color="#a855f7"
+          title="Integração n8n (leads)"
+          subtitle="Defina o segredo do webhook que o n8n usa para enviar leads"
+        >
+          <N8nCard />
+        </CollapsibleSection>
+      )}
+
 
 
 
