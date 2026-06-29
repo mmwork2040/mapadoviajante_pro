@@ -506,6 +506,35 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   );
 }
 
+function SortableActivity({
+  activity,
+  onChange,
+}: {
+  activity: NonNullable<ItineraryDay["activities"]>[number];
+  onChange: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `act:${activity.id}`,
+  });
+  return (
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-center gap-1 ${isDragging ? "opacity-60" : ""}`}
+    >
+      <button
+        {...listeners}
+        {...attributes}
+        className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        title="Arrastar"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <ActivityRow activity={activity} onChange={onChange} />
+    </li>
+  );
+}
+
 
 function ActivityRow({
   activity,
