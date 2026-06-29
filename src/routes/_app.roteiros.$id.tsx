@@ -649,7 +649,14 @@ function DayCard({
             </li>
           )}
           {sorted.map((a) => (
-            <SortableActivity key={a.id} activity={a} onChange={onChange} />
+            <SortableActivity
+              key={a.id}
+              activity={a}
+              onChange={onChange}
+              agencyId={agencyId}
+              leadId={leadId}
+              itineraryId={itineraryId}
+            />
           ))}
         </ul>
       </SortableContext>
