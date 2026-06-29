@@ -55,7 +55,20 @@ function createPublicSupabaseClient() {
   });
 }
 
-const FALLBACK_AGENCY_ID = "a0000000-0000-0000-0000-000000000001";
+function splitAgencyIdFromConfigKey(key: unknown): string | undefined {
+  const parts = String(key ?? "").split(":");
+  return parts.length >= 3 && parts[0] === "agency_cfg" ? parts[1] : undefined;
+}
+
+function parsePeriod(periodo: string | undefined): { start?: string; end?: string } {
+  if (!periodo) return {};
+  const isoDates = periodo.match(/\d{4}-\d{2}-\d{2}/g);
+  if (isoDates?.length) return { start: isoDates[0], end: isoDates[1] };
+  const brDates = periodo.match(/\d{1,2}\/\d{1,2}\/\d{2,4}/g);
+  if (brDates?.length) return { start: brDates[0], end: brDates[1] };
+  const parts = periodo.split(/\s+(?:à|a|até|ao|para|—|–)\s+/i).map((x) => x.trim()).filter(Boolean);
+  return { start: parts[0], end: parts[1] };
+}
 
 export const Route = createFileRoute("/api/public/n8n-lead")({
   server: {
@@ -215,16 +228,30 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             if (!match) {
               return json({ error: "Unauthorized" }, { status: 401 });
             }
-            const parts = String(match.key).split(":");
-            secretAgencyId = parts[1];
+            secretAgencyId = splitAgencyIdFromConfigKey(match.key);
           }
 
-          // Resolve a agência: pelo segredo, por id, por slug, ou a primeira cadastrada.
+          // Resolve a agência: pelo segredo, por id, por slug, pela configuração n8n ou pela env padrão.
           let agencyId =
             secretAgencyId ??
             s(d.agency_id) ??
             s(d.agencyId) ??
             s(process.env.N8N_DEFAULT_AGENCY_ID);
+
+          if (!agencyId && supabaseAdmin) {
+            const { data: rows, error: cfgErr } = await (supabaseAdmin as any)
+              .from("system_settings")
+              .select("key")
+              .like("key", "agency_cfg:%:n8n")
+              .order("updated_at", { ascending: false, nullsFirst: false })
+              .limit(1);
+            if (cfgErr) {
+              console.error("n8n-lead agency-config error", cfgErr);
+            } else {
+              agencyId = splitAgencyIdFromConfigKey(rows?.[0]?.key);
+            }
+          }
+
           if (!agencyId) {
             const slug = s(d.agency_slug) ?? s(d.agency);
             if (slug && supabaseAdmin) {
@@ -253,9 +280,11 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             }
             agencyId = ag?.id ?? undefined;
           }
-          agencyId = agencyId ?? FALLBACK_AGENCY_ID;
           if (!agencyId) {
-            return json({ error: "No agency found" }, { status: 422 });
+            return json(
+              { error: "No agency configured for this webhook" },
+              { status: 422 },
+            );
           }
 
           // Aceita "período" (ex: "2026-10-01 à 2026-10-11") além de data_ida/data_volta.
@@ -263,9 +292,9 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           let dataIda = s(d.data_ida);
           let dataVolta = s(d.data_volta);
           if ((!dataIda || !dataVolta) && periodo) {
-            const parts = periodo.split(/\s*(?:à|a|até|-|—|–)\s*/i).map((x) => x.trim());
-            dataIda = dataIda ?? parts[0];
-            dataVolta = dataVolta ?? parts[1];
+            const parsed = parsePeriod(periodo);
+            dataIda = dataIda ?? parsed.start;
+            dataVolta = dataVolta ?? parsed.end;
           }
           const travelDates =
             dataIda || dataVolta
