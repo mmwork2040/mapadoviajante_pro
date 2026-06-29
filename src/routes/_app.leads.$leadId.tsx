@@ -17,6 +17,14 @@ import {
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
+import {
+  DOCUMENT_CATEGORIES,
+  deleteLeadDocument,
+  fetchLeadDocuments,
+  getDocumentUrl,
+  uploadLeadDocument,
+  type LeadDocument,
+} from "@/lib/lead-documents";
 import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
