@@ -46,13 +46,65 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
   server: {
     handlers: {
       OPTIONS: async () => text(null as unknown as string, { status: 204 }),
-      GET: async () =>
-        json({
+      GET: async ({ request }) => {
+        // Diagnóstico (protegido pelo segredo): ?diag=1&secret=...
+        // Confirma se a service role key bypassa RLS e qual é seu papel.
+        const url = new URL(request.url);
+        if (url.searchParams.get("diag")) {
+          const envSecret = s(process.env.N8N_LEAD_WEBHOOK_SECRET);
+          const provided = s(
+            request.headers.get("x-webhook-secret") ?? url.searchParams.get("secret"),
+          );
+          if (!envSecret || provided !== envSecret) {
+            return json({ error: "Unauthorized" }, { status: 401 });
+          }
+          const raw =
+            process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.N8N_SUPABASE_SERVICE_KEY;
+          let role = "missing";
+          if (raw) {
+            try {
+              const p = raw.split(".");
+              role =
+                p.length === 3
+                  ? JSON.parse(Buffer.from(p[1], "base64").toString()).role
+                  : raw.startsWith("sb_secret_")
+                    ? "sb_secret"
+                    : "opaque";
+            } catch {
+              role = "undecodable";
+            }
+          }
+          try {
+            const { supabaseAdmin } = await import(
+              "@/integrations/supabase/client.server"
+            );
+            const { data, error } = await (supabaseAdmin as any)
+              .from("agencies")
+              .select("id")
+              .limit(5);
+            return json({
+              diag: true,
+              keyRole: role,
+              agenciesReadable: Array.isArray(data) ? data.length : 0,
+              error: error?.message ?? null,
+            });
+          } catch (e) {
+            return json({
+              diag: true,
+              keyRole: role,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
+        return json({
           ok: true,
           endpoint: "/api/public/n8n-lead",
           method: "POST",
           requiredHeaders: ["content-type: application/json", "x-webhook-secret"],
-        }),
+        });
+      },
+
+
       POST: async ({ request }) => {
         try {
           const envSecret = s(process.env.N8N_LEAD_WEBHOOK_SECRET);
