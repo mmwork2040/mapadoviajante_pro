@@ -902,10 +902,10 @@ function ActivityDocuments({
             {doc.category && <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
             <span className="truncate">{doc.name}</span>
           </button>
-          <button onClick={() => open(doc)} className="text-muted-foreground hover:text-primary" title="Abrir">
+          <button onClick={() => open(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Abrir">
             <Download className="h-3 w-3" />
           </button>
-          <button onClick={() => remove(doc)} className="text-muted-foreground hover:text-destructive" title="Remover">
+          <button onClick={() => remove(doc)} className="shrink-0 text-muted-foreground hover:text-destructive" title="Remover">
             <X className="h-3 w-3" />
           </button>
         </div>
