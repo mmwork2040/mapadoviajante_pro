@@ -696,9 +696,15 @@ function DayCard({
 function SortableActivity({
   activity,
   onChange,
+  agencyId,
+  leadId,
+  itineraryId,
 }: {
   activity: NonNullable<ItineraryDay["activities"]>[number];
   onChange: () => void;
+  agencyId: string;
+  leadId: string | null;
+  itineraryId: string;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `act:${activity.id}`,
@@ -718,7 +724,13 @@ function SortableActivity({
       >
         <GripVertical className="h-4 w-4" />
       </button>
-      <ActivityRow activity={activity} onChange={onChange} />
+      <ActivityRow
+        activity={activity}
+        onChange={onChange}
+        agencyId={agencyId}
+        leadId={leadId}
+        itineraryId={itineraryId}
+      />
     </li>
   );
 }
