@@ -46,13 +46,37 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
   server: {
     handlers: {
       OPTIONS: async () => text(null as unknown as string, { status: 204 }),
-      GET: async () =>
-        json({
+      GET: async ({ request }) => {
+        // Diagnóstico opcional: ?diag=1 verifica se o cliente admin lê agencies.
+        if (new URL(request.url).searchParams.get("diag")) {
+          try {
+            const { supabaseAdmin } = await import(
+              "@/integrations/supabase/client.server"
+            );
+            const { data, error } = await (supabaseAdmin as any)
+              .from("agencies")
+              .select("id", { count: "exact", head: false })
+              .limit(5);
+            return json({
+              diag: true,
+              agenciesReadable: Array.isArray(data) ? data.length : 0,
+              error: error?.message ?? null,
+            });
+          } catch (e) {
+            return json({
+              diag: true,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
+        return json({
           ok: true,
           endpoint: "/api/public/n8n-lead",
           method: "POST",
           requiredHeaders: ["content-type: application/json", "x-webhook-secret"],
-        }),
+        });
+      },
+
       POST: async ({ request }) => {
         try {
           const envSecret = s(process.env.N8N_LEAD_WEBHOOK_SECRET);
