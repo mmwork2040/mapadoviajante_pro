@@ -438,6 +438,11 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
     onChange();
   }
 
+  const sorted = [...(day.activities || [])].sort(
+    (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
+  );
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({ id: `day:${day.id}` });
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -461,17 +466,24 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      <ul className="space-y-2">
-        {[...(day.activities || [])]
-          .sort((a, b) => {
-            const ta = a.time ? a.time.slice(0, 5) : "99:99";
-            const tb = b.time ? b.time.slice(0, 5) : "99:99";
-            return ta.localeCompare(tb);
-          })
-          .map((a) => (
-            <ActivityRow key={a.id} activity={a} onChange={onChange} />
+      <SortableContext items={sorted.map((a) => `act:${a.id}`)} strategy={verticalListSortingStrategy}>
+        <ul
+          ref={setDroppableRef}
+          className={`min-h-[3rem] space-y-2 rounded-xl p-1 transition-colors ${
+            isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
+          }`}
+        >
+          {sorted.length === 0 && (
+            <li className="rounded-lg border-2 border-dashed border-border py-4 text-center text-xs text-muted-foreground">
+              Arraste Voos, Hospedagem ou Atividades para cá
+            </li>
+          )}
+          {sorted.map((a) => (
+            <SortableActivity key={a.id} activity={a} onChange={onChange} />
           ))}
-      </ul>
+        </ul>
+      </SortableContext>
+
       <div className="mt-3 flex gap-2">
         <input
           type="time"
