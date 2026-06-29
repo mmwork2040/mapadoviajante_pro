@@ -167,12 +167,13 @@ function ItineraryDetailPage() {
     if ("clientX" in event && "clientY" in event) {
       return { x: Number(event.clientX), y: Number(event.clientY) };
     }
-    if ("touches" in event && event.touches.length > 0) {
-      const touch = event.touches[0];
+    const touchEvent = event as TouchEvent;
+    if ("touches" in event && touchEvent.touches.length > 0) {
+      const touch = touchEvent.touches[0];
       return { x: touch.clientX, y: touch.clientY };
     }
-    if ("changedTouches" in event && event.changedTouches.length > 0) {
-      const touch = event.changedTouches[0];
+    if ("changedTouches" in event && touchEvent.changedTouches.length > 0) {
+      const touch = touchEvent.changedTouches[0];
       return { x: touch.clientX, y: touch.clientY };
     }
     return null;
