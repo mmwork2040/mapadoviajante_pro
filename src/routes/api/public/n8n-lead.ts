@@ -323,9 +323,11 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             }
           }
 
-          const { data: lead, error } = await (writeClient as any)
+          const leadId = crypto.randomUUID();
+          const { error } = await (writeClient as any)
             .from("crm_leads")
             .insert({
+              id: leadId,
               agency_id: agencyId,
               name,
               email,
@@ -336,9 +338,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
               status: "new",
               notes: notesParts.length ? notesParts.join("\n\n") : undefined,
               profile,
-            })
-            .select("id")
-            .single();
+            });
 
           if (error) {
             console.error("n8n-lead insert error", error);
@@ -354,7 +354,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
               .from("crm_itineraries")
               .insert({
                 agency_id: agencyId,
-                lead_id: lead.id,
+                lead_id: leadId,
                 title: `Roteiro ${destination}`,
                 client_name: name,
                 destination,
@@ -375,7 +375,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
 
           return json({
             ok: true,
-            lead_id: lead.id,
+            lead_id: leadId,
             itinerary_id: itineraryId,
             ready_for_itinerary: readyForItinerary,
             itinerary_created: Boolean(itineraryId),
