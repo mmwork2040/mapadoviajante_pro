@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { ArrowLeft, Send, Trash2, Plus, Check, Map, Pencil } from "lucide-react";
+import { useRef, useState } from "react";
+import { ArrowLeft, Send, Trash2, Plus, Check, Map, Pencil, FileText, Download, Paperclip, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   createItinerary,
@@ -17,6 +17,14 @@ import {
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
+import {
+  DOCUMENT_CATEGORIES,
+  deleteLeadDocument,
+  fetchLeadDocuments,
+  getDocumentUrl,
+  uploadLeadDocument,
+  type LeadDocument,
+} from "@/lib/lead-documents";
 import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
@@ -235,6 +243,10 @@ function LeadDetailPage() {
         </div>
       </div>
 
+      <DocumentLibrary leadId={leadId} agencyId={lead.agency_id} />
+
+
+
       {editOpen && (
         <NewLeadModal
           lead={lead}
@@ -245,6 +257,103 @@ function LeadDetailPage() {
             qc.invalidateQueries({ queryKey: ["leads"] });
           }}
         />
+      )}
+    </div>
+  );
+}
+
+function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: string }) {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [category, setCategory] = useState<string>(DOCUMENT_CATEGORIES[0].value);
+  const [uploading, setUploading] = useState(false);
+  const { data: docs = [] } = useQuery({
+    queryKey: ["lead-docs", leadId],
+    queryFn: () => fetchLeadDocuments(leadId),
+  });
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      await uploadLeadDocument({ file, agencyId, leadId, category });
+      toast.success("Documento adicionado à biblioteca.");
+      qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar documento.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function open(doc: LeadDocument) {
+    const url = await getDocumentUrl(doc.file_path);
+    if (url) window.open(url, "_blank");
+    else toast.error("Não foi possível abrir o documento.");
+  }
+
+  async function remove(doc: LeadDocument) {
+    const ok = await confirm({ title: "Remover documento", description: `Remover "${doc.name}"?`, confirmLabel: "Remover", destructive: true });
+    if (!ok) return;
+    const done = await deleteLeadDocument(doc);
+    if (done) {
+      toast.success("Documento removido.");
+      qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
+    } else {
+      toast.error("Erro ao remover documento.");
+    }
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="flex items-center gap-2 font-semibold">
+          <FileText className="h-4 w-4" /> Biblioteca de documentos
+        </h2>
+        <div className="flex items-center gap-2">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+          >
+            {DOCUMENT_CATEGORIES.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+          <input ref={fileRef} type="file" onChange={handleFile} className="hidden" accept="image/*,application/pdf" />
+          <button
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
+            Adicionar
+          </button>
+        </div>
+      </div>
+      {docs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhum documento. Anexe ingressos, passagens, vouchers e reservas — eles ficam disponíveis para a IA ao planejar roteiros.</p>
+      ) : (
+        <ul className="grid gap-2 sm:grid-cols-2">
+          {docs.map((doc) => (
+            <li key={doc.id} className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm">
+              <FileText className="h-4 w-4 shrink-0 text-primary" />
+              <button onClick={() => open(doc)} className="flex-1 truncate text-left hover:underline" title={doc.name}>
+                {doc.category && <span className="mr-1 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
+                {doc.name}
+              </button>
+              <button onClick={() => open(doc)} className="text-muted-foreground hover:text-primary" title="Abrir">
+                <Download className="h-4 w-4" />
+              </button>
+              <button onClick={() => remove(doc)} className="text-muted-foreground hover:text-destructive" title="Remover">
+                <X className="h-4 w-4" />
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

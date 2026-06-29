@@ -409,7 +409,25 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
       }
     }
 
-    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}${pastItineraries}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
+    let leadDocuments = "";
+    if (data.leadId) {
+      const { data: docs } = await (context.supabase as any)
+        .from("crm_lead_documents")
+        .select("name,category,content,created_at")
+        .eq("lead_id", data.leadId)
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (docs && docs.length) {
+        const parts = (docs as any[]).map((d) => {
+          const head = `- ${d.name}${d.category ? ` [${d.category}]` : ""}`;
+          const body = d.content ? `\n    ${String(d.content).slice(0, 800)}` : "";
+          return `${head}${body}`;
+        });
+        leadDocuments = `\n\nDOCUMENTOS DO LEAD (ingressos, passagens, vouchers, reservas e outros anexos das atividades — use as informações já confirmadas para compor e validar o roteiro):\n${parts.join("\n")}`;
+      }
+    }
+
+    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}${pastItineraries}${leadDocuments}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
 
 
     const { askWithFiles } = await import("./ai.server");
