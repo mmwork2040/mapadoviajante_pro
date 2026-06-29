@@ -69,14 +69,15 @@ const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.
 );
 
 function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: typeof Plane }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `new:${type}` });
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `new:${type}` });
   return (
     <button
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`flex cursor-grab items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-sm hover:border-primary hover:text-primary active:cursor-grabbing ${
-        isDragging ? "opacity-50" : ""
+      style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 50 : undefined }}
+      className={`flex cursor-grab touch-none items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-sm hover:border-primary hover:text-primary active:cursor-grabbing ${
+        isDragging ? "opacity-80" : ""
       }`}
     >
       <Icon className="h-4 w-4" /> {label}
