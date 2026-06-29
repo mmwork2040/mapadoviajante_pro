@@ -429,13 +429,9 @@ function ItineraryDetailPage() {
           {(it.days || []).map((day) => (
             <DayCard key={day.id} day={day} onChange={refresh} />
           ))}
-          <button
-            onClick={() => addDay.mutate()}
-            className="flex w-64 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
-          >
-            <Plus className="h-5 w-5" /> Adicionar dia
-          </button>
+          <AddDayDropzone onClick={() => addDay.mutate()} />
         </div>
+
 
       </DndContext>
 
