@@ -296,7 +296,7 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
   }
 
   async function remove(doc: LeadDocument) {
-    const ok = await confirm({ title: "Remover documento", description: `Remover "${doc.name}"?`, confirmText: "Remover" });
+    const ok = await confirm({ title: "Remover documento", description: `Remover "${doc.name}"?`, confirmLabel: "Remover", destructive: true });
     if (!ok) return;
     const done = await deleteLeadDocument(doc);
     if (done) {
