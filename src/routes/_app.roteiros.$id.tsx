@@ -87,6 +87,7 @@ function PaletteItem({ type, label, icon: Icon }: { type: string; label: string;
   return (
     <button
       ref={setNodeRef}
+      data-palette-item={type}
       {...listeners}
       {...attributes}
       style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 50 : undefined }}
@@ -464,7 +465,8 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   return (
     <div
       ref={setDroppableRef}
-      className={`flex min-h-[24rem] w-80 shrink-0 flex-col rounded-2xl border border-border bg-card p-5 transition-colors sm:w-80 ${
+      data-kanban-day={day.id}
+      className={`flex min-h-[24rem] w-[min(20rem,calc(100vw-2rem))] shrink-0 flex-col rounded-2xl border border-border bg-card p-5 transition-colors ${
         isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
       }`}
     >
