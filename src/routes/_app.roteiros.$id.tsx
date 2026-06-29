@@ -345,6 +345,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
       await createItineraryActivity({
         day_id: day.id,
         title,
+        type: newType,
         time: time || null,
         location: location || null,
         sort_order: (day.activities?.length || 0) + 1,
