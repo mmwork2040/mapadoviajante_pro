@@ -549,8 +549,11 @@ function ActivityRow({
     onChange();
   }
 
+  const meta = TYPE_META[activity.type || ""];
+  const TypeIcon = meta?.icon;
+
   return (
-    <li className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
+    <div className="flex flex-1 items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
       <span className="flex items-center gap-2">
         <button
           onClick={toggleDone}
@@ -560,6 +563,7 @@ function ActivityRow({
         >
           {done && <Check className="h-3 w-3" />}
         </button>
+        {TypeIcon && <TypeIcon className="h-4 w-4 shrink-0 text-primary" />}
         <span className={done ? "text-muted-foreground line-through" : ""}>
           {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
           {activity.title}
@@ -580,9 +584,10 @@ function ActivityRow({
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </span>
-    </li>
+    </div>
   );
 }
+
 
 
 function VouchersCard({
