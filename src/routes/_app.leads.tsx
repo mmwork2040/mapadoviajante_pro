@@ -8,6 +8,7 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/leads")({
   component: LeadsRoute,
