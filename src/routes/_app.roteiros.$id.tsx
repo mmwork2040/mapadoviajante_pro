@@ -305,17 +305,18 @@ function ItineraryDetailPage() {
           ))}
         </div>
 
-        <div className="space-y-4">
+        <div className="flex gap-4 overflow-x-auto pb-4">
           {(it.days || []).map((day) => (
             <DayCard key={day.id} day={day} onChange={refresh} />
           ))}
           <button
             onClick={() => addDay.mutate()}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
+            className="flex w-64 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
           >
-            <Plus className="h-4 w-4" /> Adicionar dia
+            <Plus className="h-5 w-5" /> Adicionar dia
           </button>
         </div>
+
       </DndContext>
 
 
