@@ -38,6 +38,14 @@ import {
   updateItineraryDay,
 } from "@/lib/services";
 import { extractDocumentData, itineraryPlanner } from "@/lib/ai.functions";
+import {
+  DOCUMENT_CATEGORIES,
+  deleteLeadDocument,
+  fetchActivityDocuments,
+  getDocumentUrl,
+  uploadLeadDocument,
+  type LeadDocument,
+} from "@/lib/lead-documents";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
