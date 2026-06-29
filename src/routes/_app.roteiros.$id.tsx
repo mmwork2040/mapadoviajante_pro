@@ -527,7 +527,7 @@ function ActivityRow({
 
   if (edit) {
     return (
-      <li className="space-y-2 rounded-lg bg-muted/50 px-3 py-2">
+      <div className="flex-1 space-y-2 rounded-lg bg-muted/50 px-3 py-2">
         <div className="flex gap-2">
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-28 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" className="flex-1 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
@@ -537,9 +537,10 @@ function ActivityRow({
           <button onClick={save} className="rounded bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">Salvar</button>
           <button onClick={() => setEdit(false)} className="rounded bg-muted px-3 py-1 text-xs">Cancelar</button>
         </div>
-      </li>
+      </div>
     );
   }
+
 
   const done = activity.type === "done";
 
