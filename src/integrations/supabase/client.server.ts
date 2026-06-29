@@ -3,7 +3,6 @@
 // Use this for admin operations in server functions and server routes only.
 // For user-authenticated queries (with RLS), use the auth middleware instead.
 import { createClient } from '@supabase/supabase-js';
-import { createHmac } from 'crypto';
 import type { Database } from './types';
 
 function isNewSupabaseApiKey(value: string): boolean {
@@ -30,61 +29,10 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
-function base64Url(value: string): string {
-  return Buffer.from(value).toString('base64url');
-}
-
-function looksLikeJwt(value: string): boolean {
-  return value.split('.').length === 3;
-}
-
-function deriveProjectRef(url: string): string | undefined {
-  try {
-    return new URL(url).hostname.split('.')[0] || undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function createServiceRoleJwt(jwtSecret: string, supabaseUrl: string): string {
-  const now = Math.floor(Date.now() / 1000);
-  const header = base64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
-  const payload = base64Url(
-    JSON.stringify({
-      iss: 'supabase',
-      ref: deriveProjectRef(supabaseUrl),
-      role: 'service_role',
-      iat: now,
-      exp: now + 60 * 60 * 24 * 365 * 10,
-    }),
-  );
-  const data = `${header}.${payload}`;
-  const signature = createHmac('sha256', jwtSecret).update(data).digest('base64url');
-  return `${data}.${signature}`;
-}
-
-function resolveServiceCredential(supabaseUrl: string): string | undefined {
-  const canonical = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (canonical) return canonical;
-
-  const legacy = process.env.N8N_SUPABASE_SERVICE_KEY?.trim();
-  if (!legacy) return undefined;
-
-  // Some deployments accidentally saved Supabase's JWT Secret instead of the
-  // service_role API key. The JWT Secret is server-only and can mint the exact
-  // service_role token PostgREST expects, avoiding another manual paste cycle.
-  if (!looksLikeJwt(legacy) && !isNewSupabaseApiKey(legacy)) {
-    return createServiceRoleJwt(legacy, supabaseUrl);
-  }
-
-  return legacy;
-}
-
 function createSupabaseAdminClient() {
   const SUPABASE_URL = process.env.SUPABASE_URL;
-  const SUPABASE_SERVICE_ROLE_KEY = SUPABASE_URL
-    ? resolveServiceCredential(SUPABASE_URL)
-    : undefined;
+  const SUPABASE_SERVICE_ROLE_KEY =
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? process.env.N8N_SUPABASE_SERVICE_KEY?.trim();
 
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     const missing = [
