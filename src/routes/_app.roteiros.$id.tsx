@@ -15,6 +15,7 @@ import {
   closestCenter,
   type CollisionDetection,
   type DragEndEvent,
+  type DragStartEvent,
   type DragOverEvent,
 } from "@dnd-kit/core";
 import {
@@ -160,15 +161,67 @@ function ItineraryDetailPage() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
   const lastOverId = useRef<string | null>(null);
+  const dragStartPoint = useRef<{ x: number; y: number } | null>(null);
+
+  function getEventPoint(event: Event): { x: number; y: number } | null {
+    if ("clientX" in event && "clientY" in event) {
+      return { x: Number(event.clientX), y: Number(event.clientY) };
+    }
+    if ("touches" in event && event.touches.length > 0) {
+      const touch = event.touches[0];
+      return { x: touch.clientX, y: touch.clientY };
+    }
+    if ("changedTouches" in event && event.changedTouches.length > 0) {
+      const touch = event.changedTouches[0];
+      return { x: touch.clientX, y: touch.clientY };
+    }
+    return null;
+  }
+
+  function getDropIdFromPoint(point: { x: number; y: number } | null): string | null {
+    if (!point || typeof document === "undefined") return null;
+    const element = document.elementFromPoint(point.x, point.y);
+    const activity = element?.closest<HTMLElement>("[data-kanban-activity]");
+    if (activity?.dataset.kanbanActivity) return `act:${activity.dataset.kanbanActivity}`;
+    const day = element?.closest<HTMLElement>("[data-kanban-day]");
+    if (day?.dataset.kanbanDay) return `day:${day.dataset.kanbanDay}`;
+
+    const days = [...document.querySelectorAll<HTMLElement>("[data-kanban-day]")];
+    const containingDay = days.find((node) => {
+      const rect = node.getBoundingClientRect();
+      return point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom;
+    });
+    if (containingDay?.dataset.kanbanDay) return `day:${containingDay.dataset.kanbanDay}`;
+
+    const verticallyAligned = days
+      .map((node) => ({ node, rect: node.getBoundingClientRect() }))
+      .filter(({ rect }) => point.y >= rect.top - 24 && point.y <= rect.bottom + 24)
+      .sort(
+        (a, b) =>
+          Math.min(Math.abs(point.x - a.rect.left), Math.abs(point.x - a.rect.right)) -
+          Math.min(Math.abs(point.x - b.rect.left), Math.abs(point.x - b.rect.right)),
+      )[0]?.node;
+    return verticallyAligned?.dataset.kanbanDay ? `day:${verticallyAligned.dataset.kanbanDay}` : null;
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    lastOverId.current = null;
+    dragStartPoint.current = getEventPoint(event.activatorEvent);
+  }
 
   function handleDragOver(event: DragOverEvent) {
-    if (event.over) lastOverId.current = String(event.over.id);
+    const start = dragStartPoint.current;
+    const point = start ? { x: start.x + event.delta.x, y: start.y + event.delta.y } : null;
+    lastOverId.current = event.over ? String(event.over.id) : getDropIdFromPoint(point) || lastOverId.current;
   }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    const resolvedOverId = over ? String(over.id) : lastOverId.current;
+    const start = dragStartPoint.current;
+    const point = start ? { x: start.x + event.delta.x, y: start.y + event.delta.y } : null;
+    const resolvedOverId = over ? String(over.id) : getDropIdFromPoint(point) || lastOverId.current;
     lastOverId.current = null;
+    dragStartPoint.current = null;
     if (!resolvedOverId) return;
     const activeId = String(active.id);
     const overId = resolvedOverId;
@@ -322,12 +375,11 @@ function ItineraryDetailPage() {
       <DndContext
         sensors={sensors}
         collisionDetection={kanbanCollisionDetection}
-        onDragStart={() => {
-          lastOverId.current = null;
-        }}
+        onDragStart={handleDragStart}
         onDragOver={handleDragOver}
         onDragCancel={() => {
           lastOverId.current = null;
+          dragStartPoint.current = null;
         }}
         onDragEnd={handleDragEnd}
       >
@@ -573,6 +625,7 @@ function SortableActivity({
   return (
     <li
       ref={setNodeRef}
+      data-kanban-activity={activity.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-1 ${isDragging ? "opacity-60" : ""}`}
     >
