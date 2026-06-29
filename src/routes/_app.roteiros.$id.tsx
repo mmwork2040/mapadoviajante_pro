@@ -295,17 +295,29 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {(it.days || []).map((day) => (
-          <DayCard key={day.id} day={day} onChange={refresh} />
-        ))}
-        <button
-          onClick={() => addDay.mutate()}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
-        >
-          <Plus className="h-4 w-4" /> Adicionar dia
-        </button>
-      </div>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Arraste para o dia:
+          </span>
+          {ACTIVITY_TYPES.map((t) => (
+            <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} />
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          {(it.days || []).map((day) => (
+            <DayCard key={day.id} day={day} onChange={refresh} />
+          ))}
+          <button
+            onClick={() => addDay.mutate()}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            <Plus className="h-4 w-4" /> Adicionar dia
+          </button>
+        </div>
+      </DndContext>
+
 
       <VouchersCard itineraryId={id} vouchers={it.vouchers || []} onChange={refresh} />
 
