@@ -2,7 +2,22 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  useDraggable,
+  useDroppable,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { toast } from "sonner";
 import {
   createItineraryActivity,
@@ -33,6 +48,41 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "Concluído",
   cancelled: "Cancelado",
 };
+
+type ActivityType = "flight" | "hotel" | "activity" | "transfer" | "restaurant";
+
+const ACTIVITY_TYPES: {
+  type: ActivityType;
+  label: string;
+  icon: typeof Plane;
+  defaultTitle: string;
+}[] = [
+  { type: "flight", label: "Voo", icon: Plane, defaultTitle: "Novo voo" },
+  { type: "hotel", label: "Hospedagem", icon: BedDouble, defaultTitle: "Nova hospedagem" },
+  { type: "activity", label: "Atividade", icon: MapPin, defaultTitle: "Nova atividade" },
+  { type: "transfer", label: "Transfer", icon: Car, defaultTitle: "Novo transfer" },
+  { type: "restaurant", label: "Restaurante", icon: Utensils, defaultTitle: "Refeição" },
+];
+
+const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
+  ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
+);
+
+function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: typeof Plane }) {
+  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: `new:${type}` });
+  return (
+    <button
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      className={`flex cursor-grab items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-sm hover:border-primary hover:text-primary active:cursor-grabbing ${
+        isDragging ? "opacity-50" : ""
+      }`}
+    >
+      <Icon className="h-4 w-4" /> {label}
+    </button>
+  );
+}
 
 function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
@@ -90,6 +140,86 @@ function ItineraryDetailPage() {
     });
     if (ok) clearItinerary.mutate();
   }
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+
+  async function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over) return;
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    const days = it?.days || [];
+
+    // Resolve target day and insertion index from the drop target.
+    let targetDayId: string | null = null;
+    let targetIndex = -1;
+    if (overId.startsWith("day:")) {
+      targetDayId = overId.slice(4);
+      const d = days.find((x) => x.id === targetDayId);
+      targetIndex = d?.activities?.length ?? 0;
+    } else if (overId.startsWith("act:")) {
+      const overActId = overId.slice(4);
+      const d = days.find((x) => (x.activities || []).some((a) => a.id === overActId));
+      if (d) {
+        targetDayId = d.id;
+        targetIndex = (d.activities || []).findIndex((a) => a.id === overActId);
+      }
+    }
+    if (!targetDayId) return;
+    const targetDay = days.find((x) => x.id === targetDayId);
+    if (!targetDay) return;
+
+    try {
+      // Drop a new block from the palette.
+      if (activeId.startsWith("new:")) {
+        const type = activeId.slice(4);
+        const meta = ACTIVITY_TYPES.find((t) => t.type === type);
+        const list = [...(targetDay.activities || [])];
+        const created = await createItineraryActivity({
+          day_id: targetDayId,
+          title: meta?.defaultTitle || "Novo item",
+          type,
+          sort_order: targetIndex,
+        });
+        if (!created) throw new Error("erro");
+        list.splice(Math.max(0, targetIndex), 0, created);
+        await Promise.all(
+          list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+        );
+        refresh();
+        return;
+      }
+
+      // Move/reorder an existing activity.
+      if (activeId.startsWith("act:")) {
+        const movingId = activeId.slice(4);
+        const sourceDay = days.find((x) => (x.activities || []).some((a) => a.id === movingId));
+        if (!sourceDay) return;
+        const moving = (sourceDay.activities || []).find((a) => a.id === movingId)!;
+
+        if (sourceDay.id === targetDayId) {
+          const list = (targetDay.activities || []).filter((a) => a.id !== movingId);
+          list.splice(Math.max(0, targetIndex), 0, moving);
+          await Promise.all(list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })));
+        } else {
+          const srcList = (sourceDay.activities || []).filter((a) => a.id !== movingId);
+          const dstList = [...(targetDay.activities || [])];
+          dstList.splice(Math.max(0, targetIndex), 0, moving);
+          await updateItineraryActivity(movingId, { day_id: targetDayId });
+          await Promise.all([
+            ...srcList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+            ...dstList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+          ]);
+        }
+        refresh();
+      }
+    } catch {
+      toast.error("Não foi possível mover o item.");
+    }
+  }
+
+
+
 
   if (isError) return <QueryError message="Não foi possível carregar o roteiro." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
@@ -165,17 +295,29 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
-      <div className="space-y-4">
-        {(it.days || []).map((day) => (
-          <DayCard key={day.id} day={day} onChange={refresh} />
-        ))}
-        <button
-          onClick={() => addDay.mutate()}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
-        >
-          <Plus className="h-4 w-4" /> Adicionar dia
-        </button>
-      </div>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+        <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Arraste para o dia:
+          </span>
+          {ACTIVITY_TYPES.map((t) => (
+            <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} />
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          {(it.days || []).map((day) => (
+            <DayCard key={day.id} day={day} onChange={refresh} />
+          ))}
+          <button
+            onClick={() => addDay.mutate()}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            <Plus className="h-4 w-4" /> Adicionar dia
+          </button>
+        </div>
+      </DndContext>
+
 
       <VouchersCard itineraryId={id} vouchers={it.vouchers || []} onChange={refresh} />
 
@@ -190,6 +332,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
   const [location, setLocation] = useState("");
+  const [newType, setNewType] = useState<string>("activity");
   const [dayTitle, setDayTitle] = useState(day.title || `Dia ${day.day_number}`);
   const [extracting, setExtracting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -202,6 +345,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
       await createItineraryActivity({
         day_id: day.id,
         title,
+        type: newType,
         time: time || null,
         location: location || null,
         sort_order: (day.activities?.length || 0) + 1,
@@ -296,6 +440,11 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
     onChange();
   }
 
+  const sorted = [...(day.activities || [])].sort(
+    (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
+  );
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({ id: `day:${day.id}` });
+
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -319,24 +468,41 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
           <Trash2 className="h-4 w-4" />
         </button>
       </div>
-      <ul className="space-y-2">
-        {[...(day.activities || [])]
-          .sort((a, b) => {
-            const ta = a.time ? a.time.slice(0, 5) : "99:99";
-            const tb = b.time ? b.time.slice(0, 5) : "99:99";
-            return ta.localeCompare(tb);
-          })
-          .map((a) => (
-            <ActivityRow key={a.id} activity={a} onChange={onChange} />
+      <SortableContext items={sorted.map((a) => `act:${a.id}`)} strategy={verticalListSortingStrategy}>
+        <ul
+          ref={setDroppableRef}
+          className={`min-h-[3rem] space-y-2 rounded-xl p-1 transition-colors ${
+            isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
+          }`}
+        >
+          {sorted.length === 0 && (
+            <li className="rounded-lg border-2 border-dashed border-border py-4 text-center text-xs text-muted-foreground">
+              Arraste Voos, Hospedagem ou Atividades para cá
+            </li>
+          )}
+          {sorted.map((a) => (
+            <SortableActivity key={a.id} activity={a} onChange={onChange} />
           ))}
-      </ul>
-      <div className="mt-3 flex gap-2">
+        </ul>
+      </SortableContext>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <select
+          value={newType}
+          onChange={(e) => setNewType(e.target.value)}
+          className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+        >
+          {ACTIVITY_TYPES.map((t) => (
+            <option key={t.type} value={t.type}>{t.label}</option>
+          ))}
+        </select>
         <input
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
           className="w-28 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
         />
+
 
         <input
           value={title}
@@ -349,6 +515,35 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
         </button>
       </div>
     </div>
+  );
+}
+
+function SortableActivity({
+  activity,
+  onChange,
+}: {
+  activity: NonNullable<ItineraryDay["activities"]>[number];
+  onChange: () => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `act:${activity.id}`,
+  });
+  return (
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`flex items-center gap-1 ${isDragging ? "opacity-60" : ""}`}
+    >
+      <button
+        {...listeners}
+        {...attributes}
+        className="cursor-grab touch-none text-muted-foreground hover:text-foreground active:cursor-grabbing"
+        title="Arrastar"
+      >
+        <GripVertical className="h-4 w-4" />
+      </button>
+      <ActivityRow activity={activity} onChange={onChange} />
+    </li>
   );
 }
 
@@ -373,7 +568,7 @@ function ActivityRow({
 
   if (edit) {
     return (
-      <li className="space-y-2 rounded-lg bg-muted/50 px-3 py-2">
+      <div className="flex-1 space-y-2 rounded-lg bg-muted/50 px-3 py-2">
         <div className="flex gap-2">
           <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-28 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
           <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" className="flex-1 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
@@ -383,9 +578,10 @@ function ActivityRow({
           <button onClick={save} className="rounded bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">Salvar</button>
           <button onClick={() => setEdit(false)} className="rounded bg-muted px-3 py-1 text-xs">Cancelar</button>
         </div>
-      </li>
+      </div>
     );
   }
+
 
   const done = activity.type === "done";
 
@@ -394,8 +590,11 @@ function ActivityRow({
     onChange();
   }
 
+  const meta = TYPE_META[activity.type || ""];
+  const TypeIcon = meta?.icon;
+
   return (
-    <li className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
+    <div className="flex flex-1 items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
       <span className="flex items-center gap-2">
         <button
           onClick={toggleDone}
@@ -405,6 +604,7 @@ function ActivityRow({
         >
           {done && <Check className="h-3 w-3" />}
         </button>
+        {TypeIcon && <TypeIcon className="h-4 w-4 shrink-0 text-primary" />}
         <span className={done ? "text-muted-foreground line-through" : ""}>
           {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
           {activity.title}
@@ -425,9 +625,10 @@ function ActivityRow({
           <Trash2 className="h-3.5 w-3.5" />
         </button>
       </span>
-    </li>
+    </div>
   );
 }
+
 
 
 function VouchersCard({
