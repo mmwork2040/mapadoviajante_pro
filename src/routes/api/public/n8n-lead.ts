@@ -58,8 +58,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           if (!envSecret || provided !== envSecret) {
             return json({ error: "Unauthorized" }, { status: 401 });
           }
-          const raw =
-            process.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.N8N_SUPABASE_SERVICE_KEY;
+          const raw = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
           let role = "missing";
           if (raw) {
             try {
