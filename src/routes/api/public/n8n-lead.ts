@@ -1,4 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 
 // Endpoint público para o n8n enviar leads (HTTP Request node).
 //   POST /api/public/n8n-lead
@@ -42,6 +44,19 @@ function text(body: string, init?: ResponseInit) {
   });
 }
 
+function createPublicSupabaseClient() {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_PUBLISHABLE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+    throw new Error("Server not configured: missing Supabase public config");
+  }
+  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+  });
+}
+
+const FALLBACK_AGENCY_ID = "a0000000-0000-0000-0000-000000000001";
+
 export const Route = createFileRoute("/api/public/n8n-lead")({
   server: {
     handlers: {
@@ -72,6 +87,14 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             } catch {
               role = "undecodable";
             }
+          }
+          if (!raw) {
+            return json({
+              diag: true,
+              keyRole: role,
+              mode: "public_insert_fallback",
+              error: null,
+            });
           }
           try {
             const { supabaseAdmin } = await import(
@@ -157,24 +180,27 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             return json({ error: "Missing 'nome'" }, { status: 400 });
           }
 
-          let supabaseAdmin: (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"];
-          try {
-            ({ supabaseAdmin } = await import("@/integrations/supabase/client.server"));
-          } catch (error) {
-            console.error("n8n-lead: supabase admin client unavailable", error);
-            return json(
-              {
-                error: "Server not configured: missing SUPABASE_SERVICE_ROLE_KEY",
-              },
-              { status: 503 },
-            );
+          let supabaseAdmin:
+            | (typeof import("@/integrations/supabase/client.server"))["supabaseAdmin"]
+            | undefined;
+          if (process.env.SUPABASE_SERVICE_ROLE_KEY?.trim()) {
+            try {
+              ({ supabaseAdmin } = await import("@/integrations/supabase/client.server"));
+            } catch (error) {
+              console.error("n8n-lead: supabase admin client unavailable", error);
+            }
           }
+          const supabasePublic = createPublicSupabaseClient();
+          const writeClient = supabaseAdmin ?? supabasePublic;
 
           // Valida o segredo pela configuração da agência, quando não bate com o env.
           // A chave em system_settings é "agency_cfg:{agencyId}:n8n" e o valor
           // contém { secret }. O segredo também identifica a agência.
           let secretAgencyId: string | undefined;
           if (!envMatch) {
+            if (!supabaseAdmin) {
+              return json({ error: "Unauthorized" }, { status: 401 });
+            }
             const { data: rows, error: cfgErr } = await (supabaseAdmin as any)
               .from("system_settings")
               .select("key,value")
@@ -194,10 +220,14 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           }
 
           // Resolve a agência: pelo segredo, por id, por slug, ou a primeira cadastrada.
-          let agencyId = secretAgencyId ?? s(d.agency_id);
+          let agencyId =
+            secretAgencyId ??
+            s(d.agency_id) ??
+            s(d.agencyId) ??
+            s(process.env.N8N_DEFAULT_AGENCY_ID);
           if (!agencyId) {
             const slug = s(d.agency_slug) ?? s(d.agency);
-            if (slug) {
+            if (slug && supabaseAdmin) {
               const { data: ag, error: agErr } = await (supabaseAdmin as any)
                 .from("agencies")
                 .select("id")
@@ -210,7 +240,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
               agencyId = ag?.id ?? undefined;
             }
           }
-          if (!agencyId) {
+          if (!agencyId && supabaseAdmin) {
             const { data: ag, error: agErr } = await (supabaseAdmin as any)
               .from("agencies")
               .select("id")
@@ -223,6 +253,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             }
             agencyId = ag?.id ?? undefined;
           }
+          agencyId = agencyId ?? FALLBACK_AGENCY_ID;
           if (!agencyId) {
             return json({ error: "No agency found" }, { status: 422 });
           }
@@ -282,7 +313,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           const email = s(d.email);
 
           // Verifica se o lead já existe (mesma agência, mesmo e-mail).
-          if (email) {
+          if (email && supabaseAdmin) {
             const { data: existing } = await (supabaseAdmin as any)
               .from("crm_leads")
               .select("id")
@@ -300,9 +331,11 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             }
           }
 
-          const { data: lead, error } = await (supabaseAdmin as any)
+          const leadId = crypto.randomUUID();
+          const { error } = await (writeClient as any)
             .from("crm_leads")
             .insert({
+              id: leadId,
               agency_id: agencyId,
               name,
               email,
@@ -313,9 +346,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
               status: "new",
               notes: notesParts.length ? notesParts.join("\n\n") : undefined,
               profile,
-            })
-            .select("id")
-            .single();
+            });
 
           if (error) {
             console.error("n8n-lead insert error", error);
@@ -326,12 +357,12 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           // Cria um roteiro em rascunho se houver dados mínimos.
           const readyForItinerary = Boolean(destination && travelDates && passengers);
           let itineraryId: string | null = null;
-          if (readyForItinerary) {
+          if (readyForItinerary && supabaseAdmin) {
             const { data: it, error: itineraryError } = await (supabaseAdmin as any)
               .from("crm_itineraries")
               .insert({
                 agency_id: agencyId,
-                lead_id: lead.id,
+                lead_id: leadId,
                 title: `Roteiro ${destination}`,
                 client_name: name,
                 destination,
@@ -352,9 +383,10 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
 
           return json({
             ok: true,
-            lead_id: lead.id,
+            lead_id: leadId,
             itinerary_id: itineraryId,
             ready_for_itinerary: readyForItinerary,
+            itinerary_created: Boolean(itineraryId),
           });
         } catch (error) {
           console.error("n8n-lead unhandled error", error);
