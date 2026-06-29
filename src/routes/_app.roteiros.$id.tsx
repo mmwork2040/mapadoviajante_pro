@@ -11,7 +11,11 @@ import {
   useDraggable,
   useDroppable,
   pointerWithin,
+  rectIntersection,
+  closestCenter,
+  type CollisionDetection,
   type DragEndEvent,
+  type DragOverEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -69,11 +73,22 @@ const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
 
+const kanbanCollisionDetection: CollisionDetection = (args) => {
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+
+  const rectCollisions = rectIntersection(args);
+  if (rectCollisions.length > 0) return rectCollisions;
+
+  return closestCenter(args);
+};
+
 function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: typeof Plane }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `new:${type}` });
   return (
     <button
       ref={setNodeRef}
+      data-palette-item={type}
       {...listeners}
       {...attributes}
       style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 50 : undefined }}
@@ -144,12 +159,19 @@ function ItineraryDetailPage() {
   }
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }));
+  const lastOverId = useRef<string | null>(null);
+
+  function handleDragOver(event: DragOverEvent) {
+    if (event.over) lastOverId.current = String(event.over.id);
+  }
 
   async function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
-    if (!over) return;
+    const resolvedOverId = over ? String(over.id) : lastOverId.current;
+    lastOverId.current = null;
+    if (!resolvedOverId) return;
     const activeId = String(active.id);
-    const overId = String(over.id);
+    const overId = resolvedOverId;
     const days = it?.days || [];
 
     // Resolve target day and insertion index from the drop target.
@@ -297,7 +319,18 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={kanbanCollisionDetection}
+        onDragStart={() => {
+          lastOverId.current = null;
+        }}
+        onDragOver={handleDragOver}
+        onDragCancel={() => {
+          lastOverId.current = null;
+        }}
+        onDragEnd={handleDragEnd}
+      >
         <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Arraste para o dia:
@@ -449,7 +482,13 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
   const { setNodeRef: setDroppableRef, isOver } = useDroppable({ id: `day:${day.id}` });
 
   return (
-    <div className="flex w-80 shrink-0 flex-col rounded-2xl border border-border bg-card p-5">
+    <div
+      ref={setDroppableRef}
+      data-kanban-day={day.id}
+      className={`flex min-h-[24rem] w-[min(20rem,calc(100vw-2rem))] shrink-0 flex-col rounded-2xl border border-border bg-card p-5 transition-colors ${
+        isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
+      }`}
+    >
 
       <div className="mb-3 flex items-center justify-between gap-2">
         <input
@@ -474,8 +513,7 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
       </div>
       <SortableContext items={sorted.map((a) => `act:${a.id}`)} strategy={verticalListSortingStrategy}>
         <ul
-          ref={setDroppableRef}
-          className={`min-h-[3rem] space-y-2 rounded-xl p-1 transition-colors ${
+          className={`min-h-[8rem] flex-1 space-y-2 rounded-xl p-1 transition-colors ${
             isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
           }`}
         >
