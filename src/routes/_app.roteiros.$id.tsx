@@ -182,6 +182,7 @@ function ItineraryDetailPage() {
   function getDropIdFromPoint(point: { x: number; y: number } | null): string | null {
     if (!point || typeof document === "undefined") return null;
     const element = document.elementFromPoint(point.x, point.y);
+    if (element?.closest<HTMLElement>("[data-add-day]")) return "new-day";
     const activity = element?.closest<HTMLElement>("[data-kanban-activity]");
     if (activity?.dataset.kanbanActivity) return `act:${activity.dataset.kanbanActivity}`;
     const day = element?.closest<HTMLElement>("[data-kanban-day]");
