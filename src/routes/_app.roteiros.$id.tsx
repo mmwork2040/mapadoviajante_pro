@@ -182,6 +182,7 @@ function ItineraryDetailPage() {
   function getDropIdFromPoint(point: { x: number; y: number } | null): string | null {
     if (!point || typeof document === "undefined") return null;
     const element = document.elementFromPoint(point.x, point.y);
+    if (element?.closest<HTMLElement>("[data-add-day]")) return "new-day";
     const activity = element?.closest<HTMLElement>("[data-kanban-activity]");
     if (activity?.dataset.kanbanActivity) return `act:${activity.dataset.kanbanActivity}`;
     const day = element?.closest<HTMLElement>("[data-kanban-day]");
@@ -226,15 +227,21 @@ function ItineraryDetailPage() {
     dragStartPoint.current = null;
     const days = it?.days || [];
 
-    if (!resolvedOverId && activeId.startsWith("new:") && days.length === 0) {
+    // Drop a palette block onto an empty board OR onto the "Adicionar dia" card:
+    // create a new day and place the item in it.
+    const wantsNewDay =
+      activeId.startsWith("new:") &&
+      (resolvedOverId === "new-day" || (!resolvedOverId && days.length === 0));
+    if (wantsNewDay) {
       try {
         const type = activeId.slice(4);
         const meta = ACTIVITY_TYPES.find((t) => t.type === type);
+        const nextNumber = days.length + 1;
         const day = await createItineraryDay({
           itinerary_id: id,
-          day_number: 1,
-          title: "Dia 1",
-          sort_order: 1,
+          day_number: nextNumber,
+          title: `Dia ${nextNumber}`,
+          sort_order: nextNumber,
         });
         if (!day) throw new Error("erro");
         await createItineraryActivity({
@@ -245,12 +252,12 @@ function ItineraryDetailPage() {
         });
         refresh();
       } catch {
-        toast.error("Não foi possível criar o primeiro dia.");
+        toast.error("Não foi possível criar o dia.");
       }
       return;
     }
 
-    if (!resolvedOverId) return;
+    if (!resolvedOverId || resolvedOverId === "new-day") return;
     const overId = resolvedOverId;
 
     // Resolve target day and insertion index from the drop target.
@@ -422,13 +429,9 @@ function ItineraryDetailPage() {
           {(it.days || []).map((day) => (
             <DayCard key={day.id} day={day} onChange={refresh} />
           ))}
-          <button
-            onClick={() => addDay.mutate()}
-            className="flex w-64 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border py-4 text-sm font-medium text-muted-foreground hover:border-primary hover:text-primary"
-          >
-            <Plus className="h-5 w-5" /> Adicionar dia
-          </button>
+          <AddDayDropzone onClick={() => addDay.mutate()} />
         </div>
+
 
       </DndContext>
 
@@ -439,6 +442,24 @@ function ItineraryDetailPage() {
 
       {editing && <EditItineraryModal it={it} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); refresh(); }} />}
     </div>
+  );
+}
+
+function AddDayDropzone({ onClick }: { onClick: () => void }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "new-day" });
+  return (
+    <button
+      ref={setNodeRef}
+      data-add-day="true"
+      onClick={onClick}
+      className={`flex w-64 shrink-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed py-4 text-sm font-medium transition-colors ${
+        isOver
+          ? "border-primary bg-primary/5 text-primary"
+          : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+      }`}
+    >
+      <Plus className="h-5 w-5" /> Adicionar dia
+    </button>
   );
 }
 
