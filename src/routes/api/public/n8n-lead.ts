@@ -88,6 +88,14 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
               role = "undecodable";
             }
           }
+          if (!raw) {
+            return json({
+              diag: true,
+              keyRole: role,
+              mode: "public_insert_fallback",
+              error: null,
+            });
+          }
           try {
             const { supabaseAdmin } = await import(
               "@/integrations/supabase/client.server"
