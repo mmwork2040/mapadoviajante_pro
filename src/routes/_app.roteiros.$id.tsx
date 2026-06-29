@@ -435,7 +435,14 @@ function ItineraryDetailPage() {
 
         <div className="flex gap-4 overflow-x-auto pb-4">
           {(it.days || []).map((day) => (
-            <DayCard key={day.id} day={day} onChange={refresh} />
+            <DayCard
+              key={day.id}
+              day={day}
+              onChange={refresh}
+              agencyId={it.agency_id}
+              leadId={it.lead_id ?? null}
+              itineraryId={id}
+            />
           ))}
           <AddDayDropzone onClick={() => addDay.mutate()} />
         </div>
