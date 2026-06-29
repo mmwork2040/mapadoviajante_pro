@@ -84,6 +84,7 @@ function PaletteItem({ type, label, icon: Icon }: { type: string; label: string;
   );
 }
 
+function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
