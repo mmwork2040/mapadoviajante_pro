@@ -486,13 +486,23 @@ function DayCard({ day, onChange }: { day: ItineraryDay; onChange: () => void })
         </ul>
       </SortableContext>
 
-      <div className="mt-3 flex gap-2">
+      <div className="mt-3 flex flex-wrap gap-2">
+        <select
+          value={newType}
+          onChange={(e) => setNewType(e.target.value)}
+          className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+        >
+          {ACTIVITY_TYPES.map((t) => (
+            <option key={t.type} value={t.type}>{t.label}</option>
+          ))}
+        </select>
         <input
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
           className="w-28 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
         />
+
 
         <input
           value={title}
