@@ -10,6 +10,7 @@ import {
   useSensors,
   useDraggable,
   useDroppable,
+  pointerWithin,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
@@ -296,7 +297,7 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
-      <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
         <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Arraste para o dia:
