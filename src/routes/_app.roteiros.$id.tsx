@@ -896,11 +896,11 @@ function ActivityDocuments({
   return (
     <div className="ml-1 space-y-1">
       {docs.map((doc) => (
-        <div key={doc.id} className="flex items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
+        <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
           <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <button onClick={() => open(doc)} className="flex-1 truncate text-left hover:underline" title={doc.name}>
-            {doc.category && <span className="mr-1 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
-            {doc.name}
+          <button onClick={() => open(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left hover:underline" title={doc.name}>
+            {doc.category && <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
+            <span className="truncate">{doc.name}</span>
           </button>
           <button onClick={() => open(doc)} className="text-muted-foreground hover:text-primary" title="Abrir">
             <Download className="h-3 w-3" />
