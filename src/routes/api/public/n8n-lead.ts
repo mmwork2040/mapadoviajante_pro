@@ -216,8 +216,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             secretAgencyId ??
             s(d.agency_id) ??
             s(d.agencyId) ??
-            s(process.env.N8N_DEFAULT_AGENCY_ID) ??
-            FALLBACK_AGENCY_ID;
+            s(process.env.N8N_DEFAULT_AGENCY_ID);
           if (!agencyId) {
             const slug = s(d.agency_slug) ?? s(d.agency);
             if (slug && supabaseAdmin) {
@@ -246,6 +245,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             }
             agencyId = ag?.id ?? undefined;
           }
+          agencyId = agencyId ?? FALLBACK_AGENCY_ID;
           if (!agencyId) {
             return json({ error: "No agency found" }, { status: 422 });
           }
