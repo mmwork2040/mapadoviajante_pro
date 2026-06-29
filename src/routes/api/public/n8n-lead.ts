@@ -26,13 +26,18 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.N8N_LEAD_WEBHOOK_SECRET;
+        const envSecret = process.env.N8N_LEAD_WEBHOOK_SECRET;
         const provided =
           request.headers.get("x-webhook-secret") ??
           new URL(request.url).searchParams.get("secret");
-        if (!secret || provided !== secret) {
+        if (!provided) {
           return new Response("Unauthorized", { status: 401 });
         }
+        // O segredo pode vir do env (global) ou da configuração da agência
+        // (Administração → Integração n8n). A validação por banco acontece
+        // após carregar o supabaseAdmin, pois identifica também a agência.
+        const envMatch = Boolean(envSecret) && provided === envSecret;
+
 
         // Lê o corpo como texto e tenta parsear de forma tolerante:
         // remove BOM/espaços, aceita JSON puro, ou form-urlencoded.
@@ -84,8 +89,31 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           );
         }
 
-        // Resolve a agência: por id, por slug, ou a primeira cadastrada.
-        let agencyId = s(d.agency_id);
+        // Valida o segredo pela configuração da agência, quando não bate com o env.
+        // A chave em system_settings é "agency_cfg:{agencyId}:n8n" e o valor
+        // contém { secret }. O segredo também identifica a agência.
+        let secretAgencyId: string | undefined;
+        if (!envMatch) {
+          const { data: rows, error: cfgErr } = await (supabaseAdmin as any)
+            .from("system_settings")
+            .select("key,value")
+            .like("key", "agency_cfg:%:n8n");
+          if (cfgErr) {
+            console.error("n8n-lead secret-lookup error", cfgErr);
+            return new Response("Auth lookup failed", { status: 500 });
+          }
+          const match = (rows ?? []).find(
+            (r: any) => s(r?.value?.secret) && r.value.secret === provided,
+          );
+          if (!match) {
+            return new Response("Unauthorized", { status: 401 });
+          }
+          const parts = String(match.key).split(":");
+          secretAgencyId = parts[1];
+        }
+
+        // Resolve a agência: pelo segredo, por id, por slug, ou a primeira cadastrada.
+        let agencyId = secretAgencyId ?? s(d.agency_id);
         if (!agencyId) {
           const slug = s(d.agency_slug) ?? s(d.agency);
           if (slug) {
