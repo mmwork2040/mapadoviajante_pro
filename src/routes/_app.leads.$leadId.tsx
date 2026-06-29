@@ -235,6 +235,10 @@ function LeadDetailPage() {
         </div>
       </div>
 
+      <DocumentLibrary leadId={leadId} agencyId={lead.agency_id} />
+
+
+
       {editOpen && (
         <NewLeadModal
           lead={lead}
