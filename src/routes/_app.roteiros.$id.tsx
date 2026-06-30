@@ -624,7 +624,7 @@ function DayCard({
           onBlur={saveDayTitle}
           className="w-full min-w-0 rounded-lg bg-transparent px-2 py-1 font-semibold outline-none hover:bg-muted/50 focus:bg-muted/50"
         />
-        <div className="flex items-center justify-end gap-1">
+        <div className="flex items-center justify-between gap-1">
           <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
           <button
             onClick={() => fileRef.current?.click()}
@@ -634,16 +634,17 @@ function DayCard({
           >
             {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
             Importar com IA
-
           </button>
           <button
             onClick={removeDay}
-            title="Excluir dia"
-            className="flex items-center rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+            title="Excluir o dia inteiro"
+            className="flex items-center gap-1 rounded-lg border border-destructive/40 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-3.5 w-3.5" />
+            Excluir dia
           </button>
         </div>
+
       </div>
 
       <SortableContext items={sorted.map((a) => `act:${a.id}`)} strategy={verticalListSortingStrategy}>
