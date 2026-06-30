@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -854,6 +854,7 @@ function ActivityDocuments({
   const fileRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState<string>(DOCUMENT_CATEGORIES[0].value);
   const [uploading, setUploading] = useState(false);
+  const [open_, setOpen_] = useState(false);
   const { data: docs = [] } = useQuery({
     queryKey: ["activity-docs", activityId],
     queryFn: () => fetchActivityDocuments(activityId),
@@ -894,42 +895,54 @@ function ActivityDocuments({
   }
 
   return (
-    <div className="ml-1 space-y-1">
-      {docs.map((doc) => (
-        <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
-          <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-          <button onClick={() => open(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left hover:underline" title={doc.name}>
-            {doc.category && <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
-            <span className="truncate">{doc.name}</span>
-          </button>
-          <button onClick={() => open(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Abrir">
-            <Download className="h-3 w-3" />
-          </button>
-          <button onClick={() => remove(doc)} className="shrink-0 text-muted-foreground hover:text-destructive" title="Remover">
-            <X className="h-3 w-3" />
-          </button>
-        </div>
-      ))}
-      <div className="flex items-center gap-1">
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          className="rounded border border-input bg-background px-1 py-0.5 text-[11px] outline-none focus:border-primary"
-        >
-          {DOCUMENT_CATEGORIES.map((c) => (
-            <option key={c.value} value={c.value}>{c.label}</option>
+    <div className="ml-1">
+      <button
+        onClick={() => setOpen_((v) => !v)}
+        className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
+      >
+        <Paperclip className="h-3 w-3" />
+        {docs.length > 0 ? `${docs.length} documento(s)` : "Anexar"}
+        <ChevronDown className={`h-3 w-3 transition-transform ${open_ ? "rotate-180" : ""}`} />
+      </button>
+      {open_ && (
+        <div className="mt-1 space-y-1">
+          {docs.map((doc) => (
+            <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
+              <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <button onClick={() => open(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left hover:underline" title={doc.name}>
+                {doc.category && <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
+                <span className="truncate">{doc.name}</span>
+              </button>
+              <button onClick={() => open(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Abrir">
+                <Download className="h-3 w-3" />
+              </button>
+              <button onClick={() => remove(doc)} className="shrink-0 text-muted-foreground hover:text-destructive" title="Remover">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
           ))}
-        </select>
-        <input ref={fileRef} type="file" onChange={handleFile} className="hidden" accept="image/*,application/pdf" />
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-          className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
-        >
-          {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
-          Anexar
-        </button>
-      </div>
+          <div className="flex items-center gap-1">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="rounded border border-input bg-background px-1 py-0.5 text-[11px] outline-none focus:border-primary"
+            >
+              {DOCUMENT_CATEGORIES.map((c) => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+            <input ref={fileRef} type="file" onChange={handleFile} className="hidden" accept="image/*,application/pdf" />
+            <button
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
+            >
+              {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
+              Anexar
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
