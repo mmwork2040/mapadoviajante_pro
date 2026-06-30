@@ -269,6 +269,7 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
   const fileRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState<string>(DOCUMENT_CATEGORIES[0].value);
   const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<LeadDocument | null>(null);
   const { data: docs = [] } = useQuery({
     queryKey: ["lead-docs", leadId],
     queryFn: () => fetchLeadDocuments(leadId),
