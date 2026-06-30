@@ -21,10 +21,11 @@ import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
   fetchLeadDocuments,
-  getDocumentUrl,
+  downloadDocument,
   uploadLeadDocument,
   type LeadDocument,
 } from "@/lib/lead-documents";
+import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
