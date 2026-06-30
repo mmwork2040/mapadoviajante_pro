@@ -879,10 +879,9 @@ function ActivityDocuments({
     }
   }
 
-  async function open(doc: LeadDocument) {
-    const url = await getDocumentUrl(doc.file_path);
-    if (url) window.open(url, "_blank");
-    else toast.error("Não foi possível abrir o documento.");
+  async function download(doc: LeadDocument) {
+    const ok = await downloadDocument(doc);
+    if (!ok) toast.error("Não foi possível baixar o documento.");
   }
 
   async function remove(doc: LeadDocument) {
