@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
