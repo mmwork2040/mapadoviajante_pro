@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useParams, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { ArrowLeft, Send, Trash2, Plus, Check, Map, Pencil, FileText, Download, Paperclip, Loader2, X } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Plus, Check, Map, Pencil, FileText, Download, Paperclip, Loader2, X, Eye } from "lucide-react";
 import { toast } from "sonner";
 import {
   createItinerary,
@@ -21,10 +21,11 @@ import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
   fetchLeadDocuments,
-  getDocumentUrl,
+  downloadDocument,
   uploadLeadDocument,
   type LeadDocument,
 } from "@/lib/lead-documents";
+import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { formatCurrency, formatDate, maskPhone } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
@@ -268,6 +269,7 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
   const fileRef = useRef<HTMLInputElement>(null);
   const [category, setCategory] = useState<string>(DOCUMENT_CATEGORIES[0].value);
   const [uploading, setUploading] = useState(false);
+  const [preview, setPreview] = useState<LeadDocument | null>(null);
   const { data: docs = [] } = useQuery({
     queryKey: ["lead-docs", leadId],
     queryFn: () => fetchLeadDocuments(leadId),
@@ -289,10 +291,9 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
     }
   }
 
-  async function open(doc: LeadDocument) {
-    const url = await getDocumentUrl(doc.file_path);
-    if (url) window.open(url, "_blank");
-    else toast.error("Não foi possível abrir o documento.");
+  async function download(doc: LeadDocument) {
+    const ok = await downloadDocument(doc);
+    if (!ok) toast.error("Não foi possível baixar o documento.");
   }
 
   async function remove(doc: LeadDocument) {
@@ -341,11 +342,14 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
           {docs.map((doc) => (
             <li key={doc.id} className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm">
               <FileText className="h-4 w-4 shrink-0 text-primary" />
-              <button onClick={() => open(doc)} className="flex-1 truncate text-left hover:underline" title={doc.name}>
+              <button onClick={() => setPreview(doc)} className="flex-1 truncate text-left hover:underline" title={`Pré-visualizar ${doc.name}`}>
                 {doc.category && <span className="mr-1 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
                 {doc.name}
               </button>
-              <button onClick={() => open(doc)} className="text-muted-foreground hover:text-primary" title="Abrir">
+              <button onClick={() => setPreview(doc)} className="text-muted-foreground hover:text-primary" title="Pré-visualizar">
+                <Eye className="h-4 w-4" />
+              </button>
+              <button onClick={() => download(doc)} className="text-muted-foreground hover:text-primary" title="Baixar">
                 <Download className="h-4 w-4" />
               </button>
               <button onClick={() => remove(doc)} className="text-muted-foreground hover:text-destructive" title="Remover">
@@ -355,6 +359,7 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
           ))}
         </ul>
       )}
+      <DocumentPreviewModal doc={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }
