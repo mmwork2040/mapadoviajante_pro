@@ -112,3 +112,35 @@ export async function getDocumentUrl(filePath: string): Promise<string | null> {
   if (error) return null;
   return data?.signedUrl ?? null;
 }
+
+/** Signed URL that forces a download (Content-Disposition: attachment). */
+export async function getDownloadUrl(filePath: string, fileName?: string): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(filePath, 3600, { download: fileName || true });
+  if (error) return null;
+  return data?.signedUrl ?? null;
+}
+
+export function isImageDoc(doc: { mime_type?: string | null; name?: string }): boolean {
+  if (doc.mime_type?.startsWith("image/")) return true;
+  return /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(doc.name || "");
+}
+
+export function isPdfDoc(doc: { mime_type?: string | null; name?: string }): boolean {
+  if (doc.mime_type === "application/pdf") return true;
+  return /\.pdf$/i.test(doc.name || "");
+}
+
+/** Force a browser download of a stored document. */
+export async function downloadDocument(doc: LeadDocument): Promise<boolean> {
+  const url = await getDownloadUrl(doc.file_path, doc.name);
+  if (!url) return false;
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = doc.name || "documento";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  return true;
+}
