@@ -947,6 +947,7 @@ function ActivityDocuments({
           </div>
         </div>
       )}
+      <DocumentPreviewModal doc={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }
