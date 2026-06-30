@@ -910,11 +910,14 @@ function ActivityDocuments({
           {docs.map((doc) => (
             <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
               <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <button onClick={() => open(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left hover:underline" title={doc.name}>
+              <button onClick={() => setPreview(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left hover:underline" title={`Pré-visualizar ${doc.name}`}>
                 {doc.category && <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
                 <span className="truncate">{doc.name}</span>
               </button>
-              <button onClick={() => open(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Abrir">
+              <button onClick={() => setPreview(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Pré-visualizar">
+                <Eye className="h-3 w-3" />
+              </button>
+              <button onClick={() => download(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Baixar">
                 <Download className="h-3 w-3" />
               </button>
               <button onClick={() => remove(doc)} className="shrink-0 text-muted-foreground hover:text-destructive" title="Remover">
