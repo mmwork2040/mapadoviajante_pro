@@ -42,10 +42,11 @@ import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
   fetchActivityDocuments,
-  getDocumentUrl,
+  downloadDocument,
   uploadLeadDocument,
   type LeadDocument,
 } from "@/lib/lead-documents";
+import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
