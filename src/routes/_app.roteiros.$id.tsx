@@ -856,6 +856,7 @@ function ActivityDocuments({
   const [category, setCategory] = useState<string>(DOCUMENT_CATEGORIES[0].value);
   const [uploading, setUploading] = useState(false);
   const [open_, setOpen_] = useState(false);
+  const [preview, setPreview] = useState<LeadDocument | null>(null);
   const { data: docs = [] } = useQuery({
     queryKey: ["activity-docs", activityId],
     queryFn: () => fetchActivityDocuments(activityId),
