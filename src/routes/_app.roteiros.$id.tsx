@@ -49,6 +49,7 @@ import {
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
 import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
 
