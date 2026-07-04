@@ -673,7 +673,7 @@ function DayCard({
             isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
           }`}
         >
-          {sorted.length === 0 && (
+          {sorted.length === 0 && !pendingActivity && (
             <li className="rounded-lg border-2 border-dashed border-border py-4 text-center text-xs text-muted-foreground">
               Arraste Voos, Hospedagem ou Atividades para cá
             </li>
