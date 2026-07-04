@@ -1,14 +1,21 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, X, MapPin, Trash2 } from "lucide-react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy } from "lucide-react";
 import { toast } from "sonner";
-import { createItinerary, deleteItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
+import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/_app/roteiros/")({
   component: ItinerariesPage,
@@ -33,6 +40,16 @@ function ItinerariesPage() {
     onError: () => toast.error("Erro ao excluir roteiro."),
   });
 
+  const duplicate = useMutation({
+    mutationFn: (it: Itinerary) => duplicateItinerary(it.id),
+    onSuccess: (res) => {
+      if (!res) return toast.error("Erro ao duplicar roteiro.");
+      toast.success("Roteiro duplicado.");
+      qc.invalidateQueries({ queryKey: ["itineraries"] });
+    },
+    onError: () => toast.error("Erro ao duplicar roteiro."),
+  });
+
   async function handleDelete(it: Itinerary) {
     const ok = await confirm({
       title: "Excluir roteiro",
@@ -42,6 +59,7 @@ function ItinerariesPage() {
     });
     if (ok) remove.mutate(it);
   }
+
 
 
   return (
@@ -85,14 +103,32 @@ function ItinerariesPage() {
                   <span className="font-semibold text-foreground">{formatCurrency(it.budget)}</span>
                 </div>
               </Link>
-              <button
-                onClick={() => handleDelete(it)}
-                disabled={remove.isPending}
-                title="Excluir roteiro"
-                className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground opacity-0 transition hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100 disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    title="Mais opções"
+                    className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground focus:opacity-100 group-hover:opacity-100 sm:opacity-0"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuItem
+                    onSelect={() => duplicate.mutate(it)}
+                    disabled={duplicate.isPending}
+                  >
+                    <Copy className="mr-2 h-4 w-4" /> Duplicar viagem
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => handleDelete(it)}
+                    disabled={remove.isPending}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
         </div>
