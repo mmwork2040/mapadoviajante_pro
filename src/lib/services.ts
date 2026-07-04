@@ -703,6 +703,47 @@ export async function deleteItinerary(id: string): Promise<boolean> {
   return true;
 }
 
+export async function duplicateItinerary(id: string): Promise<Itinerary | null> {
+  const source = await fetchItineraryById(id);
+  if (!source) return null;
+  const copy = await createItinerary({
+    lead_id: source.lead_id,
+    title: `${source.title} (cópia)`,
+    client_name: source.client_name,
+    destination: source.destination,
+    start_date: source.start_date,
+    end_date: source.end_date,
+    passengers: source.passengers,
+    budget: source.budget,
+    spent: source.spent,
+    status: "draft",
+  });
+  if (!copy) return null;
+  for (const day of source.days || []) {
+    const newDay = await createItineraryDay({
+      itinerary_id: copy.id,
+      day_number: day.day_number,
+      title: day.title,
+      sort_order: day.sort_order,
+    });
+    if (!newDay) continue;
+    for (const a of day.activities || []) {
+      await createItineraryActivity({
+        day_id: newDay.id,
+        title: a.title,
+        type: a.type,
+        time: a.time ?? null,
+        duration: a.duration ?? null,
+        location: a.location ?? null,
+        cost: a.cost ?? null,
+        description: a.description ?? null,
+        sort_order: a.sort_order,
+      });
+    }
+  }
+  return copy;
+}
+
 // A tabela usa a coluna `label`; a UI usa `title`.
 function mapDayPayload(data: Partial<ItineraryDay>): Record<string, unknown> {
   const { title, ...rest } = data;
