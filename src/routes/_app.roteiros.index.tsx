@@ -117,7 +117,7 @@ function ItinerariesPage() {
                 <DropdownMenuTrigger asChild>
                   <button
                     title="Mais opções"
-                    className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground focus:opacity-100 group-hover:opacity-100 sm:opacity-0"
+                    className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                   >
                     <MoreVertical className="h-4 w-4" />
                   </button>
