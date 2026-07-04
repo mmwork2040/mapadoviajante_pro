@@ -124,7 +124,7 @@ function ItinerariesPage() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem
-                    onSelect={() => duplicate.mutate(it)}
+                    onSelect={() => handleDuplicate(it)}
                     disabled={duplicate.isPending}
                   >
                     <Copy className="mr-2 h-4 w-4" /> Duplicar viagem
