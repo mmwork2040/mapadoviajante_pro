@@ -51,6 +51,12 @@ import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
@@ -369,20 +375,31 @@ function ItineraryDetailPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {(() => {
-            const idx = STATUS_OPTIONS.indexOf(it.status || "draft");
-            const next = idx >= 0 && idx < STATUS_OPTIONS.length - 1 ? STATUS_OPTIONS[idx + 1] : null;
-            const hasCompleteDay = (it.days || []).some((d) => (d.activities?.length || 0) > 0);
-            return next && it.status !== "cancelled" && hasCompleteDay ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <button
-                onClick={() => advanceStatus.mutate(next)}
                 disabled={advanceStatus.isPending}
                 className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
-                <ArrowRight className="h-4 w-4" /> Avançar para <span>{STATUS_LABELS[next] || next}</span>
+                Status: <span>{STATUS_LABELS[it.status || "draft"] || it.status}</span>
+                <ChevronDown className="h-4 w-4" />
               </button>
-            ) : null;
-          })()}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {STATUS_OPTIONS.map((s) => (
+                <DropdownMenuItem
+                  key={s}
+                  disabled={advanceStatus.isPending || s === (it.status || "draft")}
+                  onSelect={() => advanceStatus.mutate(s)}
+                >
+                  {s === (it.status || "draft") && <Check className="mr-2 h-4 w-4" />}
+                  <span className={s === (it.status || "draft") ? "" : "ml-6"}>
+                    {STATUS_LABELS[s] || s}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           {it.status === "draft" && (it.days?.length || 0) > 0 && (
             <button
               onClick={handleClear}
