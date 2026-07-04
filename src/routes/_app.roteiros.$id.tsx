@@ -244,6 +244,7 @@ function ItineraryDetailPage() {
       activeId.startsWith("new:") &&
       (resolvedOverId === "new-day" || (!resolvedOverId && days.length === 0));
     if (wantsNewDay) {
+      setPendingNewDay(true);
       try {
         const type = activeId.slice(4);
         const meta = ACTIVITY_TYPES.find((t) => t.type === type);
@@ -264,6 +265,8 @@ function ItineraryDetailPage() {
         refresh();
       } catch {
         toast.error("Não foi possível criar o dia.");
+      } finally {
+        setPendingNewDay(false);
       }
       return;
     }
