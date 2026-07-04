@@ -115,6 +115,8 @@ function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const [pendingDayId, setPendingDayId] = useState<string | null>(null);
+  const [pendingNewDay, setPendingNewDay] = useState(false);
   const { data: it, isLoading, isError, refetch } = useQuery({
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
