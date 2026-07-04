@@ -688,6 +688,15 @@ function DayCard({
               itineraryId={itineraryId}
             />
           ))}
+          {pendingActivity && (
+            <li className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3.5 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+            </li>
+          )}
         </ul>
       </SortableContext>
 
