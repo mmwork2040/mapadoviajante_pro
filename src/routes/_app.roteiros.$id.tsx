@@ -503,12 +503,14 @@ function DayCard({
   agencyId,
   leadId,
   itineraryId,
+  pendingActivity = false,
 }: {
   day: ItineraryDay;
   onChange: () => void;
   agencyId: string;
   leadId: string | null;
   itineraryId: string;
+  pendingActivity?: boolean;
 }) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
