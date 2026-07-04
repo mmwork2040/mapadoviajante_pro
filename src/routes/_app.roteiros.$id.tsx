@@ -51,6 +51,12 @@ import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
