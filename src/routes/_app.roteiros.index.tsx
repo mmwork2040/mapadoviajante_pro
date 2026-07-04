@@ -40,6 +40,16 @@ function ItinerariesPage() {
     onError: () => toast.error("Erro ao excluir roteiro."),
   });
 
+  const duplicate = useMutation({
+    mutationFn: (it: Itinerary) => duplicateItinerary(it.id),
+    onSuccess: (res) => {
+      if (!res) return toast.error("Erro ao duplicar roteiro.");
+      toast.success("Roteiro duplicado.");
+      qc.invalidateQueries({ queryKey: ["itineraries"] });
+    },
+    onError: () => toast.error("Erro ao duplicar roteiro."),
+  });
+
   async function handleDelete(it: Itinerary) {
     const ok = await confirm({
       title: "Excluir roteiro",
@@ -49,6 +59,7 @@ function ItinerariesPage() {
     });
     if (ok) remove.mutate(it);
   }
+
 
 
   return (
