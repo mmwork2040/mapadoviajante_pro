@@ -296,21 +296,26 @@ function ItineraryDetailPage() {
     try {
       // Drop a new block from the palette.
       if (activeId.startsWith("new:")) {
-        const type = activeId.slice(4);
-        const meta = ACTIVITY_TYPES.find((t) => t.type === type);
-        const list = [...(targetDay.activities || [])];
-        const created = await createItineraryActivity({
-          day_id: targetDayId,
-          title: meta?.defaultTitle || "Novo item",
-          type,
-          sort_order: targetIndex,
-        });
-        if (!created) throw new Error("erro");
-        list.splice(Math.max(0, targetIndex), 0, created);
-        await Promise.all(
-          list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
-        );
-        refresh();
+        setPendingDayId(targetDayId);
+        try {
+          const type = activeId.slice(4);
+          const meta = ACTIVITY_TYPES.find((t) => t.type === type);
+          const list = [...(targetDay.activities || [])];
+          const created = await createItineraryActivity({
+            day_id: targetDayId,
+            title: meta?.defaultTitle || "Novo item",
+            type,
+            sort_order: targetIndex,
+          });
+          if (!created) throw new Error("erro");
+          list.splice(Math.max(0, targetIndex), 0, created);
+          await Promise.all(
+            list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+          );
+          refresh();
+        } finally {
+          setPendingDayId(null);
+        }
         return;
       }
 
