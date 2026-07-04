@@ -49,6 +49,7 @@ import {
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
 import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
 
@@ -115,6 +116,8 @@ function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const [pendingDayId, setPendingDayId] = useState<string | null>(null);
+  const [pendingNewDay, setPendingNewDay] = useState(false);
   const { data: it, isLoading, isError, refetch } = useQuery({
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
@@ -242,6 +245,7 @@ function ItineraryDetailPage() {
       activeId.startsWith("new:") &&
       (resolvedOverId === "new-day" || (!resolvedOverId && days.length === 0));
     if (wantsNewDay) {
+      setPendingNewDay(true);
       try {
         const type = activeId.slice(4);
         const meta = ACTIVITY_TYPES.find((t) => t.type === type);
@@ -262,6 +266,8 @@ function ItineraryDetailPage() {
         refresh();
       } catch {
         toast.error("Não foi possível criar o dia.");
+      } finally {
+        setPendingNewDay(false);
       }
       return;
     }
@@ -291,21 +297,26 @@ function ItineraryDetailPage() {
     try {
       // Drop a new block from the palette.
       if (activeId.startsWith("new:")) {
-        const type = activeId.slice(4);
-        const meta = ACTIVITY_TYPES.find((t) => t.type === type);
-        const list = [...(targetDay.activities || [])];
-        const created = await createItineraryActivity({
-          day_id: targetDayId,
-          title: meta?.defaultTitle || "Novo item",
-          type,
-          sort_order: targetIndex,
-        });
-        if (!created) throw new Error("erro");
-        list.splice(Math.max(0, targetIndex), 0, created);
-        await Promise.all(
-          list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
-        );
-        refresh();
+        setPendingDayId(targetDayId);
+        try {
+          const type = activeId.slice(4);
+          const meta = ACTIVITY_TYPES.find((t) => t.type === type);
+          const list = [...(targetDay.activities || [])];
+          const created = await createItineraryActivity({
+            day_id: targetDayId,
+            title: meta?.defaultTitle || "Novo item",
+            type,
+            sort_order: targetIndex,
+          });
+          if (!created) throw new Error("erro");
+          list.splice(Math.max(0, targetIndex), 0, created);
+          await Promise.all(
+            list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+          );
+          refresh();
+        } finally {
+          setPendingDayId(null);
+        }
         return;
       }
 
@@ -443,8 +454,15 @@ function ItineraryDetailPage() {
               agencyId={it.agency_id}
               leadId={it.lead_id ?? null}
               itineraryId={id}
+              pendingActivity={pendingDayId === day.id}
             />
           ))}
+          {pendingNewDay && (
+            <div className="flex min-h-[24rem] w-[min(20rem,calc(100vw-2rem))] shrink-0 flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+              <Skeleton className="h-7 w-32" />
+              <Skeleton className="h-14 w-full rounded-xl" />
+            </div>
+          )}
           <AddDayDropzone onClick={() => addDay.mutate()} />
         </div>
 
@@ -485,12 +503,14 @@ function DayCard({
   agencyId,
   leadId,
   itineraryId,
+  pendingActivity = false,
 }: {
   day: ItineraryDay;
   onChange: () => void;
   agencyId: string;
   leadId: string | null;
   itineraryId: string;
+  pendingActivity?: boolean;
 }) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
@@ -653,7 +673,7 @@ function DayCard({
             isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
           }`}
         >
-          {sorted.length === 0 && (
+          {sorted.length === 0 && !pendingActivity && (
             <li className="rounded-lg border-2 border-dashed border-border py-4 text-center text-xs text-muted-foreground">
               Arraste Voos, Hospedagem ou Atividades para cá
             </li>
@@ -668,6 +688,15 @@ function DayCard({
               itineraryId={itineraryId}
             />
           ))}
+          {pendingActivity && (
+            <li className="flex items-center gap-3 rounded-lg border border-border p-3">
+              <Skeleton className="h-8 w-8 rounded-lg" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3.5 w-2/3" />
+                <Skeleton className="h-3 w-1/3" />
+              </div>
+            </li>
+          )}
         </ul>
       </SortableContext>
 
