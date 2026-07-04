@@ -60,6 +60,16 @@ function ItinerariesPage() {
     if (ok) remove.mutate(it);
   }
 
+  async function handleDuplicate(it: Itinerary) {
+    const ok = await confirm({
+      title: "Duplicar roteiro",
+      description: `Deseja criar uma cópia de "${it.title}"?`,
+      confirmLabel: "Duplicar",
+    });
+    if (ok) duplicate.mutate(it);
+  }
+
+
 
 
   return (
@@ -107,14 +117,14 @@ function ItinerariesPage() {
                 <DropdownMenuTrigger asChild>
                   <button
                     title="Mais opções"
-                    className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground focus:opacity-100 group-hover:opacity-100 sm:opacity-0"
+                    className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                   >
                     <MoreVertical className="h-4 w-4" />
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
                   <DropdownMenuItem
-                    onSelect={() => duplicate.mutate(it)}
+                    onSelect={() => handleDuplicate(it)}
                     disabled={duplicate.isPending}
                   >
                     <Copy className="mr-2 h-4 w-4" /> Duplicar viagem
