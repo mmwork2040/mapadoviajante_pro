@@ -60,6 +60,16 @@ function ItinerariesPage() {
     if (ok) remove.mutate(it);
   }
 
+  async function handleDuplicate(it: Itinerary) {
+    const ok = await confirm({
+      title: "Duplicar roteiro",
+      description: `Deseja criar uma cópia de "${it.title}"?`,
+      confirmLabel: "Duplicar",
+    });
+    if (ok) duplicate.mutate(it);
+  }
+
+
 
 
   return (
