@@ -173,7 +173,7 @@ function AcceptInvitePage() {
                     type="button"
                     disabled={busy}
                     onClick={confirmInvite}
-                    className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                    className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
                   >
                     {busy ? "Aguarde…" : "Tentar novamente"}
                   </button>
@@ -185,7 +185,7 @@ function AcceptInvitePage() {
                       autoAcceptStarted.current = false;
                       setError("");
                     }}
-                    className="w-full rounded-xl border border-input py-2.5 text-sm font-medium hover:bg-muted disabled:opacity-60"
+                    className="w-full rounded-lg border border-input py-2.5 text-sm font-medium hover:bg-muted disabled:opacity-60"
                   >
                     Sair e usar outro e-mail
                   </button>
@@ -241,7 +241,7 @@ function AcceptInvitePage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+                className="w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
               >
                 {busy ? "Aguarde…" : mode === "signup" ? "Aceitar e criar conta" : "Aceitar e entrar"}
               </button>

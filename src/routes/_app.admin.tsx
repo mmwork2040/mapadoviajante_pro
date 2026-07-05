@@ -557,7 +557,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {saving ? "Salvando…" : "Adicionar"}
           </button>
@@ -736,7 +736,7 @@ function WebhookCard() {
           type="button"
           onClick={save}
           disabled={disabled || !config.url.trim() || config.events.length === 0}
-          className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saved ? "Salvo ✓" : "Salvar configuração"}
         </button>
@@ -744,7 +744,7 @@ function WebhookCard() {
           type="button"
           onClick={runTest}
           disabled={!canTest || testing}
-          className="rounded-xl border border-input bg-background px-4 py-2 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-lg border border-input bg-background px-4 py-2 text-sm font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
         >
           {testing ? "Enviando…" : "Testar webhook"}
         </button>
@@ -1661,7 +1661,7 @@ function AiConfigCard() {
         type="button"
         onClick={runTest}
         disabled={testing}
-        className="mt-4 flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+        className="mt-4 flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
       >
         {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
         {testing ? "Testando…" : "Testar e conectar"}
@@ -1692,7 +1692,7 @@ function AiConfigCard() {
               type="button"
               onClick={saveOrientacoes}
               disabled={saveMut.isPending}
-              className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
             >
               <Save className="h-4 w-4" /> Salvar orientações
             </button>

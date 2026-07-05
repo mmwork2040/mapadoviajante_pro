@@ -52,13 +52,13 @@ function ProtectedLayout() {
               setAccepting(false);
               if (!res.ok) setAcceptError(res.error ?? "Não foi possível aceitar.");
             }}
-            className="mt-5 w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            className="mt-5 w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
           >
             {accepting ? "Aguarde…" : "Aceitar convite"}
           </button>
           <button
             onClick={() => signOut()}
-            className="mt-3 w-full rounded-xl border border-input py-2.5 text-sm font-medium hover:bg-muted"
+            className="mt-3 w-full rounded-lg border border-input py-2.5 text-sm font-medium hover:bg-muted"
           >
             Sair
           </button>

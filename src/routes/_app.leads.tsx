@@ -111,7 +111,7 @@ function LeadsPage() {
           />
           <button
             onClick={() => setOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
           >
             <Plus className="h-4 w-4" /> Novo Lead
           </button>
@@ -549,7 +549,7 @@ export function NewLeadModal({
             {step > 0 && (
               <button
                 onClick={() => setStep((s) => Math.max(s - 1, 0))}
-                className="flex items-center gap-2 rounded-xl border border-input px-4 py-2.5 text-sm font-semibold hover:bg-muted"
+                className="flex items-center gap-2 rounded-lg border border-input px-4 py-2.5 text-sm font-semibold hover:bg-muted"
               >
                 <ArrowLeft className="h-4 w-4" /> Voltar
               </button>
@@ -558,14 +558,14 @@ export function NewLeadModal({
               <button
                 onClick={submit}
                 disabled={saving}
-                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
                 {saving ? "Salvando…" : editing ? "Salvar Alterações" : "Criar Viajante"} <Check className="h-4 w-4" />
               </button>
             ) : (
               <button
                 onClick={next}
-                className="flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
               >
                 Próximo <ArrowRight className="h-4 w-4" />
               </button>

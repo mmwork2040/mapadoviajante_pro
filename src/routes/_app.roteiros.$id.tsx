@@ -1517,10 +1517,10 @@ function EditItineraryModal({
             </select>
           </label>
           <div className="flex gap-2">
-            <button type="submit" disabled={saving} className="flex-1 rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60">
+            <button type="submit" disabled={saving} className="flex-1 rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60">
               {saving ? "Salvando…" : "Salvar"}
             </button>
-            <button type="button" onClick={onClose} className="rounded-xl border border-border px-4 py-2.5 font-medium hover:bg-muted">
+            <button type="button" onClick={onClose} className="rounded-lg border border-border px-4 py-2.5 font-medium hover:bg-muted">
               Cancelar
             </button>
           </div>

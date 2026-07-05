@@ -49,7 +49,7 @@ function LibraryPage() {
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
         >
           <Plus className="h-4 w-4" /> Novo Destino
         </button>
@@ -166,7 +166,7 @@ function DestinationModal({
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {saving ? "Salvando…" : destination ? "Salvar" : "Adicionar"}
           </button>
