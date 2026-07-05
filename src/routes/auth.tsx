@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Route as RouteIcon } from "lucide-react";
+import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/auth")({
@@ -52,8 +52,8 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
         <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <RouteIcon className="h-5 w-5" />
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-white">
+            <img src={brandLogo.url} alt="O Mapa do Viajante" className="h-full w-full object-contain p-1" />
           </div>
           <span className="text-xl font-extrabold tracking-tight">
             Mapa<span className="text-primary">PRO</span>
