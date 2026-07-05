@@ -192,6 +192,7 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
     }
 
     const messaging = getMessaging(app);
+    bindForegroundMessages(messaging);
     const token = await getToken(messaging, {
       vapidKey: config.vapidKey,
       serviceWorkerRegistration: registration,
