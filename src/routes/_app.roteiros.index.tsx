@@ -21,6 +21,19 @@ export const Route = createFileRoute("/_app/roteiros/")({
   component: ItinerariesPage,
 });
 
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Rascunho",
+  active: "Em andamento",
+  completed: "Concluído",
+  cancelled: "Cancelado",
+};
+
+function initials(name?: string | null) {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
+
 function ItinerariesPage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
