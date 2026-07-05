@@ -53,7 +53,7 @@ function AuthPage() {
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
         <div className="mb-6 flex items-center gap-2">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-white">
-            <img src={brandLogo.url} alt="O Mapa do Viajante" className="h-full w-full object-contain p-1" />
+            <img src={brandLogo.url} alt="O Mapa do Viajante" className="h-full w-full object-contain" />
           </div>
           <span className="text-xl font-extrabold tracking-tight">
             Mapa<span className="text-primary">PRO</span>

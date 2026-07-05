@@ -197,7 +197,7 @@ export async function fetchLeads(filters: {
     .from("crm_leads")
     .select("*, assigned_member:agency_members!crm_leads_assigned_to_fkey(name, avatar_color)")
     .eq("agency_id", _agencyId)
-    .order("last_activity_at", { ascending: false });
+    .order("name", { ascending: true });
 
   if (filters.status && filters.status !== "contacted") query = query.eq("status", filters.status);
   if (filters.destination) query = query.eq("destination", filters.destination);
@@ -700,7 +700,10 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
     console.error("fetchItineraries:", error);
     throw new Error("Não foi possível carregar os roteiros.");
   }
-  return (data as Itinerary[]) || [];
+  const items = (data as Itinerary[]) || [];
+  return items.sort((a, b) =>
+    ((a.lead?.name ?? "").localeCompare(b.lead?.name ?? "", "pt", { sensitivity: "base" })),
+  );
 }
 
 export async function fetchPublicItinerary(id: string): Promise<Itinerary | null> {
