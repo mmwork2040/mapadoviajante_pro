@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
-import { getNotifConfig, configIsComplete, requestPushToken, startTokenRefreshWatcher } from "@/lib/notifications";
+import { getNotifConfig, configIsComplete, requestPushToken, startTokenRefreshWatcher, getDeviceId, getDeviceLabel } from "@/lib/notifications";
 import { saveDeviceToken } from "@/lib/push.functions";
 
 /**
@@ -30,7 +30,7 @@ export function NotifPrompt() {
       const config = await getNotifConfig();
       const res = await requestPushToken(config);
       if (res.ok && res.token) {
-        await saveDeviceToken({ data: { token: res.token } });
+        await saveDeviceToken({ data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() } });
         startTokenRefreshWatcher();
         setShow(false);
       } else {

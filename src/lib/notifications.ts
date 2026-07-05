@@ -1,7 +1,54 @@
 import { initializeApp, getApps, deleteApp, type FirebaseApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, type Messaging } from "firebase/messaging";
 import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
 import { saveDeviceToken } from "@/lib/push.functions";
+
+// ── Identificação estável do dispositivo ───────────────────────
+export function getDeviceId(): string {
+  const KEY = "push_device_id";
+  let id = localStorage.getItem(KEY);
+  if (!id) {
+    id =
+      (crypto.randomUUID?.() as string | undefined) ??
+      `dev-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(KEY, id);
+  }
+  return id;
+}
+
+export function getDeviceLabel(): string {
+  const ua = navigator.userAgent;
+  let os = "Dispositivo";
+  if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
+  else if (/Android/i.test(ua)) os = "Android";
+  else if (/Windows/i.test(ua)) os = "Windows";
+  else if (/Mac OS X/i.test(ua)) os = "macOS";
+  else if (/Linux/i.test(ua)) os = "Linux";
+  let browser = "";
+  if (/Edg\//i.test(ua)) browser = "Edge";
+  else if (/Chrome\//i.test(ua)) browser = "Chrome";
+  else if (/Firefox\//i.test(ua)) browser = "Firefox";
+  else if (/Safari\//i.test(ua)) browser = "Safari";
+  return browser ? `${os} · ${browser}` : os;
+}
+
+let foregroundBound = false;
+function bindForegroundMessages(messaging: Messaging): void {
+  if (foregroundBound) return;
+  foregroundBound = true;
+  onMessage(messaging, (payload) => {
+    const title = payload.notification?.title ?? "Notificação";
+    const body = payload.notification?.body ?? "";
+    if (Notification.permission === "granted") {
+      try {
+        new Notification(title, { body });
+      } catch {
+        // Alguns navegadores exigem o Service Worker; ignore silenciosamente.
+      }
+    }
+  });
+}
+
 
 // ── Eventos que podem gerar notificações ───────────────────────
 export const NOTIF_EVENTS = [
@@ -145,6 +192,7 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
     }
 
     const messaging = getMessaging(app);
+    bindForegroundMessages(messaging);
     const token = await getToken(messaging, {
       vapidKey: config.vapidKey,
       serviceWorkerRegistration: registration,
@@ -160,9 +208,10 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
 }
 
 /**
- * Ao logar: solicita permissão de push automaticamente (se ainda não decidida),
- * captura o device token e registra no backend. Falha silenciosa em iframe/preview
- * ou quando a permissão foi negada.
+ * Ao logar (ou restaurar sessão): captura/atualiza o device token e registra no
+ * backend. Se a permissão já foi concedida, atualiza silenciosamente sem prompt,
+ * garantindo que o token seja renovado a cada login em qualquer dispositivo.
+ * Falha silenciosa em iframe/preview ou quando a permissão foi negada.
  */
 export async function captureDeviceTokenOnLogin(): Promise<void> {
   if (typeof window === "undefined") return;
@@ -173,11 +222,14 @@ export async function captureDeviceTokenOnLogin(): Promise<void> {
   try {
     const config = await getNotifConfig();
     if (!config.enabled || !configIsComplete(config)) return;
-    // requestPushToken já chama Notification.requestPermission() (prompt apenas
-    // quando a permissão está em "default"), registra o SW e obtém o token.
+    // requestPushToken chama Notification.requestPermission() apenas quando a
+    // permissão está em "default" (exige gesto em mobile). Quando já concedida,
+    // getToken funciona sem gesto e o token é renovado.
     const res = await requestPushToken(config);
     if (res.ok && res.token) {
-      await saveDeviceToken({ data: { token: res.token } });
+      await saveDeviceToken({
+        data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() },
+      });
       lastKnownToken = res.token;
       startTokenRefreshWatcher();
     }
@@ -200,7 +252,9 @@ async function checkAndSyncToken(): Promise<void> {
     if (!config.enabled || !configIsComplete(config)) return;
     const res = await requestPushToken(config);
     if (res.ok && res.token && res.token !== lastKnownToken) {
-      await saveDeviceToken({ data: { token: res.token } });
+      await saveDeviceToken({
+        data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() },
+      });
       lastKnownToken = res.token;
     }
   } catch {

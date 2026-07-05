@@ -91,13 +91,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       await hydrateMember(data.session);
       setLoading(false);
+      // Atualiza o device token também ao restaurar a sessão (reload/app aberto).
+      if (data.session) void captureDeviceTokenOnLogin();
     });
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
-      if (event === "SIGNED_IN" || event === "USER_UPDATED") {
+      if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
         hydrateMember(sess);
-        void captureDeviceTokenOnLogin();
+        if (sess) void captureDeviceTokenOnLogin();
       } else if (event === "SIGNED_OUT") {
         setAgencyContext(null);
         setMember(null);

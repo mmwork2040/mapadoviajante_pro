@@ -903,7 +903,7 @@ function DeviceTokensCard() {
   const tokens = tokensQ.data ?? [];
 
   async function testUser(entry: DeviceTokenEntry) {
-    setSendingId(entry.userId);
+    setSendingId(entry.token);
     const res = await sendPush({
       data: {
         token: entry.token,
@@ -944,10 +944,15 @@ function DeviceTokensCard() {
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border">
           {tokens.map((t) => (
-            <li key={t.userId} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-sm">
+            <li key={t.token} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-sm">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 font-medium">
                   <span className="truncate">{t.name || t.email || t.userId}</span>
+                  {t.label && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                      {t.label}
+                    </span>
+                  )}
                   {t.isSelf && (
                     <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
                       você
@@ -962,10 +967,10 @@ function DeviceTokensCard() {
               <button
                 type="button"
                 onClick={() => testUser(t)}
-                disabled={sendingId === t.userId || !serverReady}
+                disabled={sendingId === t.token || !serverReady}
                 className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
               >
-                {sendingId === t.userId ? (
+                {sendingId === t.token ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
                   <Send className="h-3.5 w-3.5" />
