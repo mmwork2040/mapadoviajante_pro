@@ -58,6 +58,7 @@ function timeAgo(value?: string | null): string {
 }
 
 function DashboardPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardStats,
@@ -65,6 +66,8 @@ function DashboardPage() {
 
   const [chartMode, setChartMode] = useState<"revenue" | "count">("revenue");
   const [agendaMode, setAgendaMode] = useState<"week" | "month">("week");
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [taskTitle, setTaskTitle] = useState("");
 
   const week = useMemo(() => {
     const today = new Date();
@@ -76,6 +79,40 @@ function DashboardPage() {
       return d;
     });
   }, []);
+
+  const monthGrid = useMemo(() => {
+    const today = new Date();
+    const first = new Date(today.getFullYear(), today.getMonth(), 1);
+    const start = new Date(first);
+    start.setDate(first.getDate() - first.getDay());
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
+  }, []);
+
+  const createTaskMutation = useMutation({
+    mutationFn: (vars: { title: string; due: string }) =>
+      createTask({ title: vars.title, due_date: vars.due }),
+    onSuccess: (res) => {
+      if (!res) return toast.error("Erro ao criar agendamento.");
+      toast.success("Agendamento criado!");
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      setSelectedDay(null);
+      setTaskTitle("");
+    },
+    onError: () => toast.error("Erro ao criar agendamento."),
+  });
+
+  function submitTask() {
+    if (!selectedDay) return;
+    if (!taskTitle.trim()) return toast.error("Informe o título.");
+    const due = new Date(selectedDay);
+    due.setHours(9, 0, 0, 0);
+    createTaskMutation.mutate({ title: taskTitle.trim(), due: due.toISOString() });
+  }
+
 
   if (isError) {
     return <QueryError message="Não foi possível carregar o painel." onRetry={() => refetch()} />;
