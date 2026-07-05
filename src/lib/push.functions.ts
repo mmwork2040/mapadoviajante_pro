@@ -16,6 +16,12 @@ function base64url(input: ArrayBuffer | string): string {
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+function randomSecret(): string {
+  const bytes = new Uint8Array(24);
+  crypto.getRandomValues(bytes);
+  return base64url(bytes.buffer);
+}
+
 function pemToArrayBuffer(pem: string): ArrayBuffer {
   const body = pem
     .replace(/-----BEGIN PRIVATE KEY-----/, "")
@@ -141,6 +147,15 @@ export interface DeviceTokenEntry {
   isSelf: boolean;
 }
 
+export interface PushDeliveryStatus {
+  traceId: string;
+  status: "pending" | "accepted" | "received" | "failed" | "not_found";
+  message: string;
+  sentAt: string | null;
+  receivedAt: string | null;
+  deviceState: string | null;
+}
+
 /** Lista os device tokens salvos dos membros da agência do usuário (admin). */
 export const listDeviceTokens = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -201,6 +216,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
     z
       .object({
         token: z.string().min(10),
+        deviceId: z.string().min(6).max(64).optional(),
         title: z.string().min(1).max(120),
         body: z.string().min(1).max(500),
       })
@@ -224,6 +240,31 @@ export const sendTestPush = createServerFn({ method: "POST" })
     }
     // Normaliza quebras de linha escapadas (\\n) do private_key colado como texto.
     sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+    const traceId = crypto.randomUUID();
+    const ackSecret = randomSecret();
+    const sentAt = new Date().toISOString();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const deliveryKey = `push_delivery:${traceId}`;
+
+    await supabaseAdmin.from("system_settings").upsert(
+      {
+        key: deliveryKey,
+        value: {
+          traceId,
+          ackSecret,
+          status: "pending",
+          deviceId: data.deviceId ?? null,
+          tokenPrefix: data.token.slice(0, 18),
+          sentAt,
+          receivedAt: null,
+          deviceState: null,
+          message: "Envio iniciado.",
+        } as never,
+        updated_at: sentAt,
+      },
+      { onConflict: "key" },
+    );
+
     try {
       const accessToken = await getAccessToken(sa);
       const res = await fetch(
@@ -237,13 +278,23 @@ export const sendTestPush = createServerFn({ method: "POST" })
           body: JSON.stringify({
             message: {
               token: data.token,
+              data: {
+                title: data.title,
+                body: data.body,
+                traceId,
+                ackSecret,
+                url: "/",
+              },
               notification: { title: data.title, body: data.body },
               webpush: {
+                fcm_options: { link: "/" },
                 notification: {
                   title: data.title,
                   body: data.body,
                   icon: "/pwa-icon.png",
                   badge: "/pwa-icon.png",
+                  data: { traceId, ackSecret, url: "/" },
+                  requireInteraction: false,
                 },
               },
             },
@@ -253,11 +304,105 @@ export const sendTestPush = createServerFn({ method: "POST" })
       if (!res.ok) {
         const text = await res.text();
         console.error("FCM send failed", res.status, text);
-        return { ok: false, message: `Falha ao enviar (status ${res.status}).` };
+        await supabaseAdmin
+          .from("system_settings")
+          .update({
+            value: {
+              traceId,
+              ackSecret,
+              status: "failed",
+              deviceId: data.deviceId ?? null,
+              tokenPrefix: data.token.slice(0, 18),
+              sentAt,
+              receivedAt: null,
+              deviceState: null,
+              message: `FCM recusou o envio (status ${res.status}).`,
+            } as never,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("key", deliveryKey);
+        return { ok: false, message: `FCM recusou o envio (status ${res.status}).`, traceId };
       }
-      return { ok: true, message: "Notificação enviada." };
+      await supabaseAdmin
+        .from("system_settings")
+        .update({
+          value: {
+            traceId,
+            ackSecret,
+            status: "accepted",
+            deviceId: data.deviceId ?? null,
+            tokenPrefix: data.token.slice(0, 18),
+            sentAt,
+            receivedAt: null,
+            deviceState: null,
+            message: "FCM aceitou o envio; aguardando confirmação do dispositivo.",
+          } as never,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("key", deliveryKey);
+      return {
+        ok: true,
+        message: "FCM aceitou o envio; aguardando confirmação do dispositivo.",
+        traceId,
+      };
     } catch (err) {
       console.error("FCM error", err);
-      return { ok: false, message: `Erro: ${err instanceof Error ? err.message : "desconhecido"}` };
+      await supabaseAdmin
+        .from("system_settings")
+        .update({
+          value: {
+            traceId,
+            ackSecret,
+            status: "failed",
+            deviceId: data.deviceId ?? null,
+            tokenPrefix: data.token.slice(0, 18),
+            sentAt,
+            receivedAt: null,
+            deviceState: null,
+            message: `Erro: ${err instanceof Error ? err.message : "desconhecido"}`,
+          } as never,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("key", deliveryKey);
+      return { ok: false, message: `Erro: ${err instanceof Error ? err.message : "desconhecido"}`, traceId };
     }
+  });
+
+/** Consulta se o dispositivo confirmou recebimento de um teste de push. */
+export const getPushDeliveryStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ traceId: z.string().uuid() }).parse(data))
+  .handler(async ({ data }): Promise<PushDeliveryStatus> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("system_settings")
+      .select("value")
+      .eq("key", `push_delivery:${data.traceId}`)
+      .maybeSingle();
+    if (!row?.value) {
+      return {
+        traceId: data.traceId,
+        status: "not_found",
+        message: "Status não encontrado.",
+        sentAt: null,
+        receivedAt: null,
+        deviceState: null,
+      };
+    }
+    const v = row.value as {
+      traceId?: string;
+      status?: PushDeliveryStatus["status"];
+      message?: string;
+      sentAt?: string | null;
+      receivedAt?: string | null;
+      deviceState?: string | null;
+    };
+    return {
+      traceId: data.traceId,
+      status: v.status ?? "pending",
+      message: v.message ?? "Aguardando confirmação do dispositivo.",
+      sentAt: v.sentAt ?? null,
+      receivedAt: v.receivedAt ?? null,
+      deviceState: v.deviceState ?? null,
+    };
   });
