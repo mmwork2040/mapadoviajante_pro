@@ -10,6 +10,8 @@ import {
   Plus,
   ArrowRight,
   CalendarDays,
+  BarChart3,
+  ListChecks,
 } from "lucide-react";
 import { fetchDashboardStats, createTask } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
@@ -214,7 +216,10 @@ function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
           <div className="mb-6 flex items-center justify-between gap-3">
-            <h2 className="min-w-0 font-semibold">Vendas — Últimos 6 Meses</h2>
+            <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+              <BarChart3 className="h-5 w-5 shrink-0 text-primary" />
+              <span className="truncate">Vendas — Últimos 6 Meses</span>
+            </h2>
             <div className="flex shrink-0 rounded-full bg-muted p-1 text-xs font-medium">
               <button
                 onClick={() => setChartMode("revenue")}
@@ -252,9 +257,12 @@ function DashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Tarefas do Dia</h2>
-            <span className="text-xs text-muted-foreground">{tasksToday.length} pendentes</span>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+              <ListChecks className="h-5 w-5 shrink-0 text-primary" />
+              <span className="truncate">Tarefas do Dia</span>
+            </h2>
+            <span className="shrink-0 text-xs text-muted-foreground">{tasksToday.length} pendentes</span>
           </div>
           {tasksToday.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">Sem tarefas pendentes! 🎉</p>
@@ -422,8 +430,11 @@ function DashboardPage() {
 
       {/* Leads Recentes */}
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-semibold">Leads Recentes</h2>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+            <Users className="h-5 w-5 shrink-0 text-primary" />
+            <span className="truncate">Leads Recentes</span>
+          </h2>
           <Link to="/leads" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             Ver todos <ArrowRight className="h-4 w-4" />
           </Link>
