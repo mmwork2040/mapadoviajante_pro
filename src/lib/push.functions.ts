@@ -75,19 +75,24 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { data: member } = await context.supabase
       .from("agency_members")
-      .select("agency_id")
+      .select("agency_id, name, email")
       .eq("user_id", context.userId)
       .eq("is_active", true)
       .limit(1)
       .maybeSingle();
 
-    const { error } = await context.supabase.from("system_settings").upsert(
+    // system_settings é acessível apenas por admin via RLS; usamos o client admin
+    // para que qualquer usuário autenticado consiga salvar o próprio token.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("system_settings").upsert(
       {
         key: `push_token:${context.userId}`,
         value: {
           token: data.token,
           userId: context.userId,
           agencyId: member?.agency_id ?? null,
+          name: member?.name ?? null,
+          email: member?.email ?? null,
           updatedAt: new Date().toISOString(),
         } as never,
         updated_at: new Date().toISOString(),
@@ -96,6 +101,63 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
     );
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export interface DeviceTokenEntry {
+  userId: string;
+  name: string | null;
+  email: string | null;
+  token: string;
+  updatedAt: string | null;
+  isSelf: boolean;
+}
+
+/** Lista os device tokens salvos dos membros da agência do usuário (admin). */
+export const listDeviceTokens = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<DeviceTokenEntry[]> => {
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) return [];
+
+    const { data: me } = await context.supabase
+      .from("agency_members")
+      .select("agency_id")
+      .eq("user_id", context.userId)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+    const agencyId = me?.agency_id ?? null;
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
+      .from("system_settings")
+      .select("key, value, updated_at")
+      .like("key", "push_token:%");
+    if (error) throw new Error(error.message);
+
+    return (data ?? [])
+      .map((row) => {
+        const v = (row.value ?? {}) as {
+          token?: string;
+          userId?: string;
+          agencyId?: string | null;
+          name?: string | null;
+          email?: string | null;
+        };
+        return {
+          userId: v.userId ?? row.key.replace("push_token:", ""),
+          name: v.name ?? null,
+          email: v.email ?? null,
+          token: v.token ?? "",
+          agencyId: v.agencyId ?? null,
+          updatedAt: row.updated_at as string | null,
+        };
+      })
+      .filter((e) => e.token && (agencyId === null || e.agencyId === agencyId))
+      .map(({ agencyId: _a, ...e }) => ({ ...e, isSelf: e.userId === context.userId }));
   });
 
 /** Envia uma notificação push de teste para um token de dispositivo via FCM HTTP v1. */
