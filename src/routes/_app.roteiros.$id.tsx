@@ -159,10 +159,14 @@ function ItineraryDetailPage() {
   });
 
   const advanceStatus = useMutation({
-    mutationFn: async (next: string) => updateItinerary(id, { status: next }),
-    onSuccess: () => {
+    mutationFn: async (next: string) => {
+      const updated = await updateItinerary(id, { status: next });
+      if (!updated) throw new Error("update failed");
+      return updated;
+    },
+    onSuccess: async () => {
       toast.success("Status atualizado!");
-      refresh();
+      await refresh();
     },
     onError: () => toast.error("Erro ao atualizar o status."),
   });
