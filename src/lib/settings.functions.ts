@@ -51,6 +51,22 @@ export const getAgencyConfig = createServerFn({ method: "GET" })
     return { value: JSON.stringify(row.value) };
   });
 
+/** Lê apenas a configuração pública de push para qualquer membro ativo da agência. */
+export const getPublicNotificationConfig = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ value: string | null }> => {
+    const member = await resolveAgency(context.supabase, context.userId);
+    if (!member) return { value: null };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("system_settings")
+      .select("value")
+      .eq("key", settingsKey(member.agencyId, "notifications"))
+      .maybeSingle();
+    if (row?.value == null) return { value: null };
+    return { value: JSON.stringify(row.value) };
+  });
+
 /** Salva a configuração de uma seção da Administração para a agência do usuário. */
 export const saveAgencyConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
