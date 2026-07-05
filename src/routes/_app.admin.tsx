@@ -95,33 +95,10 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
   const confirm = useConfirm();
   const isAdmin = member?.role === "admin";
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [task, setTask] = useState<Partial<Task>>({ priority: "normal" });
 
   const teamQ = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
-  const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks({}) });
   const team = teamQ.data ?? [];
-  const tasks = tasksQ.data ?? [];
 
-  const addTask = useMutation({
-    mutationFn: () => createTask(task),
-    onSuccess: (res) => {
-      if (!res) return toast.error("Erro ao criar tarefa.");
-      dispatchWebhook("task.created", res);
-      setTask({ priority: "normal" });
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-    },
-    onError: () => toast.error("Erro ao criar tarefa."),
-  });
-
-  const toggle = useMutation({
-    mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
-      updateTask(id, { completed, completed_at: completed ? new Date().toISOString() : null }),
-    onSuccess: (_res, vars) => {
-      if (vars.completed) dispatchWebhook("task.completed", { id: vars.id });
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-    },
-    onError: () => toast.error("Erro ao atualizar tarefa."),
-  });
 
   const changeRole = useMutation({
     mutationFn: ({ id, role }: { id: string; role: string }) => updateMemberRole(id, role),
