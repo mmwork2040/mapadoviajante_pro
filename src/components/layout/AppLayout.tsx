@@ -174,8 +174,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-5">
           {/* Marca no mobile (a navegação fica na barra inferior) */}
           <div className="flex items-center gap-2 md:hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
-              <img src={mapaproIcon.url} alt="MapaPRO" className="h-full w-full object-cover" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
+              <img src={brandLogo.url} alt="O Segredo do Viajante" className="h-full w-full object-cover scale-125" />
             </div>
             <span className="text-base font-extrabold tracking-tight">
               Mapa<span className="text-primary">PRO</span>
