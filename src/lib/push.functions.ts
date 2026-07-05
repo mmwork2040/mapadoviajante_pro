@@ -71,7 +71,15 @@ export const getPushStatus = createServerFn({ method: "GET" })
 /** Registra/atualiza o device token de push do usuário logado em system_settings. */
 export const saveDeviceToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data) => z.object({ token: z.string().min(10) }).parse(data))
+  .inputValidator((data) =>
+    z
+      .object({
+        token: z.string().min(10),
+        deviceId: z.string().min(6).max(64),
+        label: z.string().max(120).optional(),
+      })
+      .parse(data),
+  )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const { data: member } = await context.supabase
       .from("agency_members")
@@ -83,10 +91,12 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
 
     const { error } = await context.supabase.from("system_settings").upsert(
       {
-        key: `push_token:${context.userId}`,
+        key: `push_token:${context.userId}:${data.deviceId}`,
         value: {
           token: data.token,
           userId: context.userId,
+          deviceId: data.deviceId,
+          label: data.label ?? null,
           agencyId: member?.agency_id ?? null,
           name: member?.name ?? null,
           email: member?.email ?? null,
