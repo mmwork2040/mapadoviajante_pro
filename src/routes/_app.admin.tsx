@@ -698,6 +698,7 @@ function WebhookCard() {
 }
 
 function NotificationsCard() {
+  const qc = useQueryClient();
   const [config, setConfig] = useState<NotifConfig>(DEFAULT_NOTIF_CONFIG);
   const [token, setToken] = useState<string>("");
   const [activating, setActivating] = useState(false);
@@ -748,6 +749,7 @@ function NotificationsCard() {
     }
     if (res.ok && res.token) {
       await registerPushToken(res.token);
+      qc.invalidateQueries({ queryKey: ["device-tokens"] });
       setToken(res.token);
       toast.success(res.message);
     } else {
