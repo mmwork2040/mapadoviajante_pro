@@ -42,14 +42,14 @@ function LibraryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">Biblioteca</h1>
           <p className="text-sm text-muted-foreground">Destinos e pacotes reutilizáveis.</p>
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
         >
           <Plus className="h-4 w-4" /> Novo Destino
         </button>
