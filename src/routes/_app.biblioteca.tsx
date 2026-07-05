@@ -74,6 +74,27 @@ function LibraryPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library"] });
   const active = TABS.find((t) => t.key === tab)!;
 
+  const { data: counts = {} as Record<TabKey, number> } = useQuery({
+    queryKey: ["library", "counts"],
+    queryFn: async (): Promise<Record<TabKey, number>> => {
+      const [allItems, docs] = await Promise.all([
+        fetchLibraryItems(),
+        fetchAgencyDocuments(),
+      ]);
+      const c: Record<TabKey, number> = {
+        experience: 0,
+        package: 0,
+        image: 0,
+        itinerary: 0,
+        documents: docs.length,
+      };
+      for (const item of allItems) {
+        if (item.type in c) c[item.type as LibraryItemType] += 1;
+      }
+      return c;
+    },
+  });
+
   async function remove(item: LibraryItem) {
     const ok = await confirm({
       title: "Excluir item?",
@@ -114,6 +135,7 @@ function LibraryPage() {
         {TABS.map((t) => {
           const Icon = t.icon;
           const on = t.key === tab;
+          const count = counts[t.key] ?? 0;
           return (
             <button
               key={t.key}
@@ -125,6 +147,13 @@ function LibraryPage() {
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" /> {t.label}
+              <span
+                className={`ml-0.5 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                  on ? "bg-primary-foreground/20 text-primary-foreground" : "bg-accent text-accent-foreground"
+                }`}
+              >
+                {count}
+              </span>
             </button>
           );
         })}
