@@ -259,32 +259,8 @@ function DashboardPage() {
           </div>
           )}
         </div>
-
-
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
-              <ListChecks className="h-5 w-5 shrink-0 text-primary" />
-              <span className="truncate">Tarefas do Dia</span>
-            </h2>
-            <span className="shrink-0 text-xs text-muted-foreground">{tasksToday.length} pendentes</span>
-          </div>
-          {tasksToday.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">Sem tarefas pendentes! 🎉</p>
-          ) : (
-            <ul className="space-y-3">
-              {tasksToday.map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
-                  <span className="truncate">{t.title}</span>
-                  {t.lead?.name && (
-                    <span className="shrink-0 text-xs text-muted-foreground">{t.lead.name}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </div>
+
 
       {/* Agenda da Semana */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
