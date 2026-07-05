@@ -14,8 +14,8 @@ import {
   Sun,
   LogOut,
   Bot,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+
 } from "lucide-react";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
