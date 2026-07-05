@@ -74,7 +74,7 @@ function LibraryPage() {
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library"] });
   const active = TABS.find((t) => t.key === tab)!;
 
-  const { data: counts = {} } = useQuery({
+  const { data: counts = {} as Record<TabKey, number> } = useQuery({
     queryKey: ["library", "counts"],
     queryFn: async (): Promise<Record<TabKey, number>> => {
       const [allItems, docs] = await Promise.all([
