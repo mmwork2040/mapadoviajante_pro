@@ -700,7 +700,10 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
     console.error("fetchItineraries:", error);
     throw new Error("Não foi possível carregar os roteiros.");
   }
-  return (data as Itinerary[]) || [];
+  const items = (data as Itinerary[]) || [];
+  return items.sort((a, b) =>
+    ((a.lead?.name ?? "").localeCompare(b.lead?.name ?? "", "pt", { sensitivity: "base" })),
+  );
 }
 
 export async function fetchPublicItinerary(id: string): Promise<Itinerary | null> {
