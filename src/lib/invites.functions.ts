@@ -73,9 +73,21 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     const { supabase } = context;
     const email = data.email.toLowerCase();
 
+    // Verifica se o envio de e-mail está configurado e ativo antes de criar o convite
+    const lovableKey = process.env.LOVABLE_API_KEY;
+    const connKey = process.env.GOOGLE_MAIL_API_KEY;
+    if (!lovableKey || !connKey) {
+      return {
+        ok: false,
+        message:
+          "O envio de e-mails não está configurado. Conecte o Gmail nas configurações do sistema antes de convidar membros.",
+      };
+    }
+
     // Agência e cargo do solicitante
     const { data: agencyId } = await supabase.rpc("get_user_agency_id");
     if (!agencyId) return { ok: false, message: "Agência não encontrada." };
+
 
     // Já é membro ativo?
     const { data: existing } = await supabase
