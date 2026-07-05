@@ -10,6 +10,8 @@ import {
   Plus,
   ArrowRight,
   CalendarDays,
+  BarChart3,
+  ListChecks,
 } from "lucide-react";
 import { fetchDashboardStats, createTask } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
