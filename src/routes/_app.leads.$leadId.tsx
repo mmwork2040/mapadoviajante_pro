@@ -537,8 +537,10 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
                 setOverCol(col.key);
               }}
               onDragLeave={() => setOverCol((c) => (c === col.key ? null : c))}
-              onDrop={() => {
-                if (dragId) move.mutate({ id: dragId, status: col.key });
+              onDrop={(e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData("text/plain") || dragId;
+                if (id) move.mutate({ id, status: col.key });
                 setDragId(null);
                 setOverCol(null);
               }}
@@ -552,20 +554,25 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
               <div className="space-y-2">
                 {items.map((it) => (
                   <div key={it.id} className="group relative">
-                    <Link
-                      to="/roteiros/$id"
-                      params={{ id: it.id }}
+                    <div
+                      role="button"
+                      tabIndex={0}
                       draggable
-                      onDragStart={() => setDragId(it.id)}
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", it.id);
+                        setDragId(it.id);
+                      }}
                       onDragEnd={() => {
                         setDragId(null);
                         setOverCol(null);
                       }}
+                      onClick={() => navigate({ to: "/roteiros/$id", params: { id: it.id } })}
                       className="block cursor-grab rounded-lg border border-border bg-card p-2 pr-8 text-sm hover:border-primary active:cursor-grabbing"
                     >
                       <p className="font-medium">{it.title}</p>
                       <p className="text-xs text-muted-foreground">{formatCurrency(it.budget)}</p>
-                    </Link>
+                    </div>
                     <button
                       type="button"
                       aria-label="Excluir roteiro"
