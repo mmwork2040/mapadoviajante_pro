@@ -46,11 +46,12 @@ export const Route = createFileRoute("/_app/biblioteca")({
   component: LibraryPage,
 });
 
-const TABS: { key: LibraryItemType; label: string; icon: typeof Sparkles; hint: string }[] = [
+const TABS: { key: TabKey; label: string; icon: typeof Sparkles; hint: string }[] = [
   { key: "experience", label: "Experiências", icon: Sparkles, hint: "Passeios, tours e atividades." },
   { key: "package", label: "Pacotes", icon: Package, hint: "Pacotes prontos com preço e duração." },
   { key: "image", label: "Imagens", icon: ImageIcon, hint: "Banco de imagens de destinos." },
   { key: "itinerary", label: "Roteiros modelo", icon: Map, hint: "Roteiros reutilizáveis como base." },
+  { key: "documents", label: "Documentos", icon: Files, hint: "Arquivos enviados em leads e roteiros, agrupados por origem." },
 ];
 
 function LibraryPage() {
