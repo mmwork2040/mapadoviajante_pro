@@ -450,6 +450,17 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
           </div>
         )}
 
+        <button
+          type="button"
+          onClick={() => emailQ.refetch()}
+          disabled={emailQ.isFetching}
+          className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border border-input bg-background py-2 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-60"
+        >
+          <RefreshCw className={`h-4 w-4 ${emailQ.isFetching ? "animate-spin" : ""}`} />
+          Atualizar conexão de e-mail
+        </button>
+
+
         <form onSubmit={submit} className="space-y-3">
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Nome</span>
