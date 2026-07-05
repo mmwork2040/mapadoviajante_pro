@@ -21,7 +21,7 @@ import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 
 const NAV = [
-  { to: "/", label: "Página Inicial", icon: LayoutDashboard },
+  { to: "/", label: "Painel", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
   { to: "/biblioteca", label: "Biblioteca", icon: Images },
