@@ -14,6 +14,7 @@ import {
   setAgencyContext,
 } from "@/lib/services";
 import { acceptInvite, getMyPendingInvite, type PendingInvite } from "@/lib/invites";
+import { captureDeviceTokenOnLogin } from "@/lib/notifications";
 import type { AgencyMember } from "@/lib/types";
 
 interface AuthContextValue {
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(sess);
       if (event === "SIGNED_IN" || event === "USER_UPDATED") {
         hydrateMember(sess);
+        void captureDeviceTokenOnLogin();
       } else if (event === "SIGNED_OUT") {
         setAgencyContext(null);
         setMember(null);
