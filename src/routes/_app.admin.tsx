@@ -903,7 +903,7 @@ function DeviceTokensCard() {
   const tokens = tokensQ.data ?? [];
 
   async function testUser(entry: DeviceTokenEntry) {
-    setSendingId(entry.userId);
+    setSendingId(entry.token);
     const res = await sendPush({
       data: {
         token: entry.token,
