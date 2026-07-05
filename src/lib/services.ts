@@ -197,7 +197,7 @@ export async function fetchLeads(filters: {
     .from("crm_leads")
     .select("*, assigned_member:agency_members!crm_leads_assigned_to_fkey(name, avatar_color)")
     .eq("agency_id", _agencyId)
-    .order("last_activity_at", { ascending: false });
+    .order("name", { ascending: true });
 
   if (filters.status && filters.status !== "contacted") query = query.eq("status", filters.status);
   if (filters.destination) query = query.eq("destination", filters.destination);
