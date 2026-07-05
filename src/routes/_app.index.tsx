@@ -240,6 +240,9 @@ function DashboardPage() {
             </div>
           </div>
 
+          {series.every((v) => !v) ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">Nenhuma venda registrada nos últimos 6 meses</p>
+          ) : (
           <div className="flex h-56 items-end gap-3">
             {data.chartData.labels.map((label, i) => (
               <div key={label} className="flex flex-1 flex-col items-center gap-2">
@@ -254,7 +257,9 @@ function DashboardPage() {
               </div>
             ))}
           </div>
+          )}
         </div>
+
 
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
           <div className="mb-4 flex items-center justify-between gap-2">
