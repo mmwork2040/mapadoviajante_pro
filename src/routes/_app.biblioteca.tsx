@@ -130,7 +130,9 @@ function LibraryPage() {
 
       <p className="text-sm text-muted-foreground">{active.hint}</p>
 
-      {isError ? (
+      {isDocuments ? (
+        <DocumentsPanel />
+      ) : isError ? (
         <QueryError message="Não foi possível carregar a biblioteca." onRetry={() => refetch()} />
       ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
@@ -144,9 +146,9 @@ function LibraryPage() {
         </div>
       )}
 
-      {(open || editing) && (
+      {!isDocuments && (open || editing) && (
         <LibraryModal
-          type={tab}
+          type={tab as LibraryItemType}
           item={editing}
           onClose={() => {
             setOpen(false);
