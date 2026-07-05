@@ -70,7 +70,6 @@ export const Route = createFileRoute("/_app/admin")({
 });
 
 const ROLES = ["admin", "gerente", "consultor"];
-const PRIORITIES = ["low", "normal", "high"];
 
 function AdminPage() {
   const { session, member } = useAuth();
