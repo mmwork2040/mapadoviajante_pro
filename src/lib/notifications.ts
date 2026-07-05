@@ -252,7 +252,9 @@ async function checkAndSyncToken(): Promise<void> {
     if (!config.enabled || !configIsComplete(config)) return;
     const res = await requestPushToken(config);
     if (res.ok && res.token && res.token !== lastKnownToken) {
-      await saveDeviceToken({ data: { token: res.token } });
+      await saveDeviceToken({
+        data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() },
+      });
       lastKnownToken = res.token;
     }
   } catch {
