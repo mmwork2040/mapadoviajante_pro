@@ -442,6 +442,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
       title: taskData.title,
       priority: taskData.priority || "normal",
       due_date: taskData.due_date || null,
+      description: taskData.description ?? null,
     })
     .select()
     .single();
