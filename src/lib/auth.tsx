@@ -14,6 +14,7 @@ import {
   setAgencyContext,
 } from "@/lib/services";
 import { acceptInvite, getMyPendingInvite, type PendingInvite } from "@/lib/invites";
+import { captureDeviceTokenOnLogin } from "@/lib/notifications";
 import type { AgencyMember } from "@/lib/types";
 
 interface AuthContextValue {
