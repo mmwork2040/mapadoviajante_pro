@@ -320,6 +320,9 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
           subtitle="Configure notificações push via Firebase (FCM)"
         >
           <NotificationsCard />
+          <div className="mt-6 border-t border-border pt-6">
+            <DeviceTokensCard />
+          </div>
         </CollapsibleSection>
       )}
 
