@@ -341,12 +341,13 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
       ) : (
         <ul className="grid gap-2 sm:grid-cols-2">
           {docs.map((doc) => (
-            <li key={doc.id} className="flex items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm">
+            <li key={doc.id} className="flex min-w-0 items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm">
               <FileText className="h-4 w-4 shrink-0 text-primary" />
-              <button onClick={() => setPreview(doc)} className="flex-1 truncate text-left hover:underline" title={`Pré-visualizar ${doc.name}`}>
+              <button onClick={() => setPreview(doc)} className="min-w-0 flex-1 truncate text-left hover:underline" title={`Pré-visualizar ${doc.name}`}>
                 {doc.category && <span className="mr-1 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
                 {doc.name}
               </button>
+
               <button onClick={() => setPreview(doc)} className="text-muted-foreground hover:text-primary" title="Pré-visualizar">
                 <Eye className="h-4 w-4" />
               </button>
