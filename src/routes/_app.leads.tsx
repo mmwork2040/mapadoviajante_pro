@@ -179,6 +179,7 @@ function LeadsPage() {
                           setDragId(null);
                           setOverCol(null);
                         }}
+                        onMove={(status) => move.mutate({ id: l.id, status })}
                       />
                     ))
                   )}
@@ -187,6 +188,7 @@ function LeadsPage() {
             );
           })}
         </div>
+
 
       )}
 
