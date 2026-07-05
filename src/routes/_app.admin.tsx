@@ -484,10 +484,10 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
           </label>
           <button
             type="submit"
-            disabled={saving}
+            disabled={saving || !emailReady}
             className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            {saving ? "Salvando…" : "Adicionar"}
+            {saving ? "Salvando…" : !emailReady ? "E-mail não configurado" : "Adicionar"}
           </button>
         </form>
       </div>
