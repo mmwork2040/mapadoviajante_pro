@@ -443,6 +443,7 @@ const ITINERARY_COLUMNS: { key: string; label: string }[] = [
 function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName: string; lead: Lead }) {
   const qc = useQueryClient();
   const confirm = useConfirm();
+  const navigate = useNavigate();
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
   const { data: itineraries = [] } = useQuery({
@@ -451,7 +452,11 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
   });
 
   const move = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateItinerary(id, { status }),
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const updated = await updateItinerary(id, { status });
+      if (!updated) throw new Error("Não foi possível mover o roteiro.");
+      return updated;
+    },
     onMutate: async ({ id, status }) => {
       await qc.cancelQueries({ queryKey: ["lead-itineraries", leadId] });
       const prev = qc.getQueryData<Itinerary[]>(["lead-itineraries", leadId]);
@@ -532,8 +537,10 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
                 setOverCol(col.key);
               }}
               onDragLeave={() => setOverCol((c) => (c === col.key ? null : c))}
-              onDrop={() => {
-                if (dragId) move.mutate({ id: dragId, status: col.key });
+              onDrop={(e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData("text/plain") || dragId;
+                if (id) move.mutate({ id, status: col.key });
                 setDragId(null);
                 setOverCol(null);
               }}
@@ -547,20 +554,25 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
               <div className="space-y-2">
                 {items.map((it) => (
                   <div key={it.id} className="group relative">
-                    <Link
-                      to="/roteiros/$id"
-                      params={{ id: it.id }}
+                    <div
+                      role="button"
+                      tabIndex={0}
                       draggable
-                      onDragStart={() => setDragId(it.id)}
+                      onDragStart={(e) => {
+                        e.dataTransfer.effectAllowed = "move";
+                        e.dataTransfer.setData("text/plain", it.id);
+                        setDragId(it.id);
+                      }}
                       onDragEnd={() => {
                         setDragId(null);
                         setOverCol(null);
                       }}
+                      onClick={() => navigate({ to: "/roteiros/$id", params: { id: it.id } })}
                       className="block cursor-grab rounded-lg border border-border bg-card p-2 pr-8 text-sm hover:border-primary active:cursor-grabbing"
                     >
                       <p className="font-medium">{it.title}</p>
                       <p className="text-xs text-muted-foreground">{formatCurrency(it.budget)}</p>
-                    </Link>
+                    </div>
                     <button
                       type="button"
                       aria-label="Excluir roteiro"
