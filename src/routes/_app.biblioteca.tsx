@@ -14,6 +14,9 @@ import {
   Upload,
   FileText,
   MapPin,
+  Files,
+  Download,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -24,32 +27,46 @@ import {
   updateLibraryItem,
   uploadLibraryAsset,
 } from "@/lib/services";
+import {
+  fetchAgencyDocuments,
+  documentOrigin,
+  downloadDocument,
+  type AgencyDocument,
+  type DocumentOrigin,
+} from "@/lib/lead-documents";
 import { formatCurrency } from "@/lib/ui";
 import type { LibraryItem, LibraryItemType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { useConfirm } from "@/components/ConfirmDialog";
+
+type TabKey = LibraryItemType | "documents";
 
 export const Route = createFileRoute("/_app/biblioteca")({
   component: LibraryPage,
 });
 
-const TABS: { key: LibraryItemType; label: string; icon: typeof Sparkles; hint: string }[] = [
+const TABS: { key: TabKey; label: string; icon: typeof Sparkles; hint: string }[] = [
   { key: "experience", label: "Experiências", icon: Sparkles, hint: "Passeios, tours e atividades." },
   { key: "package", label: "Pacotes", icon: Package, hint: "Pacotes prontos com preço e duração." },
   { key: "image", label: "Imagens", icon: ImageIcon, hint: "Banco de imagens de destinos." },
   { key: "itinerary", label: "Roteiros modelo", icon: Map, hint: "Roteiros reutilizáveis como base." },
+  { key: "documents", label: "Documentos", icon: Files, hint: "Arquivos enviados em leads e roteiros, agrupados por origem." },
 ];
 
 function LibraryPage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
-  const [tab, setTab] = useState<LibraryItemType>("experience");
+  const [tab, setTab] = useState<TabKey>("experience");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryItem | null>(null);
 
+  const isDocuments = tab === "documents";
+
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["library", tab],
-    queryFn: () => fetchLibraryItems(tab),
+    queryFn: () => fetchLibraryItems(tab as LibraryItemType),
+    enabled: !isDocuments,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library"] });
@@ -78,15 +95,17 @@ function LibraryPage() {
             Base de conhecimento para elaborar novos roteiros e dicas de viagem.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-          className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-        >
-          <Plus className="h-4 w-4 shrink-0" /> Novo {active.label.replace(/s$/, "")}
-        </button>
+        {!isDocuments && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+            className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+          >
+            <Plus className="h-4 w-4 shrink-0" /> Novo {active.label.replace(/s$/, "")}
+          </button>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -111,7 +130,9 @@ function LibraryPage() {
 
       <p className="text-sm text-muted-foreground">{active.hint}</p>
 
-      {isError ? (
+      {isDocuments ? (
+        <DocumentsPanel />
+      ) : isError ? (
         <QueryError message="Não foi possível carregar a biblioteca." onRetry={() => refetch()} />
       ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
@@ -125,9 +146,9 @@ function LibraryPage() {
         </div>
       )}
 
-      {(open || editing) && (
+      {!isDocuments && (open || editing) && (
         <LibraryModal
-          type={tab}
+          type={tab as LibraryItemType}
           item={editing}
           onClose={() => {
             setOpen(false);
@@ -392,5 +413,80 @@ function Fld({
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
       />
     </label>
+  );
+}
+
+const ORIGIN_LABELS: Record<DocumentOrigin, string> = {
+  roteiro: "Roteiros",
+  lead: "Leads",
+  geral: "Gerais",
+};
+
+function DocumentsPanel() {
+  const [preview, setPreview] = useState<AgencyDocument | null>(null);
+  const { data: docs = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["library", "documents"],
+    queryFn: fetchAgencyDocuments,
+  });
+
+  if (isError)
+    return <QueryError message="Não foi possível carregar os documentos." onRetry={() => refetch()} />;
+  if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
+  if (docs.length === 0)
+    return <p className="text-muted-foreground">Nenhum documento enviado ainda.</p>;
+
+  const groups: Record<DocumentOrigin, AgencyDocument[]> = { roteiro: [], lead: [], geral: [] };
+  for (const d of docs) groups[documentOrigin(d)].push(d);
+
+  return (
+    <div className="space-y-6">
+      {(Object.keys(groups) as DocumentOrigin[]).map((origin) =>
+        groups[origin].length === 0 ? null : (
+          <div key={origin} className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {ORIGIN_LABELS[origin]} · {groups[origin].length}
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {groups[origin].map((doc) => (
+                <DocumentRow key={doc.id} doc={doc} onPreview={() => setPreview(doc)} />
+              ))}
+            </div>
+          </div>
+        ),
+      )}
+      <DocumentPreviewModal doc={preview} onClose={() => setPreview(null)} />
+    </div>
+  );
+}
+
+function DocumentRow({ doc, onPreview }: { doc: AgencyDocument; onPreview: () => void }) {
+  const source = doc.itinerary?.title || doc.lead?.name || null;
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+        <FileText className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{doc.name}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {doc.category ? `${doc.category}` : "documento"}
+          {source ? ` · ${source}` : ""}
+        </p>
+      </div>
+      <button
+        onClick={onPreview}
+        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+        title="Visualizar"
+      >
+        <Eye className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => downloadDocument(doc)}
+        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+        title="Baixar"
+      >
+        <Download className="h-4 w-4" />
+      </button>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAgencyId, loadAgencyContext } from "@/lib/services";
 
 export interface LeadDocument {
   id: string;
@@ -143,4 +144,33 @@ export async function downloadDocument(doc: LeadDocument): Promise<boolean> {
   a.click();
   a.remove();
   return true;
+}
+
+export interface AgencyDocument extends LeadDocument {
+  lead?: { name: string } | null;
+  itinerary?: { title: string } | null;
+}
+
+export type DocumentOrigin = "roteiro" | "lead" | "geral";
+
+export function documentOrigin(doc: AgencyDocument): DocumentOrigin {
+  if (doc.itinerary_id) return "roteiro";
+  if (doc.lead_id) return "lead";
+  return "geral";
+}
+
+/** All documents uploaded across the agency (leads, roteiros, avulsos). */
+export async function fetchAgencyDocuments(): Promise<AgencyDocument[]> {
+  const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
+  if (!agencyId) return [];
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .select("*, lead:crm_leads(name), itinerary:crm_itineraries(title)")
+    .eq("agency_id", agencyId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("fetchAgencyDocuments", error);
+    return [];
+  }
+  return (data as unknown as AgencyDocument[]) || [];
 }
