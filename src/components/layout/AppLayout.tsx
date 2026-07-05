@@ -9,6 +9,7 @@ import {
   Images,
   Wallet,
   ShieldCheck,
+  ListChecks,
   Moon,
   Sun,
   LogOut,
@@ -24,6 +25,7 @@ import { InstallPWA } from "@/components/InstallPWA";
 const NAV = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
+  { to: "/tarefas", label: "Tarefas", icon: ListChecks },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
   { to: "/biblioteca", label: "Biblioteca", icon: Images },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
@@ -34,9 +36,9 @@ const NAV = [
 const MOBILE_NAV = [
   { to: "/", label: "Início", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
+  { to: "/tarefas", label: "Tarefas", icon: ListChecks },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
-  { to: "/admin", label: "Admin", icon: ShieldCheck },
 ] as const;
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -49,7 +51,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const leadsCount = leadsQ.data?.length ?? 0;
   const showAdmin = isSuperAdminEmail(session?.user?.email);
   const nav = showAdmin ? NAV : NAV.filter((i) => i.to !== "/admin");
-  const mobileNav = showAdmin ? MOBILE_NAV : MOBILE_NAV.filter((i) => i.to !== "/admin");
+  const mobileNav = MOBILE_NAV;
 
   useEffect(() => {
     const channel = supabase

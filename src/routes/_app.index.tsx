@@ -11,7 +11,7 @@ import {
   ArrowRight,
   CalendarDays,
   BarChart3,
-  ListChecks,
+  
 } from "lucide-react";
 import { fetchDashboardStats, createTask } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
@@ -163,12 +163,8 @@ function DashboardPage() {
   const maxVal = Math.max(1, ...series);
   const todayKey = new Date().toDateString();
 
-  const tasksToday = data.tasks
-    .filter((t) => !t.completed)
-    .filter((t) => {
-      if (!t.due_date) return false;
-      return new Date(t.due_date).toDateString() === todayKey;
-    });
+
+
 
   const recentLeads = [...data.leads]
     .sort(
@@ -212,9 +208,9 @@ function DashboardPage() {
       </div>
 
 
-      {/* Chart + Tasks */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:col-span-2">
+      {/* Chart */}
+      <div>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
           <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex w-full min-w-0 items-center gap-2 text-sm font-semibold sm:w-auto sm:text-base">
               <BarChart3 className="h-5 w-5 shrink-0 text-primary" />
@@ -259,32 +255,8 @@ function DashboardPage() {
           </div>
           )}
         </div>
-
-
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-          <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
-              <ListChecks className="h-5 w-5 shrink-0 text-primary" />
-              <span className="truncate">Tarefas do Dia</span>
-            </h2>
-            <span className="shrink-0 text-xs text-muted-foreground">{tasksToday.length} pendentes</span>
-          </div>
-          {tasksToday.length === 0 ? (
-            <p className="py-10 text-center text-sm text-muted-foreground">Sem tarefas pendentes! 🎉</p>
-          ) : (
-            <ul className="space-y-3">
-              {tasksToday.map((t) => (
-                <li key={t.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-3 text-sm">
-                  <span className="truncate">{t.title}</span>
-                  {t.lead?.name && (
-                    <span className="shrink-0 text-xs text-muted-foreground">{t.lead.name}</span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
       </div>
+
 
       {/* Agenda da Semana */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
