@@ -92,6 +92,28 @@ export interface Destination {
   image_url?: string | null;
 }
 
+export type LibraryItemType = "experience" | "package" | "image" | "itinerary";
+
+export interface LibraryItem {
+  id: string;
+  agency_id: string;
+  type: LibraryItemType;
+  title: string;
+  description?: string | null;
+  content?: string | null;
+  location?: string | null;
+  image_url?: string | null;
+  file_url?: string | null;
+  file_name?: string | null;
+  price?: number | null;
+  days?: number | null;
+  tags?: string[] | null;
+  created_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+
 export interface Itinerary {
   id: string;
   agency_id: string;
