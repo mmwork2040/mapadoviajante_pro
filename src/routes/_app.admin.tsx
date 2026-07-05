@@ -780,6 +780,30 @@ function NotificationsCard() {
         Cole a configuração web do seu projeto Firebase para habilitar notificações push neste navegador/dispositivo.
       </p>
 
+      {(() => {
+        const map: Record<string, { label: string; cls: string }> = {
+          granted: { label: "Permitida", cls: "bg-emerald-500/15 text-emerald-600" },
+          denied: { label: "Bloqueada", cls: "bg-red-500/15 text-red-600" },
+          default: { label: "Não solicitada", cls: "bg-amber-500/15 text-amber-600" },
+          unsupported: { label: "Sem suporte", cls: "bg-muted text-muted-foreground" },
+        };
+        const s = map[permission];
+        return (
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+            <span className="flex items-center gap-2 font-medium">
+              <Bell className="h-4 w-4" /> Permissão neste dispositivo
+            </span>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${s.cls}`}>{s.label}</span>
+            {token && (
+              <span className="ml-auto truncate font-mono text-xs text-muted-foreground" title={token}>
+                token: {token.slice(0, 16)}…
+              </span>
+            )}
+          </div>
+        );
+      })()}
+
+
       <label className="flex items-center gap-3 text-sm font-medium">
         <button
           type="button"
