@@ -257,9 +257,12 @@ function DashboardPage() {
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="font-semibold">Tarefas do Dia</h2>
-            <span className="text-xs text-muted-foreground">{tasksToday.length} pendentes</span>
+          <div className="mb-4 flex items-center justify-between gap-2">
+            <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+              <ListChecks className="h-5 w-5 shrink-0 text-primary" />
+              <span className="truncate">Tarefas do Dia</span>
+            </h2>
+            <span className="shrink-0 text-xs text-muted-foreground">{tasksToday.length} pendentes</span>
           </div>
           {tasksToday.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">Sem tarefas pendentes! 🎉</p>
