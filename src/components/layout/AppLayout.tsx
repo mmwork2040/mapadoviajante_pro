@@ -21,6 +21,7 @@ import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
+import { NotifPrompt } from "@/components/NotifPrompt";
 import mapaproIcon from "@/assets/mapapro-icon.png.asset.json";
 
 const NAV = [
