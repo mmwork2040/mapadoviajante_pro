@@ -214,11 +214,11 @@ function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
           <div className="mb-6 flex items-center justify-between gap-3">
-            <h2 className="font-semibold">Vendas — Últimos 6 Meses</h2>
-            <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
+            <h2 className="min-w-0 font-semibold">Vendas — Últimos 6 Meses</h2>
+            <div className="flex shrink-0 rounded-full bg-muted p-1 text-xs font-medium">
               <button
                 onClick={() => setChartMode("revenue")}
-                className={`rounded-full px-3 py-1 transition ${
+                className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
                   chartMode === "revenue" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                 }`}
               >
@@ -226,7 +226,7 @@ function DashboardPage() {
               </button>
               <button
                 onClick={() => setChartMode("count")}
-                className={`rounded-full px-3 py-1 transition ${
+                className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
                   chartMode === "count" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
                 }`}
               >
@@ -234,6 +234,7 @@ function DashboardPage() {
               </button>
             </div>
           </div>
+
           <div className="flex h-56 items-end gap-3">
             {data.chartData.labels.map((label, i) => (
               <div key={label} className="flex flex-1 flex-col items-center gap-2">
