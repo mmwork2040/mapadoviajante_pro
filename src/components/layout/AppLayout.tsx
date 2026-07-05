@@ -21,6 +21,7 @@ import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
+import mapaproIcon from "@/assets/mapapro-icon.png.asset.json";
 
 const NAV = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
@@ -80,8 +81,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         }`}
       >
         <div className={`flex items-center gap-2 py-5 ${collapsed ? "justify-center px-2" : "px-5"}`}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <RouteIcon className="h-5 w-5" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
+            <img src={mapaproIcon.url} alt="MapaPRO" className="h-full w-full object-cover" />
           </div>
           {!collapsed && (
             <span className="animate-fade-in whitespace-nowrap text-lg font-extrabold tracking-tight">
@@ -172,8 +173,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-5">
           {/* Marca no mobile (a navegação fica na barra inferior) */}
           <div className="flex items-center gap-2 md:hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <RouteIcon className="h-4 w-4" />
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary">
+              <img src={mapaproIcon.url} alt="MapaPRO" className="h-full w-full object-cover" />
             </div>
             <span className="text-base font-extrabold tracking-tight">
               Mapa<span className="text-primary">PRO</span>
