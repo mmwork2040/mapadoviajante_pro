@@ -14,6 +14,9 @@ import {
   Upload,
   FileText,
   MapPin,
+  Files,
+  Download,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -24,10 +27,20 @@ import {
   updateLibraryItem,
   uploadLibraryAsset,
 } from "@/lib/services";
+import {
+  fetchAgencyDocuments,
+  documentOrigin,
+  downloadDocument,
+  type AgencyDocument,
+  type DocumentOrigin,
+} from "@/lib/lead-documents";
 import { formatCurrency } from "@/lib/ui";
 import type { LibraryItem, LibraryItemType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { useConfirm } from "@/components/ConfirmDialog";
+
+type TabKey = LibraryItemType | "documents";
 
 export const Route = createFileRoute("/_app/biblioteca")({
   component: LibraryPage,
