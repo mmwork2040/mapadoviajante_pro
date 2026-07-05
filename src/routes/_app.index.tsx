@@ -430,9 +430,9 @@ function DashboardPage() {
 
 
       {/* Leads Recentes */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+          <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
             <Users className="h-5 w-5 shrink-0 text-primary" />
             <span className="truncate">Leads Recentes</span>
           </h2>
