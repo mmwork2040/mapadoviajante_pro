@@ -214,9 +214,9 @@ function DashboardPage() {
 
       {/* Chart + Tasks */}
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:col-span-2">
           <div className="mb-6 flex items-center justify-between gap-3">
-            <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+            <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
               <BarChart3 className="h-5 w-5 shrink-0 text-primary" />
               <span className="truncate">Vendas — Últimos 6 Meses</span>
             </h2>
@@ -256,9 +256,9 @@ function DashboardPage() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
           <div className="mb-4 flex items-center justify-between gap-2">
-            <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+            <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
               <ListChecks className="h-5 w-5 shrink-0 text-primary" />
               <span className="truncate">Tarefas do Dia</span>
             </h2>
@@ -282,16 +282,18 @@ function DashboardPage() {
       </div>
 
       {/* Agenda da Semana */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="flex items-center gap-2 font-semibold">
-            <CalendarDays className="h-5 w-5 text-primary" />{" "}
-            {agendaMode === "week" ? "Agenda da Semana" : "Agenda do Mês"}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+            <CalendarDays className="h-5 w-5 shrink-0 text-primary" />
+            <span className="truncate">
+              {agendaMode === "week" ? "Agenda da Semana" : "Agenda do Mês"}
+            </span>
           </h2>
-          <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
+          <div className="flex shrink-0 rounded-full bg-muted p-1 text-xs font-medium">
             <button
               onClick={() => setAgendaMode("week")}
-              className={`rounded-full px-3 py-1 transition ${
+              className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
                 agendaMode === "week" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
             >
@@ -299,7 +301,7 @@ function DashboardPage() {
             </button>
             <button
               onClick={() => setAgendaMode("month")}
-              className={`rounded-full px-3 py-1 transition ${
+              className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
                 agendaMode === "month" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
               }`}
             >
@@ -320,29 +322,28 @@ function DashboardPage() {
                   key={i}
                   type="button"
                   onClick={() => setSelectedDay(d)}
-                  className={`min-h-[120px] border-r border-border p-2 text-left transition last:border-r-0 hover:bg-accent ${
+                  className={`flex min-h-[96px] min-w-0 flex-col items-center border-r border-border p-1 text-center transition last:border-r-0 hover:bg-accent sm:min-h-[120px] sm:p-2 ${
                     isToday ? "bg-primary/5" : ""
                   }`}
                 >
-                  <p className="text-center text-[11px] font-medium text-muted-foreground">{WEEK_DAYS[d.getDay()]}</p>
-                  <p className="mt-1 text-center">
-                    <span
-                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
-                        isToday ? "bg-primary text-primary-foreground" : ""
-                      }`}
-                    >
-                      {d.getDate()}
-                    </span>
-                  </p>
-                  <div className="mt-3 text-center text-xs text-muted-foreground">
-                    {count > 0 ? `${count} tarefa(s)` : "—"}
-                  </div>
+                  <p className="text-[10px] font-medium text-muted-foreground sm:text-[11px]">{WEEK_DAYS[d.getDay()]}</p>
+                  <span
+                    className={`mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold sm:h-8 sm:w-8 sm:text-sm ${
+                      isToday ? "bg-primary text-primary-foreground" : ""
+                    }`}
+                  >
+                    {d.getDate()}
+                  </span>
+                  <span className="mt-2 text-[10px] text-muted-foreground sm:text-xs">
+                    {count > 0 ? count : "—"}
+                  </span>
                 </button>
               );
             })}
           </div>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border">
+
             <div className="grid grid-cols-7 border-b border-border bg-muted/50">
               {WEEK_DAYS.map((wd) => (
                 <div key={wd} className="py-2 text-center text-[11px] font-medium text-muted-foreground">
@@ -362,7 +363,7 @@ function DashboardPage() {
                     key={i}
                     type="button"
                     onClick={() => setSelectedDay(d)}
-                    className={`min-h-[64px] border-b border-r border-border p-1.5 text-left transition hover:bg-accent sm:min-h-[84px] ${
+                    className={`flex min-h-[56px] min-w-0 flex-col border-b border-r border-border p-1 text-left transition hover:bg-accent sm:min-h-[84px] sm:p-1.5 ${
                       isToday ? "bg-primary/5" : ""
                     } ${inMonth ? "" : "opacity-40"}`}
                   >
@@ -374,7 +375,7 @@ function DashboardPage() {
                       {d.getDate()}
                     </span>
                     {count > 0 && (
-                      <span className="mt-1 block truncate text-[10px] text-primary">{count} tarefa(s)</span>
+                      <span className="mt-0.5 block truncate text-[10px] text-primary">{count}</span>
                     )}
                   </button>
                 );
@@ -429,9 +430,9 @@ function DashboardPage() {
 
 
       {/* Leads Recentes */}
-      <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
         <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+          <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
             <Users className="h-5 w-5 shrink-0 text-primary" />
             <span className="truncate">Leads Recentes</span>
           </h2>
