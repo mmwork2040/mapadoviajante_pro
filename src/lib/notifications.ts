@@ -41,10 +41,10 @@ export function getDeviceLabel(): string {
   return browser ? `${os} · ${browser}` : os;
 }
 
-let foregroundBound = false;
+const foregroundBound = new WeakSet<Messaging>();
 function bindForegroundMessages(messaging: Messaging): void {
-  if (foregroundBound) return;
-  foregroundBound = true;
+  if (foregroundBound.has(messaging)) return;
+  foregroundBound.add(messaging);
   onMessage(messaging, (payload) => {
     const title = payload.notification?.title ?? "Notificação";
     const body = payload.notification?.body ?? "";
@@ -57,6 +57,8 @@ function bindForegroundMessages(messaging: Messaging): void {
     }
   });
 }
+
+let pushAppConfigKey = "";
 
 export async function registerPushToken(token: string): Promise<void> {
   await saveDeviceToken({
@@ -178,19 +180,23 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
       appId: config.appId,
     }).toString();
 
+  const appConfig = {
+    apiKey: config.apiKey,
+    authDomain: config.authDomain,
+    projectId: config.projectId,
+    messagingSenderId: config.messagingSenderId,
+    appId: config.appId,
+  };
+  const appConfigKey = JSON.stringify(appConfig);
   let app: FirebaseApp;
   const existing = getApps().find((a) => a.name === "push");
-  if (existing) await deleteApp(existing);
-  app = initializeApp(
-    {
-      apiKey: config.apiKey,
-      authDomain: config.authDomain,
-      projectId: config.projectId,
-      messagingSenderId: config.messagingSenderId,
-      appId: config.appId,
-    },
-    "push",
-  );
+  if (existing && pushAppConfigKey === appConfigKey) {
+    app = existing;
+  } else {
+    if (existing) await deleteApp(existing);
+    app = initializeApp(appConfig, "push");
+    pushAppConfigKey = appConfigKey;
+  }
 
   try {
     const registration = await navigator.serviceWorker.register(swUrl);
