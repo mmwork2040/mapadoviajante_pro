@@ -294,7 +294,32 @@ function DashboardPage() {
             Ver todos <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-        <div className="overflow-x-auto">
+        {/* Mobile: cards */}
+        <div className="space-y-3 md:hidden">
+          {recentLeads.length === 0 && (
+            <p className="py-6 text-center text-muted-foreground">Nenhum lead encontrado</p>
+          )}
+          {recentLeads.map((l) => (
+            <div key={l.id} className="rounded-xl border border-border p-3">
+              <div className="flex items-start justify-between gap-2">
+                <p className="min-w-0 flex-1 truncate font-medium">{l.name}</p>
+                <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
+                  {STATUS_LABEL[l.status] || l.status}
+                </span>
+              </div>
+              <p className="mt-1 truncate text-sm text-muted-foreground">{l.destination || "—"}</p>
+              <div className="mt-2 flex items-center justify-between text-sm">
+                <span className="font-semibold text-primary">{formatCurrency(l.value)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {timeAgo(l.last_activity_at || l.created_at)}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Desktop: table */}
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-muted-foreground">
