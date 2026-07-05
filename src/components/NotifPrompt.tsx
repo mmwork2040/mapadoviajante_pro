@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
-import { getNotifConfig, configIsComplete, requestPushToken, startTokenRefreshWatcher, getDeviceId, getDeviceLabel } from "@/lib/notifications";
-import { saveDeviceToken } from "@/lib/push.functions";
+import { getNotifConfig, configIsComplete, requestPushToken, registerPushToken } from "@/lib/notifications";
 
 /**
  * Banner que solicita permissão de notificações a partir de um toque do usuário.
@@ -30,8 +29,7 @@ export function NotifPrompt() {
       const config = await getNotifConfig();
       const res = await requestPushToken(config);
       if (res.ok && res.token) {
-        await saveDeviceToken({ data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() } });
-        startTokenRefreshWatcher();
+        await registerPushToken(res.token);
         setShow(false);
       } else {
         setMsg(res.message);
