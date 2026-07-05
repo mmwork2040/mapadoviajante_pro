@@ -22,6 +22,7 @@ import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
+import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
 import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
@@ -91,6 +92,11 @@ const AppRoteirosIndexRoute = AppRoteirosIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoteirosRoute,
 } as any)
+const ApiPublicPushDeliveryRoute = ApiPublicPushDeliveryRouteImport.update({
+  id: '/api/public/push-delivery',
+  path: '/api/public/push-delivery',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicN8nLeadRoute = ApiPublicN8nLeadRouteImport.update({
   id: '/api/public/n8n-lead',
   path: '/api/public/n8n-lead',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
+  '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
   '/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
+  '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
   '/roteiros': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesById {
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_app/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
+  '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
   '/_app/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRouteTypes {
@@ -185,6 +194,7 @@ export interface FileRouteTypes {
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
+    | '/api/public/push-delivery'
     | '/roteiros/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -202,6 +212,7 @@ export interface FileRouteTypes {
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
+    | '/api/public/push-delivery'
     | '/roteiros'
   id:
     | '__root__'
@@ -221,6 +232,7 @@ export interface FileRouteTypes {
     | '/_app/roteiros/$id'
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
+    | '/api/public/push-delivery'
     | '/_app/roteiros/'
   fileRoutesById: FileRoutesById
 }
@@ -232,6 +244,7 @@ export interface RootRouteChildren {
   ViajanteIdRoute: typeof ViajanteIdRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
   ApiPublicN8nLeadRoute: typeof ApiPublicN8nLeadRoute
+  ApiPublicPushDeliveryRoute: typeof ApiPublicPushDeliveryRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -327,6 +340,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRoteirosIndexRouteImport
       parentRoute: typeof AppRoteirosRoute
     }
+    '/api/public/push-delivery': {
+      id: '/api/public/push-delivery'
+      path: '/api/public/push-delivery'
+      fullPath: '/api/public/push-delivery'
+      preLoaderRoute: typeof ApiPublicPushDeliveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/n8n-lead': {
       id: '/api/public/n8n-lead'
       path: '/api/public/n8n-lead'
@@ -414,6 +434,7 @@ const rootRouteChildren: RootRouteChildren = {
   ViajanteIdRoute: ViajanteIdRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
   ApiPublicN8nLeadRoute: ApiPublicN8nLeadRoute,
+  ApiPublicPushDeliveryRoute: ApiPublicPushDeliveryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
