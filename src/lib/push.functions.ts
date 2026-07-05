@@ -81,10 +81,7 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
 
-    // system_settings é acessível apenas por admin via RLS; usamos o client admin
-    // para que qualquer usuário autenticado consiga salvar o próprio token.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error } = await supabaseAdmin.from("system_settings").upsert(
+    const { error } = await context.supabase.from("system_settings").upsert(
       {
         key: `push_token:${context.userId}`,
         value: {
@@ -131,8 +128,7 @@ export const listDeviceTokens = createServerFn({ method: "GET" })
       .maybeSingle();
     const agencyId = me?.agency_id ?? null;
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await context.supabase
       .from("system_settings")
       .select("key, value, updated_at")
       .like("key", "push_token:%");
