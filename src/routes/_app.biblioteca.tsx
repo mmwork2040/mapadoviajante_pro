@@ -95,15 +95,17 @@ function LibraryPage() {
             Base de conhecimento para elaborar novos roteiros e dicas de viagem.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setOpen(true);
-          }}
-          className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-        >
-          <Plus className="h-4 w-4 shrink-0" /> Novo {active.label.replace(/s$/, "")}
-        </button>
+        {!isDocuments && (
+          <button
+            onClick={() => {
+              setEditing(null);
+              setOpen(true);
+            }}
+            className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+          >
+            <Plus className="h-4 w-4 shrink-0" /> Novo {active.label.replace(/s$/, "")}
+          </button>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
