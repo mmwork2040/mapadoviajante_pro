@@ -363,7 +363,7 @@ function DashboardPage() {
                     key={i}
                     type="button"
                     onClick={() => setSelectedDay(d)}
-                    className={`min-h-[64px] border-b border-r border-border p-1.5 text-left transition hover:bg-accent sm:min-h-[84px] ${
+                    className={`flex min-h-[56px] min-w-0 flex-col border-b border-r border-border p-1 text-left transition hover:bg-accent sm:min-h-[84px] sm:p-1.5 ${
                       isToday ? "bg-primary/5" : ""
                     } ${inMonth ? "" : "opacity-40"}`}
                   >
@@ -375,7 +375,7 @@ function DashboardPage() {
                       {d.getDate()}
                     </span>
                     {count > 0 && (
-                      <span className="mt-1 block truncate text-[10px] text-primary">{count} tarefa(s)</span>
+                      <span className="mt-0.5 block truncate text-[10px] text-primary">{count}</span>
                     )}
                   </button>
                 );
