@@ -51,7 +51,7 @@ import {
   saveAiConfig,
   updateMemberRole,
 } from "@/lib/services";
-import { sendTeamInvite } from "@/lib/invites.functions";
+import { sendTeamInvite, getEmailConfigStatus } from "@/lib/invites.functions";
 import {
   getAgencyPaymentConfig,
   saveAgencyPaymentConfig,
