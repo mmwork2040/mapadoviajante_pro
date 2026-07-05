@@ -1,6 +1,7 @@
 import { initializeApp, getApps, deleteApp, type FirebaseApp } from "firebase/app";
 import { getMessaging, getToken } from "firebase/messaging";
 import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
+import { saveDeviceToken } from "@/lib/push.functions";
 
 // ── Eventos que podem gerar notificações ───────────────────────
 export const NOTIF_EVENTS = [
