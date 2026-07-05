@@ -392,8 +392,13 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
   const [form, setForm] = useState({ name: "", email: "", role: "consultor" });
   const [saving, setSaving] = useState(false);
 
+  const emailQ = useQuery({ queryKey: ["email-config"], queryFn: () => getEmailConfigStatus() });
+  const emailReady = emailQ.data?.configured === true;
+  const emailChecking = emailQ.isLoading;
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!emailReady) return;
     setSaving(true);
     // Usa sempre o domínio público publicado (o preview/sandbox do editor
     // não abre fora do Lovable).
@@ -414,11 +419,37 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-2xl bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Convidar Membro</h2>
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              <UserPlus className="h-5 w-5" />
+            </span>
+            <h2 className="text-lg font-bold">Convidar Membro</h2>
+          </div>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
+
+        {emailChecking ? (
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+            Verificando configuração de e-mail…
+          </div>
+        ) : emailReady ? (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-600 dark:text-emerald-400">
+            <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>Envio de e-mail ativo. O convite será enviado automaticamente.</span>
+          </div>
+        ) : (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>
+              O envio de e-mails não está configurado. Conecte o Gmail nas configurações do sistema
+              antes de convidar membros.
+            </span>
+          </div>
+        )}
+
         <form onSubmit={submit} className="space-y-3">
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Nome</span>
