@@ -698,11 +698,15 @@ function NotificationsCard() {
   const [token, setToken] = useState<string>("");
   const [activating, setActivating] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const sendPush = useServerFn(sendTestPush);
   const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
 
   useEffect(() => {
     getNotifConfig().then(setConfig);
+    if (typeof window !== "undefined") {
+      setPermission("Notification" in window ? Notification.permission : "unsupported");
+    }
   }, []);
 
   function update(patch: Partial<NotifConfig>) {
