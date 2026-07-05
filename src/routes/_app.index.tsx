@@ -216,7 +216,10 @@ function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-5 shadow-sm lg:col-span-2">
           <div className="mb-6 flex items-center justify-between gap-3">
-            <h2 className="min-w-0 font-semibold">Vendas — Últimos 6 Meses</h2>
+            <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+              <BarChart3 className="h-5 w-5 shrink-0 text-primary" />
+              <span className="truncate">Vendas — Últimos 6 Meses</span>
+            </h2>
             <div className="flex shrink-0 rounded-full bg-muted p-1 text-xs font-medium">
               <button
                 onClick={() => setChartMode("revenue")}
