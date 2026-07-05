@@ -427,7 +427,32 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
       }
     }
 
-    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}${pastItineraries}${leadDocuments}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
+    let library = "";
+    {
+      const { data: libItems } = await (context.supabase as any)
+        .from("crm_library_items")
+        .select("type,title,location,description,content,price,days,tags")
+        .order("created_at", { ascending: false })
+        .limit(60);
+      if (libItems && libItems.length) {
+        const typeLabel: Record<string, string> = {
+          experience: "Experiência",
+          package: "Pacote",
+          image: "Imagem",
+          itinerary: "Roteiro modelo",
+        };
+        const parts = (libItems as any[]).map((l) => {
+          const head = `- [${typeLabel[l.type] || l.type}] ${l.title}${l.location ? ` (${l.location})` : ""}${l.type === "package" && l.price ? ` — ${l.price}${l.days ? `/${l.days}d` : ""}` : ""}`;
+          const tags = Array.isArray(l.tags) && l.tags.length ? ` [tags: ${l.tags.join(", ")}]` : "";
+          const body = [l.description, l.content].filter(Boolean).join(" ").slice(0, 600);
+          return `${head}${tags}${body ? `\n    ${body}` : ""}`;
+        });
+        library = `\n\nBIBLIOTECA DA AGÊNCIA (experiências, pacotes, imagens e roteiros modelo reutilizáveis — use como base de conhecimento e sugira itens relevantes ao compor o roteiro e as dicas):\n${parts.join("\n")}`;
+      }
+    }
+
+    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}${pastItineraries}${leadDocuments}${library}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
+
 
 
     const { askWithFiles } = await import("./ai.server");
