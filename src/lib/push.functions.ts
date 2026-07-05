@@ -8,9 +8,9 @@ interface ServiceAccount {
   project_id: string;
 }
 
-function base64url(input: ArrayBuffer | string): string {
+function base64url(input: ArrayBuffer | Uint8Array | string): string {
   const bytes =
-    typeof input === "string" ? new TextEncoder().encode(input) : new Uint8Array(input);
+    typeof input === "string" ? new TextEncoder().encode(input) : input instanceof Uint8Array ? input : new Uint8Array(input);
   let str = "";
   for (const b of bytes) str += String.fromCharCode(b);
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
@@ -19,7 +19,7 @@ function base64url(input: ArrayBuffer | string): string {
 function randomSecret(): string {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
-  return base64url(bytes.buffer);
+  return base64url(bytes);
 }
 
 function pemToArrayBuffer(pem: string): ArrayBuffer {
