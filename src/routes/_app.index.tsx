@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   CircleDollarSign,
   Users,
@@ -10,8 +11,18 @@ import {
   ArrowRight,
   CalendarDays,
 } from "lucide-react";
-import { fetchDashboardStats } from "@/lib/services";
+import { fetchDashboardStats, createTask } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/")({
@@ -47,6 +58,7 @@ function timeAgo(value?: string | null): string {
 }
 
 function DashboardPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardStats,
@@ -54,6 +66,8 @@ function DashboardPage() {
 
   const [chartMode, setChartMode] = useState<"revenue" | "count">("revenue");
   const [agendaMode, setAgendaMode] = useState<"week" | "month">("week");
+  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
+  const [taskTitle, setTaskTitle] = useState("");
 
   const week = useMemo(() => {
     const today = new Date();
@@ -65,6 +79,40 @@ function DashboardPage() {
       return d;
     });
   }, []);
+
+  const monthGrid = useMemo(() => {
+    const today = new Date();
+    const first = new Date(today.getFullYear(), today.getMonth(), 1);
+    const start = new Date(first);
+    start.setDate(first.getDate() - first.getDay());
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
+  }, []);
+
+  const createTaskMutation = useMutation({
+    mutationFn: (vars: { title: string; due: string }) =>
+      createTask({ title: vars.title, due_date: vars.due }),
+    onSuccess: (res) => {
+      if (!res) return toast.error("Erro ao criar agendamento.");
+      toast.success("Agendamento criado!");
+      queryClient.invalidateQueries({ queryKey: ["dashboard"] });
+      setSelectedDay(null);
+      setTaskTitle("");
+    },
+    onError: () => toast.error("Erro ao criar agendamento."),
+  });
+
+  function submitTask() {
+    if (!selectedDay) return;
+    if (!taskTitle.trim()) return toast.error("Informe o título.");
+    const due = new Date(selectedDay);
+    due.setHours(9, 0, 0, 0);
+    createTaskMutation.mutate({ title: taskTitle.trim(), due: due.toISOString() });
+  }
+
 
   if (isError) {
     return <QueryError message="Não foi possível carregar o painel." onRetry={() => refetch()} />;
@@ -144,22 +192,23 @@ function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-start gap-3">
-              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${c.ring}`}>
-                <c.icon className="h-5 w-5" />
+          <div key={c.label} className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11 ${c.ring}`}>
+                <c.icon className="h-4 w-4 sm:h-5 sm:w-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-sm text-muted-foreground">{c.label}</p>
-                <p className="mt-1 text-2xl font-bold leading-tight">{c.value}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{c.hint}</p>
+                <p className="text-xs text-muted-foreground sm:text-sm">{c.label}</p>
+                <p className="mt-1 truncate text-lg font-bold leading-tight sm:text-2xl">{c.value}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground sm:text-xs">{c.hint}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
+
 
       {/* Chart + Tasks */}
       <div className="grid gap-6 lg:grid-cols-3">
@@ -227,7 +276,8 @@ function DashboardPage() {
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
           <h2 className="flex items-center gap-2 font-semibold">
-            <CalendarDays className="h-5 w-5 text-primary" /> Agenda da Semana
+            <CalendarDays className="h-5 w-5 text-primary" />{" "}
+            {agendaMode === "week" ? "Agenda da Semana" : "Agenda do Mês"}
           </h2>
           <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
             <button
@@ -248,43 +298,126 @@ function DashboardPage() {
             </button>
           </div>
         </div>
-        <div className="grid grid-cols-7 overflow-hidden rounded-xl border border-border">
-          {week.map((d, i) => {
-            const isToday = d.toDateString() === todayKey;
-            const count = data.tasks.filter(
-              (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed,
-            ).length;
-            return (
-              <div
-                key={i}
-                className={`min-h-[120px] border-r border-border p-2 last:border-r-0 ${
-                  isToday ? "bg-primary/5" : ""
-                }`}
-              >
-                <p className="text-center text-[11px] font-medium text-muted-foreground">{WEEK_DAYS[d.getDay()]}</p>
-                <p className="mt-1 text-center">
-                  <span
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
-                      isToday ? "bg-primary text-primary-foreground" : ""
-                    }`}
-                  >
-                    {d.getDate()}
-                  </span>
-                </p>
-                <div className="mt-3 text-center text-xs text-muted-foreground">
-                  {count > 0 ? `${count} tarefa(s)` : "—"}
+
+        {agendaMode === "week" ? (
+          <div className="grid grid-cols-7 overflow-hidden rounded-xl border border-border">
+            {week.map((d, i) => {
+              const isToday = d.toDateString() === todayKey;
+              const count = data.tasks.filter(
+                (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed,
+              ).length;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setSelectedDay(d)}
+                  className={`min-h-[120px] border-r border-border p-2 text-left transition last:border-r-0 hover:bg-accent ${
+                    isToday ? "bg-primary/5" : ""
+                  }`}
+                >
+                  <p className="text-center text-[11px] font-medium text-muted-foreground">{WEEK_DAYS[d.getDay()]}</p>
+                  <p className="mt-1 text-center">
+                    <span
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
+                        isToday ? "bg-primary text-primary-foreground" : ""
+                      }`}
+                    >
+                      {d.getDate()}
+                    </span>
+                  </p>
+                  <div className="mt-3 text-center text-xs text-muted-foreground">
+                    {count > 0 ? `${count} tarefa(s)` : "—"}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-border">
+            <div className="grid grid-cols-7 border-b border-border bg-muted/50">
+              {WEEK_DAYS.map((wd) => (
+                <div key={wd} className="py-2 text-center text-[11px] font-medium text-muted-foreground">
+                  {wd}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-7">
+              {monthGrid.map((d, i) => {
+                const isToday = d.toDateString() === todayKey;
+                const inMonth = d.getMonth() === new Date().getMonth();
+                const count = data.tasks.filter(
+                  (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed,
+                ).length;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setSelectedDay(d)}
+                    className={`min-h-[64px] border-b border-r border-border p-1.5 text-left transition hover:bg-accent sm:min-h-[84px] ${
+                      isToday ? "bg-primary/5" : ""
+                    } ${inMonth ? "" : "opacity-40"}`}
+                  >
+                    <span
+                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                        isToday ? "bg-primary text-primary-foreground" : ""
+                      }`}
+                    >
+                      {d.getDate()}
+                    </span>
+                    {count > 0 && (
+                      <span className="mt-1 block truncate text-[10px] text-primary">{count} tarefa(s)</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
           <span>
-            {MONTH_NAMES[week[0].getMonth()]} {week[0].getFullYear()}
+            {MONTH_NAMES[(agendaMode === "week" ? week[0] : new Date()).getMonth()]}{" "}
+            {(agendaMode === "week" ? week[0] : new Date()).getFullYear()}
           </span>
           <span>{data.pendingTasks} compromissos pendentes</span>
         </div>
       </div>
+
+      {/* Modal de agendamento */}
+      <Dialog open={!!selectedDay} onOpenChange={(o) => !o && setSelectedDay(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              Novo agendamento
+              {selectedDay && (
+                <span className="ml-1 font-normal text-muted-foreground">
+                  — {selectedDay.getDate()}/{selectedDay.getMonth() + 1}/{selectedDay.getFullYear()}
+                </span>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="task-title">Título</Label>
+            <Input
+              id="task-title"
+              value={taskTitle}
+              onChange={(e) => setTaskTitle(e.target.value)}
+              placeholder="Ex.: Ligar para o cliente"
+              onKeyDown={(e) => e.key === "Enter" && submitTask()}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedDay(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={submitTask} disabled={createTaskMutation.isPending}>
+              {createTaskMutation.isPending ? "Salvando…" : "Agendar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {/* Leads Recentes */}
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
