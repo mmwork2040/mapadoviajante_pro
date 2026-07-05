@@ -19,9 +19,10 @@ import {
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
+import { InstallPWA } from "@/components/InstallPWA";
 
 const NAV = [
-  { to: "/", label: "Página Inicial", icon: LayoutDashboard },
+  { to: "/", label: "Painel", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
   { to: "/biblioteca", label: "Biblioteca", icon: Images },
@@ -232,6 +233,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
           );
         })}
       </nav>
+
+      <InstallPWA />
     </div>
   );
 }
