@@ -520,6 +520,7 @@ export async function createTransaction(txData: Partial<Transaction>): Promise<T
 
 // ── Library ────────────────────────────────────────────────────
 export async function fetchDestinations(): Promise<Destination[]> {
+  if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return [];
   const { data, error } = await supabase
     .from("crm_library_destinations")
