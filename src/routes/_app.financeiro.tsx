@@ -143,49 +143,81 @@ function FinancePage() {
         ) : isLoading ? (
           <p className="text-muted-foreground">Carregando…</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase text-muted-foreground">
-                  <th className="pb-2">Descrição</th>
-                  <th className="pb-2">Categoria</th>
-                  <th className="pb-2">Status</th>
-                  <th className="pb-2">Data</th>
-                  <th className="pb-2 text-right">Valor</th>
-                </tr>
-              </thead>
-              <tbody>
-                {txs.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="py-3 text-muted-foreground">
-                      Nenhuma transação.
-                    </td>
-                  </tr>
-                )}
-                {txs.map((t) => (
-                  <tr key={t.id} className="border-t border-border">
-                    <td className="py-2 font-medium">
-                      <span className="inline-flex items-center gap-1">
-                        {t.type === "income" ? (
-                          <ArrowUpRight className="h-4 w-4 text-[var(--success)]" />
-                        ) : (
-                          <ArrowDownRight className="h-4 w-4 text-destructive" />
-                        )}
-                        {t.description || "—"}
-                      </span>
-                    </td>
-                    <td className="py-2 capitalize text-muted-foreground">{t.category || "—"}</td>
-                    <td className="py-2 text-muted-foreground">{t.status === "confirmed" ? "Confirmado" : "Pendente"}</td>
-                    <td className="py-2 text-muted-foreground">{formatDate(t.transaction_date)}</td>
-                    <td className={`py-2 text-right font-semibold ${t.type === "income" ? "text-[var(--success)]" : "text-destructive"}`}>
+          <>
+            {/* Mobile: cards */}
+            <div className="space-y-3 md:hidden">
+              {txs.length === 0 && (
+                <p className="py-3 text-muted-foreground">Nenhuma transação.</p>
+              )}
+              {txs.map((t) => (
+                <div key={t.id} className="rounded-xl border border-border p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="flex min-w-0 items-center gap-1 font-medium">
+                      {t.type === "income" ? (
+                        <ArrowUpRight className="h-4 w-4 shrink-0 text-[var(--success)]" />
+                      ) : (
+                        <ArrowDownRight className="h-4 w-4 shrink-0 text-destructive" />
+                      )}
+                      <span className="truncate">{t.description || "—"}</span>
+                    </span>
+                    <span className={`shrink-0 font-semibold ${t.type === "income" ? "text-[var(--success)]" : "text-destructive"}`}>
                       {t.type === "income" ? "+" : "-"}
                       {formatCurrency(t.amount)}
-                    </td>
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="capitalize">{t.category || "—"} · {t.status === "confirmed" ? "Confirmado" : "Pendente"}</span>
+                    <span>{formatDate(t.transaction_date)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: table */}
+            <div className="hidden overflow-x-auto md:block">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs uppercase text-muted-foreground">
+                    <th className="pb-2">Descrição</th>
+                    <th className="pb-2">Categoria</th>
+                    <th className="pb-2">Status</th>
+                    <th className="pb-2">Data</th>
+                    <th className="pb-2 text-right">Valor</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {txs.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="py-3 text-muted-foreground">
+                        Nenhuma transação.
+                      </td>
+                    </tr>
+                  )}
+                  {txs.map((t) => (
+                    <tr key={t.id} className="border-t border-border">
+                      <td className="py-2 font-medium">
+                        <span className="inline-flex items-center gap-1">
+                          {t.type === "income" ? (
+                            <ArrowUpRight className="h-4 w-4 text-[var(--success)]" />
+                          ) : (
+                            <ArrowDownRight className="h-4 w-4 text-destructive" />
+                          )}
+                          {t.description || "—"}
+                        </span>
+                      </td>
+                      <td className="py-2 capitalize text-muted-foreground">{t.category || "—"}</td>
+                      <td className="py-2 text-muted-foreground">{t.status === "confirmed" ? "Confirmado" : "Pendente"}</td>
+                      <td className="py-2 text-muted-foreground">{formatDate(t.transaction_date)}</td>
+                      <td className={`py-2 text-right font-semibold ${t.type === "income" ? "text-[var(--success)]" : "text-destructive"}`}>
+                        {t.type === "income" ? "+" : "-"}
+                        {formatCurrency(t.amount)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
 
