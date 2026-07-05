@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAgencyId, loadAgencyContext } from "@/lib/services";
 
 export interface LeadDocument {
   id: string;
