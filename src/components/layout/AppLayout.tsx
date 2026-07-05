@@ -51,7 +51,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const leadsCount = leadsQ.data?.length ?? 0;
   const showAdmin = isSuperAdminEmail(session?.user?.email);
   const nav = showAdmin ? NAV : NAV.filter((i) => i.to !== "/admin");
-  const mobileNav = showAdmin ? MOBILE_NAV : MOBILE_NAV.filter((i) => i.to !== "/admin");
+  const mobileNav = MOBILE_NAV;
 
   useEffect(() => {
     const channel = supabase
