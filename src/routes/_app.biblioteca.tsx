@@ -477,7 +477,7 @@ function DocumentsPanel() {
     <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-input bg-background px-4 py-3 text-sm font-medium text-muted-foreground hover:border-primary hover:text-foreground sm:w-auto">
       <Upload className="h-4 w-4 shrink-0" />
       {uploading ? "Enviando…" : "Enviar arquivos"}
-      <input type="file" multiple onChange={handleUpload} disabled={uploading} className="hidden" />
+      <input type="file" accept="application/pdf" multiple onChange={handleUpload} disabled={uploading} className="hidden" />
     </label>
   );
 
