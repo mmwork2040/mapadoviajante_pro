@@ -192,22 +192,23 @@ function DashboardPage() {
       </div>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
         {cards.map((c) => (
-          <div key={c.label} className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-start gap-3">
-              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${c.ring}`}>
-                <c.icon className="h-5 w-5" />
+          <div key={c.label} className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+            <div className="flex items-start gap-2 sm:gap-3">
+              <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-11 sm:w-11 ${c.ring}`}>
+                <c.icon className="h-4 w-4 sm:h-5 sm:w-5" />
               </span>
               <div className="min-w-0">
-                <p className="text-sm text-muted-foreground">{c.label}</p>
-                <p className="mt-1 text-2xl font-bold leading-tight">{c.value}</p>
-                <p className="mt-1 text-xs text-muted-foreground">{c.hint}</p>
+                <p className="text-xs text-muted-foreground sm:text-sm">{c.label}</p>
+                <p className="mt-1 truncate text-lg font-bold leading-tight sm:text-2xl">{c.value}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground sm:text-xs">{c.hint}</p>
               </div>
             </div>
           </div>
         ))}
       </div>
+
 
       {/* Chart + Tasks */}
       <div className="grid gap-6 lg:grid-cols-3">
