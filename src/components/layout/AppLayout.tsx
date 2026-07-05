@@ -83,7 +83,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       >
         <div className={`flex items-center gap-2 py-5 ${collapsed ? "justify-center px-2" : "px-5"}`}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
-            <img src={brandLogo.url} alt="O Segredo do Viajante" className="h-full w-full object-cover scale-125" />
+            <img src={brandLogo.url} alt="O Segredo do Viajante" className="h-full w-full object-contain p-0.5" />
           </div>
           {!collapsed && (
             <span className="animate-fade-in whitespace-nowrap text-lg font-extrabold tracking-tight">
@@ -175,7 +175,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {/* Marca no mobile (a navegação fica na barra inferior) */}
           <div className="flex items-center gap-2 md:hidden">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white">
-              <img src={brandLogo.url} alt="O Segredo do Viajante" className="h-full w-full object-cover scale-125" />
+              <img src={brandLogo.url} alt="O Segredo do Viajante" className="h-full w-full object-contain p-0.5" />
             </div>
             <span className="text-base font-extrabold tracking-tight">
               Mapa<span className="text-primary">PRO</span>
