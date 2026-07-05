@@ -48,6 +48,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
@@ -201,9 +202,60 @@ export function AppLayout({ children }: { children: ReactNode }) {
             >
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+
+            {/* Menu do usuário (mobile) */}
+            <div className="relative md:hidden">
+              <button
+                onClick={() => setMobileMenu((o) => !o)}
+                aria-label="Menu do usuário"
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted"
+              >
+                <span
+                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
+                  style={{ background: member?.avatar_color || "var(--primary)" }}
+                >
+                  {initials(member?.name || session?.user?.email || "?")}
+                </span>
+                <span className="max-w-[110px] truncate text-sm font-medium">
+                  {member?.name || session?.user?.email}
+                </span>
+              </button>
+              {mobileMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setMobileMenu(false)} />
+                  <div className="absolute right-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
+                    <div className="border-b border-border px-3 py-2.5">
+                      <p className="truncate text-sm font-semibold">{member?.name || "Usuário"}</p>
+                      <p className="truncate text-xs text-muted-foreground">{session?.user?.email}</p>
+                    </div>
+                    {showAdmin && (
+                      <Link
+                        to="/admin"
+                        onClick={() => setMobileMenu(false)}
+                        className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
+                      >
+                        <ShieldCheck className="h-4 w-4" />
+                        Administração
+                      </Link>
+                    )}
+                    <button
+                      onClick={() => {
+                        setMobileMenu(false);
+                        signOut();
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Sair
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
             <button
               onClick={() => signOut()}
-              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted"
+              className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted md:flex"
             >
               <LogOut className="h-4 w-4" />
               <span className="hidden sm:inline">Sair</span>
