@@ -5,7 +5,7 @@ import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users } from "lu
 import { toast } from "sonner";
 import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
+import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
