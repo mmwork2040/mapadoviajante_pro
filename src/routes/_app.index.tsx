@@ -163,12 +163,8 @@ function DashboardPage() {
   const maxVal = Math.max(1, ...series);
   const todayKey = new Date().toDateString();
 
-  const tasksToday = data.tasks
-    .filter((t) => !t.completed)
-    .filter((t) => {
-      if (!t.due_date) return false;
-      return new Date(t.due_date).toDateString() === todayKey;
-    });
+
+
 
   const recentLeads = [...data.leads]
     .sort(
