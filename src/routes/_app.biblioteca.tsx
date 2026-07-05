@@ -440,6 +440,13 @@ function DocumentsPanel() {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (files.length === 0) return;
+    const invalid = files.filter(
+      (f) => f.type !== "application/pdf" && !/\.pdf$/i.test(f.name),
+    );
+    if (invalid.length > 0) {
+      toast.error("Envie apenas arquivos PDF.");
+      return;
+    }
     setUploading(true);
     try {
       for (const f of files) await uploadGeneralDocument(f);
@@ -470,7 +477,7 @@ function DocumentsPanel() {
     <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-input bg-background px-4 py-3 text-sm font-medium text-muted-foreground hover:border-primary hover:text-foreground sm:w-auto">
       <Upload className="h-4 w-4 shrink-0" />
       {uploading ? "Enviando…" : "Enviar arquivos"}
-      <input type="file" multiple onChange={handleUpload} disabled={uploading} className="hidden" />
+      <input type="file" accept="application/pdf" multiple onChange={handleUpload} disabled={uploading} className="hidden" />
     </label>
   );
 
