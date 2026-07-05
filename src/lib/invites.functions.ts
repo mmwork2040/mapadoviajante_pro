@@ -6,6 +6,14 @@ const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1"
 
 const MEMBER_COLORS = ["#ff7a1a", "#2563eb", "#16a34a", "#db2777", "#9333ea", "#0891b2"];
 
+/** Verifica se o envio de e-mails (Gmail) está configurado e ativo. */
+export const getEmailConfigStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const configured = Boolean(process.env.LOVABLE_API_KEY && process.env.GOOGLE_MAIL_API_KEY);
+    return { configured };
+  });
+
 function encodeRawEmail(to: string, subject: string, body: string): string {
   const message = [
     `To: ${to}`,
