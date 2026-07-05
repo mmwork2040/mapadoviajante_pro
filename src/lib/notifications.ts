@@ -160,24 +160,69 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
 }
 
 /**
- * Captura silenciosamente o device token ao logar e registra no backend.
- * Só age se as notificações estiverem habilitadas, a config completa,
- * fora de iframe e com permissão já concedida (não força prompt no login).
+ * Ao logar: solicita permissão de push automaticamente (se ainda não decidida),
+ * captura o device token e registra no backend. Falha silenciosa em iframe/preview
+ * ou quando a permissão foi negada.
  */
 export async function captureDeviceTokenOnLogin(): Promise<void> {
   if (typeof window === "undefined") return;
   if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
   if (window.self !== window.top) return; // preview/iframe
-  if (Notification.permission !== "granted") return;
+  if (Notification.permission === "denied") return;
 
   try {
     const config = await getNotifConfig();
     if (!config.enabled || !configIsComplete(config)) return;
+    // requestPushToken já chama Notification.requestPermission() (prompt apenas
+    // quando a permissão está em "default"), registra o SW e obtém o token.
     const res = await requestPushToken(config);
     if (res.ok && res.token) {
       await saveDeviceToken({ data: { token: res.token } });
+      lastKnownToken = res.token;
+      startTokenRefreshWatcher();
     }
   } catch {
     // Falha silenciosa: não deve interromper o fluxo de login.
   }
 }
+
+// ── Detecção de mudança do device token (sem depender de logout/login) ──
+let lastKnownToken: string | undefined;
+let watcherStarted = false;
+
+/** Verifica o token atual e atualiza o backend caso tenha mudado. */
+async function checkAndSyncToken(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (window.self !== window.top) return;
+  if (Notification.permission !== "granted") return;
+  try {
+    const config = await getNotifConfig();
+    if (!config.enabled || !configIsComplete(config)) return;
+    const res = await requestPushToken(config);
+    if (res.ok && res.token && res.token !== lastKnownToken) {
+      await saveDeviceToken({ data: { token: res.token } });
+      lastKnownToken = res.token;
+    }
+  } catch {
+    // Silencioso: revalida na próxima checagem.
+  }
+}
+
+/**
+ * Inicia o monitoramento de mudanças do device token. O FCM Web pode rotacionar
+ * o token; como não há evento onTokenRefresh no SDK modular, revalidamos ao voltar
+ * o foco à aba e periodicamente, sincronizando o backend quando houver mudança.
+ */
+export function startTokenRefreshWatcher(): void {
+  if (typeof window === "undefined" || watcherStarted) return;
+  watcherStarted = true;
+
+  const onFocus = () => {
+    if (document.visibilityState === "visible") void checkAndSyncToken();
+  };
+  document.addEventListener("visibilitychange", onFocus);
+  window.addEventListener("focus", onFocus);
+  // Revalidação periódica (a cada 6h) enquanto a aba estiver aberta.
+  window.setInterval(() => void checkAndSyncToken(), 6 * 60 * 60 * 1000);
+}
+
