@@ -158,3 +158,26 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
     };
   }
 }
+
+/**
+ * Captura silenciosamente o device token ao logar e registra no backend.
+ * Só age se as notificações estiverem habilitadas, a config completa,
+ * fora de iframe e com permissão já concedida (não força prompt no login).
+ */
+export async function captureDeviceTokenOnLogin(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (!("Notification" in window) || !("serviceWorker" in navigator)) return;
+  if (window.self !== window.top) return; // preview/iframe
+  if (Notification.permission !== "granted") return;
+
+  try {
+    const config = await getNotifConfig();
+    if (!config.enabled || !configIsComplete(config)) return;
+    const res = await requestPushToken(config);
+    if (res.ok && res.token) {
+      await saveDeviceToken({ data: { token: res.token } });
+    }
+  } catch {
+    // Falha silenciosa: não deve interromper o fluxo de login.
+  }
+}
