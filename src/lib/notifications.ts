@@ -208,9 +208,10 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
 }
 
 /**
- * Ao logar: solicita permissão de push automaticamente (se ainda não decidida),
- * captura o device token e registra no backend. Falha silenciosa em iframe/preview
- * ou quando a permissão foi negada.
+ * Ao logar (ou restaurar sessão): captura/atualiza o device token e registra no
+ * backend. Se a permissão já foi concedida, atualiza silenciosamente sem prompt,
+ * garantindo que o token seja renovado a cada login em qualquer dispositivo.
+ * Falha silenciosa em iframe/preview ou quando a permissão foi negada.
  */
 export async function captureDeviceTokenOnLogin(): Promise<void> {
   if (typeof window === "undefined") return;
@@ -221,11 +222,14 @@ export async function captureDeviceTokenOnLogin(): Promise<void> {
   try {
     const config = await getNotifConfig();
     if (!config.enabled || !configIsComplete(config)) return;
-    // requestPushToken já chama Notification.requestPermission() (prompt apenas
-    // quando a permissão está em "default"), registra o SW e obtém o token.
+    // requestPushToken chama Notification.requestPermission() apenas quando a
+    // permissão está em "default" (exige gesto em mobile). Quando já concedida,
+    // getToken funciona sem gesto e o token é renovado.
     const res = await requestPushToken(config);
     if (res.ok && res.token) {
-      await saveDeviceToken({ data: { token: res.token } });
+      await saveDeviceToken({
+        data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() },
+      });
       lastKnownToken = res.token;
       startTokenRefreshWatcher();
     }
