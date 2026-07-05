@@ -22,7 +22,7 @@ import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
-import brandLogo from "@/assets/logo-segredo-viajante.jpg.asset.json";
+import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
 
 const NAV = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
