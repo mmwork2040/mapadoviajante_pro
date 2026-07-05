@@ -21,6 +21,7 @@ import {
   configIsComplete,
   NOTIF_EVENTS,
   DEFAULT_CONFIG as DEFAULT_NOTIF_CONFIG,
+  getDeviceId,
   type NotifConfig,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
@@ -705,6 +706,7 @@ function NotificationsCard() {
   const [testing, setTesting] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const sendPush = useServerFn(sendTestPush);
+  const getDelivery = useServerFn(getPushDeliveryStatus);
   const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
 
   useEffect(() => {
@@ -764,10 +766,23 @@ function NotificationsCard() {
     }
     setTesting(true);
     const res = await sendPush({
-      data: { token, title: "Teste de notificação", body: "As notificações estão funcionando! 🎉" },
+      data: { token, deviceId: getDeviceId(), title: "Teste de notificação", body: "As notificações estão funcionando! 🎉" },
     });
     setTesting(false);
-    res.ok ? toast.info(res.message) : toast.error(res.message);
+    if (!res.ok || !res.traceId) {
+      toast.error(res.message);
+      return;
+    }
+    toast.info(res.message);
+    for (let i = 0; i < 6; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const status = await getDelivery({ data: { traceId: res.traceId } });
+      if (status.status === "received") {
+        toast.success("Dispositivo confirmou recebimento.");
+        return;
+      }
+    }
+    toast.warning("FCM aceitou, mas este dispositivo não confirmou recebimento.");
   }
 
   const fields: { key: keyof NotifConfig; label: string; placeholder: string }[] = [

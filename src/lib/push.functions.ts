@@ -222,7 +222,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data }) => {
+  .handler(async ({ data }): Promise<{ ok: boolean; message: string; traceId?: string }> => {
     const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
     if (!raw) return { ok: false, message: "Service account do Firebase não configurada." };
     let sa: ServiceAccount;
