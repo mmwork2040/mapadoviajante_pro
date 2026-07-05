@@ -1,6 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Route as RouteIcon } from "lucide-react";
 import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
 import { useAuth } from "@/lib/auth";
 
