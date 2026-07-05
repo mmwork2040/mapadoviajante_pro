@@ -1,7 +1,54 @@
 import { initializeApp, getApps, deleteApp, type FirebaseApp } from "firebase/app";
-import { getMessaging, getToken } from "firebase/messaging";
+import { getMessaging, getToken, onMessage, type Messaging } from "firebase/messaging";
 import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
 import { saveDeviceToken } from "@/lib/push.functions";
+
+// ── Identificação estável do dispositivo ───────────────────────
+function getDeviceId(): string {
+  const KEY = "push_device_id";
+  let id = localStorage.getItem(KEY);
+  if (!id) {
+    id =
+      (crypto.randomUUID?.() as string | undefined) ??
+      `dev-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    localStorage.setItem(KEY, id);
+  }
+  return id;
+}
+
+function getDeviceLabel(): string {
+  const ua = navigator.userAgent;
+  let os = "Dispositivo";
+  if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
+  else if (/Android/i.test(ua)) os = "Android";
+  else if (/Windows/i.test(ua)) os = "Windows";
+  else if (/Mac OS X/i.test(ua)) os = "macOS";
+  else if (/Linux/i.test(ua)) os = "Linux";
+  let browser = "";
+  if (/Edg\//i.test(ua)) browser = "Edge";
+  else if (/Chrome\//i.test(ua)) browser = "Chrome";
+  else if (/Firefox\//i.test(ua)) browser = "Firefox";
+  else if (/Safari\//i.test(ua)) browser = "Safari";
+  return browser ? `${os} · ${browser}` : os;
+}
+
+let foregroundBound = false;
+function bindForegroundMessages(messaging: Messaging): void {
+  if (foregroundBound) return;
+  foregroundBound = true;
+  onMessage(messaging, (payload) => {
+    const title = payload.notification?.title ?? "Notificação";
+    const body = payload.notification?.body ?? "";
+    if (Notification.permission === "granted") {
+      try {
+        new Notification(title, { body });
+      } catch {
+        // Alguns navegadores exigem o Service Worker; ignore silenciosamente.
+      }
+    }
+  });
+}
+
 
 // ── Eventos que podem gerar notificações ───────────────────────
 export const NOTIF_EVENTS = [
