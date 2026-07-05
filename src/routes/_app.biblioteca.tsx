@@ -440,6 +440,13 @@ function DocumentsPanel() {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (files.length === 0) return;
+    const invalid = files.filter(
+      (f) => f.type !== "application/pdf" && !/\.pdf$/i.test(f.name),
+    );
+    if (invalid.length > 0) {
+      toast.error("Envie apenas arquivos PDF.");
+      return;
+    }
     setUploading(true);
     try {
       for (const f of files) await uploadGeneralDocument(f);
