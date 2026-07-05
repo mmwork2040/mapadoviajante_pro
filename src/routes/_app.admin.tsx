@@ -63,7 +63,7 @@ import { formatDate, initials } from "@/lib/ui";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
-import type { AiConfig, Task } from "@/lib/types";
+import type { AiConfig } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/admin")({
   component: AdminPage,
