@@ -894,6 +894,99 @@ function NotificationsCard() {
   );
 }
 
+function DeviceTokensCard() {
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const sendPush = useServerFn(sendTestPush);
+  const tokensQ = useQuery({ queryKey: ["device-tokens"], queryFn: () => listDeviceTokens() });
+  const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
+  const serverReady = statusQ.data?.configured;
+  const tokens = tokensQ.data ?? [];
+
+  async function testUser(entry: DeviceTokenEntry) {
+    setSendingId(entry.userId);
+    const res = await sendPush({
+      data: {
+        token: entry.token,
+        title: "Teste de notificação",
+        body: "As notificações estão funcionando! 🎉",
+      },
+    });
+    setSendingId(null);
+    res.ok ? toast.success(res.message) : toast.error(res.message);
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="flex items-center gap-2 text-sm font-semibold">
+            <Smartphone className="h-4 w-4" /> Dispositivos com token ativo
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Usuários que ativaram as notificações e têm um device token salvo.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => tokensQ.refetch()}
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold"
+        >
+          <RefreshCw className={`h-3.5 w-3.5 ${tokensQ.isFetching ? "animate-spin" : ""}`} /> Atualizar
+        </button>
+      </div>
+
+      {tokensQ.isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando…</p>
+      ) : tokens.length === 0 ? (
+        <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+          Nenhum usuário com device token ativo ainda.
+        </p>
+      ) : (
+        <ul className="divide-y divide-border rounded-lg border border-border">
+          {tokens.map((t) => (
+            <li key={t.userId} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-sm">
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 font-medium">
+                  <span className="truncate">{t.name || t.email || t.userId}</span>
+                  {t.isSelf && (
+                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                      você
+                    </span>
+                  )}
+                </div>
+                <div className="truncate font-mono text-xs text-muted-foreground" title={t.token}>
+                  {t.token.slice(0, 24)}…
+                  {t.updatedAt && ` · ${new Date(t.updatedAt).toLocaleString("pt-BR")}`}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => testUser(t)}
+                disabled={sendingId === t.userId || !serverReady}
+                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+              >
+                {sendingId === t.userId ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Send className="h-3.5 w-3.5" />
+                )}
+                Enviar teste
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {!serverReady && (
+        <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+          Para enviar, configure a <strong>service account</strong> do Firebase no servidor.
+        </p>
+      )}
+    </div>
+  );
+}
+
+
 function GmailCard() {
   const [config, setConfig] = useState<GmailConfig>(DEFAULT_GMAIL_CONFIG);
   const [to, setTo] = useState("");
