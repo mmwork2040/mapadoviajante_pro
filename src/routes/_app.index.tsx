@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   CircleDollarSign,
   Users,
@@ -10,8 +11,18 @@ import {
   ArrowRight,
   CalendarDays,
 } from "lucide-react";
-import { fetchDashboardStats } from "@/lib/services";
+import { fetchDashboardStats, createTask } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { QueryError } from "@/components/QueryError";
 
 export const Route = createFileRoute("/_app/")({
