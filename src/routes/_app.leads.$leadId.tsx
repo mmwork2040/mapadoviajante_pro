@@ -443,6 +443,7 @@ const ITINERARY_COLUMNS: { key: string; label: string }[] = [
 function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName: string; lead: Lead }) {
   const qc = useQueryClient();
   const confirm = useConfirm();
+  const navigate = useNavigate();
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
   const { data: itineraries = [] } = useQuery({
@@ -451,7 +452,11 @@ function ItinerariesPanel({ leadId, leadName, lead }: { leadId: string; leadName
   });
 
   const move = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: string }) => updateItinerary(id, { status }),
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const updated = await updateItinerary(id, { status });
+      if (!updated) throw new Error("Não foi possível mover o roteiro.");
+      return updated;
+    },
     onMutate: async ({ id, status }) => {
       await qc.cancelQueries({ queryKey: ["lead-itineraries", leadId] });
       const prev = qc.getQueryData<Itinerary[]>(["lead-itineraries", leadId]);
