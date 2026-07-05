@@ -31,6 +31,8 @@ import {
   fetchAgencyDocuments,
   documentOrigin,
   downloadDocument,
+  uploadGeneralDocument,
+  deleteLeadDocument,
   type AgencyDocument,
   type DocumentOrigin,
 } from "@/lib/lead-documents";
