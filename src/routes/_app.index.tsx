@@ -430,8 +430,11 @@ function DashboardPage() {
 
       {/* Leads Recentes */}
       <div className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="font-semibold">Leads Recentes</h2>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+            <Users className="h-5 w-5 shrink-0 text-primary" />
+            <span className="truncate">Leads Recentes</span>
+          </h2>
           <Link to="/leads" className="inline-flex items-center gap-1 text-sm font-medium text-primary hover:underline">
             Ver todos <ArrowRight className="h-4 w-4" />
           </Link>
