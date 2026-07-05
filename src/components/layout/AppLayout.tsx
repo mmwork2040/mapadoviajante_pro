@@ -48,6 +48,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { theme, toggle } = useTheme();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
