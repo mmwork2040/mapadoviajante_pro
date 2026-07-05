@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy } from "lucide-react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users } from "lucide-react";
 import { toast } from "sonner";
 import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
+import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -20,6 +20,19 @@ import {
 export const Route = createFileRoute("/_app/roteiros/")({
   component: ItinerariesPage,
 });
+
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Rascunho",
+  active: "Em andamento",
+  completed: "Concluído",
+  cancelled: "Cancelado",
+};
+
+function initials(name?: string | null) {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
 
 function ItinerariesPage() {
   const qc = useQueryClient();
@@ -81,7 +94,7 @@ function ItinerariesPage() {
         </div>
         <button
           onClick={() => setOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
         >
           <Plus className="h-4 w-4" /> Novo Roteiro
         </button>
@@ -100,24 +113,48 @@ function ItinerariesPage() {
               <Link
                 to="/roteiros/$id"
                 params={{ id: it.id }}
-                className="block rounded-2xl border border-border bg-card p-5 transition hover:shadow-md"
+                className="flex overflow-hidden rounded-xl border border-border bg-card transition hover:shadow-md"
               >
-                <div className="flex items-center gap-2 text-primary">
-                  <MapPin className="h-4 w-4" />
-                  <span className="text-xs font-medium uppercase">{it.status}</span>
+                {/* Left panel — destination */}
+                <div className="relative flex w-32 shrink-0 flex-col justify-end bg-muted/60 p-4">
+                  <MapPin className="absolute left-1/2 top-5 h-9 w-9 -translate-x-1/2 text-muted-foreground/20" />
+                  <div className="flex items-center gap-1.5 text-sm font-bold">
+                    <MapPin className="h-4 w-4 shrink-0 text-foreground" />
+                    <span className="truncate">{it.destination || "—"}</span>
+                  </div>
                 </div>
-                <h3 className="mt-2 pr-8 font-semibold">{it.title}</h3>
-                <p className="text-sm text-muted-foreground">{it.destination || "—"}</p>
-                <div className="mt-3 flex justify-between text-xs text-muted-foreground">
-                  <span>{formatDate(it.start_date)}</span>
-                  <span className="font-semibold text-foreground">{formatCurrency(it.budget)}</span>
+
+                {/* Right panel — details */}
+                <div className="min-w-0 flex-1 p-4 pr-10">
+                  <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                    {STATUS_LABELS[it.status] || it.status}
+                  </span>
+                  <div className="mt-3 flex items-center gap-2">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-foreground">
+                      {initials(it.client_name || it.title)}
+                    </span>
+                    <span className="truncate font-semibold">{it.client_name || it.title}</span>
+                  </div>
+                  <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    <p className="flex items-center gap-1.5">
+                      <Calendar className="h-4 w-4 shrink-0" />
+                      <span className="truncate">
+                        {formatDate(it.start_date)}
+                        {it.end_date ? ` – ${formatDate(it.end_date)}` : ""}
+                      </span>
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <Users className="h-4 w-4 shrink-0" />
+                      {it.passengers || 1} {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
+                    </p>
+                  </div>
                 </div>
               </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     title="Mais opções"
-                    className="absolute right-3 top-3 rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                    className="absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
                   >
                     <MoreVertical className="h-4 w-4" />
                   </button>
@@ -232,7 +269,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
           <button
             type="submit"
             disabled={saving}
-            className="w-full rounded-xl bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {saving ? "Salvando…" : "Criar Roteiro"}
           </button>
