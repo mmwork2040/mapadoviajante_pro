@@ -97,13 +97,13 @@ function LibraryPage() {
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+              className={`flex items-center gap-2 whitespace-nowrap rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
                 on
                   ? "border-primary bg-primary text-primary-foreground"
                   : "border-border bg-card text-muted-foreground hover:text-foreground"
               }`}
             >
-              <Icon className="h-4 w-4" /> {t.label}
+              <Icon className="h-4 w-4 shrink-0" /> {t.label}
             </button>
           );
         })}
