@@ -89,6 +89,15 @@ export const sendTestPush = createServerFn({ method: "POST" })
     } catch {
       return { ok: false, message: "Service account inválida (JSON malformado)." };
     }
+    if (!sa.private_key || !sa.client_email || !sa.project_id) {
+      return {
+        ok: false,
+        message:
+          "Service account incompleta: verifique os campos private_key, client_email e project_id.",
+      };
+    }
+    // Normaliza quebras de linha escapadas (\\n) do private_key colado como texto.
+    sa.private_key = sa.private_key.replace(/\\n/g, "\n");
     try {
       const accessToken = await getAccessToken(sa);
       const res = await fetch(
