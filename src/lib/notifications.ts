@@ -4,6 +4,15 @@ import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
 import { saveDeviceToken } from "@/lib/push.functions";
 
 // ── Identificação estável do dispositivo ───────────────────────
+function shortHash(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36).padStart(7, "0");
+}
+
 export function getDeviceId(): string {
   const KEY = "push_device_id";
   let id = localStorage.getItem(KEY);
@@ -13,7 +22,7 @@ export function getDeviceId(): string {
       `dev-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     localStorage.setItem(KEY, id);
   }
-  return id;
+  return `${id}-${shortHash(`${location.origin}|${navigator.userAgent}`)}`;
 }
 
 export function getDeviceLabel(): string {
@@ -47,6 +56,14 @@ function bindForegroundMessages(messaging: Messaging): void {
       }
     }
   });
+}
+
+export async function registerPushToken(token: string): Promise<void> {
+  await saveDeviceToken({
+    data: { token, deviceId: getDeviceId(), label: getDeviceLabel() },
+  });
+  lastKnownToken = token;
+  startTokenRefreshWatcher();
 }
 
 
@@ -141,7 +158,7 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
     };
   }
 
-  const permission = await Notification.requestPermission();
+  const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
   if (permission !== "granted") {
     return {
       ok: false,
@@ -227,11 +244,7 @@ export async function captureDeviceTokenOnLogin(): Promise<void> {
     // getToken funciona sem gesto e o token é renovado.
     const res = await requestPushToken(config);
     if (res.ok && res.token) {
-      await saveDeviceToken({
-        data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() },
-      });
-      lastKnownToken = res.token;
-      startTokenRefreshWatcher();
+      await registerPushToken(res.token);
     }
   } catch {
     // Falha silenciosa: não deve interromper o fluxo de login.
@@ -252,10 +265,7 @@ async function checkAndSyncToken(): Promise<void> {
     if (!config.enabled || !configIsComplete(config)) return;
     const res = await requestPushToken(config);
     if (res.ok && res.token && res.token !== lastKnownToken) {
-      await saveDeviceToken({
-        data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() },
-      });
-      lastKnownToken = res.token;
+      await registerPushToken(res.token);
     }
   } catch {
     // Silencioso: revalida na próxima checagem.
