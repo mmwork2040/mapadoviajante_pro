@@ -89,9 +89,29 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
 
-    const { error } = await context.supabase.from("system_settings").upsert(
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const tokenKey = `push_token:${context.userId}:${data.deviceId}`;
+    const { data: existingRows } = await supabaseAdmin
+      .from("system_settings")
+      .select("key, value")
+      .like("key", "push_token:%");
+    const staleKeys = (existingRows ?? [])
+      .filter((row) => {
+        const value = (row.value ?? {}) as { token?: string; userId?: string; deviceId?: string };
+        return (
+          row.key === `push_token:${context.userId}` ||
+          (value.token === data.token && row.key !== tokenKey) ||
+          (value.userId === context.userId && value.deviceId === data.deviceId && row.key !== tokenKey)
+        );
+      })
+      .map((row) => row.key);
+    if (staleKeys.length > 0) {
+      await supabaseAdmin.from("system_settings").delete().in("key", staleKeys);
+    }
+
+    const { error } = await supabaseAdmin.from("system_settings").upsert(
       {
-        key: `push_token:${context.userId}:${data.deviceId}`,
+        key: tokenKey,
         value: {
           token: data.token,
           userId: context.userId,
@@ -112,6 +132,7 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
 
 export interface DeviceTokenEntry {
   userId: string;
+  deviceId: string;
   name: string | null;
   email: string | null;
   label: string | null;
@@ -154,9 +175,12 @@ export const listDeviceTokens = createServerFn({ method: "GET" })
           name?: string | null;
           email?: string | null;
           label?: string | null;
+          deviceId?: string | null;
         };
+        const [, keyUserId, keyDeviceId] = row.key.split(":");
         return {
-          userId: v.userId ?? row.key.replace("push_token:", "").split(":")[0],
+          userId: v.userId ?? keyUserId,
+          deviceId: v.deviceId ?? keyDeviceId ?? "",
           name: v.name ?? null,
           email: v.email ?? null,
           label: v.label ?? null,
@@ -165,7 +189,8 @@ export const listDeviceTokens = createServerFn({ method: "GET" })
           updatedAt: row.updated_at as string | null,
         };
       })
-      .filter((e) => e.token && (agencyId === null || e.agencyId === agencyId))
+      .filter((e) => e.token && e.deviceId && (agencyId === null || e.agencyId === agencyId))
+      .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""))
       .map(({ agencyId: _a, ...e }) => ({ ...e, isSelf: e.userId === context.userId }));
   });
 
@@ -213,6 +238,14 @@ export const sendTestPush = createServerFn({ method: "POST" })
             message: {
               token: data.token,
               notification: { title: data.title, body: data.body },
+              webpush: {
+                notification: {
+                  title: data.title,
+                  body: data.body,
+                  icon: "/pwa-icon.png",
+                  badge: "/pwa-icon.png",
+                },
+              },
             },
           }),
         },

@@ -1,9 +1,18 @@
 import { initializeApp, getApps, deleteApp, type FirebaseApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, type Messaging } from "firebase/messaging";
-import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
+import { getPublicNotificationConfig, saveAgencyConfig } from "@/lib/settings.functions";
 import { saveDeviceToken } from "@/lib/push.functions";
 
 // ── Identificação estável do dispositivo ───────────────────────
+function shortHash(value: string): string {
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) {
+    hash ^= value.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36).padStart(7, "0");
+}
+
 export function getDeviceId(): string {
   const KEY = "push_device_id";
   let id = localStorage.getItem(KEY);
@@ -13,7 +22,7 @@ export function getDeviceId(): string {
       `dev-${Date.now()}-${Math.random().toString(36).slice(2)}`;
     localStorage.setItem(KEY, id);
   }
-  return id;
+  return `${id}-${shortHash(`${location.origin}|${navigator.userAgent}`)}`;
 }
 
 export function getDeviceLabel(): string {
@@ -32,10 +41,10 @@ export function getDeviceLabel(): string {
   return browser ? `${os} · ${browser}` : os;
 }
 
-let foregroundBound = false;
+const foregroundBound = new WeakSet<Messaging>();
 function bindForegroundMessages(messaging: Messaging): void {
-  if (foregroundBound) return;
-  foregroundBound = true;
+  if (foregroundBound.has(messaging)) return;
+  foregroundBound.add(messaging);
   onMessage(messaging, (payload) => {
     const title = payload.notification?.title ?? "Notificação";
     const body = payload.notification?.body ?? "";
@@ -47,6 +56,16 @@ function bindForegroundMessages(messaging: Messaging): void {
       }
     }
   });
+}
+
+let pushAppConfigKey = "";
+
+export async function registerPushToken(token: string): Promise<void> {
+  await saveDeviceToken({
+    data: { token, deviceId: getDeviceId(), label: getDeviceLabel() },
+  });
+  lastKnownToken = token;
+  startTokenRefreshWatcher();
 }
 
 
@@ -87,7 +106,7 @@ export const DEFAULT_CONFIG: NotifConfig = {
 
 export async function getNotifConfig(): Promise<NotifConfig> {
   try {
-    const { value } = await getAgencyConfig({ data: { scope: "notifications" } });
+    const { value } = await getPublicNotificationConfig();
     if (!value) return DEFAULT_CONFIG;
     return { ...DEFAULT_CONFIG, ...(JSON.parse(value) as Partial<NotifConfig>) };
   } catch {
@@ -141,7 +160,7 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
     };
   }
 
-  const permission = await Notification.requestPermission();
+  const permission = Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
   if (permission !== "granted") {
     return {
       ok: false,
@@ -161,19 +180,23 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
       appId: config.appId,
     }).toString();
 
+  const appConfig = {
+    apiKey: config.apiKey,
+    authDomain: config.authDomain,
+    projectId: config.projectId,
+    messagingSenderId: config.messagingSenderId,
+    appId: config.appId,
+  };
+  const appConfigKey = JSON.stringify(appConfig);
   let app: FirebaseApp;
   const existing = getApps().find((a) => a.name === "push");
-  if (existing) await deleteApp(existing);
-  app = initializeApp(
-    {
-      apiKey: config.apiKey,
-      authDomain: config.authDomain,
-      projectId: config.projectId,
-      messagingSenderId: config.messagingSenderId,
-      appId: config.appId,
-    },
-    "push",
-  );
+  if (existing && pushAppConfigKey === appConfigKey) {
+    app = existing;
+  } else {
+    if (existing) await deleteApp(existing);
+    app = initializeApp(appConfig, "push");
+    pushAppConfigKey = appConfigKey;
+  }
 
   try {
     const registration = await navigator.serviceWorker.register(swUrl);
@@ -227,11 +250,7 @@ export async function captureDeviceTokenOnLogin(): Promise<void> {
     // getToken funciona sem gesto e o token é renovado.
     const res = await requestPushToken(config);
     if (res.ok && res.token) {
-      await saveDeviceToken({
-        data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() },
-      });
-      lastKnownToken = res.token;
-      startTokenRefreshWatcher();
+      await registerPushToken(res.token);
     }
   } catch {
     // Falha silenciosa: não deve interromper o fluxo de login.
@@ -252,10 +271,7 @@ async function checkAndSyncToken(): Promise<void> {
     if (!config.enabled || !configIsComplete(config)) return;
     const res = await requestPushToken(config);
     if (res.ok && res.token && res.token !== lastKnownToken) {
-      await saveDeviceToken({
-        data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() },
-      });
-      lastKnownToken = res.token;
+      await registerPushToken(res.token);
     }
   } catch {
     // Silencioso: revalida na próxima checagem.
