@@ -287,7 +287,6 @@ export const sendTestPush = createServerFn({ method: "POST" })
               },
               notification: { title: data.title, body: data.body },
               webpush: {
-                fcm_options: { link: "/" },
                 notification: {
                   title: data.title,
                   body: data.body,
