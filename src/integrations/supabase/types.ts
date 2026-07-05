@@ -950,6 +950,63 @@ export type Database = {
           },
         ]
       }
+      crm_library_items: {
+        Row: {
+          agency_id: string
+          content: string | null
+          created_at: string | null
+          created_by: string | null
+          days: number | null
+          description: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          image_url: string | null
+          location: string | null
+          price: number | null
+          tags: string[] | null
+          title: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          agency_id: string
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          days?: number | null
+          description?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          price?: number | null
+          tags?: string[] | null
+          title: string
+          type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          agency_id?: string
+          content?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          days?: number | null
+          description?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          image_url?: string | null
+          location?: string | null
+          price?: number | null
+          tags?: string[] | null
+          title?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       crm_tasks: {
         Row: {
           agency_id: string
