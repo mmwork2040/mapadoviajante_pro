@@ -30,7 +30,7 @@ export function NotifPrompt() {
       const config = await getNotifConfig();
       const res = await requestPushToken(config);
       if (res.ok && res.token) {
-        await saveDeviceToken({ data: { token: res.token } });
+        await saveDeviceToken({ data: { token: res.token, deviceId: getDeviceId(), label: getDeviceLabel() } });
         startTokenRefreshWatcher();
         setShow(false);
       } else {
