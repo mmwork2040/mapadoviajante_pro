@@ -90,14 +90,28 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
       .maybeSingle();
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin
+    const tokenKey = `push_token:${context.userId}:${data.deviceId}`;
+    const { data: existingRows } = await supabaseAdmin
       .from("system_settings")
-      .delete()
-      .eq("key", `push_token:${context.userId}`);
+      .select("key, value")
+      .like("key", "push_token:%");
+    const staleKeys = (existingRows ?? [])
+      .filter((row) => {
+        const value = (row.value ?? {}) as { token?: string; userId?: string; deviceId?: string };
+        return (
+          row.key === `push_token:${context.userId}` ||
+          (value.token === data.token && row.key !== tokenKey) ||
+          (value.userId === context.userId && value.deviceId === data.deviceId && row.key !== tokenKey)
+        );
+      })
+      .map((row) => row.key);
+    if (staleKeys.length > 0) {
+      await supabaseAdmin.from("system_settings").delete().in("key", staleKeys);
+    }
 
     const { error } = await supabaseAdmin.from("system_settings").upsert(
       {
-        key: `push_token:${context.userId}:${data.deviceId}`,
+        key: tokenKey,
         value: {
           token: data.token,
           userId: context.userId,
