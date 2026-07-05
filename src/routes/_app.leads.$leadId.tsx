@@ -348,15 +348,16 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
                 {doc.name}
               </button>
 
-              <button onClick={() => setPreview(doc)} className="text-muted-foreground hover:text-primary" title="Pré-visualizar">
+              <button onClick={() => setPreview(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Pré-visualizar">
                 <Eye className="h-4 w-4" />
               </button>
-              <button onClick={() => download(doc)} className="text-muted-foreground hover:text-primary" title="Baixar">
+              <button onClick={() => download(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Baixar">
                 <Download className="h-4 w-4" />
               </button>
-              <button onClick={() => remove(doc)} className="text-muted-foreground hover:text-destructive" title="Remover">
+              <button onClick={() => remove(doc)} className="shrink-0 text-muted-foreground hover:text-destructive" title="Remover">
                 <X className="h-4 w-4" />
               </button>
+
             </li>
           ))}
         </ul>
