@@ -210,11 +210,13 @@ function LeadCard({
   dragging,
   onDragStart,
   onDragEnd,
+  onMove,
 }: {
   lead: Lead;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
+  onMove: (status: LeadStatus) => void;
 }) {
   const navigate = useNavigate();
 
@@ -228,22 +230,51 @@ function LeadCard({
         onDragStart();
       }}
       onDragEnd={onDragEnd}
-      className={`group relative cursor-grab rounded-xl border border-border bg-card p-3 pr-9 shadow-sm transition hover:shadow-md hover:border-primary/40 active:cursor-grabbing ${
+      className={`group relative cursor-grab rounded-xl border border-border bg-card p-3 pr-16 shadow-sm transition hover:shadow-md hover:border-primary/40 active:cursor-grabbing ${
         dragging ? "opacity-50 ring-2 ring-primary" : ""
       }`}
     >
-      <button
-        type="button"
-        aria-label="Ver detalhes do lead"
-        title="Ver detalhes"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
-        }}
-        className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
-      >
-        <Info className="h-4 w-4" />
-      </button>
+      <div className="absolute right-2 top-2 flex items-center gap-0.5">
+        <button
+          type="button"
+          aria-label="Ver detalhes do lead"
+          title="Ver detalhes"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
+          }}
+          className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+        >
+          <Info className="h-4 w-4" />
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Mover lead"
+              title="Mover para outra etapa"
+              onClick={(e) => e.stopPropagation()}
+              className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuLabel>Mover para</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {COLUMNS.filter((c) => c.key !== lead.status).map((c) => (
+              <DropdownMenuItem
+                key={c.key}
+                onSelect={() => onMove(c.key)}
+                className="gap-2"
+              >
+                <span className={`h-2.5 w-2.5 rounded-full ${c.dot}`} />
+                {c.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       <p className="font-medium">{lead.name}</p>
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
       <p className="mt-2 text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
