@@ -57,6 +57,7 @@ export interface Task {
   title: string;
   priority: string;
   due_date?: string | null;
+  description?: string | null;
   completed?: boolean;
   completed_at?: string | null;
   assigned?: { name: string; avatar_color?: string | null } | null;
