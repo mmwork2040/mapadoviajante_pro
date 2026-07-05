@@ -212,9 +212,9 @@ function DashboardPage() {
       </div>
 
 
-      {/* Chart + Tasks */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:col-span-2">
+      {/* Chart */}
+      <div>
+        <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
           <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="flex w-full min-w-0 items-center gap-2 text-sm font-semibold sm:w-auto sm:text-base">
               <BarChart3 className="h-5 w-5 shrink-0 text-primary" />
