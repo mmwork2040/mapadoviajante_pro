@@ -153,11 +153,13 @@ export const listDeviceTokens = createServerFn({ method: "GET" })
           agencyId?: string | null;
           name?: string | null;
           email?: string | null;
+          label?: string | null;
         };
         return {
-          userId: v.userId ?? row.key.replace("push_token:", ""),
+          userId: v.userId ?? row.key.replace("push_token:", "").split(":")[0],
           name: v.name ?? null,
           email: v.email ?? null,
+          label: v.label ?? null,
           token: v.token ?? "",
           agencyId: v.agencyId ?? null,
           updatedAt: row.updated_at as string | null,
