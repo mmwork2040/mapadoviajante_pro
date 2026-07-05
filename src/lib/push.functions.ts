@@ -68,6 +68,36 @@ export const getPushStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async () => ({ configured: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT) }));
 
+/** Registra/atualiza o device token de push do usuário logado em system_settings. */
+export const saveDeviceToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ token: z.string().min(10) }).parse(data))
+  .handler(async ({ data, context }): Promise<{ ok: true }> => {
+    const { data: member } = await context.supabase
+      .from("agency_members")
+      .select("agency_id")
+      .eq("user_id", context.userId)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+
+    const { error } = await context.supabase.from("system_settings").upsert(
+      {
+        key: `push_token:${context.userId}`,
+        value: {
+          token: data.token,
+          userId: context.userId,
+          agencyId: member?.agency_id ?? null,
+          updatedAt: new Date().toISOString(),
+        } as never,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "key" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Envia uma notificação push de teste para um token de dispositivo via FCM HTTP v1. */
 export const sendTestPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
