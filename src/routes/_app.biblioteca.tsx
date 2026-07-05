@@ -57,13 +57,16 @@ const TABS: { key: TabKey; label: string; icon: typeof Sparkles; hint: string }[
 function LibraryPage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
-  const [tab, setTab] = useState<LibraryItemType>("experience");
+  const [tab, setTab] = useState<TabKey>("experience");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryItem | null>(null);
 
+  const isDocuments = tab === "documents";
+
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["library", tab],
-    queryFn: () => fetchLibraryItems(tab),
+    queryFn: () => fetchLibraryItems(tab as LibraryItemType),
+    enabled: !isDocuments,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library"] });
