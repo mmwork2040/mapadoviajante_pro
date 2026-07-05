@@ -415,3 +415,78 @@ function Fld({
     </label>
   );
 }
+
+const ORIGIN_LABELS: Record<DocumentOrigin, string> = {
+  roteiro: "Roteiros",
+  lead: "Leads",
+  geral: "Gerais",
+};
+
+function DocumentsPanel() {
+  const [preview, setPreview] = useState<AgencyDocument | null>(null);
+  const { data: docs = [], isLoading, isError, refetch } = useQuery({
+    queryKey: ["library", "documents"],
+    queryFn: fetchAgencyDocuments,
+  });
+
+  if (isError)
+    return <QueryError message="Não foi possível carregar os documentos." onRetry={() => refetch()} />;
+  if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
+  if (docs.length === 0)
+    return <p className="text-muted-foreground">Nenhum documento enviado ainda.</p>;
+
+  const groups: Record<DocumentOrigin, AgencyDocument[]> = { roteiro: [], lead: [], geral: [] };
+  for (const d of docs) groups[documentOrigin(d)].push(d);
+
+  return (
+    <div className="space-y-6">
+      {(Object.keys(groups) as DocumentOrigin[]).map((origin) =>
+        groups[origin].length === 0 ? null : (
+          <div key={origin} className="space-y-3">
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              {ORIGIN_LABELS[origin]} · {groups[origin].length}
+            </h3>
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {groups[origin].map((doc) => (
+                <DocumentRow key={doc.id} doc={doc} onPreview={() => setPreview(doc)} />
+              ))}
+            </div>
+          </div>
+        ),
+      )}
+      <DocumentPreviewModal doc={preview} onClose={() => setPreview(null)} />
+    </div>
+  );
+}
+
+function DocumentRow({ doc, onPreview }: { doc: AgencyDocument; onPreview: () => void }) {
+  const source = doc.itinerary?.title || doc.lead?.name || null;
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+        <FileText className="h-5 w-5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-medium">{doc.name}</p>
+        <p className="truncate text-xs text-muted-foreground">
+          {doc.category ? `${doc.category}` : "documento"}
+          {source ? ` · ${source}` : ""}
+        </p>
+      </div>
+      <button
+        onClick={onPreview}
+        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+        title="Visualizar"
+      >
+        <Eye className="h-4 w-4" />
+      </button>
+      <button
+        onClick={() => downloadDocument(doc)}
+        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+        title="Baixar"
+      >
+        <Download className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
