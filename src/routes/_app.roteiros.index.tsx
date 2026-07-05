@@ -126,9 +126,17 @@ function ItinerariesPage() {
 
                 {/* Right panel — details */}
                 <div className="min-w-0 flex-1 p-4 pr-10">
-                  <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                    {STATUS_LABELS[it.status] || it.status}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                      {STATUS_LABELS[it.status] || it.status}
+                    </span>
+                    {/(cópia)/i.test(it.title) && (
+                      <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        <Copy className="h-3 w-3" /> Cópia
+                      </span>
+                    )}
+                  </div>
+
                   <div className="mt-3 flex items-center gap-2">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-foreground">
                       {initials(it.client_name || it.title)}
