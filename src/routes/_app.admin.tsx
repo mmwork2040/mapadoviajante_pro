@@ -898,8 +898,11 @@ function NotificationsCard() {
   );
 }
 
+type SendResult = { ok: boolean; message: string; at: string };
+
 function DeviceTokensCard() {
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [results, setResults] = useState<Record<string, SendResult>>({});
   const sendPush = useServerFn(sendTestPush);
   const tokensQ = useQuery({ queryKey: ["device-tokens"], queryFn: () => listDeviceTokens() });
   const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
@@ -916,6 +919,10 @@ function DeviceTokensCard() {
       },
     });
     setSendingId(null);
+    setResults((r) => ({
+      ...r,
+      [entry.token]: { ok: res.ok, message: res.message, at: new Date().toLocaleTimeString("pt-BR") },
+    }));
     res.ok ? toast.success(res.message) : toast.error(res.message);
   }
 
