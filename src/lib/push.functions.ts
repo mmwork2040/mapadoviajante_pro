@@ -114,6 +114,7 @@ export interface DeviceTokenEntry {
   userId: string;
   name: string | null;
   email: string | null;
+  label: string | null;
   token: string;
   updatedAt: string | null;
   isSelf: boolean;
