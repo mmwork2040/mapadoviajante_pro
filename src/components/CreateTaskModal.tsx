@@ -86,22 +86,15 @@ export function CreateTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl gap-0 overflow-hidden p-0" showClose={false}>
+      <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-foreground">
               <ListPlus className="h-5 w-5" />
             </div>
-            <h2 className="text-lg font-bold">Criar Tarefa</h2>
+            <DialogTitle className="text-lg font-bold">Criar Tarefa</DialogTitle>
           </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            aria-label="Fechar"
-            className="rounded-lg p-1.5 text-muted-foreground transition hover:bg-muted"
-          >
-            <X className="h-5 w-5" />
-          </button>
         </div>
 
         {/* Body */}
