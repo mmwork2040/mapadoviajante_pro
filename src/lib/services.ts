@@ -598,7 +598,7 @@ function sanitizeFileName(name: string): string {
 export async function fetchLibraryItems(type?: LibraryItemType): Promise<LibraryItem[]> {
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return [];
-  let q = supabase
+  let q = (supabase as any)
     .from("crm_library_items")
     .select("*")
     .eq("agency_id", _agencyId)
@@ -636,7 +636,7 @@ export async function getLibraryAssetUrl(path: string): Promise<string | null> {
 export async function createLibraryItem(item: Partial<LibraryItem>): Promise<LibraryItem | null> {
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return null;
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("crm_library_items")
     .insert({
       agency_id: _agencyId,
@@ -663,7 +663,7 @@ export async function createLibraryItem(item: Partial<LibraryItem>): Promise<Lib
 }
 
 export async function updateLibraryItem(id: string, updates: Partial<LibraryItem>): Promise<LibraryItem | null> {
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("crm_library_items")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
@@ -680,7 +680,7 @@ export async function deleteLibraryItem(item: LibraryItem): Promise<boolean> {
   if (item.file_url) {
     await supabase.storage.from(LIBRARY_BUCKET).remove([item.file_url]);
   }
-  const { error } = await supabase.from("crm_library_items").delete().eq("id", item.id);
+  const { error } = await (supabase as any).from("crm_library_items").delete().eq("id", item.id);
   if (error) {
     console.error("deleteLibraryItem:", error);
     return false;
