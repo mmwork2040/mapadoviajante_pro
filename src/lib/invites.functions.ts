@@ -155,16 +155,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
 
     const link = `${data.appUrl.replace(/\/$/, "")}/aceitar-convite?token=${token}`;
 
-    // Envio via Gmail (mesma infra de e-mail do sistema)
-    const lovableKey = process.env.LOVABLE_API_KEY;
-    const connKey = process.env.GOOGLE_MAIL_API_KEY;
-    if (!lovableKey || !connKey) {
-      return {
-        ok: true,
-        emailSent: false,
-        message: "Convite criado, mas o Gmail não está conectado para enviar o e-mail.",
-      };
-    }
+
 
     try {
       const subject = `Convite para a equipe ${(agency as { name?: string })?.name ?? "da agência"}`;
