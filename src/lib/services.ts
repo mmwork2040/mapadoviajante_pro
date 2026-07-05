@@ -588,7 +588,106 @@ export async function createDestination(destData: Partial<Destination>): Promise
   return data as Destination;
 }
 
-// ── Itineraries ────────────────────────────────────────────────
+// ── Biblioteca (repositório de conhecimento) ───────────────────
+const LIBRARY_BUCKET = "library-assets";
+
+function sanitizeFileName(name: string): string {
+  return name.replace(/[^\w.\-]+/g, "_").slice(0, 120);
+}
+
+export async function fetchLibraryItems(type?: LibraryItemType): Promise<LibraryItem[]> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return [];
+  let q = supabase
+    .from("crm_library_items")
+    .select("*")
+    .eq("agency_id", _agencyId)
+    .order("created_at", { ascending: false });
+  if (type) q = q.eq("type", type);
+  const { data, error } = await q;
+  if (error) {
+    console.error("fetchLibraryItems:", error);
+    throw new Error("Não foi possível carregar a biblioteca.");
+  }
+  return (data as LibraryItem[]) || [];
+}
+
+export async function uploadLibraryAsset(file: File): Promise<{ path: string; name: string } | null> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return null;
+  const path = `${_agencyId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
+  const { error } = await supabase.storage.from(LIBRARY_BUCKET).upload(path, file, {
+    contentType: file.type || undefined,
+    upsert: false,
+  });
+  if (error) {
+    console.error("uploadLibraryAsset:", error);
+    throw new Error("Não foi possível enviar o arquivo.");
+  }
+  return { path, name: file.name };
+}
+
+export async function getLibraryAssetUrl(path: string): Promise<string | null> {
+  const { data, error } = await supabase.storage.from(LIBRARY_BUCKET).createSignedUrl(path, 3600);
+  if (error) return null;
+  return data?.signedUrl ?? null;
+}
+
+export async function createLibraryItem(item: Partial<LibraryItem>): Promise<LibraryItem | null> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return null;
+  const { data, error } = await supabase
+    .from("crm_library_items")
+    .insert({
+      agency_id: _agencyId,
+      type: item.type || "experience",
+      title: item.title,
+      description: item.description ?? null,
+      content: item.content ?? null,
+      location: item.location ?? null,
+      image_url: item.image_url ?? null,
+      file_url: item.file_url ?? null,
+      file_name: item.file_name ?? null,
+      price: item.price ?? 0,
+      days: item.days ?? null,
+      tags: item.tags ?? [],
+      created_by: _memberId,
+    })
+    .select()
+    .single();
+  if (error) {
+    console.error("createLibraryItem:", error);
+    return null;
+  }
+  return data as LibraryItem;
+}
+
+export async function updateLibraryItem(id: string, updates: Partial<LibraryItem>): Promise<LibraryItem | null> {
+  const { data, error } = await supabase
+    .from("crm_library_items")
+    .update({ ...updates, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) {
+    console.error("updateLibraryItem:", error);
+    return null;
+  }
+  return data as LibraryItem;
+}
+
+export async function deleteLibraryItem(item: LibraryItem): Promise<boolean> {
+  if (item.file_url) {
+    await supabase.storage.from(LIBRARY_BUCKET).remove([item.file_url]);
+  }
+  const { error } = await supabase.from("crm_library_items").delete().eq("id", item.id);
+  if (error) {
+    console.error("deleteLibraryItem:", error);
+    return false;
+  }
+  return true;
+}
+
 export async function fetchItineraries(): Promise<Itinerary[]> {
   if (!_agencyId) return [];
   const { data, error } = await supabase
