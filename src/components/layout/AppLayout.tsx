@@ -21,6 +21,7 @@ import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
+import { NotifPrompt } from "@/components/NotifPrompt";
 import mapaproIcon from "@/assets/mapapro-icon.png.asset.json";
 
 const NAV = [
@@ -211,6 +212,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </header>
 
         <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-5 pb-24 sm:px-5 sm:py-6 md:pb-6">
+          <NotifPrompt />
           {children}
         </main>
       </div>
