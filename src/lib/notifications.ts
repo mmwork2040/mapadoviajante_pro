@@ -4,7 +4,7 @@ import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
 import { saveDeviceToken } from "@/lib/push.functions";
 
 // ── Identificação estável do dispositivo ───────────────────────
-function getDeviceId(): string {
+export function getDeviceId(): string {
   const KEY = "push_device_id";
   let id = localStorage.getItem(KEY);
   if (!id) {
@@ -16,7 +16,7 @@ function getDeviceId(): string {
   return id;
 }
 
-function getDeviceLabel(): string {
+export function getDeviceLabel(): string {
   const ua = navigator.userAgent;
   let os = "Dispositivo";
   if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
