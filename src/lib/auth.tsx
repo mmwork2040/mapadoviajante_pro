@@ -97,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(sess);
       if (event === "SIGNED_IN" || event === "USER_UPDATED") {
         hydrateMember(sess);
+        void captureDeviceTokenOnLogin();
       } else if (event === "SIGNED_OUT") {
         setAgencyContext(null);
         setMember(null);
