@@ -245,7 +245,6 @@ export const sendTestPush = createServerFn({ method: "POST" })
                   icon: "/pwa-icon.png",
                   badge: "/pwa-icon.png",
                 },
-                fcmOptions: { link: "/" },
               },
             },
           }),
