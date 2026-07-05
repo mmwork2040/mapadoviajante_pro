@@ -739,6 +739,9 @@ function NotificationsCard() {
     setActivating(true);
     const res = await requestPushToken(config);
     setActivating(false);
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setPermission(Notification.permission);
+    }
     if (res.ok && res.token) {
       setToken(res.token);
       toast.success(res.message);
