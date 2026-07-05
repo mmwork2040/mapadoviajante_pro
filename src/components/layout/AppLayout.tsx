@@ -14,8 +14,8 @@ import {
   Sun,
   LogOut,
   Bot,
-  PanelLeftClose,
-  PanelLeftOpen,
+  ChevronLeft,
+
 } from "lucide-react";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
@@ -182,10 +182,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <button
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-            className="hidden rounded-lg p-2 text-muted-foreground hover:bg-muted md:block"
+            className="group hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:block"
           >
-            {collapsed ? <PanelLeftOpen className="h-5 w-5" /> : <PanelLeftClose className="h-5 w-5" />}
+            <ChevronLeft
+              className={`h-5 w-5 transition-transform duration-300 ease-in-out group-hover:scale-110 ${
+                collapsed ? "rotate-180" : "rotate-0"
+              }`}
+            />
           </button>
+
           <div className="flex items-center gap-1">
             <button
               onClick={toggle}
