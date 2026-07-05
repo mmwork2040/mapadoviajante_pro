@@ -215,12 +215,12 @@ function DashboardPage() {
       {/* Chart + Tasks */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5 lg:col-span-2">
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+          <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="flex w-full min-w-0 items-center gap-2 text-sm font-semibold sm:w-auto sm:text-base">
               <BarChart3 className="h-5 w-5 shrink-0 text-primary" />
               <span className="truncate">Vendas — Últimos 6 Meses</span>
             </h2>
-            <div className="flex shrink-0 rounded-full bg-muted p-1 text-xs font-medium">
+            <div className="flex max-w-full shrink-0 rounded-full bg-muted p-1 text-xs font-medium">
               <button
                 onClick={() => setChartMode("revenue")}
                 className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
@@ -283,14 +283,14 @@ function DashboardPage() {
 
       {/* Agenda da Semana */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+          <div className="mb-4 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="flex w-full min-w-0 items-center gap-2 text-sm font-semibold sm:w-auto sm:text-base">
             <CalendarDays className="h-5 w-5 shrink-0 text-primary" />
             <span className="truncate">
               {agendaMode === "week" ? "Agenda da Semana" : "Agenda do Mês"}
             </span>
           </h2>
-          <div className="flex shrink-0 rounded-full bg-muted p-1 text-xs font-medium">
+          <div className="flex max-w-full shrink-0 rounded-full bg-muted p-1 text-xs font-medium">
             <button
               onClick={() => setAgendaMode("week")}
               className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
