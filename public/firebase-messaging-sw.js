@@ -1,33 +1,60 @@
-/* Service worker de mensagens do Firebase Cloud Messaging.
-   Recebe a configuração via query params no registro (o SW não acessa localStorage).
+/* Service worker de mensagens push.
    Isolado do PWA: não faz cache de app. */
 /* eslint-disable no-undef */
-importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js");
 
-const params = new URL(location).searchParams;
-const config = {
-  apiKey: params.get("apiKey"),
-  authDomain: params.get("authDomain"),
-  projectId: params.get("projectId"),
-  messagingSenderId: params.get("messagingSenderId"),
-  appId: params.get("appId"),
-};
-
-if (config.apiKey && config.projectId) {
-  firebase.initializeApp(config);
-  const messaging = firebase.messaging();
-  messaging.onBackgroundMessage((payload) => {
-    const n = (payload && payload.notification) || {};
-    self.registration.showNotification(n.title || "Notificação", {
-      body: n.body || "",
-      icon: "/pwa-icon.png",
-      badge: "/pwa-icon.png",
-    });
-  });
+function getPayload(event) {
+  try {
+    return event.data ? event.data.json() : {};
+  } catch {
+    return {};
+  }
 }
+
+function payloadData(payload) {
+  return payload.data || payload.notification?.data || payload.webpush?.notification?.data || {};
+}
+
+async function acknowledgePushDelivery(data, deviceState) {
+  if (!data || !data.traceId || !data.ackSecret) return;
+  try {
+    await fetch("/api/public/push-delivery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        traceId: data.traceId,
+        ackSecret: data.ackSecret,
+        deviceState,
+      }),
+      keepalive: true,
+    });
+  } catch {
+    // Confirmação best-effort.
+  }
+}
+
+self.addEventListener("push", (event) => {
+  const payload = getPayload(event);
+  const data = payloadData(payload);
+  const notification = payload.notification || payload.webpush?.notification || {};
+  const title = notification.title || data.title || "Notificação";
+  const body = notification.body || data.body || "";
+  const url = data.url || notification.data?.url || "/";
+
+  event.waitUntil(
+    Promise.all([
+      acknowledgePushDelivery(data, "background"),
+      self.registration.showNotification(title, {
+        body,
+        icon: notification.icon || "/pwa-icon.png",
+        badge: notification.badge || "/pwa-icon.png",
+        data: { url },
+      }),
+    ]),
+  );
+});
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  event.waitUntil(self.clients.openWindow("/"));
+  const url = event.notification.data?.url || "/";
+  event.waitUntil(self.clients.openWindow(url));
 });

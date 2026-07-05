@@ -21,6 +21,7 @@ import {
   configIsComplete,
   NOTIF_EVENTS,
   DEFAULT_CONFIG as DEFAULT_NOTIF_CONFIG,
+  getDeviceId,
   type NotifConfig,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
@@ -43,7 +44,7 @@ import {
   DEFAULT_N8N_CONFIG,
   type N8nConfig,
 } from "@/lib/n8n-config";
-import { sendTestPush, getPushStatus, listDeviceTokens, type DeviceTokenEntry } from "@/lib/push.functions";
+import { sendTestPush, getPushStatus, listDeviceTokens, getPushDeliveryStatus, type DeviceTokenEntry } from "@/lib/push.functions";
 import {
   fetchAiConfig,
   fetchTeamMembers,
@@ -705,6 +706,7 @@ function NotificationsCard() {
   const [testing, setTesting] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const sendPush = useServerFn(sendTestPush);
+  const getDelivery = useServerFn(getPushDeliveryStatus);
   const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
 
   useEffect(() => {
@@ -764,10 +766,23 @@ function NotificationsCard() {
     }
     setTesting(true);
     const res = await sendPush({
-      data: { token, title: "Teste de notificação", body: "As notificações estão funcionando! 🎉" },
+      data: { token, deviceId: getDeviceId(), title: "Teste de notificação", body: "As notificações estão funcionando! 🎉" },
     });
     setTesting(false);
-    res.ok ? toast.success(res.message) : toast.error(res.message);
+    if (!res.ok || !res.traceId) {
+      toast.error(res.message);
+      return;
+    }
+    toast.info(res.message);
+    for (let i = 0; i < 6; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const status = await getDelivery({ data: { traceId: res.traceId } });
+      if (status.status === "received") {
+        toast.success("Dispositivo confirmou recebimento.");
+        return;
+      }
+    }
+    toast.warning("FCM aceitou, mas este dispositivo não confirmou recebimento.");
   }
 
   const fields: { key: keyof NotifConfig; label: string; placeholder: string }[] = [
@@ -898,12 +913,18 @@ function NotificationsCard() {
   );
 }
 
-type SendResult = { ok: boolean; message: string; at: string };
+type SendResult = {
+  ok: boolean;
+  status: "accepted" | "received" | "failed";
+  message: string;
+  at: string;
+};
 
 function DeviceTokensCard() {
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [results, setResults] = useState<Record<string, SendResult>>({});
   const sendPush = useServerFn(sendTestPush);
+  const getDelivery = useServerFn(getPushDeliveryStatus);
   const tokensQ = useQuery({ queryKey: ["device-tokens"], queryFn: () => listDeviceTokens() });
   const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
   const serverReady = statusQ.data?.configured;
@@ -914,6 +935,7 @@ function DeviceTokensCard() {
     const res = await sendPush({
       data: {
         token: entry.token,
+        deviceId: entry.deviceId,
         title: "Teste de notificação",
         body: "As notificações estão funcionando! 🎉",
       },
@@ -921,9 +943,44 @@ function DeviceTokensCard() {
     setSendingId(null);
     setResults((r) => ({
       ...r,
-      [entry.token]: { ok: res.ok, message: res.message, at: new Date().toLocaleTimeString("pt-BR") },
+      [entry.token]: {
+        ok: res.ok,
+        status: res.ok ? "accepted" : "failed",
+        message: res.message,
+        at: new Date().toLocaleTimeString("pt-BR"),
+      },
     }));
-    res.ok ? toast.success(res.message) : toast.error(res.message);
+    res.ok ? toast.info(res.message) : toast.error(res.message);
+
+    if (!res.ok || !res.traceId) return;
+    for (let i = 0; i < 6; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const status = await getDelivery({ data: { traceId: res.traceId } });
+      if (status.status === "received") {
+        setResults((r) => ({
+          ...r,
+          [entry.token]: {
+            ok: true,
+            status: "received",
+            message: status.message,
+            at: new Date(status.receivedAt ?? Date.now()).toLocaleTimeString("pt-BR"),
+          },
+        }));
+        toast.success("Dispositivo confirmou recebimento.");
+        return;
+      }
+    }
+
+    setResults((r) => ({
+      ...r,
+      [entry.token]: {
+        ok: false,
+        status: "failed",
+        message: "FCM aceitou, mas o dispositivo não confirmou recebimento.",
+        at: new Date().toLocaleTimeString("pt-BR"),
+      },
+    }));
+    toast.warning("FCM aceitou, mas o dispositivo não confirmou recebimento.");
   }
 
   return (
@@ -995,7 +1052,11 @@ function DeviceTokensCard() {
                       results[t.token].ok ? "text-emerald-600" : "text-destructive"
                     }`}
                   >
-                    {results[t.token].ok ? "✓ Enviada" : "✕ Falhou"} · {results[t.token].at}
+                    {results[t.token].status === "received"
+                      ? "✓ Recebida"
+                      : results[t.token].status === "accepted"
+                        ? "… Aguardando dispositivo"
+                        : "✕ Sem confirmação"} · {results[t.token].at}
                   </span>
                 )}
               </div>

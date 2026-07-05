@@ -42,18 +42,49 @@ export function getDeviceLabel(): string {
 }
 
 const foregroundBound = new WeakSet<Messaging>();
+
+async function acknowledgePushDelivery(
+  traceId: unknown,
+  ackSecret: unknown,
+  deviceState: string,
+): Promise<void> {
+  if (typeof traceId !== "string" || typeof ackSecret !== "string") return;
+  try {
+    await fetch("/api/public/push-delivery", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ traceId, ackSecret, deviceState }),
+      keepalive: true,
+    });
+  } catch {
+    // Confirmação best-effort; não deve quebrar a notificação local.
+  }
+}
+
 function bindForegroundMessages(messaging: Messaging): void {
   if (foregroundBound.has(messaging)) return;
   foregroundBound.add(messaging);
   onMessage(messaging, (payload) => {
-    const title = payload.notification?.title ?? "Notificação";
-    const body = payload.notification?.body ?? "";
+    const title = payload.notification?.title ?? payload.data?.title ?? "Notificação";
+    const body = payload.notification?.body ?? payload.data?.body ?? "";
+    void acknowledgePushDelivery(payload.data?.traceId, payload.data?.ackSecret, "foreground");
     if (Notification.permission === "granted") {
-      try {
-        new Notification(title, { body });
-      } catch {
-        // Alguns navegadores exigem o Service Worker; ignore silenciosamente.
-      }
+      void navigator.serviceWorker.ready
+        .then((registration) =>
+          registration.showNotification(title, {
+            body,
+            icon: "/pwa-icon.png",
+            badge: "/pwa-icon.png",
+            data: { url: payload.data?.url ?? "/" },
+          }),
+        )
+        .catch(() => {
+          try {
+            new Notification(title, { body });
+          } catch {
+            // Alguns navegadores exigem o Service Worker; ignore silenciosamente.
+          }
+        });
     }
   });
 }
