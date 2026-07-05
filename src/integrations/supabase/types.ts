@@ -2363,12 +2363,14 @@ export type Database = {
     }
     Functions: {
       accept_agency_invite: { Args: { _token: string }; Returns: undefined }
+      agency_exists: { Args: { _agency_id: string }; Returns: boolean }
       agency_has_members: { Args: { _agency_id: string }; Returns: boolean }
       deduct_extra_tokens: {
         Args: { p_amount: number; p_user_id: string }
         Returns: undefined
       }
       ensure_admin_user: { Args: never; Returns: undefined }
+      form_token_exists: { Args: { _token: string }; Returns: boolean }
       get_invite_info: {
         Args: { _token: string }
         Returns: {
