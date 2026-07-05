@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, ListChecks, Bell, Mail, Send, CreditCard } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -44,15 +44,12 @@ import {
 } from "@/lib/n8n-config";
 import { sendTestPush, getPushStatus } from "@/lib/push.functions";
 import {
-  createTask,
   fetchAiConfig,
-  fetchTasks,
   fetchTeamMembers,
   removeMember,
   revokeMember,
   saveAiConfig,
   updateMemberRole,
-  updateTask,
 } from "@/lib/services";
 import { sendTeamInvite } from "@/lib/invites.functions";
 import {
@@ -66,14 +63,13 @@ import { formatDate, initials } from "@/lib/ui";
 import { useAuth, isSuperAdminEmail } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
-import type { AiConfig, Task } from "@/lib/types";
+import type { AiConfig } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/admin")({
   component: AdminPage,
 });
 
 const ROLES = ["admin", "gerente", "consultor"];
-const PRIORITIES = ["low", "normal", "high"];
 
 function AdminPage() {
   const { session, member } = useAuth();
@@ -95,33 +91,10 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
   const confirm = useConfirm();
   const isAdmin = member?.role === "admin";
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [task, setTask] = useState<Partial<Task>>({ priority: "normal" });
 
   const teamQ = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
-  const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks({}) });
   const team = teamQ.data ?? [];
-  const tasks = tasksQ.data ?? [];
 
-  const addTask = useMutation({
-    mutationFn: () => createTask(task),
-    onSuccess: (res) => {
-      if (!res) return toast.error("Erro ao criar tarefa.");
-      dispatchWebhook("task.created", res);
-      setTask({ priority: "normal" });
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-    },
-    onError: () => toast.error("Erro ao criar tarefa."),
-  });
-
-  const toggle = useMutation({
-    mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
-      updateTask(id, { completed, completed_at: completed ? new Date().toISOString() : null }),
-    onSuccess: (_res, vars) => {
-      if (vars.completed) dispatchWebhook("task.completed", { id: vars.id });
-      qc.invalidateQueries({ queryKey: ["tasks"] });
-    },
-    onError: () => toast.error("Erro ao atualizar tarefa."),
-  });
 
   const changeRole = useMutation({
     mutationFn: ({ id, role }: { id: string; role: string }) => updateMemberRole(id, role),
@@ -311,82 +284,6 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                     Remover
                   </button>
                 )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </CollapsibleSection>
-
-      <CollapsibleSection
-        icon={ListChecks}
-        color="#10b981"
-        title="Tarefas"
-        subtitle="Organize e acompanhe as tarefas da equipe"
-
-      >
-        <div className="mb-4 space-y-2">
-          <input
-            value={task.title || ""}
-            onChange={(e) => setTask({ ...task, title: e.target.value })}
-            placeholder="Nova tarefa…"
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-          <div className="flex gap-2">
-            <select
-              value={task.priority || "normal"}
-              onChange={(e) => setTask({ ...task, priority: e.target.value })}
-              className="rounded-lg border border-input bg-background px-2 py-2 text-sm capitalize outline-none focus:border-primary"
-            >
-              {PRIORITIES.map((p) => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-            <select
-              value={task.assigned_to || ""}
-              onChange={(e) => setTask({ ...task, assigned_to: e.target.value || null })}
-              className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
-            >
-              <option value="">Sem responsável</option>
-              {team.map((m) => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-              ))}
-            </select>
-            <input
-              type="date"
-              value={task.due_date || ""}
-              onChange={(e) => setTask({ ...task, due_date: e.target.value || null })}
-              className="rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
-            />
-            <button
-              onClick={() => task.title?.trim() && addTask.mutate()}
-              className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-        {tasksQ.isError ? (
-          <QueryError message="Não foi possível carregar as tarefas." onRetry={() => tasksQ.refetch()} />
-        ) : (
-          <ul className="space-y-2">
-            {tasks.length === 0 && <li className="text-sm text-muted-foreground">Nenhuma tarefa.</li>}
-            {tasks.map((t) => (
-              <li key={t.id} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2">
-                <button
-                  onClick={() => toggle.mutate({ id: t.id, completed: !t.completed })}
-                  className={`flex h-5 w-5 items-center justify-center rounded border ${
-                    t.completed ? "border-primary bg-primary text-primary-foreground" : "border-input"
-                  }`}
-                >
-                  {t.completed && <Check className="h-3.5 w-3.5" />}
-                </button>
-                <span className={`flex-1 text-sm ${t.completed ? "text-muted-foreground line-through" : ""}`}>
-                  {t.title}
-                  {t.priority && t.priority !== "normal" && (
-                    <span className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs capitalize">{t.priority}</span>
-                  )}
-                </span>
-                {t.due_date && <span className="text-xs text-muted-foreground">{formatDate(t.due_date)}</span>}
               </li>
             ))}
           </ul>
