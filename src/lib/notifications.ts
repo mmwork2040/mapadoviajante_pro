@@ -1,6 +1,6 @@
 import { initializeApp, getApps, deleteApp, type FirebaseApp } from "firebase/app";
 import { getMessaging, getToken, onMessage, type Messaging } from "firebase/messaging";
-import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
+import { getPublicNotificationConfig, saveAgencyConfig } from "@/lib/settings.functions";
 import { saveDeviceToken } from "@/lib/push.functions";
 
 // ── Identificação estável do dispositivo ───────────────────────
@@ -104,7 +104,7 @@ export const DEFAULT_CONFIG: NotifConfig = {
 
 export async function getNotifConfig(): Promise<NotifConfig> {
   try {
-    const { value } = await getAgencyConfig({ data: { scope: "notifications" } });
+    const { value } = await getPublicNotificationConfig();
     if (!value) return DEFAULT_CONFIG;
     return { ...DEFAULT_CONFIG, ...(JSON.parse(value) as Partial<NotifConfig>) };
   } catch {
