@@ -135,6 +135,7 @@ function LibraryPage() {
         {TABS.map((t) => {
           const Icon = t.icon;
           const on = t.key === tab;
+          const count = counts[t.key] ?? 0;
           return (
             <button
               key={t.key}
@@ -146,6 +147,13 @@ function LibraryPage() {
               }`}
             >
               <Icon className="h-4 w-4 shrink-0" /> {t.label}
+              <span
+                className={`ml-0.5 inline-flex min-w-[1.25rem] items-center justify-center rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+                  on ? "bg-primary-foreground/20 text-primary-foreground" : "bg-accent text-accent-foreground"
+                }`}
+              >
+                {count}
+              </span>
             </button>
           );
         })}
