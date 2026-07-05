@@ -17,6 +17,7 @@ import {
   getNotifConfig,
   saveNotifConfig,
   requestPushToken,
+  registerPushToken,
   configIsComplete,
   NOTIF_EVENTS,
   DEFAULT_CONFIG as DEFAULT_NOTIF_CONFIG,
@@ -746,6 +747,7 @@ function NotificationsCard() {
       setPermission(Notification.permission);
     }
     if (res.ok && res.token) {
+      await registerPushToken(res.token);
       setToken(res.token);
       toast.success(res.message);
     } else {
@@ -944,7 +946,7 @@ function DeviceTokensCard() {
       ) : (
         <ul className="divide-y divide-border rounded-lg border border-border">
           {tokens.map((t) => (
-            <li key={t.token} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-sm">
+            <li key={`${t.userId}:${t.deviceId}`} className="flex flex-wrap items-center gap-3 px-3 py-2.5 text-sm">
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 font-medium">
                   <span className="truncate">{t.name || t.email || t.userId}</span>
@@ -960,7 +962,7 @@ function DeviceTokensCard() {
                   )}
                 </div>
                 <div className="truncate font-mono text-xs text-muted-foreground" title={t.token}>
-                  {t.token.slice(0, 24)}…
+                  {t.deviceId.slice(0, 18)} · {t.token.slice(0, 24)}…
                   {t.updatedAt && ` · ${new Date(t.updatedAt).toLocaleString("pt-BR")}`}
                 </div>
               </div>
