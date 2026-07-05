@@ -425,43 +425,102 @@ const ORIGIN_LABELS: Record<DocumentOrigin, string> = {
 };
 
 function DocumentsPanel() {
+  const qc = useQueryClient();
+  const confirm = useConfirm();
   const [preview, setPreview] = useState<AgencyDocument | null>(null);
+  const [uploading, setUploading] = useState(false);
   const { data: docs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["library", "documents"],
     queryFn: fetchAgencyDocuments,
   });
 
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["library", "documents"] });
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setUploading(true);
+    try {
+      for (const f of files) await uploadGeneralDocument(f);
+      toast.success(files.length > 1 ? "Arquivos enviados." : "Arquivo enviado.");
+      invalidate();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao enviar arquivo.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function remove(doc: AgencyDocument) {
+    const ok = await confirm({
+      title: "Excluir documento?",
+      description: `"${doc.name}" será removido definitivamente.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (!ok) return;
+    if (await deleteLeadDocument(doc)) {
+      toast.success("Documento excluído.");
+      invalidate();
+    } else toast.error("Erro ao excluir documento.");
+  }
+
+  const uploadBar = (
+    <label className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-input bg-background px-4 py-3 text-sm font-medium text-muted-foreground hover:border-primary hover:text-foreground sm:w-auto">
+      <Upload className="h-4 w-4 shrink-0" />
+      {uploading ? "Enviando…" : "Enviar arquivos"}
+      <input type="file" multiple onChange={handleUpload} disabled={uploading} className="hidden" />
+    </label>
+  );
+
   if (isError)
     return <QueryError message="Não foi possível carregar os documentos." onRetry={() => refetch()} />;
   if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
-  if (docs.length === 0)
-    return <p className="text-muted-foreground">Nenhum documento enviado ainda.</p>;
 
-  const groups: Record<DocumentOrigin, AgencyDocument[]> = { roteiro: [], lead: [], geral: [] };
+  const groups: Record<DocumentOrigin, AgencyDocument[]> = { geral: [], roteiro: [], lead: [] };
   for (const d of docs) groups[documentOrigin(d)].push(d);
 
   return (
     <div className="space-y-6">
-      {(Object.keys(groups) as DocumentOrigin[]).map((origin) =>
-        groups[origin].length === 0 ? null : (
-          <div key={origin} className="space-y-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-              {ORIGIN_LABELS[origin]} · {groups[origin].length}
-            </h3>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {groups[origin].map((doc) => (
-                <DocumentRow key={doc.id} doc={doc} onPreview={() => setPreview(doc)} />
-              ))}
+      <div className="flex justify-start">{uploadBar}</div>
+      {docs.length === 0 ? (
+        <p className="text-muted-foreground">Nenhum documento no repositório ainda.</p>
+      ) : (
+        (Object.keys(groups) as DocumentOrigin[]).map((origin) =>
+          groups[origin].length === 0 ? null : (
+            <div key={origin} className="space-y-3">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                {ORIGIN_LABELS[origin]} · {groups[origin].length}
+              </h3>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {groups[origin].map((doc) => (
+                  <DocumentRow
+                    key={doc.id}
+                    doc={doc}
+                    onPreview={() => setPreview(doc)}
+                    onRemove={origin === "geral" ? () => remove(doc) : undefined}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
-        ),
+          ),
+        )
       )}
       <DocumentPreviewModal doc={preview} onClose={() => setPreview(null)} />
     </div>
   );
 }
 
-function DocumentRow({ doc, onPreview }: { doc: AgencyDocument; onPreview: () => void }) {
+function DocumentRow({
+  doc,
+  onPreview,
+  onRemove,
+}: {
+  doc: AgencyDocument;
+  onPreview: () => void;
+  onRemove?: () => void;
+}) {
   const source = doc.itinerary?.title || doc.lead?.name || null;
   return (
     <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
@@ -489,6 +548,15 @@ function DocumentRow({ doc, onPreview }: { doc: AgencyDocument; onPreview: () =>
       >
         <Download className="h-4 w-4" />
       </button>
+      {onRemove && (
+        <button
+          onClick={onRemove}
+          className="rounded-lg p-1.5 text-destructive hover:bg-accent"
+          title="Excluir"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
+      )}
     </div>
   );
 }
