@@ -8,6 +8,8 @@ import type {
   ItineraryActivity,
   ItineraryDay,
   Lead,
+  LibraryItem,
+  LibraryItemType,
   LeadActivity,
   Task,
   Transaction,
