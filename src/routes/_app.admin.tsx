@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -449,6 +449,17 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
             </span>
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={() => emailQ.refetch()}
+          disabled={emailQ.isFetching}
+          className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border border-input bg-background py-2 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-60"
+        >
+          <RefreshCw className={`h-4 w-4 ${emailQ.isFetching ? "animate-spin" : ""}`} />
+          Atualizar conexão de e-mail
+        </button>
+
 
         <form onSubmit={submit} className="space-y-3">
           <label className="block">
