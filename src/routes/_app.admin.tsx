@@ -975,23 +975,35 @@ function DeviceTokensCard() {
                   {t.updatedAt && ` · ${new Date(t.updatedAt).toLocaleString("pt-BR")}`}
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => testUser(t)}
-                disabled={sendingId === t.token || !serverReady}
-                className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
-              >
-                {sendingId === t.token ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Send className="h-3.5 w-3.5" />
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  onClick={() => testUser(t)}
+                  disabled={sendingId === t.token || !serverReady}
+                  className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold disabled:opacity-50"
+                >
+                  {sendingId === t.token ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Send className="h-3.5 w-3.5" />
+                  )}
+                  Testar notificação
+                </button>
+                {results[t.token] && (
+                  <span
+                    className={`text-[10px] font-semibold ${
+                      results[t.token].ok ? "text-emerald-600" : "text-destructive"
+                    }`}
+                  >
+                    {results[t.token].ok ? "✓ Enviada" : "✕ Falhou"} · {results[t.token].at}
+                  </span>
                 )}
-                Enviar teste
-              </button>
+              </div>
             </li>
           ))}
         </ul>
       )}
+
 
       {!serverReady && (
         <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
