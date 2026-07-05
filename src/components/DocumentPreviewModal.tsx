@@ -22,16 +22,31 @@ export function DocumentPreviewModal({
 
   useEffect(() => {
     let active = true;
+    let objectUrl: string | null = null;
     setUrl(null);
     if (!doc) return;
     setLoading(true);
-    getDocumentUrl(doc.file_path)
-      .then((u) => {
-        if (active) setUrl(u);
-      })
-      .finally(() => active && setLoading(false));
+    (async () => {
+      try {
+        const signed = await getDocumentUrl(doc.file_path);
+        if (!signed) return;
+        // Fetch as blob so PDFs/images render reliably inside the modal
+        // (avoids cross-origin/content-type issues with signed URLs in iframes).
+        const res = await fetch(signed);
+        if (!res.ok) throw new Error("fetch failed");
+        const blob = await res.blob();
+        objectUrl = URL.createObjectURL(blob);
+        if (active) setUrl(objectUrl);
+        else URL.revokeObjectURL(objectUrl);
+      } catch {
+        if (active) setUrl(null);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
     return () => {
       active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [doc]);
 
