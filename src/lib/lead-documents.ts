@@ -174,3 +174,10 @@ export async function fetchAgencyDocuments(): Promise<AgencyDocument[]> {
   }
   return (data as unknown as AgencyDocument[]) || [];
 }
+
+/** Upload a general (repository) document not tied to a lead/roteiro. */
+export async function uploadGeneralDocument(file: File, category?: string | null): Promise<LeadDocument | null> {
+  const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
+  if (!agencyId) throw new Error("Agência não encontrada.");
+  return uploadLeadDocument({ file, agencyId, category });
+}
