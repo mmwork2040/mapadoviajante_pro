@@ -128,8 +128,7 @@ export const listDeviceTokens = createServerFn({ method: "GET" })
       .maybeSingle();
     const agencyId = me?.agency_id ?? null;
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data, error } = await supabaseAdmin
+    const { data, error } = await context.supabase
       .from("system_settings")
       .select("key, value, updated_at")
       .like("key", "push_token:%");
