@@ -310,15 +310,15 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
 
   return (
     <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="flex items-center gap-2 font-semibold">
-          <FileText className="h-4 w-4" /> Biblioteca de documentos
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="flex min-w-0 items-center gap-2 font-semibold">
+          <FileText className="h-4 w-4 shrink-0" /> <span className="truncate">Biblioteca de documentos</span>
         </h2>
         <div className="flex items-center gap-2">
           <select
             value={category}
             onChange={(e) => setCategory(e.target.value)}
-            className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+            className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary sm:flex-none"
           >
             {DOCUMENT_CATEGORIES.map((c) => (
               <option key={c.value} value={c.value}>{c.label}</option>
@@ -328,13 +328,14 @@ function DocumentLibrary({ leadId, agencyId }: { leadId: string; agencyId: strin
           <button
             onClick={() => fileRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            className="flex shrink-0 items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Paperclip className="h-4 w-4" />}
             Adicionar
           </button>
         </div>
       </div>
+
       {docs.length === 0 ? (
         <p className="text-sm text-muted-foreground">Nenhum documento. Anexe ingressos, passagens, vouchers e reservas — eles ficam disponíveis para a IA ao planejar roteiros.</p>
       ) : (
