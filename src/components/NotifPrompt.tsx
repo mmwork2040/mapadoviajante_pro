@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bell, X } from "lucide-react";
-import { getNotifConfig, configIsComplete, requestPushToken, startTokenRefreshWatcher } from "@/lib/notifications";
+import { getNotifConfig, configIsComplete, requestPushToken, startTokenRefreshWatcher, getDeviceId, getDeviceLabel } from "@/lib/notifications";
 import { saveDeviceToken } from "@/lib/push.functions";
 
 /**
