@@ -1,6 +1,11 @@
-/* Service worker de mensagens push.
+/* Service worker de mensagens push. v3
    Isolado do PWA: não faz cache de app. */
 /* eslint-disable no-undef */
+
+// Assume o controle imediatamente ao publicar uma nova versão, substituindo
+// service workers antigos que ficavam presos até fechar todas as abas.
+self.addEventListener("install", () => self.skipWaiting());
+self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim()));
 
 function getPayload(event) {
   try {
