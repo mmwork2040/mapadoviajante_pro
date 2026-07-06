@@ -230,7 +230,15 @@ export async function requestPushToken(rawConfig: NotifConfig): Promise<{ ok: bo
   }
 
   try {
-    const registration = await navigator.serviceWorker.register(swUrl);
+    const registration = await navigator.serviceWorker.register(swUrl, {
+      updateViaCache: "none",
+    });
+    // Força buscar a versão mais recente do script (evita SW antigo em cache).
+    try {
+      await registration.update();
+    } catch {
+      // Ignora falhas de atualização; o registro atual ainda é utilizável.
+    }
 
     // Aguarda o Service Worker ficar ativo antes de tentar obter o token,
     // senão o PushManager.subscribe falha ("no active Service Worker").
