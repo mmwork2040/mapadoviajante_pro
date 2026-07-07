@@ -222,7 +222,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   <MessageCircle className="h-4 w-4 text-[var(--success)]" /> WhatsApp
                 </button>
                 <button
-                  onClick={() => createRoteiro.mutate()}
+                  onClick={handleCreateRoteiro}
                   disabled={createRoteiro.isPending}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted disabled:opacity-60"
                 >
@@ -298,7 +298,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 <X className="h-4 w-4" /> Fechar
               </button>
               <button
-                onClick={() => createRoteiro.mutate()}
+                onClick={handleCreateRoteiro}
                 disabled={createRoteiro.isPending}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
