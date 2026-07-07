@@ -290,6 +290,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   activities={activities}
                   onUpdate={(u) => update.mutate(u)}
                   onOpenActivities={() => setTab("atividades")}
+                  onDelete={handleDelete}
                 />
               )}
               {tab === "viagem" && <ViagemTab lead={lead} p={p} />}
