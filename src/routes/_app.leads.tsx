@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange } from "lucide-react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2 } from "lucide-react";
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
 import {
   DropdownMenu,
@@ -415,10 +415,12 @@ function leadToForm(lead: Lead): WizardForm {
 export function NewLeadModal({
   onClose,
   onCreated,
+  onDelete,
   lead,
 }: {
   onClose: () => void;
   onCreated: () => void;
+  onDelete?: () => void;
   lead?: Lead;
 }) {
   const editing = !!lead;
@@ -554,6 +556,15 @@ export function NewLeadModal({
               )}
             </Section>
           )}
+          {step === 0 && editing && onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Excluir viajante
+            </button>
+          )}
 
           {step === 1 && (
             <Section icon={Plane} title="Detalhes da Viagem">
@@ -615,6 +626,7 @@ export function NewLeadModal({
               </button>
             ) : (
               <button
+                type="button"
                 onClick={next}
                 className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
               >

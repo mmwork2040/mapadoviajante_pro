@@ -290,7 +290,6 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   activities={activities}
                   onUpdate={(u) => update.mutate(u)}
                   onOpenActivities={() => setTab("atividades")}
-                  onDelete={handleDelete}
                 />
               )}
               {tab === "viagem" && <ViagemTab lead={lead} p={p} />}
@@ -332,15 +331,18 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
         )}
       </aside>
       {editOpen && lead && (
-        <NewLeadModal
-          lead={lead}
-          onClose={() => setEditOpen(false)}
-          onCreated={() => {
-            setEditOpen(false);
-            qc.invalidateQueries({ queryKey: ["lead", leadId] });
-            qc.invalidateQueries({ queryKey: ["leads"] });
-          }}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <NewLeadModal
+            lead={lead}
+            onClose={() => setEditOpen(false)}
+            onDelete={handleDelete}
+            onCreated={() => {
+              setEditOpen(false);
+              qc.invalidateQueries({ queryKey: ["lead", leadId] });
+              qc.invalidateQueries({ queryKey: ["leads"] });
+            }}
+          />
+        </div>
       )}
     </div>
   );
@@ -582,14 +584,12 @@ function PerfilTab({
   activities,
   onUpdate,
   onOpenActivities,
-  onDelete,
 }: {
   lead: Lead;
   team: import("@/lib/types").AgencyMember[];
   activities: import("@/lib/types").LeadActivity[];
   onUpdate: (updates: Partial<Lead>) => void;
   onOpenActivities?: () => void;
-  onDelete?: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -670,17 +670,6 @@ function PerfilTab({
 
         )}
       </section>
-
-      {onDelete && (
-        <div className="pt-2">
-          <button
-            onClick={onDelete}
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-red-500"
-          >
-            <Trash2 className="h-3.5 w-3.5" /> Excluir viajante
-          </button>
-        </div>
-      )}
     </div>
   );
 }
