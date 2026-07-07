@@ -42,7 +42,7 @@ import {
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, formatDate, initials, maskPhone } from "@/lib/ui";
+import { formatCurrency, formatDate, initials, maskCurrency, maskPhone, parseCurrency } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
 import type { Lead, LeadStatus } from "@/lib/types";
 
