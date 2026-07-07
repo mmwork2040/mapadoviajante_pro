@@ -797,6 +797,8 @@ export function NewLeadModal({
                 confirming={confirming}
                 onConfirmPending={confirmPendingImage}
                 onRejectPending={rejectPendingImage}
+                errorMessage={imgError || undefined}
+                onRetry={findDestinationImage}
               />
 
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
