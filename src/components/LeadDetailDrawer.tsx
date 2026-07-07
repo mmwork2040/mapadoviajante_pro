@@ -564,10 +564,10 @@ function PerfilTab({
           />
           <EditableField
             label="Orçamento"
-            value={lead.value != null ? String(lead.value) : ""}
+            value={lead.value ? maskCurrency(Math.round(Number(lead.value) * 100)) : ""}
             display={formatCurrency(lead.value)}
-            type="number"
-            onSave={(v) => onUpdate({ value: Number(v) || 0 })}
+            mask={maskCurrency}
+            onSave={(v) => onUpdate({ value: parseCurrency(v) })}
           />
           <EditableField
             label="Origem"
