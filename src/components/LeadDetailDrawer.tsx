@@ -269,7 +269,15 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto scrollbar-thin p-5">
-              {tab === "perfil" && <PerfilTab lead={lead} activities={activities} onOpenActivities={() => setTab("atividades")} />}
+              {tab === "perfil" && (
+                <PerfilTab
+                  lead={lead}
+                  team={team}
+                  activities={activities}
+                  onUpdate={(u) => update.mutate(u)}
+                  onOpenActivities={() => setTab("atividades")}
+                />
+              )}
               {tab === "viagem" && <ViagemTab lead={lead} p={p} />}
               {tab === "atividades" && (
                 <AtividadesTab leadId={leadId} team={team} activities={activities} />
