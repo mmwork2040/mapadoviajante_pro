@@ -556,6 +556,15 @@ export function NewLeadModal({
               )}
             </Section>
           )}
+          {step === 0 && editing && onDelete && (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-red-500"
+            >
+              <Trash2 className="h-3.5 w-3.5" /> Excluir viajante
+            </button>
+          )}
 
           {step === 1 && (
             <Section icon={Plane} title="Detalhes da Viagem">
