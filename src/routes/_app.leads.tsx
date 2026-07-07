@@ -755,7 +755,9 @@ export function NewLeadModal({
                   disabled: !form.destination.trim() || !aiActive,
                   title: !aiActive
                     ? "Ative e conecte a IA nas configurações para buscar imagens"
-                    : "Buscar imagem do destino",
+                    : form.cover_image
+                      ? "Buscar outra imagem do destino"
+                      : "Buscar imagem do destino",
                 }}
                 hint={form.cover_image ? undefined : aiActive ? undefined : "IA inativa — configure para buscar imagens"}
                 previewImage={form.cover_image || undefined}
