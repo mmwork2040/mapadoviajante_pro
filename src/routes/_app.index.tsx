@@ -440,8 +440,46 @@ function DashboardPage() {
               )}
             </DialogTitle>
           </DialogHeader>
+          {selectedDay && (() => {
+            const dayTasks = data.tasks.filter(
+              (t) => t.due_date && new Date(t.due_date).toDateString() === selectedDay.toDateString(),
+            );
+            return (
+              <div className="mb-4 space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Compromissos do dia ({dayTasks.length})
+                </p>
+                {dayTasks.length === 0 ? (
+                  <p className="rounded-lg border border-dashed border-border py-4 text-center text-xs text-muted-foreground">
+                    Nenhum compromisso neste dia.
+                  </p>
+                ) : (
+                  <ul className="max-h-48 space-y-2 overflow-y-auto scrollbar-thin">
+                    {dayTasks.map((t) => (
+                      <li
+                        key={t.id}
+                        className="flex items-start gap-2 rounded-lg border border-border p-2"
+                      >
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          <CalendarClock className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className={`truncate text-sm font-medium ${t.completed ? "text-muted-foreground line-through" : ""}`}>
+                            {t.title}
+                          </p>
+                          {t.lead?.name && (
+                            <p className="truncate text-xs text-muted-foreground">👤 {t.lead.name}</p>
+                          )}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })()}
           <div className="space-y-2">
-            <Label htmlFor="task-title">Título</Label>
+            <Label htmlFor="task-title">Novo compromisso</Label>
             <Input
               id="task-title"
               value={taskTitle}
