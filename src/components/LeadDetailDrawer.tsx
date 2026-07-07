@@ -585,7 +585,7 @@ function PerfilTab({
   activities,
   onUpdate,
   onOpenActivities,
-  onDelete,
+  
 }: {
   lead: Lead;
   team: import("@/lib/types").AgencyMember[];
