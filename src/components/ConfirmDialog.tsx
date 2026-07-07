@@ -65,7 +65,10 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             <AlertDialogAction
               onClick={() => resolve(true)}
               className={
-                opts.destructive
+                opts.destructive ||
+                /excluir|remover|revogar|apagar|deletar|limpar/i.test(
+                  `${opts.confirmLabel ?? ""} ${opts.title ?? ""}`,
+                )
                   ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                   : undefined
               }
