@@ -528,6 +528,21 @@ export function NewLeadModal({
       setStep(0);
       return;
     }
+    const departure = form.departure.trim();
+    if (departure) {
+      if (departure.length > 120) {
+        toast.error("Ponto de partida muito longo (máx. 120 caracteres).");
+        setStep(1);
+        return;
+      }
+      // Aceita sigla-nome (ex.: "GRU - São Paulo/Guarulhos") ou texto livre.
+      const validDeparture = /^[\p{L}\p{N}\s./,'()°ºª-]+$/u.test(departure);
+      if (!validDeparture) {
+        toast.error("Ponto de partida contém caracteres inválidos.");
+        setStep(1);
+        return;
+      }
+    }
     setSaving(true);
     const payload = {
       name: form.name.trim(),
@@ -537,7 +552,7 @@ export function NewLeadModal({
       value: parseCurrency(form.value),
       origin: (form.origin === "Outro" ? form.origin_other.trim() : form.origin) || "direto",
       profile: {
-        departure: form.departure,
+        departure,
         travel_dates: form.travel_dates,
         passengers: form.passengers,
         trip_type: form.trip_type,
