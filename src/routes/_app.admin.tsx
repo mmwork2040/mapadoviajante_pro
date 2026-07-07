@@ -556,7 +556,7 @@ function AgencyCard() {
           <span className="mb-1 block text-sm font-medium">CNPJ</span>
           <input
             value={form.cnpj}
-            onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+            onChange={(e) => setForm({ ...form, cnpj: maskCpfCnpj(e.target.value) })}
             className={inputCls}
             placeholder="Obrigatório se emitir nota fiscal"
           />
