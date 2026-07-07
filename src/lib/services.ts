@@ -175,6 +175,53 @@ export async function removeMember(
   return { ok: true, action: "deleted" };
 }
 
+/** Bloqueia ou desbloqueia o acesso de um membro (somente admins, via RLS). */
+export async function setMemberBlocked(id: string, blocked: boolean): Promise<boolean> {
+  const { error } = await supabase
+    .from("agency_members")
+    .update(
+      blocked
+        ? { is_active: false, status: "blocked", invite_token: null }
+        : { is_active: true, status: "active" },
+    )
+    .eq("id", id);
+  if (error) {
+    console.error("setMemberBlocked:", error);
+    return false;
+  }
+  return true;
+}
+
+/** Atualiza os dados do próprio perfil (nome, telefone, cor). Não altera cargo. */
+export async function updateMyProfile(updates: {
+  name?: string;
+  phone?: string | null;
+  avatar_color?: string | null;
+}): Promise<boolean> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return false;
+  const { error } = await supabase
+    .from("agency_members")
+    .update(updates)
+    .eq("user_id", user.id);
+  if (error) {
+    console.error("updateMyProfile:", error);
+    return false;
+  }
+  return true;
+}
+
+/** Altera a senha do usuário logado. */
+export async function updateMyPassword(newPassword: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+
+
 
 
 // ── Leads ──────────────────────────────────────────────────────
