@@ -21,6 +21,7 @@ import {
   Send,
   Check,
   Clock,
+  CalendarClock,
   CreditCard,
   Info,
   ChevronDown,
@@ -399,6 +400,7 @@ function AtividadesTab({
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [assigned, setAssigned] = useState("");
+  const [dueDate, setDueDate] = useState("");
 
   const register = useMutation({
     mutationFn: () =>
@@ -407,12 +409,16 @@ function AtividadesTab({
         title: title.trim() || ACTIVITY_TYPES.find((t) => t.key === type)?.label || "Atividade",
         details,
         assigned_to_id: assigned || null,
+        due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
       }),
     onSuccess: () => {
       setTitle("");
       setDetails("");
+      setDueDate("");
       toast.success("Atividade registrada.");
       qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: () => toast.error("Erro ao registrar atividade."),
   });
@@ -423,6 +429,8 @@ function AtividadesTab({
       if (!ok) return toast.error("Erro ao excluir atividade.");
       toast.success("Atividade excluída.");
       qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: () => toast.error("Erro ao excluir atividade."),
   });
@@ -456,10 +464,24 @@ function AtividadesTab({
           value={details}
           onChange={(e) => setDetails(e.target.value)}
           rows={3}
-          placeholder="Detalhes…"
+          placeholder="Detalhes… Use @ para mencionar alguém da equipe"
           className="mb-2 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
+        <label className="mb-3 flex items-center gap-2">
+          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-primary">
+            <CalendarClock className="h-4 w-4" /> Data de execução:
+          </span>
+          <input
+            type="date"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+            className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
+          />
+        </label>
         <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-primary">
+            <User className="h-4 w-4" /> Atribuir a:
+          </span>
           <select
             value={assigned}
             onChange={(e) => setAssigned(e.target.value)}
@@ -480,6 +502,7 @@ function AtividadesTab({
             <Send className="h-4 w-4" /> Registrar
           </button>
         </div>
+
       </section>
 
       <section>

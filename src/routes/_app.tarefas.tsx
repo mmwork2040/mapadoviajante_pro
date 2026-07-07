@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, ListChecks, Check, CalendarClock } from "lucide-react";
-import { fetchTasks, updateTask } from "@/lib/services";
+import { fetchTasks, updateTask, cleanTaskDescription } from "@/lib/services";
 import { Button } from "@/components/ui/button";
 import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
@@ -124,8 +124,9 @@ function TaskList({ tasks, onToggle }: { tasks: Task[]; onToggle: (t: Task) => v
                 {t.lead?.name && <span>👤 {t.lead.name}</span>}
                 {t.assigned?.name && <span>• {t.assigned.name}</span>}
               </div>
-              {t.description && (
-                <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+              {cleanTaskDescription(t.description) && (
+                <p className="mt-1 text-xs text-muted-foreground">{cleanTaskDescription(t.description)}</p>
+
               )}
             </div>
             <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.cls}`}>

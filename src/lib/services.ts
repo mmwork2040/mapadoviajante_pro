@@ -425,8 +425,22 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
   return (data as LeadActivity[]) || [];
 }
 
+// Marca invisível que liga uma tarefa de agenda à atividade que a originou.
+const ACTIVITY_TASK_MARK = (id: string) => `[atv:${id}]`;
+
+/** Remove a marca de vínculo interna da descrição de uma tarefa. */
+export function cleanTaskDescription(desc?: string | null): string {
+  if (!desc) return "";
+  return desc.replace(/\s*\[atv:[0-9a-f-]+\]\s*/gi, "").trim();
+}
+
 export async function deleteLeadActivity(id: string): Promise<boolean> {
   try {
+    // Remove a tarefa de agenda vinculada (se houver), limpando tudo referente.
+    await supabase
+      .from("crm_tasks")
+      .delete()
+      .ilike("description", `%${ACTIVITY_TASK_MARK(id)}%`);
     const { deleteLeadActivityFn } = await import("@/lib/lead-activities.functions");
     await deleteLeadActivityFn({ data: { id } });
     return true;
@@ -440,7 +454,7 @@ export async function deleteLeadActivity(id: string): Promise<boolean> {
 
 export async function createLeadActivity(
   leadId: string,
-  activityData: Partial<LeadActivity>,
+  activityData: Partial<LeadActivity> & { due_date?: string | null },
 ): Promise<LeadActivity | null> {
   const { data, error } = await supabase
     .from("crm_lead_activities")
@@ -462,11 +476,31 @@ export async function createLeadActivity(
     console.error("createLeadActivity:", error);
     return null;
   }
+  const activity = data as LeadActivity;
+
+  // Se houver data de execução, cria uma tarefa vinculada para a agenda.
+  if (activityData.due_date) {
+    const desc = [activityData.details?.trim(), ACTIVITY_TASK_MARK(activity.id)]
+      .filter(Boolean)
+      .join("\n\n");
+    const { error: taskErr } = await supabase.from("crm_tasks").insert({
+      agency_id: _agencyId,
+      created_by: _memberId,
+      lead_id: leadId,
+      assigned_to: activityData.assigned_to_id || null,
+      title: activity.title,
+      priority: "normal",
+      due_date: activityData.due_date,
+      description: desc,
+    });
+    if (taskErr) console.error("createLeadActivity(task):", taskErr);
+  }
+
   await supabase
     .from("crm_leads")
     .update({ last_activity_at: new Date().toISOString() })
     .eq("id", leadId);
-  return data as LeadActivity;
+  return activity;
 }
 
 // ── Tasks ──────────────────────────────────────────────────────
