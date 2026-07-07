@@ -131,6 +131,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     {leadsCount}
                   </span>
                 )}
+                {to === "/tarefas" && todayTasksCount > 0 && (
+                  <span
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground ${
+                      collapsed ? "absolute right-1.5 top-1.5" : "ml-auto"
+                    }`}
+                  >
+                    {todayTasksCount}
+                  </span>
+                )}
               </Link>
             );
           })}
