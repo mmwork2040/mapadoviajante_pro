@@ -541,6 +541,7 @@ export function NewLeadModal({
   const [triedImages, setTriedImages] = useState<string[]>([]);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [imgError, setImgError] = useState<string | null>(null);
 
   async function findDestinationImage() {
     const dest = form.destination.trim();
@@ -548,6 +549,7 @@ export function NewLeadModal({
     // Só busca na biblioteca na primeira tentativa; depois busca sempre uma nova.
     const wantNew = !!form.cover_image || triedImages.length > 0;
     setSearchingImg(true);
+    setImgError(null);
     try {
       if (!wantNew) {
         const fromLibrary = await searchLibraryImageForDestination(dest);
@@ -565,10 +567,14 @@ export function NewLeadModal({
         setTriedImages((prev) => [...prev, res.imageUrl]);
         toast.info("Confirme se deseja usar esta imagem.");
       } else {
-        toast.error("Nenhuma imagem encontrada para este destino.");
+        const msg = "Nenhuma imagem encontrada para este destino.";
+        setImgError(msg);
+        toast.error(msg);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível buscar a imagem.");
+      const msg = e instanceof Error ? e.message : "Não foi possível buscar a imagem.";
+      setImgError(msg);
+      toast.error(msg);
     } finally {
       setSearchingImg(false);
     }
