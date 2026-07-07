@@ -763,6 +763,7 @@ function AtividadesTab({
           value={details}
           onChange={(e) => setDetails(e.target.value)}
           rows={3}
+          maxLength={250}
           placeholder="Detalhes…"
           className="mb-2 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
