@@ -513,12 +513,13 @@ export function NewLeadModal({
                 <UserPlus className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">{editing ? "Editar Viajante" : "Novo Viajante"}</h2>
-                <p className="text-sm text-muted-foreground">
+                <h2 className="text-lg font-bold">{editing ? "Editar Viajante" : "Novo Viajante"}</h2>
+                <p className="text-xs text-muted-foreground">
                   {editing
                     ? "Revise e atualize todos os dados do cliente"
                     : "Preencha os dados para criar o perfil completo do cliente"}
                 </p>
+
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -542,31 +543,38 @@ export function NewLeadModal({
           </div>
 
           <div className="mt-5 flex items-center">
-            {STEPS.map((s, i) => (
+            {STEPS.map((s, i) => {
+              const done = i < step;
+              const current = i === step;
+              return (
               <div key={s.label} className="flex flex-1 items-center last:flex-none">
                 <div className="flex flex-col items-center">
                   <div
-                    className={`flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition ${
-                      i <= step
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-card text-muted-foreground"
+                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition ${
+                      done
+                        ? "bg-green-500 text-white"
+                        : current
+                          ? "animate-pulse bg-primary text-primary-foreground ring-4 ring-primary/25"
+                          : "bg-card text-muted-foreground"
                     }`}
                   >
-                    {i < step ? <Check className="h-4 w-4" /> : i + 1}
+                    {done ? <Check className="h-4 w-4" /> : i + 1}
                   </div>
                   <span
-                    className={`mt-1 text-xs font-semibold uppercase tracking-wide ${
-                      i <= step ? "text-primary" : "text-muted-foreground"
+                    className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${
+                      done ? "text-green-600 dark:text-green-400" : current ? "text-primary" : "text-muted-foreground"
                     }`}
                   >
                     {s.label}
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className={`mx-2 h-0.5 flex-1 ${i < step ? "bg-primary" : "bg-border"}`} />
+                  <div className={`mx-2 h-0.5 flex-1 ${i < step ? "bg-green-500" : "bg-border"}`} />
                 )}
               </div>
-            ))}
+              );
+            })}
+
           </div>
         </div>
 
