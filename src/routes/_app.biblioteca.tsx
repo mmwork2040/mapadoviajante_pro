@@ -216,6 +216,38 @@ function LibraryPage() {
 
       <p className="text-sm text-muted-foreground">{active.hint}</p>
 
+      {isImageTab && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={toggleSelectMode}
+            className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+              selectMode
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <CheckSquare className="h-4 w-4" /> {selectMode ? "Cancelar seleção" : "Selecionar imagens"}
+          </button>
+          {selectMode && (
+            <>
+              <button
+                onClick={toggleAll}
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                {selected.size === items.length ? "Limpar seleção" : "Selecionar todas"}
+              </button>
+              <button
+                onClick={bulkRemove}
+                disabled={selected.size === 0}
+                className="flex items-center gap-2 rounded-lg bg-destructive px-3 py-1.5 text-sm font-semibold text-destructive-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" /> Excluir {selected.size > 0 ? `(${selected.size})` : ""}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {isDocuments ? (
         <DocumentsPanel />
       ) : isError ? (
@@ -227,7 +259,15 @@ function LibraryPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <LibraryCard key={item.id} item={item} onEdit={() => setEditing(item)} onRemove={() => remove(item)} />
+            <LibraryCard
+              key={item.id}
+              item={item}
+              onEdit={() => setEditing(item)}
+              onRemove={() => remove(item)}
+              selectable={selectMode && isImageTab}
+              selected={selected.has(item.id)}
+              onToggleSelect={() => toggleItem(item.id)}
+            />
           ))}
         </div>
       )}
