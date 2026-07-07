@@ -46,14 +46,15 @@ function isPhoto(url: string): boolean {
 }
 
 // Busca fotos reais no Wikimedia Commons relacionadas ao destino.
-async function commonsPhoto(query: string): Promise<string | null> {
+// Retorna várias candidatas (para permitir alternar entre imagens).
+async function commonsPhotos(query: string): Promise<string[]> {
   const params = new URLSearchParams({
     action: "query",
     format: "json",
     generator: "search",
     gsrsearch: `${query} landscape city landmark`,
     gsrnamespace: "6", // File:
-    gsrlimit: "20",
+    gsrlimit: "30",
     prop: "imageinfo",
     iiprop: "url|mime",
     iiurlwidth: "1200",
@@ -64,16 +65,22 @@ async function commonsPhoto(query: string): Promise<string | null> {
     const res = await fetch(url, {
       headers: { Accept: "application/json", "User-Agent": "OSegredoDoViajante/1.0" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return [];
     const json = (await res.json()) as {
       query?: {
         pages?: Record<
           string,
-          { title?: string; imageinfo?: { url?: string; thumburl?: string; mime?: string }[] }
+          {
+            index?: number;
+            title?: string;
+            imageinfo?: { url?: string; thumburl?: string; mime?: string }[];
+          }
         >;
       };
     };
     const pages = json.query?.pages ? Object.values(json.query.pages) : [];
+    pages.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+    const out: string[] = [];
     for (const p of pages) {
       const info = p.imageinfo?.[0];
       if (!info) continue;
@@ -81,12 +88,12 @@ async function commonsPhoto(query: string): Promise<string | null> {
       const full = info.url ?? "";
       const title = p.title ?? "";
       if (full && isPhoto(full) && !isBadImage(title)) {
-        return info.thumburl ?? full;
+        out.push(info.thumburl ?? full);
       }
     }
-    return null;
+    return out;
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -109,6 +116,7 @@ async function wikipediaPhoto(lang: string, query: string): Promise<string | nul
     return null;
   }
 }
+
 
 // Baixa (localiza) uma FOTO real do destino usando fontes abertas.
 // Só é permitido quando a IA da agência está configurada e conectada.
