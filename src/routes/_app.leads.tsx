@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical } from "lucide-react";
@@ -16,6 +16,7 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/leads")({
@@ -39,6 +40,7 @@ function LeadsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
   const { data: leads = [], isLoading, isError, refetch } = useQuery({
@@ -180,6 +182,7 @@ function LeadsPage() {
                           setOverCol(null);
                         }}
                         onMove={(status) => move.mutate({ id: l.id, status })}
+                        onOpen={() => setDetailId(l.id)}
                       />
                     ))
                   )}
@@ -201,6 +204,8 @@ function LeadsPage() {
           }}
         />
       )}
+
+      {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => setDetailId(null)} />}
     </div>
   );
 }
@@ -211,14 +216,17 @@ function LeadCard({
   onDragStart,
   onDragEnd,
   onMove,
+  onOpen,
 }: {
   lead: Lead;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
   onMove: (status: LeadStatus) => void;
+  onOpen: () => void;
 }) {
-  const navigate = useNavigate();
+  
+
 
   return (
     <div
@@ -241,7 +249,7 @@ function LeadCard({
           title="Ver detalhes"
           onClick={(e) => {
             e.stopPropagation();
-            navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
+            onOpen();
           }}
           className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
         >
