@@ -119,6 +119,32 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     onError: () => toast.error("Erro ao criar roteiro."),
   });
 
+  async function handleCreateRoteiro() {
+    if (createRoteiro.isPending) return;
+    const existing = await fetchItinerariesByLead(leadId);
+    const openOne = existing.find((it) => it.status === "draft" || it.status === "active");
+    if (openOne) {
+      const goToExisting = await confirm({
+        title: "Roteiro em aberto",
+        description: `Este lead já possui um roteiro em ${
+          openOne.status === "draft" ? "rascunho" : "andamento"
+        }. Deseja abri-lo em vez de criar outro?`,
+        confirmLabel: "Abrir existente",
+        cancelLabel: "Criar novo",
+      });
+      if (goToExisting) {
+        navigate({ to: "/roteiros/$id", params: { id: openOne.id } });
+        return;
+      }
+    }
+    const ok = await confirm({
+      title: "Criar roteiro",
+      description: "Deseja criar um novo roteiro para este lead?",
+      confirmLabel: "Criar",
+    });
+    if (ok) createRoteiro.mutate();
+  }
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
