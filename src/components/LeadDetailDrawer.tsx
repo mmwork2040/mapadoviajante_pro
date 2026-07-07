@@ -902,6 +902,16 @@ function AtividadesTab({
                      {a.due_date && (
                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                          <CalendarClock className="h-3 w-3" /> Execução: <span className="font-medium text-foreground">{formatDate(a.due_date)}</span>
+                         {isOverdue(a.due_date, a.completed) && (
+                           <span className="ml-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                             Atrasada
+                           </span>
+                         )}
+                         {a.completed && (
+                           <span className="ml-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                             Concluída
+                           </span>
+                         )}
                        </p>
                      )}
                      {a.assigned?.name && (
