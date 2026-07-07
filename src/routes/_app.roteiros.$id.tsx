@@ -693,6 +693,15 @@ function DayCard({
             Importar com IA
           </button>
           <button
+            onClick={duplicate}
+            disabled={duplicating}
+            title="Duplicar o dia inteiro"
+            className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-60"
+          >
+            {duplicating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
+            Duplicar
+          </button>
+          <button
             onClick={removeDay}
             title="Excluir o dia inteiro"
             className="flex items-center gap-1 rounded-lg border border-destructive/40 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground"
