@@ -892,12 +892,22 @@ function ModalTextarea({
   value,
   onChange,
   placeholder,
+  presets,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  presets?: string[];
 }) {
+  const items = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const addPreset = (p: string) => {
+    if (items.some((i) => i.toLowerCase() === p.toLowerCase())) return;
+    onChange([...items, p].join(", "));
+  };
   return (
     <label className="block sm:col-span-2">
       <span className="mb-1 block text-sm font-semibold">{label}</span>
@@ -908,6 +918,30 @@ function ModalTextarea({
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
       />
+      {presets && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {presets.map((p) => {
+            const active = items.some((i) => i.toLowerCase() === p.toLowerCase());
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => addPreset(p)}
+                disabled={active}
+                className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                  active
+                    ? "cursor-default border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                }`}
+              >
+                {active ? "✓ " : "+ "}
+                {p}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </label>
   );
 }
+
