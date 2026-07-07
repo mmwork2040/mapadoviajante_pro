@@ -415,10 +415,12 @@ function leadToForm(lead: Lead): WizardForm {
 export function NewLeadModal({
   onClose,
   onCreated,
+  onDelete,
   lead,
 }: {
   onClose: () => void;
   onCreated: () => void;
+  onDelete?: () => void;
   lead?: Lead;
 }) {
   const editing = !!lead;
