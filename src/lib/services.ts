@@ -428,6 +428,19 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
 // Marca invisível que liga uma tarefa de agenda à atividade que a originou.
 const ACTIVITY_TASK_MARK = (id: string) => `[atv:${id}]`;
 
+/** Uma tarefa/atividade é considerada expirada (atrasada) quando a data de
+ * execução já passou e ainda não foi concluída pelo usuário. */
+export function isOverdue(due_date?: string | null, completed?: boolean | null): boolean {
+  if (!due_date || completed) return false;
+  const due = new Date(due_date);
+  if (Number.isNaN(due.getTime())) return false;
+  const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  return dueDay < todayStart.getTime();
+}
+
+
 /** Remove a marca de vínculo interna da descrição de uma tarefa. */
 export function cleanTaskDescription(desc?: string | null): string {
   if (!desc) return "";
