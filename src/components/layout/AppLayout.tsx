@@ -57,6 +57,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
+  const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
+  const todayTasksCount = (tasksQ.data ?? []).filter((t) => {
+    if (!t.due_date || t.completed) return false;
+    return new Date(t.due_date).toDateString() === new Date().toDateString();
+  }).length;
   const isAdmin = isAdminUser(member, session?.user?.email);
   const showAdmin = isAdmin;
   const nav = isAdmin ? NAV : NAV.filter((i) => !ADMIN_ONLY.includes(i.to as (typeof ADMIN_ONLY)[number]));
