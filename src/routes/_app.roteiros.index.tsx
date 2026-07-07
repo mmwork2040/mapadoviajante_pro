@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users } from "lucide-react";
 import { toast } from "sonner";
-import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
+import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads, resolveDisplayImageUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
@@ -32,6 +32,21 @@ function initials(name?: string | null) {
   const parts = (name || "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
+}
+
+function CoverImage({ value, className, alt }: { value: string; className?: string; alt?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    resolveDisplayImageUrl(value).then((u) => {
+      if (active) setUrl(u);
+    });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+  if (!url) return null;
+  return <img src={url} alt={alt || "Imagem do destino"} className={className} loading="lazy" />;
 }
 
 function ItinerariesPage() {
@@ -116,13 +131,25 @@ function ItinerariesPage() {
                 className="flex overflow-hidden rounded-xl border border-border bg-card transition hover:shadow-md"
               >
                 {/* Left panel — destination */}
-                <div className="relative flex w-32 shrink-0 flex-col justify-end bg-muted/60 p-4">
-                  <MapPin className="absolute left-1/2 top-5 h-9 w-9 -translate-x-1/2 text-muted-foreground/20" />
-                  <div className="flex items-center gap-1.5 text-sm font-bold">
-                    <MapPin className="h-4 w-4 shrink-0 text-foreground" />
+                <div className="relative flex w-32 shrink-0 flex-col justify-end overflow-hidden bg-muted/60 p-4">
+                  {it.cover_image ? (
+                    <>
+                      <CoverImage
+                        value={it.cover_image}
+                        alt={it.destination || "Destino"}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                    </>
+                  ) : (
+                    <MapPin className="absolute left-1/2 top-5 h-9 w-9 -translate-x-1/2 text-muted-foreground/20" />
+                  )}
+                  <div className={`relative flex items-center gap-1.5 text-sm font-bold ${it.cover_image ? "text-white" : ""}`}>
+                    <MapPin className={`h-4 w-4 shrink-0 ${it.cover_image ? "text-white" : "text-foreground"}`} />
                     <span className="truncate">{it.destination || "—"}</span>
                   </div>
                 </div>
+
 
                 {/* Right panel — details */}
                 <div className="min-w-0 flex-1 p-4 pr-10">

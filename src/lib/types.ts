@@ -132,6 +132,7 @@ export interface Itinerary {
   spent?: number;
   status: string;
   created_at?: string;
+  cover_image?: string | null;
   lead?: { name: string } | null;
   days?: ItineraryDay[];
   vouchers?: Voucher[];

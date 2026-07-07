@@ -798,8 +798,13 @@ function normalizeText(s: string): string {
     .trim();
 }
 
-// Procura na biblioteca (destinos e itens) uma imagem relacionada ao destino informado.
-export async function searchLibraryImageForDestination(destination: string): Promise<string | null> {
+// Encontra, entre destinos e itens já carregados, a imagem da biblioteca
+// relacionada ao destino informado (função pura, sem I/O).
+export function matchLibraryImage(
+  destination: string,
+  destinations: Destination[],
+  items: LibraryItem[],
+): string | null {
   const term = normalizeText(destination);
   if (!term) return null;
   const tokens = term.split(/[\s,/]+/).filter((t) => t.length >= 3);
@@ -809,28 +814,35 @@ export async function searchLibraryImageForDestination(destination: string): Pro
     return h.includes(term) || tokens.some((t) => h.includes(t));
   };
 
+  const destHit = destinations.find(
+    (d) => d.image_url && (matches(d.title) || matches(d.name) || matches(d.country)),
+  );
+  if (destHit?.image_url) return destHit.image_url;
+
+  const itemHit = items.find(
+    (i) =>
+      i.image_url &&
+      (matches(i.title) || matches(i.location) || matches((i.tags || []).join(" "))),
+  );
+  if (itemHit?.image_url) return itemHit.image_url;
+  return null;
+}
+
+// Procura na biblioteca (destinos e itens) uma imagem relacionada ao destino informado.
+export async function searchLibraryImageForDestination(destination: string): Promise<string | null> {
+  if (!normalizeText(destination)) return null;
   try {
     const [destinations, items] = await Promise.all([
       fetchDestinations().catch(() => [] as Destination[]),
       fetchLibraryItems().catch(() => [] as LibraryItem[]),
     ]);
-
-    const destHit = destinations.find(
-      (d) => d.image_url && (matches(d.title) || matches(d.name) || matches(d.country)),
-    );
-    if (destHit?.image_url) return destHit.image_url;
-
-    const itemHit = items.find(
-      (i) =>
-        i.image_url &&
-        (matches(i.title) || matches(i.location) || matches((i.tags || []).join(" "))),
-    );
-    if (itemHit?.image_url) return itemHit.image_url;
+    return matchLibraryImage(destination, destinations, items);
   } catch (e) {
     console.error("searchLibraryImageForDestination:", e);
+    return null;
   }
-  return null;
  }
+
 
 // Baixa uma imagem externa, salva no bucket da biblioteca e cria um item "image"
 // reutilizável. Retorna uma URL exibível (assinada) ou a própria URL externa em caso de falha.
@@ -876,9 +888,26 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
     throw new Error("Não foi possível carregar os roteiros.");
   }
   const items = (data as Itinerary[]) || [];
+
+  // Carrega no card a foto do destino já existente na biblioteca (se houver).
+  try {
+    const [destinations, libItems] = await Promise.all([
+      fetchDestinations().catch(() => [] as Destination[]),
+      fetchLibraryItems().catch(() => [] as LibraryItem[]),
+    ]);
+    for (const it of items) {
+      if (it.destination) {
+        it.cover_image = matchLibraryImage(it.destination, destinations, libItems);
+      }
+    }
+  } catch (e) {
+    console.error("fetchItineraries cover:", e);
+  }
+
   return items.sort((a, b) =>
     ((a.lead?.name ?? "").localeCompare(b.lead?.name ?? "", "pt", { sensitivity: "base" })),
   );
+
 }
 
 export async function fetchPublicItinerary(id: string): Promise<Itinerary | null> {
