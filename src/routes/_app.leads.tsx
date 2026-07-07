@@ -539,12 +539,14 @@ export function NewLeadModal({
   const downloadImage = useServerFn(downloadDestinationImage);
   const [searchingImg, setSearchingImg] = useState(false);
   const [triedImages, setTriedImages] = useState<string[]>([]);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   async function findDestinationImage() {
     const dest = form.destination.trim();
     if (!dest || !aiActive) return;
-    // Se já houver uma imagem, o usuário quer outra: busca externa evitando repetidas.
-    const wantNew = !!form.cover_image;
+    // Só busca na biblioteca na primeira tentativa; depois busca sempre uma nova.
+    const wantNew = !!form.cover_image || triedImages.length > 0;
     setSearchingImg(true);
     try {
       if (!wantNew) {
@@ -556,12 +558,12 @@ export function NewLeadModal({
           return;
         }
       }
+      // Não salva ainda: mostra a imagem para o usuário confirmar.
       const res = await downloadImage({ data: { destination: dest, exclude: triedImages } });
       if (res?.imageUrl) {
-        const saved = await saveExternalImageToLibrary(res.imageUrl, dest);
-        set({ cover_image: saved });
-        setTriedImages((prev) => [...prev, res.imageUrl, saved]);
-        toast.success(wantNew ? "Nova imagem encontrada." : "Imagem baixada e salva na biblioteca.");
+        setPendingImage(res.imageUrl);
+        setTriedImages((prev) => [...prev, res.imageUrl]);
+        toast.info("Confirme se deseja usar esta imagem.");
       } else {
         toast.error("Nenhuma imagem encontrada para este destino.");
       }
@@ -570,6 +572,29 @@ export function NewLeadModal({
     } finally {
       setSearchingImg(false);
     }
+  }
+
+  // Confirma a imagem pendente: só então baixa e salva na biblioteca.
+  async function confirmPendingImage() {
+    if (!pendingImage) return;
+    setConfirming(true);
+    try {
+      const saved = await saveExternalImageToLibrary(pendingImage, form.destination.trim());
+      set({ cover_image: saved });
+      setTriedImages((prev) => [...prev, saved]);
+      setPendingImage(null);
+      toast.success("Imagem baixada e salva na biblioteca.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível salvar a imagem.");
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  // Usuário não gostou: descarta e busca outra automaticamente.
+  function rejectPendingImage() {
+    setPendingImage(null);
+    void findDestinationImage();
   }
 
 
@@ -761,8 +786,13 @@ export function NewLeadModal({
                 }}
                 hint={form.cover_image ? undefined : aiActive ? undefined : "IA inativa — configure para buscar imagens"}
                 previewImage={form.cover_image || undefined}
-                onClearPreview={() => { set({ cover_image: "" }); setTriedImages([]); }}
+                onClearPreview={() => { set({ cover_image: "" }); setPendingImage(null); setTriedImages([]); }}
+                pendingImage={pendingImage || undefined}
+                confirming={confirming}
+                onConfirmPending={confirmPendingImage}
+                onRejectPending={rejectPendingImage}
               />
+
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
               <ModalSelect label="Tipo de Viagem" value={form.trip_type} onChange={(v) => set({ trip_type: v })} options={["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"]} />
@@ -1003,6 +1033,11 @@ export function ModalField({
   hint,
   previewImage,
   onClearPreview,
+  pendingImage,
+  confirming,
+  onConfirmPending,
+  onRejectPending,
+
 }: {
   label: string;
   value: string;
@@ -1023,6 +1058,11 @@ export function ModalField({
   hint?: string;
   previewImage?: string;
   onClearPreview?: () => void;
+  pendingImage?: string;
+  confirming?: boolean;
+  onConfirmPending?: () => void;
+  onRejectPending?: () => void;
+
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
   const masks = {
@@ -1084,6 +1124,37 @@ export function ModalField({
               <X className="h-3.5 w-3.5" />
             </button>
           )}
+        </div>
+      )}
+      {!previewImage && pendingImage && (
+        <div className="mt-2 space-y-2">
+          <div className="relative overflow-hidden rounded-xl border border-border">
+            <CoverImage value={pendingImage} alt="Prévia do destino" className="h-28 w-full object-cover" />
+            {confirming && (
+              <div className="absolute inset-0 grid place-items-center bg-black/40">
+                <Loader2 className="h-5 w-5 animate-spin text-white" />
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onConfirmPending}
+              disabled={confirming}
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-2 text-xs font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50"
+            >
+              <Check className="h-4 w-4" /> Usar esta imagem
+            </button>
+            <button
+              type="button"
+              onClick={onRejectPending}
+              disabled={confirming}
+              title="Buscar outra imagem"
+              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border px-3 py-2 text-xs font-semibold transition hover:bg-muted disabled:opacity-50"
+            >
+              <X className="h-4 w-4" /> Outra
+            </button>
+          </div>
         </div>
       )}
       {suggestions && (
