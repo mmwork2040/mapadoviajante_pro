@@ -716,7 +716,7 @@ function TravelDatesField({
   }
 
   return (
-    <div className="sm:col-span-2">
+    <div>
       <div className="mb-1 flex items-center justify-between">
         <span className="text-sm font-semibold">Datas / Período</span>
         <div className="flex rounded-full bg-muted p-0.5 text-xs font-medium">
