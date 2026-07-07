@@ -209,11 +209,11 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               {coverUrl && (
                 <>
                   <div
-                    className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.12]"
+                    className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-40"
                     style={{ backgroundImage: `url(${coverUrl})` }}
                     aria-hidden
                   />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-card/60 to-card/85" aria-hidden />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-card/40 to-card/70" aria-hidden />
                 </>
               )}
               <div className="relative flex items-start gap-3">
