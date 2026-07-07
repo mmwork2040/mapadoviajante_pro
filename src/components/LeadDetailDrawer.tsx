@@ -337,6 +337,15 @@ function PerfilTab({ lead, activities, onOpenActivities }: { lead: Lead; activit
                     </p>
                     {a.details && <p className="text-xs text-muted-foreground">{a.details}</p>}
                   </div>
+                  {onOpenActivities && (
+                    <button
+                      onClick={onOpenActivities}
+                      className="shrink-0 self-start inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/20"
+                      title="Ver detalhes na aba Atividades"
+                    >
+                      <Plus className="h-3 w-3" /> info
+                    </button>
+                  )}
                 </li>
               );
             })}
