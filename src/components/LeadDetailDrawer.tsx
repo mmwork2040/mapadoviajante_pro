@@ -205,8 +205,18 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
         ) : (
           <>
             {/* Header */}
-            <div className="border-b border-border p-5">
-              <div className="flex items-start gap-3">
+            <div className="relative overflow-hidden border-b border-border p-5">
+              {coverUrl && (
+                <>
+                  <div
+                    className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.12]"
+                    style={{ backgroundImage: `url(${coverUrl})` }}
+                    aria-hidden
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-card/60 to-card/85" aria-hidden />
+                </>
+              )}
+              <div className="relative flex items-start gap-3">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
                   {initials(lead.name)}
                 </span>
