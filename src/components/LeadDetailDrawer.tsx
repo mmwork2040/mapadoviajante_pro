@@ -104,6 +104,27 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     onError: () => toast.error("Erro ao atualizar lead."),
   });
 
+  async function handleDelete() {
+    const ok = await confirm({
+      title: "Excluir viajante",
+      description: `Tem certeza que deseja excluir "${lead?.name}"? Esta ação não pode ser desfeita.`,
+      confirmLabel: "Excluir",
+      cancelLabel: "Cancelar",
+      danger: true,
+    });
+    if (!ok) return;
+    const done = await deleteLead(leadId);
+    if (done) {
+      toast.success("Viajante excluído.");
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      onClose();
+    } else {
+      toast.error("Erro ao excluir viajante.");
+    }
+  }
+
+
+
   const createRoteiro = useMutation({
     mutationFn: () =>
       createItinerary({
