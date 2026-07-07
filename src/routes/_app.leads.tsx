@@ -204,6 +204,8 @@ function LeadsPage() {
           }}
         />
       )}
+
+      {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => setDetailId(null)} />}
     </div>
   );
 }
