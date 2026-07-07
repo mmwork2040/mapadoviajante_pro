@@ -396,6 +396,16 @@ function AtividadesTab({
     onError: () => toast.error("Erro ao registrar atividade."),
   });
 
+  const remove = useMutation({
+    mutationFn: (id: string) => deleteLeadActivity(id),
+    onSuccess: (ok) => {
+      if (!ok) return toast.error("Erro ao excluir atividade.");
+      toast.success("Atividade excluída.");
+      qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
+    },
+    onError: () => toast.error("Erro ao excluir atividade."),
+  });
+
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-border p-4">
