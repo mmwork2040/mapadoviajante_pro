@@ -314,6 +314,46 @@ function LibraryModal({
   const [tagsText, setTagsText] = useState((item?.tags ?? []).join(", "));
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [aiField, setAiField] = useState<"description" | "content" | null>(null);
+
+  const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+  const aiActive =
+    aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
+  const genContent = useServerFn(generateLibraryContent);
+
+  async function aiAssist(field: "description" | "content") {
+    if (!aiActive) return;
+    if (!form.title?.trim()) {
+      toast.error("Informe um título antes de usar a IA.");
+      return;
+    }
+    setAiField(field);
+    try {
+      const res = await genContent({
+        data: {
+          itemType: effectiveType,
+          title: form.title.trim(),
+          location: form.location?.trim() || "",
+          description: form.description?.trim() || "",
+          content: form.content?.trim() || "",
+          tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
+          field,
+        },
+      });
+      const text = res.text?.trim();
+      if (!text) {
+        toast.error("A IA não retornou conteúdo.");
+        return;
+      }
+      setForm((f) => ({ ...f, [field]: text }));
+      toast.success(field === "description" ? "Descrição gerada!" : "Conteúdo gerado!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar com IA.");
+    } finally {
+      setAiField(null);
+    }
+  }
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
