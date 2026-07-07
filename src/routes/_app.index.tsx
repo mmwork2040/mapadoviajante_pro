@@ -72,6 +72,7 @@ function DashboardPage() {
   const [agendaMode, setAgendaMode] = useState<"week" | "month">("week");
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
+  const [taskFilter, setTaskFilter] = useState<"today" | "tomorrow" | "week">("today");
 
   const week = useMemo(() => {
     const today = new Date();
