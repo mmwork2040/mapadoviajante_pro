@@ -302,6 +302,14 @@ function LeadCard({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      {(() => {
+        const cover = (lead.profile as Record<string, string> | undefined)?.cover_image;
+        return cover ? (
+          <div className="mb-2 -mr-12 overflow-hidden rounded-lg">
+            <CoverImage value={cover} alt={lead.destination || "Destino"} className="h-24 w-full object-cover" />
+          </div>
+        ) : null;
+      })()}
       <p className="font-medium">{lead.name}</p>
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
       <p className="mt-2 text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
