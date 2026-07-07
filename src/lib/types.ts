@@ -43,6 +43,7 @@ export interface LeadActivity {
   title: string;
   details?: string | null;
   mentions?: string[];
+  due_date?: string | null;
   created_at?: string;
   author?: { id: string; name: string; avatar_color?: string | null; role?: string } | null;
   assigned?: { id: string; name: string; avatar_color?: string | null } | null;
