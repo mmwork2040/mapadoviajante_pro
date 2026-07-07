@@ -26,6 +26,7 @@ import {
   Info,
   ChevronDown,
   Trash2,
+  Plus,
 
 } from "lucide-react";
 import { toast } from "sonner";
