@@ -615,9 +615,7 @@ function DashboardPage() {
             <div key={l.id} className="rounded-xl border border-border p-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="min-w-0 flex-1 truncate font-medium">{l.name}</p>
-                <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-                  {STATUS_LABEL[l.status] || l.status}
-                </span>
+                <StatusBadge status={l.status} />
               </div>
               <p className="mt-1 truncate text-sm text-muted-foreground">{l.destination || "—"}</p>
               <div className="mt-2 flex items-center justify-between text-sm">
