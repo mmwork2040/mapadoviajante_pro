@@ -164,7 +164,29 @@ function AcceptInvitePage() {
               Este convite não existe ou já foi utilizado. Peça um novo convite ao administrador.
             </p>
           </div>
-        ) : session ? (
+        ) : wrongUser ? (
+          <div>
+            <h1 className="text-xl font-bold">Conta diferente conectada</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Você está logado como <strong>{sessionEmail}</strong>, mas este convite é para{" "}
+              <strong>{inviteEmail}</strong>. Saia e entre com o e-mail do convite para continuar.
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                await supabase.auth.signOut();
+                autoAcceptStarted.current = false;
+                setError("");
+                setBusy(false);
+              }}
+              className="mt-5 w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {busy ? "Aguarde…" : "Sair e usar o e-mail do convite"}
+            </button>
+          </div>
+        ) : emailMatches ? (
           <div>
             {!error ? (
               <p className="text-sm text-muted-foreground">Confirmando seu convite…</p>
