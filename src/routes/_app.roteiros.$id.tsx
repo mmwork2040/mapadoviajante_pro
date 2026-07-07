@@ -411,27 +411,28 @@ function ItineraryDetailPage() {
             <DropdownMenuTrigger asChild>
               <button
                 disabled={advanceStatus.isPending}
-                className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+                className="flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1.5 pl-3 pr-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-60"
               >
-                Status: <span>{STATUS_LABELS[it.status || "draft"] || it.status}</span>
-                <ChevronDown className="h-4 w-4" />
+                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_DOTS[it.status || "draft"] || "bg-muted-foreground"}`} />
+                {STATUS_LABELS[it.status || "draft"] || it.status}
+                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuContent align="start" className="min-w-40">
               {STATUS_OPTIONS.map((s) => (
                 <DropdownMenuItem
                   key={s}
                   disabled={advanceStatus.isPending || s === (it.status || "draft")}
                   onSelect={() => advanceStatus.mutate(s)}
+                  className={s === (it.status || "draft") ? "font-semibold" : ""}
                 >
-                  {s === (it.status || "draft") && <Check className="mr-2 h-4 w-4" />}
-                  <span className={s === (it.status || "draft") ? "" : "ml-6"}>
-                    {STATUS_LABELS[s] || s}
-                  </span>
+                  <span className={`mr-2 h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_DOTS[s] || "bg-muted-foreground"}`} />
+                  {STATUS_LABELS[s] || s}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
+
           {it.status === "draft" && (it.days?.length || 0) > 0 && (
             <button
               onClick={handleClear}
