@@ -1341,6 +1341,29 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
           : `\n- **${titulo}**: (sem atividades)`;
       });
       msg += "\n\nPosso ajustar, sugerir passeios ou completar dias vazios.";
+
+      // Detecta atividades com títulos genéricos/padrão ou sem dados essenciais.
+      const genericTitle = (t?: string) => {
+        const v = (t || "").trim().toLowerCase();
+        if (!v) return true;
+        return /^(nova atividade|novo voo|novo vôo|nova hospedagem|novo hotel|novo transfer|novo traslado|novo restaurante|nova refei[çc][ãa]o|nova nota|novo passeio|novo ingresso|atividade|item)$/.test(v);
+      };
+      const incompletas: string[] = [];
+      (it.days || []).forEach((d) => {
+        const titulo = d.title || `Dia ${d.day_number}`;
+        (d.activities || []).forEach((a) => {
+          const faltando: string[] = [];
+          if (genericTitle(a.title)) faltando.push("título");
+          if (!a.time) faltando.push("horário");
+          if (!a.location) faltando.push("local");
+          if (faltando.length)
+            incompletas.push(`- **${titulo}** → "${a.title || "sem título"}" (falta ${faltando.join(", ")})`);
+        });
+      });
+      if (incompletas.length) {
+        msg += `\n\n⚠️ Encontrei ${incompletas.length} atividade(s) que parecem incompletas ou com título genérico:\n${incompletas.join("\n")}`;
+        msg += "\n\nEnvie os anexos (passagens, vouchers, ingressos) dessas atividades que eu completo os dados automaticamente, ou me diga os detalhes.";
+      }
     } else {
       msg += "\n\nNenhum dia foi montado ainda. Envie passagens/reservas ou me diga o que precisa que eu monto os dias.";
     }
