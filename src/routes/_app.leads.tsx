@@ -1,7 +1,9 @@
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical } from "lucide-react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange } from "lucide-react";
+import { parseTravelPeriodFn } from "@/lib/ai.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -556,7 +558,7 @@ export function NewLeadModal({
           {step === 1 && (
             <Section icon={Plane} title="Detalhes da Viagem">
               <ModalField label="Destino" placeholder="Ex: Paris, França" value={form.destination} onChange={(v) => set({ destination: v })} />
-              <ModalField label="Datas / Período" placeholder="Ex: Jul/2026, 10 dias" value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
+              <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
               <ModalSelect label="Tipo de Viagem" value={form.trip_type} onChange={(v) => set({ trip_type: v })} options={["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"]} />
               <ModalTextarea label="Observações da viagem" placeholder="Preferências, ocasião especial…" value={form.trip_notes} onChange={(v) => set({ trip_notes: v })} />
@@ -622,6 +624,140 @@ export function NewLeadModal({
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TravelDatesField({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const rangeMatch = /^(\d{4}-\d{2}-\d{2})\s*a\s*(\d{4}-\d{2}-\d{2})$/.exec((value || "").trim());
+  const [mode, setMode] = useState<"exatas" | "periodo">(rangeMatch ? "exatas" : "periodo");
+  const [startDate, setStartDate] = useState(rangeMatch?.[1] ?? "");
+  const [endDate, setEndDate] = useState(rangeMatch?.[2] ?? "");
+  const [periodText, setPeriodText] = useState(rangeMatch ? "" : value || "");
+  const [checking, setChecking] = useState(false);
+  const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
+  const parseFn = useServerFn(parseTravelPeriodFn);
+
+  function updateExact(s: string, e: string) {
+    setStartDate(s);
+    setEndDate(e);
+    onChange(s && e ? `${s} a ${e}` : "");
+  }
+
+  async function interpret() {
+    if (!periodText.trim()) {
+      toast.error("Digite o período da viagem.");
+      return;
+    }
+    setChecking(true);
+    setFeedback(null);
+    try {
+      const res = await parseFn({ data: { text: periodText } });
+      if (res.valid) {
+        setStartDate(res.start_date);
+        setEndDate(res.end_date);
+        onChange(`${res.start_date} a ${res.end_date}`);
+        setFeedback({ ok: true, msg: res.message });
+      } else {
+        onChange("");
+        setFeedback({ ok: false, msg: res.message || "O período informado é inválido." });
+      }
+    } catch (err) {
+      setFeedback({ ok: false, msg: err instanceof Error ? err.message : "Erro ao interpretar o período." });
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  return (
+    <div className="sm:col-span-2">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-sm font-semibold">Datas / Período</span>
+        <div className="flex rounded-full bg-muted p-0.5 text-xs font-medium">
+          {([
+            { key: "exatas", label: "Datas" },
+            { key: "periodo", label: "Período" },
+          ] as const).map((m) => (
+            <button
+              key={m.key}
+              type="button"
+              onClick={() => setMode(m.key)}
+              className={`rounded-full px-3 py-1 transition ${
+                mode === m.key ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {mode === "exatas" ? (
+        <div className="grid grid-cols-2 gap-3">
+          <input
+            type="date"
+            value={startDate}
+            onChange={(e) => updateExact(e.target.value, endDate)}
+            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
+          />
+          <input
+            type="date"
+            value={endDate}
+            min={startDate || undefined}
+            onChange={(e) => updateExact(startDate, e.target.value)}
+            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
+          />
+        </div>
+      ) : (
+        <>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={periodText}
+              placeholder="Ex: Jul/2026, 10 dias"
+              onChange={(e) => setPeriodText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  interpret();
+                }
+              }}
+              className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
+            />
+            <button
+              type="button"
+              onClick={interpret}
+              disabled={checking}
+              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              Apurar
+            </button>
+          </div>
+          {startDate && endDate && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+              <CalendarRange className="h-3.5 w-3.5" />
+              {new Date(`${startDate}T00:00:00`).toLocaleDateString("pt-BR")} –{" "}
+              {new Date(`${endDate}T00:00:00`).toLocaleDateString("pt-BR")}
+            </p>
+          )}
+          {feedback && (
+            <p
+              className={`mt-1.5 text-xs ${
+                feedback.ok ? "text-muted-foreground" : "text-destructive"
+              }`}
+            >
+              {feedback.msg}
+            </p>
+          )}
+        </>
+      )}
     </div>
   );
 }

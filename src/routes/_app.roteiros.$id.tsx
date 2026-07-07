@@ -1481,11 +1481,21 @@ function EditItineraryModal({
     destination: it.destination || "",
     budget: it.budget || 0,
     status: it.status,
+    start_date: it.start_date || "",
+    end_date: it.end_date || "",
   });
   const [saving, setSaving] = useState(false);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!form.start_date || !form.end_date) {
+      toast.error("Informe o período da viagem (início e fim).");
+      return;
+    }
+    if (new Date(form.end_date).getTime() < new Date(form.start_date).getTime()) {
+      toast.error("A data final não pode ser anterior à inicial.");
+      return;
+    }
     setSaving(true);
     const res = await updateItinerary(it.id, form);
     setSaving(false);
@@ -1503,6 +1513,10 @@ function EditItineraryModal({
           <Field label="Título" value={form.title || ""} onChange={(v) => setForm({ ...form, title: v })} />
           <Field label="Cliente" value={form.client_name || ""} onChange={(v) => setForm({ ...form, client_name: v })} />
           <Field label="Destino" value={form.destination || ""} onChange={(v) => setForm({ ...form, destination: v })} />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Início da viagem" type="date" required value={form.start_date || ""} onChange={(v) => setForm({ ...form, start_date: v })} />
+            <Field label="Fim da viagem" type="date" required value={form.end_date || ""} onChange={(v) => setForm({ ...form, end_date: v })} />
+          </div>
           <Field label="Orçamento" format="currency" value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
           <label className="block">
             <span className="mb-1 block text-sm font-medium">Status</span>
@@ -1536,19 +1550,24 @@ function Field({
   onChange,
   type = "text",
   format,
+  required,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   type?: string;
   format?: "currency";
+  required?: boolean;
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-sm font-medium">{label}</span>
+      <span className="mb-1 block text-sm font-medium">
+        {label} {required && <span className="text-primary">*</span>}
+      </span>
       <input
         type={format ? "text" : type}
         inputMode={format ? "numeric" : undefined}
+        required={required}
         value={format === "currency" ? maskCurrency(String(Math.round((Number(value) || 0) * 100))) : value}
         onChange={(e) => onChange(format === "currency" ? String(parseCurrency(e.target.value)) : e.target.value)}
         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
