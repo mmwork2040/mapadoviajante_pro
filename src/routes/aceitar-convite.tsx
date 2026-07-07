@@ -99,6 +99,18 @@ function AcceptInvitePage() {
     void confirmInvite();
   }, [emailMatches, info?.valid, token, confirmInvite]);
 
+  // Se houver outra conta conectada, desconecta automaticamente para o novo
+  // usuário fazer login com o e-mail do convite.
+  const autoSignOutStarted = useRef(false);
+  useEffect(() => {
+    if (!wrongUser || autoSignOutStarted.current) return;
+    autoSignOutStarted.current = true;
+    void supabase.auth.signOut().then(() => {
+      autoAcceptStarted.current = false;
+      setError("");
+    });
+  }, [wrongUser]);
+
 
 
   async function handleSubmit(e: React.FormEvent) {
