@@ -305,7 +305,7 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function PerfilTab({ lead, activities }: { lead: Lead; activities: import("@/lib/types").LeadActivity[] }) {
+function PerfilTab({ lead, activities, onOpenActivities }: { lead: Lead; activities: import("@/lib/types").LeadActivity[]; onOpenActivities?: () => void }) {
   return (
     <div className="space-y-6">
       <section>
