@@ -1033,6 +1033,11 @@ export function ModalField({
   hint,
   previewImage,
   onClearPreview,
+  pendingImage,
+  confirming,
+  onConfirmPending,
+  onRejectPending,
+
 }: {
   label: string;
   value: string;
