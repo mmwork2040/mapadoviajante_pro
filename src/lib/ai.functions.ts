@@ -454,7 +454,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: PlannerInput) => {
     if (!d?.message?.trim() && !(d?.files?.length)) throw new Error("Envie uma mensagem ou um documento.");
-    return { message: d.message || "", context: d.context || "", files: d.files || [], leadId: d.leadId ?? null };
+    return { message: d.message || "", context: d.context || "", files: d.files || [], leadId: d.leadId ?? null, itineraryId: d.itineraryId ?? null };
   })
   .handler(async ({ data, context }): Promise<PlannerResult> => {
     const { data: cfg, error } = await context.supabase
