@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import {
   createItinerary,
   createLeadActivity,
+  deleteLead,
   deleteLeadActivity,
   fetchItinerariesByLead,
   fetchLeadActivities,
@@ -44,6 +45,7 @@ import {
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, initials, maskCurrency, maskPhone, parseCurrency } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { NewLeadModal } from "@/routes/_app.leads";
 import type { Lead, LeadStatus } from "@/lib/types";
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
