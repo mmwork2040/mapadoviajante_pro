@@ -542,6 +542,32 @@ export function NewLeadModal({
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const dest = form.destination.trim();
+    if (!dest) {
+      toast.error("Informe o destino antes de enviar a imagem.");
+      return;
+    }
+    setUploadingImg(true);
+    setImgError(null);
+    try {
+      const url = await uploadImageToLibraryForDestination(file, dest);
+      set({ cover_image: url });
+      setPendingImage(null);
+      setTriedImages((prev) => [...prev, url]);
+      toast.success("Imagem enviada e salva na biblioteca.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setUploadingImg(false);
+    }
+  }
 
   async function findDestinationImage() {
     const dest = form.destination.trim();
