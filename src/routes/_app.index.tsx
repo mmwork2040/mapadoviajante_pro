@@ -618,7 +618,17 @@ function DashboardPage() {
             <div key={l.id} className="rounded-xl border border-border p-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="min-w-0 flex-1 truncate font-medium">{l.name}</p>
+              <div className="flex items-center gap-2">
                 <StatusBadge status={l.status} />
+                <button
+                  type="button"
+                  onClick={() => setDetailLeadId(l.id)}
+                  className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  aria-label="Ver detalhes do lead"
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+              </div>
               </div>
               <p className="mt-1 truncate text-sm text-muted-foreground">{l.destination || "—"}</p>
               <div className="mt-2 flex items-center justify-between text-sm">
