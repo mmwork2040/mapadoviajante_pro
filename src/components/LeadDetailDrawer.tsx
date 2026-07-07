@@ -734,7 +734,10 @@ function AtividadesTab({
           {ACTIVITY_TYPES.map((t) => (
             <button
               key={t.key}
-              onClick={() => setType(t.key)}
+              onClick={() => {
+                setType(t.key);
+                setTitle(t.label);
+              }}
               className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
                 type === t.key
                   ? "border-primary bg-primary text-primary-foreground"
@@ -755,7 +758,7 @@ function AtividadesTab({
           value={details}
           onChange={(e) => setDetails(e.target.value)}
           rows={3}
-          placeholder="Detalhes… Use @ para mencionar alguém da equipe"
+          placeholder="Detalhes…"
           className="mb-2 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
         <label className="mb-3 flex items-center gap-2">
