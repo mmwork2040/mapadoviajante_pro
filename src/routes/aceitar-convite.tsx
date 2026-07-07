@@ -81,17 +81,24 @@ function AcceptInvitePage() {
     }
   }, [token, refreshMember, goHome]);
 
-  // Se o usuário já pertence a uma agência (convite já aceito), vai para a home.
+  // Verifica se a sessão atual é do mesmo e-mail do convite.
+  const sessionEmail = session?.user?.email?.toLowerCase() ?? "";
+  const inviteEmail = info?.email?.toLowerCase() ?? "";
+  const emailMatches = Boolean(session && inviteEmail && sessionEmail === inviteEmail);
+  const wrongUser = Boolean(session && inviteEmail && sessionEmail !== inviteEmail);
+
+  // Se já pertence a uma agência E é o e-mail do convite (convite já aceito), vai para a home.
   useEffect(() => {
-    if (session && member) goHome();
-  }, [session, member, goHome]);
+    if (session && member && emailMatches) goHome();
+  }, [session, member, emailMatches, goHome]);
 
   // Se já estiver logado com o e-mail certo, aceita direto uma única vez.
   useEffect(() => {
-    if (!session || !info?.valid || !token || autoAcceptStarted.current) return;
+    if (!emailMatches || !info?.valid || !token || autoAcceptStarted.current) return;
     autoAcceptStarted.current = true;
     void confirmInvite();
-  }, [session, info?.valid, token, confirmInvite]);
+  }, [emailMatches, info?.valid, token, confirmInvite]);
+
 
 
   async function handleSubmit(e: React.FormEvent) {
