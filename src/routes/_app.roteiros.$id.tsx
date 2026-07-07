@@ -1369,7 +1369,7 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
     const dias = (it.days || [])
       .map((d) => {
         const acts = (d.activities || [])
-          .map((a) => `  - ${[a.time, a.title, a.location].filter(Boolean).join(" ")}`)
+          .map((a) => `  - [id:${a.id}] ${[a.time, a.title, a.location].filter(Boolean).join(" ") || "(sem detalhes)"}`)
           .join("\n");
         return `${d.title || `Dia ${d.day_number}`}\n${acts || "  (sem atividades)"}`;
       })
