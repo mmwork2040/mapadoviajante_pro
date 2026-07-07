@@ -343,18 +343,57 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function PerfilTab({ lead, activities, onOpenActivities }: { lead: Lead; activities: import("@/lib/types").LeadActivity[]; onOpenActivities?: () => void }) {
+function PerfilTab({
+  lead,
+  team,
+  activities,
+  onUpdate,
+  onOpenActivities,
+}: {
+  lead: Lead;
+  team: import("@/lib/types").AgencyMember[];
+  activities: import("@/lib/types").LeadActivity[];
+  onUpdate: (updates: Partial<Lead>) => void;
+  onOpenActivities?: () => void;
+}) {
   return (
     <div className="space-y-6">
       <section>
         <SectionTitle icon={User}>Dados de contato</SectionTitle>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="E-mail" value={lead.email} />
-          <Field label="WhatsApp" value={lead.phone ? maskPhone(lead.phone) : null} />
-          <Field label="Orçamento" value={formatCurrency(lead.value)} />
-          <Field label="Origem" value={lead.origin} />
+          <EditableField
+            label="E-mail"
+            value={lead.email}
+            type="email"
+            onSave={(v) => onUpdate({ email: v })}
+          />
+          <EditableField
+            label="WhatsApp"
+            value={lead.phone}
+            display={lead.phone ? maskPhone(lead.phone) : null}
+            type="tel"
+            onSave={(v) => onUpdate({ phone: v })}
+          />
+          <EditableField
+            label="Orçamento"
+            value={lead.value != null ? String(lead.value) : ""}
+            display={formatCurrency(lead.value)}
+            type="number"
+            onSave={(v) => onUpdate({ value: Number(v) || 0 })}
+          />
+          <EditableField
+            label="Origem"
+            value={lead.origin}
+            onSave={(v) => onUpdate({ origin: v })}
+          />
+          <ResponsibleField
+            value={lead.assigned_to}
+            team={team}
+            onSave={(v) => onUpdate({ assigned_to: v || null })}
+          />
         </div>
       </section>
+
       <section>
         <SectionTitle icon={Clock}>Atividade recente</SectionTitle>
         {activities.length === 0 ? (
