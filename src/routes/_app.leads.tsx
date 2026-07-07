@@ -936,7 +936,7 @@ function ModalTextarea({
   };
   return (
     <label className="block sm:col-span-2">
-      <span className="mb-1 block text-sm font-semibold">{label}</span>
+      <span className="mb-1 flex h-8 items-center text-sm font-semibold">{label}</span>
       <textarea
         rows={3}
         value={value}
