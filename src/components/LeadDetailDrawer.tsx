@@ -399,6 +399,7 @@ function AtividadesTab({
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
   const [assigned, setAssigned] = useState("");
+  const [dueDate, setDueDate] = useState("");
 
   const register = useMutation({
     mutationFn: () =>
@@ -407,12 +408,16 @@ function AtividadesTab({
         title: title.trim() || ACTIVITY_TYPES.find((t) => t.key === type)?.label || "Atividade",
         details,
         assigned_to_id: assigned || null,
+        due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
       }),
     onSuccess: () => {
       setTitle("");
       setDetails("");
+      setDueDate("");
       toast.success("Atividade registrada.");
       qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: () => toast.error("Erro ao registrar atividade."),
   });
