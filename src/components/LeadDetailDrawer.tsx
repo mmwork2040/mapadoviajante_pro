@@ -46,12 +46,12 @@ import { formatCurrency, formatDate, initials, maskPhone } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
 import type { Lead, LeadStatus } from "@/lib/types";
 
-const STATUSES: { key: LeadStatus; label: string }[] = [
-  { key: "new", label: "Novo" },
-  { key: "contacted", label: "Contatado" },
-  { key: "negotiating", label: "Negociando" },
-  { key: "closed", label: "Fechado" },
-  { key: "lost", label: "Perdido" },
+const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
+  { key: "new", label: "Novo", dot: "bg-blue-500" },
+  { key: "contacted", label: "Contatado", dot: "bg-sky-500" },
+  { key: "negotiating", label: "Negociando", dot: "bg-amber-400" },
+  { key: "closed", label: "Fechado", dot: "bg-emerald-500" },
+  { key: "lost", label: "Perdido", dot: "bg-red-500" },
 ];
 
 const TABS = [
