@@ -225,7 +225,7 @@ function LeadCard({
   onMove: (status: LeadStatus) => void;
   onOpen: () => void;
 }) {
-  const navigate = useNavigate();
+  
 
 
   return (
