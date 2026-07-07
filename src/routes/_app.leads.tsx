@@ -717,7 +717,7 @@ function TravelDatesField({
 
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between">
+      <div className="mb-1 flex h-8 items-center justify-between">
         <span className="text-sm font-semibold">Datas / Período</span>
         <div className="flex rounded-full bg-muted p-0.5 text-xs font-medium">
           {([
@@ -855,9 +855,10 @@ export function ModalField({
   };
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1 block text-sm font-semibold">
+      <span className="mb-1 flex h-8 items-center text-sm font-semibold">
         {label} {required && <span className="text-primary">*</span>}
       </span>
+
       <input
         type={format ? "text" : type}
         inputMode={format ? "numeric" : undefined}
@@ -894,7 +895,8 @@ function ModalSelect({
 }) {
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1 block text-sm font-semibold">{label}</span>
+      <span className="mb-1 flex h-8 items-center text-sm font-semibold">{label}</span>
+
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -934,7 +936,7 @@ function ModalTextarea({
   };
   return (
     <label className="block sm:col-span-2">
-      <span className="mb-1 block text-sm font-semibold">{label}</span>
+      <span className="mb-1 flex h-8 items-center text-sm font-semibold">{label}</span>
       <textarea
         rows={3}
         value={value}
