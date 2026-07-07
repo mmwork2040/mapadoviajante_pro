@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload } from "lucide-react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images } from "lucide-react";
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import {
@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
@@ -543,7 +543,17 @@ export function NewLeadModal({
   const [confirming, setConfirming] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function pickFromLibrary(value: string) {
+    set({ cover_image: value });
+    setPendingImage(null);
+    setImgError(null);
+    setShowLibraryPicker(false);
+    setTriedImages((prev) => [...prev, value]);
+    toast.success("Imagem selecionada da biblioteca.");
+  }
 
   async function handleUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -805,18 +815,32 @@ export function NewLeadModal({
                 placeholder="Ex: Paris, França"
                 value={form.destination}
                 onChange={(v) => set({ destination: v })}
-                action={{
-                  icon: ImageIcon,
-                  onClick: findDestinationImage,
-                  loading: searchingImg,
-                  disabled: !form.destination.trim() || !aiActive,
-                  title: !aiActive
-                    ? "Ative e conecte a IA nas configurações para buscar imagens"
-                    : form.cover_image
-                      ? "Buscar outra imagem do destino"
-                      : "Buscar imagem do destino",
-                }}
-                hint={form.cover_image ? undefined : aiActive ? undefined : "IA inativa — configure para buscar imagens"}
+                actions={[
+                  {
+                    icon: ImageIcon,
+                    onClick: findDestinationImage,
+                    loading: searchingImg,
+                    disabled: !form.destination.trim() || !aiActive,
+                    title: !aiActive
+                      ? "Ative e conecte a IA nas configurações para buscar imagens"
+                      : form.cover_image
+                        ? "Buscar outra imagem do destino (IA)"
+                        : "Buscar imagem do destino (IA)",
+                  },
+                  {
+                    icon: Images,
+                    onClick: () => setShowLibraryPicker(true),
+                    title: "Escolher da biblioteca de imagens",
+                  },
+                  {
+                    icon: Upload,
+                    onClick: () => fileInputRef.current?.click(),
+                    loading: uploadingImg,
+                    disabled: !form.destination.trim(),
+                    title: "Enviar imagem do meu dispositivo",
+                  },
+                ]}
+                hint={form.cover_image ? undefined : aiActive ? undefined : "IA inativa — use a biblioteca ou envie uma imagem"}
                 previewImage={form.cover_image || undefined}
                 onClearPreview={() => { set({ cover_image: "" }); setPendingImage(null); setTriedImages([]); }}
                 pendingImage={pendingImage || undefined}
@@ -833,15 +857,15 @@ export function NewLeadModal({
                 className="hidden"
                 onChange={handleUploadImage}
               />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingImg || !form.destination.trim()}
-                className="-mt-1 inline-flex items-center gap-1.5 text-xs font-semibold text-primary transition hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground disabled:no-underline"
-              >
-                {uploadingImg ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-                {uploadingImg ? "Enviando…" : "Enviar imagem do meu dispositivo"}
-              </button>
+              {showLibraryPicker && (
+                <LibraryImagePicker
+                  onClose={() => setShowLibraryPicker(false)}
+                  onPick={pickFromLibrary}
+                />
+              )}
+
+
+
 
 
 
@@ -1082,6 +1106,7 @@ export function ModalField({
   format,
   suggestions,
   action,
+  actions,
   hint,
   previewImage,
   onClearPreview,
@@ -1109,6 +1134,13 @@ export function ModalField({
     disabled?: boolean;
     title?: string;
   };
+  actions?: {
+    icon: typeof User;
+    onClick: () => void;
+    loading?: boolean;
+    disabled?: boolean;
+    title?: string;
+  }[];
   hint?: string;
   previewImage?: string;
   onClearPreview?: () => void;
@@ -1129,7 +1161,7 @@ export function ModalField({
   const handleChange = (raw: string) => {
     onChange(format ? masks[format](raw) : raw);
   };
-  const ActionIcon = action?.icon;
+  const allActions = actions ?? (action ? [action] : []);
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
       <span className="mb-1 flex h-8 items-center text-sm font-semibold">
@@ -1145,25 +1177,28 @@ export function ModalField({
           placeholder={placeholder}
           list={listId}
           onChange={(e) => handleChange(e.target.value)}
-          className={`w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background ${
-            action ? "pr-12" : "pr-4"
-          }`}
+          className="w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background"
+          style={allActions.length ? { paddingRight: `${allActions.length * 36 + 8}px` } : undefined}
         />
-        {action && ActionIcon && (
-          <button
-            type="button"
-            onClick={action.onClick}
-            disabled={action.disabled || action.loading}
-            title={action.title}
-            aria-label={action.title || "Ação"}
-            className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
-          >
-            {action.loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ActionIcon className="h-4 w-4" />
-            )}
-          </button>
+        {allActions.length > 0 && (
+          <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
+            {allActions.map((a, i) => {
+              const Icon = a.icon;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={a.onClick}
+                  disabled={a.disabled || a.loading}
+                  title={a.title}
+                  aria-label={a.title || "Ação"}
+                  className="grid h-8 w-8 place-items-center rounded-lg text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
+                >
+                  {a.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
       {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
@@ -1240,6 +1275,85 @@ export function ModalField({
     </label>
   );
 }
+
+// Modal para escolher uma imagem já existente na biblioteca interna.
+function LibraryImagePicker({
+  onClose,
+  onPick,
+}: {
+  onClose: () => void;
+  onPick: (value: string) => void;
+}) {
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["library", "image"],
+    queryFn: () => fetchLibraryItems("image"),
+  });
+  const [q, setQ] = useState("");
+  const term = q.trim().toLowerCase();
+  const filtered = term
+    ? items.filter(
+        (i) =>
+          i.title?.toLowerCase().includes(term) ||
+          i.location?.toLowerCase().includes(term) ||
+          (i.tags || []).some((t) => t.toLowerCase().includes(term)),
+      )
+    : items;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-background shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h3 className="text-base font-semibold">Biblioteca de imagens</h3>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="border-b border-border p-4">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por destino, título ou tag…"
+            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-2.5 text-sm outline-none focus:border-primary focus:bg-background"
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {isLoading ? (
+            <div className="grid place-items-center py-10 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              Nenhuma imagem na biblioteca.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {filtered.map((item) => {
+                const value = item.image_url || item.file_url;
+                if (!value) return null;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onPick(value)}
+                    className="group overflow-hidden rounded-xl border border-border text-left transition hover:border-primary"
+                  >
+                    <CoverImage value={value} alt={item.title} className="h-24 w-full object-cover" />
+                    <p className="truncate px-2 py-1.5 text-xs font-medium">{item.title}</p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 function ModalSelect({
   label,
