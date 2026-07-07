@@ -17,6 +17,7 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Transaction, TxType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { useAuth, isAdminUser } from "@/lib/auth";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
