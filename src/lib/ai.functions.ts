@@ -327,7 +327,17 @@ export type PlannedDay = {
   date?: string;
   activities: PlannedActivity[];
 };
-export type PlannerResult = { reply: string; days: PlannedDay[] };
+export type PlannedUpdate = {
+  activityId: string;
+  time?: string;
+  title?: string;
+  location?: string;
+  type?: string;
+  description?: string;
+  duration?: string;
+  cost?: number;
+};
+export type PlannerResult = { reply: string; days: PlannedDay[]; updates: PlannedUpdate[] };
 
 const PLANNER_PROMPT = `Você é o assistente interno da agência que conversa com o CONSULTOR (o usuário logado). O CONSULTOR sou eu, que estou montando o roteiro. O LEAD é o viajante/cliente para quem o roteiro está sendo elaborado. Você fala SEMPRE comigo, o consultor — nunca diretamente com o viajante. Aja com respeito, educação, simpatia e profissionalismo, como um colega de equipe experiente.
 
