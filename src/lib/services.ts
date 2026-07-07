@@ -378,6 +378,17 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
   return (data as LeadActivity[]) || [];
 }
 
+export async function deleteLeadActivity(id: string): Promise<boolean> {
+  const { error } = await supabase.from("crm_lead_activities").delete().eq("id", id);
+  if (error) {
+    console.error("deleteLeadActivity:", error);
+    return false;
+  }
+  return true;
+}
+
+
+
 export async function createLeadActivity(
   leadId: string,
   activityData: Partial<LeadActivity>,
