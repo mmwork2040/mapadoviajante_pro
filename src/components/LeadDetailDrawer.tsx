@@ -6,7 +6,7 @@ import {
   MapPin,
   MessageCircle,
   Map as MapIcon,
-  Columns,
+  
   User,
   Plane,
   ClipboardList,
