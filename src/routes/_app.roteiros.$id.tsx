@@ -31,6 +31,7 @@ import {
   createVoucher,
   deleteItineraryActivity,
   deleteItineraryDay,
+  duplicateItineraryDay,
   deleteVoucher,
   fetchItineraryById,
   updateItinerary,
