@@ -207,7 +207,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
         ) : (
           <>
             {/* Header */}
-            <div className="relative overflow-hidden border-b border-border p-5">
+            <div className="relative border-b border-border p-5">
               {coverUrl && (
                 <>
                   <div
