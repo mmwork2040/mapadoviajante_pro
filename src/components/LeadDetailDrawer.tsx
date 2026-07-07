@@ -486,6 +486,7 @@ function AtividadesTab({
           <input
             type="date"
             value={dueDate}
+            required
             onChange={(e) => setDueDate(e.target.value)}
             className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
           />
