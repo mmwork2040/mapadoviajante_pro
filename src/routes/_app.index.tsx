@@ -180,7 +180,9 @@ function DashboardPage() {
     weekEnd.setDate(today.getDate() + 7);
     return data.tasks
       .filter((t) => {
-        if (!t.due_date || t.completed) return false;
+        if (!t.due_date) return false;
+        if (taskStatus === "pending" && t.completed) return false;
+        if (taskStatus === "done" && !t.completed) return false;
         const due = startOfDay(new Date(t.due_date));
         if (taskFilter === "today") return due.getTime() === today.getTime();
         if (taskFilter === "tomorrow") return due.getTime() === tomorrow.getTime();
