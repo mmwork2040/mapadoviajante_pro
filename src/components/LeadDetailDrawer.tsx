@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -78,6 +78,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("perfil");
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: lead } = useQuery({ queryKey: ["lead", leadId], queryFn: () => fetchLeadById(leadId) });
   const { data: activities = [] } = useQuery({
@@ -206,7 +207,14 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
             </div>
 
             {/* Tabs */}
-            <div className="flex overflow-x-auto border-b border-border px-2">
+            <div
+              ref={tabsRef}
+              onWheel={(e) => {
+                if (e.deltaY === 0) return;
+                e.currentTarget.scrollLeft += e.deltaY;
+              }}
+              className="flex overflow-x-auto scrollbar-thin border-b border-border px-2"
+            >
               {TABS.map((t) => (
                 <button
                   key={t.key}
@@ -229,7 +237,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto p-5">
+            <div className="flex-1 overflow-y-auto scrollbar-thin p-5">
               {tab === "perfil" && <PerfilTab lead={lead} activities={activities} />}
               {tab === "viagem" && <ViagemTab lead={lead} p={p} />}
               {tab === "atividades" && (
