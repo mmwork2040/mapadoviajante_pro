@@ -344,6 +344,17 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
 
       {isAdmin && (
         <CollapsibleSection
+          icon={Building2}
+          color="#0d9488"
+          title="Dados da Agência"
+          subtitle="Nome, contato e endereço usados nos convites e documentos"
+        >
+          <AgencyCard />
+        </CollapsibleSection>
+      )}
+
+      {isAdmin && (
+        <CollapsibleSection
           icon={Webhook}
           color="#f97316"
           title="Webhook"
