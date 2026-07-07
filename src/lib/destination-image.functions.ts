@@ -124,7 +124,10 @@ export const downloadDestinationImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: DownloadInput) => {
     if (!d?.destination?.trim()) throw new Error("Informe o destino.");
-    return { destination: d.destination.trim() };
+    const exclude = Array.isArray(d.exclude)
+      ? d.exclude.filter((x): x is string => typeof x === "string")
+      : [];
+    return { destination: d.destination.trim(), exclude };
   })
   .handler(async ({ data, context }): Promise<{ imageUrl: string }> => {
     const { data: cfg, error } = await context.supabase
