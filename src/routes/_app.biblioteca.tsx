@@ -485,6 +485,37 @@ function LibraryModal({
   );
 }
 
+function AiAssistButton({
+  loading,
+  disabled,
+  title,
+  onClick,
+}: {
+  loading: boolean;
+  disabled: boolean;
+  title: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {loading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Wand2 className="h-3.5 w-3.5" />
+      )}
+      IA
+    </button>
+  );
+}
+
+
+
 function Fld({
   label,
   value,
