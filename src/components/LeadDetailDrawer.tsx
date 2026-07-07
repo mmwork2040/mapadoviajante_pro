@@ -545,6 +545,11 @@ function AtividadesTab({
                       {meta.label}
                     </p>
                      {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
+                     {a.due_date && (
+                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                         <CalendarClock className="h-3 w-3" /> Execução: <span className="font-medium text-foreground">{formatDate(a.due_date)}</span>
+                       </p>
+                     )}
                      {a.assigned?.name && (
                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                          <User className="h-3 w-3" /> Atribuído a: <span className="font-medium text-foreground">{a.assigned.name}</span>
