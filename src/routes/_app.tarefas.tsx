@@ -69,8 +69,8 @@ function TarefasPage() {
   const hasFilters = statusFilter !== "all" || !!fromDate || !!toDate;
   const clearFilters = () => {
     setStatusFilter("all");
-    setFromDate("");
-    setToDate("");
+    setFromDate(todayStr());
+    setToDate(todayStr());
   };
 
   const pending = allTasks.filter((t) => !t.completed).sort(byDue);
