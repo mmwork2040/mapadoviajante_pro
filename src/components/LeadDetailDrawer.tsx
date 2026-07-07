@@ -110,7 +110,6 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
       description: `Tem certeza que deseja excluir "${lead?.name}"? Esta ação não pode ser desfeita.`,
       confirmLabel: "Excluir",
       cancelLabel: "Cancelar",
-      danger: true,
     });
     if (!ok) return;
     const done = await deleteLead(leadId);
