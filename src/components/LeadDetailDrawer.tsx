@@ -31,6 +31,7 @@ import { toast } from "sonner";
 import {
   createItinerary,
   createLeadActivity,
+  deleteLeadActivity,
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
