@@ -472,6 +472,7 @@ function ItineraryDetailPage() {
             <DayCard
               key={day.id}
               day={day}
+              allDays={it.days || []}
               onChange={refresh}
               agencyId={it.agency_id}
               leadId={it.lead_id ?? null}
