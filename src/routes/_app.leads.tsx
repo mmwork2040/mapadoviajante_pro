@@ -710,7 +710,24 @@ export function NewLeadModal({
           {step === 1 && (
             <Section icon={Plane} title="Detalhes da Viagem">
               <ModalField label="Ponto de partida" placeholder="Ex: GRU - São Paulo/Guarulhos" value={form.departure} onChange={(v) => set({ departure: v })} suggestions={AIRPORTS} />
-              <ModalField label="Destino" placeholder="Ex: Paris, França" value={form.destination} onChange={(v) => set({ destination: v })} />
+              <ModalField
+                label="Destino"
+                placeholder="Ex: Paris, França"
+                value={form.destination}
+                onChange={(v) => set({ destination: v })}
+                action={{
+                  icon: ImageIcon,
+                  onClick: findDestinationImage,
+                  loading: searchingImg,
+                  disabled: !form.destination.trim() || !aiActive,
+                  title: !aiActive
+                    ? "Ative e conecte a IA nas configurações para buscar imagens"
+                    : "Buscar imagem do destino",
+                }}
+                hint={form.cover_image ? undefined : aiActive ? undefined : "IA inativa — configure para buscar imagens"}
+                previewImage={form.cover_image || undefined}
+                onClearPreview={() => set({ cover_image: "" })}
+              />
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
               <ModalSelect label="Tipo de Viagem" value={form.trip_type} onChange={(v) => set({ trip_type: v })} options={["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"]} />
