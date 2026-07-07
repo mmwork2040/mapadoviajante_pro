@@ -6,7 +6,7 @@ import {
   MapPin,
   MessageCircle,
   Map as MapIcon,
-  Columns,
+  
   User,
   Plane,
   ClipboardList,
@@ -34,6 +34,7 @@ import { toast } from "sonner";
 import {
   createItinerary,
   createLeadActivity,
+  deleteLead,
   deleteLeadActivity,
   fetchItinerariesByLead,
   fetchLeadActivities,
@@ -44,6 +45,7 @@ import {
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, initials, maskCurrency, maskPhone, parseCurrency } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { NewLeadModal } from "@/routes/_app.leads";
 import type { Lead, LeadStatus } from "@/lib/types";
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
@@ -83,6 +85,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const navigate = useNavigate();
   const confirm = useConfirm();
   const [tab, setTab] = useState<TabKey>("perfil");
+  const [editOpen, setEditOpen] = useState(false);
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: lead } = useQuery({ queryKey: ["lead", leadId], queryFn: () => fetchLeadById(leadId) });
@@ -100,6 +103,26 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     },
     onError: () => toast.error("Erro ao atualizar lead."),
   });
+
+  async function handleDelete() {
+    const ok = await confirm({
+      title: "Excluir viajante",
+      description: `Tem certeza que deseja excluir "${lead?.name}"? Esta ação não pode ser desfeita.`,
+      confirmLabel: "Excluir",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+    const done = await deleteLead(leadId);
+    if (done) {
+      toast.success("Viajante excluído.");
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      onClose();
+    } else {
+      toast.error("Erro ao excluir viajante.");
+    }
+  }
+
+
 
   const createRoteiro = useMutation({
     mutationFn: () =>
@@ -220,10 +243,10 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   <MapIcon className="h-4 w-4" /> Criar Roteiro
                 </button>
                 <button
-                  onClick={() => navigate({ to: "/leads/$leadId", params: { leadId } })}
+                  onClick={() => setEditOpen(true)}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
                 >
-                  <Columns className="h-4 w-4" /> Pipeline
+                  <Pencil className="h-4 w-4" /> Editar
                 </button>
               </div>
             </div>
@@ -267,6 +290,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   activities={activities}
                   onUpdate={(u) => update.mutate(u)}
                   onOpenActivities={() => setTab("atividades")}
+                  onDelete={handleDelete}
                 />
               )}
               {tab === "viagem" && <ViagemTab lead={lead} p={p} />}
@@ -307,6 +331,17 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
           </>
         )}
       </aside>
+      {editOpen && lead && (
+        <NewLeadModal
+          lead={lead}
+          onClose={() => setEditOpen(false)}
+          onCreated={() => {
+            setEditOpen(false);
+            qc.invalidateQueries({ queryKey: ["lead", leadId] });
+            qc.invalidateQueries({ queryKey: ["leads"] });
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -547,12 +582,14 @@ function PerfilTab({
   activities,
   onUpdate,
   onOpenActivities,
+  onDelete,
 }: {
   lead: Lead;
   team: import("@/lib/types").AgencyMember[];
   activities: import("@/lib/types").LeadActivity[];
   onUpdate: (updates: Partial<Lead>) => void;
   onOpenActivities?: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <div className="space-y-6">
@@ -633,6 +670,17 @@ function PerfilTab({
 
         )}
       </section>
+
+      {onDelete && (
+        <div className="pt-2">
+          <button
+            onClick={onDelete}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition hover:text-red-500"
+          >
+            <Trash2 className="h-3.5 w-3.5" /> Excluir viajante
+          </button>
+        </div>
+      )}
     </div>
   );
 }
