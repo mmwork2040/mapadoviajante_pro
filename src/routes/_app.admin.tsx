@@ -55,6 +55,7 @@ import {
   updateMemberRole,
 } from "@/lib/services";
 import { sendTeamInvite, getEmailConfigStatus } from "@/lib/invites.functions";
+import { getAgencyInfo, saveAgencyInfo, lookupCep, type AgencyInfo } from "@/lib/agency";
 import {
   getAgencyPaymentConfig,
   saveAgencyPaymentConfig,
