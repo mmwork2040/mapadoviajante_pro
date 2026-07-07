@@ -244,18 +244,36 @@ function LibraryPage() {
 
       <p className="text-sm text-muted-foreground">{active.hint}</p>
 
-      {isImageTab && items.length > 0 && (
+      {isImageTab && (
         <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={imgInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handleUploadImage}
+          />
           <button
-            onClick={toggleSelectMode}
-            className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
-              selectMode
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border bg-card text-muted-foreground hover:text-foreground"
-            }`}
+            onClick={() => imgInputRef.current?.click()}
+            disabled={uploadingImg}
+            className="flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
           >
-            <CheckSquare className="h-4 w-4" /> {selectMode ? "Cancelar seleção" : "Selecionar imagens"}
+            {uploadingImg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {uploadingImg ? "Enviando…" : "Enviar imagem"}
           </button>
+          {items.length > 0 && (
+            <button
+              onClick={toggleSelectMode}
+              className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+                selectMode
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border bg-card text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <CheckSquare className="h-4 w-4" /> {selectMode ? "Cancelar seleção" : "Selecionar imagens"}
+            </button>
+          )}
           {selectMode && (
             <>
               <button
