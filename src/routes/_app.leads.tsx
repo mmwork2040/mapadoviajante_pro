@@ -773,12 +773,13 @@ function TravelDatesField({
             <button
               type="button"
               onClick={interpret}
-              disabled={checking}
-              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              disabled={checking || !periodText.trim()}
+              className="flex shrink-0 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {checking ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Apurar
             </button>
+
           </div>
           {startDate && endDate && (
             <p className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
