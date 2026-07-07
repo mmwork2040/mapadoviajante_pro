@@ -42,7 +42,7 @@ function inviteHtml(opts: { name: string; agency: string; inviter: string; link:
         <p style="margin:0 0 14px;font-size:16px;">Olá, <strong>${name}</strong>!</p>
         <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">
           <strong>${inviter}</strong> convidou você para participar da equipe da agência
-          <strong>${agency}</strong> no sistema O Segredo do Viajante.
+          <strong>${agency}</strong> no sistema O Mapa do Viajante.
         </p>
         <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">
           Para começar a usar o sistema, aceite o convite clicando no botão abaixo.
