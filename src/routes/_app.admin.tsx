@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw, Smartphone } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw, Smartphone, Ban, LockOpen } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -51,6 +51,7 @@ import {
   removeMember,
   revokeMember,
   saveAiConfig,
+  setMemberBlocked,
   updateMemberRole,
 } from "@/lib/services";
 import { sendTeamInvite, getEmailConfigStatus } from "@/lib/invites.functions";
@@ -62,7 +63,7 @@ import {
 } from "@/lib/payments.functions";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
-import { useAuth, isSuperAdminEmail } from "@/lib/auth";
+import { useAuth, isAdminUser } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
 import type { AiConfig } from "@/lib/types";
@@ -75,7 +76,7 @@ const ROLES = ["admin", "gerente", "consultor"];
 
 function AdminPage() {
   const { session, member } = useAuth();
-  if (!isSuperAdminEmail(session?.user?.email)) {
+  if (!isAdminUser(member, session?.user?.email)) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center text-center">
         <h1 className="text-xl font-bold">Acesso restrito</h1>
@@ -179,6 +180,33 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     remove.mutate(m.id);
   }
 
+  const blockToggle = useMutation({
+    mutationFn: ({ id, blocked }: { id: string; blocked: boolean }) => setMemberBlocked(id, blocked),
+    onSuccess: (ok, vars) => {
+      if (!ok) return toast.error("Erro ao atualizar o acesso.");
+      toast.success(vars.blocked ? "Acesso bloqueado." : "Acesso liberado.");
+      qc.invalidateQueries({ queryKey: ["team"] });
+    },
+    onError: () => toast.error("Erro ao atualizar o acesso."),
+  });
+
+  async function handleToggleBlock(m: { id: string; name?: string | null; email?: string | null; is_active?: boolean }) {
+    const blocking = m.is_active !== false;
+    const ok = await confirm({
+      title: blocking ? "Bloquear acesso?" : "Liberar acesso?",
+      description: blocking
+        ? `${m.name || m.email || "Este usuário"} não poderá mais acessar o sistema até ser liberado.`
+        : `${m.name || m.email || "Este usuário"} poderá acessar o sistema novamente.`,
+      confirmLabel: blocking ? "Bloquear" : "Liberar",
+      cancelLabel: "Cancelar",
+      destructive: blocking,
+    });
+    if (!ok) return;
+    blockToggle.mutate({ id: m.id, blocked: blocking });
+  }
+
+
+
   return (
     <div className="space-y-6">
       <div>
@@ -272,6 +300,28 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                   >
                     {revoke.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <X className="h-3.5 w-3.5" />}
                     Revogar
+                  </button>
+                )}
+                {isAdmin && m.status !== "pending" && m.id !== member?.id && (
+                  <button
+                    type="button"
+                    title={m.is_active === false ? "Liberar acesso" : "Bloquear acesso"}
+                    disabled={blockToggle.isPending}
+                    onClick={() => handleToggleBlock(m)}
+                    className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs disabled:opacity-50 ${
+                      m.is_active === false
+                        ? "border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                        : "border-amber-500/40 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
+                    }`}
+                  >
+                    {blockToggle.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : m.is_active === false ? (
+                      <LockOpen className="h-3.5 w-3.5" />
+                    ) : (
+                      <Ban className="h-3.5 w-3.5" />
+                    )}
+                    {m.is_active === false ? "Liberar" : "Bloquear"}
                   </button>
                 )}
                 {isAdmin && m.status !== "pending" && m.id !== member?.id && (

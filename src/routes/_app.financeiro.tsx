@@ -17,6 +17,7 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Transaction, TxType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { useAuth, isAdminUser } from "@/lib/auth";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -28,6 +29,21 @@ const CATEGORIES = ["pacote", "comissao", "operacional", "marketing"];
 const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 function FinancePage() {
+  const { member, session } = useAuth();
+  if (!isAdminUser(member, session?.user?.email)) {
+    return (
+      <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center text-center">
+        <h1 className="text-xl font-bold">Acesso restrito</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          A área Financeiro está disponível apenas para administradores.
+        </p>
+      </div>
+    );
+  }
+  return <FinanceContent />;
+}
+
+function FinanceContent() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [typeFilter, setTypeFilter] = useState("");

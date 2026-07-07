@@ -15,9 +15,10 @@ import {
   LogOut,
   Bot,
   ChevronLeft,
+  UserCog,
 
 } from "lucide-react";
-import { useAuth, isSuperAdminEmail } from "@/lib/auth";
+import { useAuth, isAdminUser } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
@@ -32,7 +33,11 @@ const NAV = [
   { to: "/biblioteca", label: "Biblioteca", icon: Images },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/admin", label: "Administração", icon: ShieldCheck },
+  { to: "/perfil", label: "Meu Perfil", icon: UserCog },
 ] as const;
+
+// Itens que exigem cargo de administrador
+const ADMIN_ONLY = ["/financeiro", "/admin"] as const;
 
 // Itens principais exibidos na barra de navegação inferior (mobile)
 const MOBILE_NAV = [
@@ -52,9 +57,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
-  const showAdmin = isSuperAdminEmail(session?.user?.email);
-  const nav = showAdmin ? NAV : NAV.filter((i) => i.to !== "/admin");
-  const mobileNav = MOBILE_NAV;
+  const isAdmin = isAdminUser(member, session?.user?.email);
+  const showAdmin = isAdmin;
+  const nav = isAdmin ? NAV : NAV.filter((i) => !ADMIN_ONLY.includes(i.to as (typeof ADMIN_ONLY)[number]));
+  const mobileNav = isAdmin ? MOBILE_NAV : MOBILE_NAV.filter((i) => i.to !== "/financeiro");
 
   useEffect(() => {
     const channel = supabase
@@ -228,6 +234,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <p className="truncate text-sm font-semibold">{member?.name || "Usuário"}</p>
                       <p className="truncate text-xs text-muted-foreground">{session?.user?.email}</p>
                     </div>
+                    <Link
+                      to="/perfil"
+                      onClick={() => setMobileMenu(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
+                    >
+                      <UserCog className="h-4 w-4" />
+                      Meu Perfil
+                    </Link>
                     {showAdmin && (
                       <Link
                         to="/admin"
