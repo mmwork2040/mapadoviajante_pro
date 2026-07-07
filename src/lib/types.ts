@@ -31,6 +31,7 @@ export interface Lead {
   checklists?: Record<string, unknown>;
   last_activity_at?: string;
   created_at?: string;
+  updated_at?: string;
   assigned_member?: { name: string; avatar_color?: string | null } | null;
 }
 
