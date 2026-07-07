@@ -247,7 +247,7 @@ function LeadCard({
           title="Ver detalhes"
           onClick={(e) => {
             e.stopPropagation();
-            navigate({ to: "/leads/$leadId", params: { leadId: lead.id } });
+            onOpen();
           }}
           className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
         >
