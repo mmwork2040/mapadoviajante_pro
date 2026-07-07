@@ -476,6 +476,7 @@ function leadToForm(lead: Lead): WizardForm {
     origin_other: ORIGINS.includes(lead.origin || "") ? "" : lead.origin || "",
     departure: p.departure || "",
     destination: lead.destination || "",
+    cover_image: p.cover_image || "",
     travel_dates: p.travel_dates || "",
     passengers: p.passengers || "",
     trip_type: p.trip_type || "",
