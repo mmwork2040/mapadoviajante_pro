@@ -41,9 +41,14 @@ function TarefasPage() {
     onError: () => toast.error("Erro ao atualizar tarefa."),
   });
 
+  const byDue = (a: Task, b: Task) => {
+    const ta = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+    const tb = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+    return ta - tb;
+  };
   const tasks = data ?? [];
-  const pending = tasks.filter((t) => !t.completed);
-  const done = tasks.filter((t) => t.completed);
+  const pending = tasks.filter((t) => !t.completed).sort(byDue);
+  const done = tasks.filter((t) => t.completed).sort(byDue);
 
   return (
     <div className="space-y-6">
