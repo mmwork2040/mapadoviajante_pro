@@ -223,6 +223,68 @@ export async function askCopilot(cfg: ProviderConfig, prompt: string): Promise<s
   return text.trim();
 }
 
+export type ParsedPeriod = {
+  valid: boolean;
+  start_date: string;
+  end_date: string;
+  message: string;
+};
+
+// Interpreta um período de viagem informado em texto livre e retorna datas.
+export async function parseTravelPeriod(
+  cfg: ProviderConfig,
+  input: string,
+): Promise<ParsedPeriod> {
+  const today = new Date().toISOString().slice(0, 10);
+  const prompt = `Você é um assistente que interpreta períodos de viagem informados em texto livre, em português do Brasil. A data de hoje é ${today}.
+Dado o texto do usuário, determine a data inicial e a data final da viagem no formato AAAA-MM-DD.
+Regras:
+- Interprete expressões como "Jul/2026, 10 dias", "de 10 a 20 de julho de 2026", "próxima semana por 5 noites", "primeira quinzena de dezembro".
+- Se só houver mês/ano e uma duração, calcule a data final somando a duração à data inicial.
+- Se o texto for ambíguo, contraditório, impossível (ex: data final antes da inicial) ou não representar um período de viagem válido, marque "valid": false e explique brevemente o problema em "message".
+- Nunca invente um período quando não houver informação suficiente: marque "valid": false.
+Responda APENAS com um JSON válido, sem texto extra:
+{
+  "valid": true/false,
+  "start_date": "AAAA-MM-DD ou vazio",
+  "end_date": "AAAA-MM-DD ou vazio",
+  "message": "explicação curta em português (resumo do período interpretado ou o motivo da invalidez)"
+}
+
+Texto do usuário: "${input.replace(/"/g, "'")}"`;
+
+  const raw = await askCopilot(cfg, prompt);
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) {
+    return { valid: false, start_date: "", end_date: "", message: "Não foi possível interpretar o período informado." };
+  }
+  let parsed: Partial<ParsedPeriod>;
+  try {
+    parsed = JSON.parse(cleaned.slice(start, end + 1)) as Partial<ParsedPeriod>;
+  } catch {
+    return { valid: false, start_date: "", end_date: "", message: "Não foi possível interpretar o período informado." };
+  }
+  const s = typeof parsed.start_date === "string" ? parsed.start_date : "";
+  const e = typeof parsed.end_date === "string" ? parsed.end_date : "";
+  const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  let valid = parsed.valid === true && isDate(s) && isDate(e);
+  if (valid && new Date(e).getTime() < new Date(s).getTime()) valid = false;
+  return {
+    valid,
+    start_date: valid ? s : "",
+    end_date: valid ? e : "",
+    message:
+      typeof parsed.message === "string" && parsed.message.trim()
+        ? parsed.message.trim()
+        : valid
+          ? "Período interpretado com sucesso."
+          : "O período informado é inválido.",
+  };
+}
+
+
 const KNOWLEDGE_PROMPT = `Você recebe um documento (PDF, planilha, imagem ou texto) que servirá como base de conhecimento para uma IA de uma agência de viagens.
 Extraia e organize TODO o conteúdo textual relevante (preços, regras, destinos, descrições, tabelas) em texto corrido limpo, em português.
 Responda APENAS com o texto extraído, sem comentários adicionais.`;
