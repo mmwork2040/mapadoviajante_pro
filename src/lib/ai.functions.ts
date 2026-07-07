@@ -311,6 +311,7 @@ type PlannerInput = {
   context: string;
   files: PlannerFile[];
   leadId?: string | null;
+  itineraryId?: string | null;
 };
 
 export type PlannedActivity = {
