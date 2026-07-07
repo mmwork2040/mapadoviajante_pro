@@ -427,7 +427,10 @@ function EditableField({
             onChange={(e) => setDraft(mask ? mask(e.target.value) : e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") save();
-              if (e.key === "Escape") setEditing(false);
+              if (e.key === "Escape") {
+                setDraft(value ?? "");
+                setEditing(false);
+              }
             }}
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
           />
@@ -456,7 +459,7 @@ function EditableField({
           <button
             onClick={start}
             title="Editar"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
@@ -497,6 +500,13 @@ function ResponsibleField({
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") save();
+              if (e.key === "Escape") {
+                setDraft(value ?? "");
+                setEditing(false);
+              }
+            }}
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
           >
             <option value="">Sem responsável</option>
@@ -520,7 +530,7 @@ function ResponsibleField({
           <button
             onClick={start}
             title="Editar"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <Pencil className="h-3.5 w-3.5" />
           </button>
