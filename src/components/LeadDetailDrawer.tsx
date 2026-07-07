@@ -932,7 +932,11 @@ function ChecklistTab({
           placeholder="Novo item…"
           className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
-        <button onClick={add} className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">
+        <button
+          onClick={add}
+          disabled={!newItem.trim()}
+          className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+        >
           Adicionar
         </button>
       </div>

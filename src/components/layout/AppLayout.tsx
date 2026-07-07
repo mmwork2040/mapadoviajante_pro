@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
-import { fetchLeads } from "@/lib/services";
+import { fetchLeads, fetchTasks } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
 import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
@@ -57,6 +57,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
+  const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
+  const todayTasksCount = (tasksQ.data ?? []).filter((t) => {
+    if (!t.due_date || t.completed) return false;
+    return new Date(t.due_date).toDateString() === new Date().toDateString();
+  }).length;
   const isAdmin = isAdminUser(member, session?.user?.email);
   const showAdmin = isAdmin;
   const nav = isAdmin ? NAV : NAV.filter((i) => !ADMIN_ONLY.includes(i.to as (typeof ADMIN_ONLY)[number]));
@@ -124,6 +129,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     }`}
                   >
                     {leadsCount}
+                  </span>
+                )}
+                {to === "/tarefas" && todayTasksCount > 0 && (
+                  <span
+                    className={`flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground ${
+                      collapsed ? "absolute right-1.5 top-1.5" : "ml-auto"
+                    }`}
+                  >
+                    {todayTasksCount}
                   </span>
                 )}
               </Link>
@@ -301,6 +315,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 {to === "/leads" && leadsCount > 0 && (
                   <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
                     {leadsCount}
+                  </span>
+                )}
+                {to === "/tarefas" && todayTasksCount > 0 && (
+                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {todayTasksCount}
                   </span>
                 )}
               </span>
