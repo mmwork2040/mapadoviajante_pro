@@ -557,6 +557,7 @@ export function NewLeadModal({
       origin: (form.origin === "Outro" ? form.origin_other.trim() : form.origin) || "direto",
       profile: {
         departure,
+        cover_image: form.cover_image || "",
         travel_dates: form.travel_dates,
         passengers: form.passengers,
         trip_type: form.trip_type,
