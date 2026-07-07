@@ -13,8 +13,10 @@ import {
   BarChart3,
   ListChecks,
   CalendarClock,
+  Eye,
 
 } from "lucide-react";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { fetchDashboardStats, createTask, cleanTaskDescription } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import {
@@ -94,6 +96,7 @@ function DashboardPage() {
   const [taskTitle, setTaskTitle] = useState("");
   const [taskFilter, setTaskFilter] = useState<"today" | "tomorrow" | "week">("today");
   const [taskStatus, setTaskStatus] = useState<"all" | "pending" | "done">("pending");
+  const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
 
   const week = useMemo(() => {
     const today = new Date();
@@ -615,7 +618,17 @@ function DashboardPage() {
             <div key={l.id} className="rounded-xl border border-border p-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="min-w-0 flex-1 truncate font-medium">{l.name}</p>
+              <div className="flex items-center gap-2">
                 <StatusBadge status={l.status} />
+                <button
+                  type="button"
+                  onClick={() => setDetailLeadId(l.id)}
+                  className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  aria-label="Ver detalhes do lead"
+                >
+                  <Eye className="h-4 w-4" />
+                </button>
+              </div>
               </div>
               <p className="mt-1 truncate text-sm text-muted-foreground">{l.destination || "—"}</p>
               <div className="mt-2 flex items-center justify-between text-sm">
@@ -638,12 +651,13 @@ function DashboardPage() {
                 <th className="pb-2">Valor</th>
                 <th className="pb-2">Status</th>
                 <th className="pb-2">Última Atividade</th>
+                <th className="pb-2"></th>
               </tr>
             </thead>
             <tbody>
               {recentLeads.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
                     Nenhum lead encontrado
                   </td>
                 </tr>
@@ -657,12 +671,26 @@ function DashboardPage() {
                     <StatusBadge status={l.status} />
                   </td>
                   <td className="py-2 text-muted-foreground">{timeAgo(l.last_activity_at || l.created_at)}</td>
+                  <td className="py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setDetailLeadId(l.id)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      aria-label="Ver detalhes do lead"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
       </div>
+
+      {detailLeadId && (
+        <LeadDetailDrawer leadId={detailLeadId} onClose={() => setDetailLeadId(null)} />
+      )}
     </div>
   );
 }
