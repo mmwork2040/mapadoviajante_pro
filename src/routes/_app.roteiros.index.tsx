@@ -34,6 +34,21 @@ function initials(name?: string | null) {
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
 }
 
+function CoverImage({ value, className, alt }: { value: string; className?: string; alt?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    resolveDisplayImageUrl(value).then((u) => {
+      if (active) setUrl(u);
+    });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+  if (!url) return null;
+  return <img src={url} alt={alt || "Imagem do destino"} className={className} loading="lazy" />;
+}
+
 function ItinerariesPage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
