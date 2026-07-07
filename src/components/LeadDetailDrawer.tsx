@@ -385,6 +385,7 @@ function AtividadesTab({
   activities: import("@/lib/types").LeadActivity[];
 }) {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [type, setType] = useState("note");
   const [title, setTitle] = useState("");
   const [details, setDetails] = useState("");
