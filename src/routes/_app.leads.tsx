@@ -964,6 +964,10 @@ export function ModalField({
   full,
   format,
   suggestions,
+  action,
+  hint,
+  previewImage,
+  onClearPreview,
 }: {
   label: string;
   value: string;
@@ -974,6 +978,16 @@ export function ModalField({
   full?: boolean;
   format?: "currency" | "phone" | "cpfcnpj";
   suggestions?: string[];
+  action?: {
+    icon: typeof User;
+    onClick: () => void;
+    loading?: boolean;
+    disabled?: boolean;
+    title?: string;
+  };
+  hint?: string;
+  previewImage?: string;
+  onClearPreview?: () => void;
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
   const masks = {
@@ -984,22 +998,59 @@ export function ModalField({
   const handleChange = (raw: string) => {
     onChange(format ? masks[format](raw) : raw);
   };
+  const ActionIcon = action?.icon;
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
       <span className="mb-1 flex h-8 items-center text-sm font-semibold">
         {label} {required && <span className="text-primary">*</span>}
       </span>
 
-      <input
-        type={format ? "text" : type}
-        inputMode={format ? "numeric" : undefined}
-        required={required}
-        value={value}
-        placeholder={placeholder}
-        list={listId}
-        onChange={(e) => handleChange(e.target.value)}
-        className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
-      />
+      <div className="relative">
+        <input
+          type={format ? "text" : type}
+          inputMode={format ? "numeric" : undefined}
+          required={required}
+          value={value}
+          placeholder={placeholder}
+          list={listId}
+          onChange={(e) => handleChange(e.target.value)}
+          className={`w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background ${
+            action ? "pr-12" : "pr-4"
+          }`}
+        />
+        {action && ActionIcon && (
+          <button
+            type="button"
+            onClick={action.onClick}
+            disabled={action.disabled || action.loading}
+            title={action.title}
+            aria-label={action.title || "Ação"}
+            className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
+          >
+            {action.loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ActionIcon className="h-4 w-4" />
+            )}
+          </button>
+        )}
+      </div>
+      {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
+      {previewImage && (
+        <div className="relative mt-2 overflow-hidden rounded-xl border border-border">
+          <img src={previewImage} alt="Prévia do destino" className="h-28 w-full object-cover" />
+          {onClearPreview && (
+            <button
+              type="button"
+              onClick={onClearPreview}
+              title="Remover imagem"
+              className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/50 text-white hover:bg-black/70"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
       {suggestions && (
         <datalist id={listId}>
           {suggestions.map((s) => (
