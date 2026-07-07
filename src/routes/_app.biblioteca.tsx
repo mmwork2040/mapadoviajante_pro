@@ -21,6 +21,8 @@ import {
   Eye,
   Wand2,
   Loader2,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 
 import { toast } from "sonner";
