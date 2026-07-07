@@ -895,7 +895,8 @@ function ModalSelect({
 }) {
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1 block text-sm font-semibold">{label}</span>
+      <span className="mb-1 flex h-8 items-center text-sm font-semibold">{label}</span>
+
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
