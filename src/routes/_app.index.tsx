@@ -215,6 +215,55 @@ function DashboardPage() {
         ))}
       </div>
 
+      {/* Tarefas de Hoje */}
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
+            <ListChecks className="h-5 w-5 shrink-0 text-primary" />
+            <span className="truncate">Tarefas de Hoje</span>
+          </h2>
+          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+            {todayTasks.length}
+          </span>
+        </div>
+        {todayTasks.length === 0 ? (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nenhuma tarefa para hoje.
+          </p>
+        ) : (
+          <ul className="space-y-2">
+            {todayTasks.map((t) => {
+              const desc = cleanTaskDescription(t.description);
+              return (
+                <li
+                  key={t.id}
+                  className="flex items-start gap-3 rounded-xl border border-border p-3"
+                >
+                  <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <CalendarClock className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{t.title}</p>
+                    {t.lead?.name && (
+                      <p className="truncate text-xs text-muted-foreground">👤 {t.lead.name}</p>
+                    )}
+                    {desc && <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>}
+                  </div>
+                  <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                    {new Date(t.due_date!).toLocaleTimeString("pt-BR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+
+
 
       {/* Chart */}
       <div>
