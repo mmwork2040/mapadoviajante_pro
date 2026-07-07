@@ -386,6 +386,21 @@ const LOYALTY_PROGRAMS = [
   "Air France-KLM Flying Blue",
 ];
 
+const PREFERENCE_PRESETS = [
+  "Assento na janela",
+  "Assento no corredor",
+  "Sem escalas",
+  "Alimentação vegetariana",
+  "Alimentação sem glúten",
+  "Acessibilidade / mobilidade reduzida",
+  "Viaja com crianças",
+  "Viaja com pet",
+  "Quarto silencioso",
+  "Andar alto",
+  "Cama King",
+  "Late check-out",
+];
+
 function leadToForm(lead: Lead): WizardForm {
   const p = (lead.profile || {}) as Record<string, string>;
   return {
