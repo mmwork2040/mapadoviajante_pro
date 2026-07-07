@@ -313,14 +313,25 @@ function PerfilTab({ lead, activities }: { lead: Lead; activities: import("@/lib
           <p className="text-sm text-muted-foreground">Nenhuma atividade ainda.</p>
         ) : (
           <ul className="space-y-3">
-            {activities.slice(0, 4).map((a) => (
-              <li key={a.id} className="relative rounded-xl bg-muted/50 p-3 pl-5">
-                <span className="absolute left-2 top-4 h-2 w-2 rounded-full bg-primary" />
-                <p className="text-sm font-medium">{a.title}</p>
-                {a.details && <p className="text-xs text-muted-foreground">{a.details}</p>}
-              </li>
-            ))}
+            {activities.slice(0, 4).map((a) => {
+              const meta = activityMeta(a.type);
+              return (
+                <li key={a.id} className="flex gap-3 rounded-xl bg-muted/50 p-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <meta.icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{a.title}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {meta.label}
+                    </p>
+                    {a.details && <p className="text-xs text-muted-foreground">{a.details}</p>}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
+
         )}
       </section>
     </div>
