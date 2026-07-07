@@ -404,7 +404,15 @@ function LibraryModal({
           <Fld label="Título" required value={form.title || ""} onChange={(v) => setForm({ ...form, title: v })} />
           <Fld label="Local / Destino" value={form.location || ""} onChange={(v) => setForm({ ...form, location: v })} />
           <label className="block">
-            <span className="mb-1 block text-sm font-medium">Descrição curta</span>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">Descrição curta</span>
+              <AiAssistButton
+                loading={aiField === "description"}
+                disabled={!aiActive || aiField !== null}
+                title={aiActive ? "Gerar descrição com IA" : "IA inativa — configure para usar"}
+                onClick={() => aiAssist("description")}
+              />
+            </div>
             <textarea
               value={form.description || ""}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -413,7 +421,15 @@ function LibraryModal({
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium">Conteúdo (base de conhecimento p/ IA)</span>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">Conteúdo (base de conhecimento p/ IA)</span>
+              <AiAssistButton
+                loading={aiField === "content"}
+                disabled={!aiActive || aiField !== null}
+                title={aiActive ? "Elaborar conteúdo com IA" : "IA inativa — configure para usar"}
+                onClick={() => aiAssist("content")}
+              />
+            </div>
             <textarea
               value={form.content || ""}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
@@ -422,6 +438,7 @@ function LibraryModal({
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </label>
+
           {isPackage && (
             <div className="grid grid-cols-2 gap-3">
               <Fld label="Preço base" type="number" value={String(form.price ?? "")} onChange={(v) => setForm({ ...form, price: Number(v) })} />
