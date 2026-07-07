@@ -422,8 +422,26 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
     console.error("fetchLeadActivities:", error);
     throw new Error("Não foi possível carregar o histórico.");
   }
-  return (data as LeadActivity[]) || [];
+  const activities = (data as LeadActivity[]) || [];
+
+  // Enriquece cada atividade com a data de execução e o status da tarefa vinculada.
+  const { data: tasks } = await supabase
+    .from("crm_tasks")
+    .select("due_date, completed, description")
+    .eq("lead_id", leadId);
+  if (tasks) {
+    for (const a of activities) {
+      const linked = (tasks as { due_date?: string | null; completed?: boolean | null; description?: string | null }[])
+        .find((t) => (t.description || "").includes(ACTIVITY_TASK_MARK(a.id)));
+      if (linked) {
+        a.due_date = linked.due_date ?? a.due_date;
+        a.completed = linked.completed ?? false;
+      }
+    }
+  }
+  return activities;
 }
+
 
 // Marca invisível que liga uma tarefa de agenda à atividade que a originou.
 const ACTIVITY_TASK_MARK = (id: string) => `[atv:${id}]`;
