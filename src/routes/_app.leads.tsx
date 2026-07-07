@@ -1276,6 +1276,82 @@ export function ModalField({
   );
 }
 
+// Modal para escolher uma imagem já existente na biblioteca interna.
+function LibraryImagePicker({
+  onClose,
+  onPick,
+}: {
+  onClose: () => void;
+  onPick: (value: string) => void;
+}) {
+  const { data: items = [], isLoading } = useQuery({
+    queryKey: ["library", "image"],
+    queryFn: () => fetchLibraryItems("image"),
+  });
+  const [q, setQ] = useState("");
+  const term = q.trim().toLowerCase();
+  const filtered = term
+    ? items.filter(
+        (i) =>
+          i.title?.toLowerCase().includes(term) ||
+          i.location?.toLowerCase().includes(term) ||
+          (i.tags || []).some((t) => t.toLowerCase().includes(term)),
+      )
+    : items;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-background shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <h3 className="text-base font-semibold">Biblioteca de imagens</h3>
+          <button onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="border-b border-border p-4">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por destino, título ou tag…"
+            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-2.5 text-sm outline-none focus:border-primary focus:bg-background"
+          />
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {isLoading ? (
+            <div className="grid place-items-center py-10 text-muted-foreground">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">
+              Nenhuma imagem na biblioteca.
+            </p>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {filtered.map((item) => {
+                const value = item.image_url || item.file_url;
+                if (!value) return null;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onPick(value)}
+                    className="group overflow-hidden rounded-xl border border-border text-left transition hover:border-primary"
+                  >
+                    <CoverImage value={value} alt={item.title} className="h-24 w-full object-cover" />
+                    <p className="truncate px-2 py-1.5 text-xs font-medium">{item.title}</p>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
 function ModalSelect({
   label,
   value,
