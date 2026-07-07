@@ -636,10 +636,20 @@ function DayCard({
   }
 
   const [duplicating, setDuplicating] = useState(false);
-  async function duplicate() {
+  const [showDupModal, setShowDupModal] = useState(false);
+  const sortedDays = [...(allDays || [])].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+  const [dupTarget, setDupTarget] = useState<number>(() => sortedDays.length + 1);
+
+  function openDuplicate() {
+    setDupTarget(sortedDays.length + 1);
+    setShowDupModal(true);
+  }
+
+  async function confirmDuplicate() {
+    setShowDupModal(false);
     setDuplicating(true);
     try {
-      const copy = await duplicateItineraryDay(day.id);
+      const copy = await duplicateItineraryDay(day.id, dupTarget);
       if (!copy) throw new Error("erro");
       toast.success("Dia duplicado.");
       onChange();
