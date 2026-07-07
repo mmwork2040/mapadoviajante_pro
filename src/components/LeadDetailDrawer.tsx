@@ -500,6 +500,13 @@ function ResponsibleField({
             autoFocus
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") save();
+              if (e.key === "Escape") {
+                setDraft(value ?? "");
+                setEditing(false);
+              }
+            }}
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
           >
             <option value="">Sem responsável</option>
