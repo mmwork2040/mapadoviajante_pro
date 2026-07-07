@@ -169,11 +169,24 @@ function DashboardPage() {
 
 
 
-  const todayTasks = data.tasks
-    .filter(
-      (t) => t.due_date && new Date(t.due_date).toDateString() === todayKey && !t.completed,
-    )
-    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime());
+  const todayTasks = (() => {
+    const now = new Date();
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const today = startOfDay(now);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() + 7);
+    return data.tasks
+      .filter((t) => {
+        if (!t.due_date || t.completed) return false;
+        const due = startOfDay(new Date(t.due_date));
+        if (taskFilter === "today") return due.getTime() === today.getTime();
+        if (taskFilter === "tomorrow") return due.getTime() === tomorrow.getTime();
+        return due.getTime() >= today.getTime() && due.getTime() < weekEnd.getTime();
+      })
+      .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime());
+  })();
 
   const recentLeads = [...data.leads]
     .sort(
