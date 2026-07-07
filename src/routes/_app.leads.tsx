@@ -1045,6 +1045,8 @@ export function ModalField({
   confirming,
   onConfirmPending,
   onRejectPending,
+  errorMessage,
+  onRetry,
 
 }: {
   label: string;
