@@ -73,6 +73,38 @@ export const extractKnowledgeDoc = createServerFn({ method: "POST" })
     return { text };
   });
 
+type ParsePeriodInput = { text: string };
+
+// Interpreta um período de viagem em texto livre e retorna datas de início/fim.
+export const parseTravelPeriodFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: ParsePeriodInput) => {
+    if (!d?.text?.trim()) throw new Error("Informe o período da viagem.");
+    return { text: d.text.trim() };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+    const { parseTravelPeriod } = await import("./ai.server");
+    return parseTravelPeriod(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: cfg.max_tokens,
+      },
+      data.text,
+    );
+  });
+
 type CopilotInput = { prompt: string };
 
 type KnowledgeState = {
