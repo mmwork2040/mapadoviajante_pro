@@ -413,14 +413,16 @@ function AtividadesTab({
   const [dueDate, setDueDate] = useState("");
 
   const register = useMutation({
-    mutationFn: () =>
-      createLeadActivity(leadId, {
+    mutationFn: () => {
+      if (!dueDate) throw new Error("A data de execução é obrigatória.");
+      return createLeadActivity(leadId, {
         type,
         title: title.trim() || ACTIVITY_TYPES.find((t) => t.key === type)?.label || "Atividade",
         details,
         assigned_to_id: assigned || null,
-        due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
-      }),
+        due_date: new Date(`${dueDate}T09:00:00`).toISOString(),
+      });
+    },
     onSuccess: () => {
       setTitle("");
       setDetails("");
