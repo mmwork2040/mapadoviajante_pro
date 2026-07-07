@@ -1169,6 +1169,23 @@ export function ModalField({
           </div>
         </div>
       )}
+      {!previewImage && !pendingImage && errorMessage && (
+        <div className="mt-2 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+          <div className="flex-1 space-y-2">
+            <p className="text-xs text-destructive">{errorMessage}</p>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-semibold text-destructive transition hover:bg-destructive/10"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Tentar novamente
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       {suggestions && (
         <datalist id={listId}>
           {suggestions.map((s) => (
