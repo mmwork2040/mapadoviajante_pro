@@ -197,25 +197,11 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               </div>
 
               <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="relative flex items-center gap-2 rounded-full border border-border bg-muted/40 pl-3 pr-1">
-                  <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                      STATUSES.find((s) => s.key === lead.status)?.dot || "bg-muted-foreground"
-                    }`}
-                  />
-                  <select
-                    value={lead.status}
-                    onChange={(e) => update.mutate({ status: e.target.value as LeadStatus })}
-                    className="appearance-none bg-transparent py-1.5 pr-6 text-xs font-semibold text-foreground outline-none"
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                </div>
+                <StatusDropdown
+                  value={lead.status}
+                  onChange={(status) => update.mutate({ status })}
+                />
+                <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
                 <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
               </div>
 
