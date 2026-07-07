@@ -73,6 +73,12 @@ const STATUS_LABELS: Record<string, string> = {
   completed: "Concluído",
   cancelled: "Cancelado",
 };
+const STATUS_DOTS: Record<string, string> = {
+  draft: "bg-muted-foreground",
+  active: "bg-sky-500",
+  completed: "bg-emerald-500",
+  cancelled: "bg-red-500",
+};
 
 type ActivityType = "flight" | "hotel" | "activity" | "transfer" | "restaurant";
 
