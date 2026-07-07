@@ -818,14 +818,14 @@ export async function searchLibraryImageForDestination(destination: string): Pro
     const destHit = destinations.find(
       (d) => d.image_url && (matches(d.title) || matches(d.name) || matches(d.country)),
     );
-    if (destHit?.image_url) return resolveDisplayImageUrl(destHit.image_url);
+    if (destHit?.image_url) return destHit.image_url;
 
     const itemHit = items.find(
       (i) =>
         i.image_url &&
         (matches(i.title) || matches(i.location) || matches((i.tags || []).join(" "))),
     );
-    if (itemHit?.image_url) return resolveDisplayImageUrl(itemHit.image_url);
+    if (itemHit?.image_url) return itemHit.image_url;
   } catch (e) {
     console.error("searchLibraryImageForDestination:", e);
   }
