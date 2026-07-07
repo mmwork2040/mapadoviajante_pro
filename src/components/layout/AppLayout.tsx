@@ -234,6 +234,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <p className="truncate text-sm font-semibold">{member?.name || "Usuário"}</p>
                       <p className="truncate text-xs text-muted-foreground">{session?.user?.email}</p>
                     </div>
+                    <Link
+                      to="/perfil"
+                      onClick={() => setMobileMenu(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
+                    >
+                      <UserCog className="h-4 w-4" />
+                      Meu Perfil
+                    </Link>
                     {showAdmin && (
                       <Link
                         to="/admin"
