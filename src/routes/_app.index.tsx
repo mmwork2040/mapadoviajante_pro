@@ -41,6 +41,26 @@ const STATUS_LABEL: Record<string, string> = {
   lost: "Perdido",
 };
 
+const STATUS_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
+  new: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  contacted: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
+  negotiating: { bg: "bg-violet-50", text: "text-violet-700", dot: "bg-violet-500" },
+  closed: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
+  lost: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const s = STATUS_STYLE[status] || { bg: "bg-accent", text: "text-accent-foreground", dot: "bg-muted-foreground" };
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase ${s.bg} ${s.text}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+      {STATUS_LABEL[status] || status}
+    </span>
+  );
+}
+
 const WEEK_DAYS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 const MONTH_NAMES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
