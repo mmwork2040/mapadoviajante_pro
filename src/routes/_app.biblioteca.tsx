@@ -73,6 +73,8 @@ function LibraryPage() {
   const [tab, setTab] = useState<TabKey>("experience");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryItem | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const isDocuments = tab === "documents";
 
