@@ -13,8 +13,10 @@ import {
   BarChart3,
   ListChecks,
   CalendarClock,
+  Eye,
 
 } from "lucide-react";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { fetchDashboardStats, createTask, cleanTaskDescription } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import {
