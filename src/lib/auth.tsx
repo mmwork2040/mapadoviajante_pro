@@ -41,6 +41,11 @@ export function isSuperAdminEmail(email?: string | null) {
   return !!email && SUPER_ADMIN_EMAILS.includes(email.toLowerCase());
 }
 
+/** Verdadeiro se o membro é administrador (cargo admin) ou super admin do sistema. */
+export function isAdminUser(member?: AgencyMember | null, email?: string | null) {
+  return member?.role === "admin" || isSuperAdminEmail(email);
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [member, setMember] = useState<AgencyMember | null>(null);
