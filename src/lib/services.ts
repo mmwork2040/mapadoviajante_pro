@@ -780,7 +780,53 @@ export async function deleteLibraryItem(item: LibraryItem): Promise<boolean> {
     console.error("deleteLibraryItem:", error);
     return false;
   }
+  await cleanupImageReferences([item]);
   return true;
+}
+
+// Remove referências das imagens excluídas dos perfis de leads (profile.cover_image).
+// Roteiros resolvem a capa dinamicamente da biblioteca, portanto se limpam sozinhos.
+async function cleanupImageReferences(items: LibraryItem[]): Promise<void> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return;
+  const refs = items
+    .flatMap((i) => [i.file_url, i.image_url])
+    .filter((v): v is string => !!v);
+  if (refs.length === 0) return;
+  try {
+    const { data: leads } = await (supabase as any)
+      .from("crm_leads")
+      .select("id, profile")
+      .eq("agency_id", _agencyId);
+    for (const lead of (leads || []) as { id: string; profile: Record<string, unknown> | null }[]) {
+      const cover = (lead.profile as Record<string, string> | null)?.cover_image;
+      if (!cover) continue;
+      const hit = refs.some((r) => cover === r || cover.includes(r));
+      if (!hit) continue;
+      const newProfile = { ...(lead.profile || {}) };
+      delete (newProfile as Record<string, unknown>).cover_image;
+      await (supabase as any).from("crm_leads").update({ profile: newProfile }).eq("id", lead.id);
+    }
+  } catch (e) {
+    console.error("cleanupImageReferences:", e);
+  }
+}
+
+// Exclusão em massa de itens da biblioteca (com limpeza de referências).
+export async function bulkDeleteLibraryItems(items: LibraryItem[]): Promise<number> {
+  if (items.length === 0) return 0;
+  const paths = items.map((i) => i.file_url).filter((v): v is string => !!v);
+  if (paths.length > 0) {
+    await supabase.storage.from(LIBRARY_BUCKET).remove(paths);
+  }
+  const ids = items.map((i) => i.id);
+  const { error } = await (supabase as any).from("crm_library_items").delete().in("id", ids);
+  if (error) {
+    console.error("bulkDeleteLibraryItems:", error);
+    return 0;
+  }
+  await cleanupImageReferences(items);
+  return items.length;
 }
 
 // Resolve um valor de imagem: URL http(s) direto ou caminho no bucket da biblioteca.
