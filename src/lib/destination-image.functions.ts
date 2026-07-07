@@ -242,15 +242,6 @@ Texto: "${dest.replace(/"/g, "'")}"`,
     const fresh = pool.find((u) => !excluded.has(u));
     if (fresh) return { imageUrl: fresh };
 
-
-    // 2) Foto principal do artigo da Wikipedia (apenas se for foto real).
-    for (const lang of ["pt", "en"]) {
-      for (const q of searchTerms) {
-        const img = await wikipediaPhoto(lang, q);
-        if (img && !excluded.has(img)) return { imageUrl: img };
-      }
-    }
-
     throw new Error(
       excluded.size
         ? "Não há outras fotos disponíveis para este destino."
