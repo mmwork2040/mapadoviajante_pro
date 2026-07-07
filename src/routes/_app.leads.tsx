@@ -1137,7 +1137,7 @@ export function ModalField({
   const handleChange = (raw: string) => {
     onChange(format ? masks[format](raw) : raw);
   };
-  const ActionIcon = action?.icon;
+  const allActions = actions ?? (action ? [action] : []);
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
       <span className="mb-1 flex h-8 items-center text-sm font-semibold">
@@ -1153,25 +1153,28 @@ export function ModalField({
           placeholder={placeholder}
           list={listId}
           onChange={(e) => handleChange(e.target.value)}
-          className={`w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background ${
-            action ? "pr-12" : "pr-4"
-          }`}
+          className="w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background"
+          style={allActions.length ? { paddingRight: `${allActions.length * 36 + 8}px` } : undefined}
         />
-        {action && ActionIcon && (
-          <button
-            type="button"
-            onClick={action.onClick}
-            disabled={action.disabled || action.loading}
-            title={action.title}
-            aria-label={action.title || "Ação"}
-            className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
-          >
-            {action.loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <ActionIcon className="h-4 w-4" />
-            )}
-          </button>
+        {allActions.length > 0 && (
+          <div className="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
+            {allActions.map((a, i) => {
+              const Icon = a.icon;
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={a.onClick}
+                  disabled={a.disabled || a.loading}
+                  title={a.title}
+                  aria-label={a.title || "Ação"}
+                  className="grid h-8 w-8 place-items-center rounded-lg text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
+                >
+                  {a.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+                </button>
+              );
+            })}
+          </div>
         )}
       </div>
       {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
