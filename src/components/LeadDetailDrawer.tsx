@@ -9,6 +9,7 @@ import {
   
   User,
   Plane,
+  Gift,
   ClipboardList,
   ListChecks,
   StickyNote,
@@ -694,32 +695,40 @@ function PerfilTab({
 }
 
 function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
-  const hasMiles = p.loyalty_programs || p.points_miles;
+  const hasBenefits = p.loyalty_programs || p.points_miles || p.has_passport || p.preferences;
   return (
     <div className="space-y-6">
       <section>
-        <SectionTitle icon={Plane}>Dados da viagem</SectionTitle>
+        <SectionTitle icon={Plane}>Detalhes da viagem</SectionTitle>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="Destino" value={lead.destination} />
           <Field label="Ponto de partida" value={p.departure} />
+          <Field label="Destino" value={lead.destination} />
           <Field label="Data pretendida" value={p.travel_dates} />
-          <Field label="Nº pessoas" value={p.passengers} />
-          <Field label="Hospedagem" value={p.hotel_category} />
-          <Field label="Flexibilidade" value={p.preferences || p.trip_type} />
+          <Field label="Nº de passageiros" value={p.passengers} />
+          <Field label="Tipo de viagem" value={p.trip_type} />
         </div>
+        {p.trip_notes && (
+          <div className="mt-2">
+            <Field label="Detalhes e expectativas" value={p.trip_notes} />
+          </div>
+        )}
       </section>
       <section>
-        <SectionTitle icon={CreditCard}>Cartões & milhas</SectionTitle>
-        {hasMiles ? (
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Programas" value={p.loyalty_programs} />
-            <Field label="Pontos / milhas" value={p.points_miles} />
+        <SectionTitle icon={Gift}>Benefícios & fidelidade</SectionTitle>
+        {hasBenefits ? (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Programas de fidelidade" value={p.loyalty_programs} />
+              <Field label="Pontos / milhas" value={p.points_miles} />
+              <Field label="Possui passaporte?" value={p.has_passport} />
+            </div>
+            {p.preferences && <Field label="Preferências do cliente" value={p.preferences} />}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-6 text-center">
             <Info className="h-6 w-6 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Nenhum cartão ou milha registrado.
+              Nenhum benefício ou fidelidade registrado.
               <br />
               Esses dados são preenchidos no formulário de cadastro.
             </p>
@@ -729,6 +738,7 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
     </div>
   );
 }
+
 
 function AtividadesTab({
   leadId,
