@@ -651,6 +651,7 @@ function DashboardPage() {
                 <th className="pb-2">Valor</th>
                 <th className="pb-2">Status</th>
                 <th className="pb-2">Última Atividade</th>
+                <th className="pb-2"></th>
               </tr>
             </thead>
             <tbody>
