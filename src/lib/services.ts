@@ -973,11 +973,12 @@ export async function duplicateItineraryDay(dayId: string): Promise<ItineraryDay
     (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
   );
   for (const a of activities) {
+    const raw = a as unknown as { time_start?: string | null };
     await createItineraryActivity({
       day_id: newDay.id,
       title: a.title,
       type: a.type,
-      time: a.time ?? null,
+      time: raw.time_start ?? a.time ?? null,
       duration: a.duration ?? null,
       location: a.location ?? null,
       cost: a.cost ?? null,
