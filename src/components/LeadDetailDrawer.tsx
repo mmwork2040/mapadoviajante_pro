@@ -40,6 +40,7 @@ import {
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
+  resolveDisplayImageUrl,
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
