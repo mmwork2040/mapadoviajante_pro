@@ -671,6 +671,16 @@ function DashboardPage() {
                     <StatusBadge status={l.status} />
                   </td>
                   <td className="py-2 text-muted-foreground">{timeAgo(l.last_activity_at || l.created_at)}</td>
+                  <td className="py-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setDetailLeadId(l.id)}
+                      className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
+                      aria-label="Ver detalhes do lead"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
