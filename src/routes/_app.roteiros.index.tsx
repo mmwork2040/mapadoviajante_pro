@@ -1,15 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads, resolveDisplayImageUrl } from "@/lib/services";
+import {
+  createItinerary,
+  deleteItinerary,
+  duplicateItinerary,
+  fetchItineraries,
+  fetchLeads,
+  resolveDisplayImageUrl,
+  updateLead,
+  fetchAiConfig,
+  searchLibraryImageForDestination,
+  saveExternalImageToLibrary,
+  uploadImageToLibraryForDestination,
+} from "@/lib/services";
+import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { ModalField, LibraryImagePicker } from "./_app.leads";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -236,8 +251,21 @@ function ItinerariesPage() {
 
 function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
   const [form, setForm] = useState<Partial<Itinerary>>({ status: "draft", passengers: 1, budget: 0 });
+  const [coverImage, setCoverImage] = useState("");
   const [saving, setSaving] = useState(false);
   const { data: leads = [] } = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
+
+  const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+  const aiActive = aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
+  const downloadImage = useServerFn(downloadDestinationImage);
+  const [searchingImg, setSearchingImg] = useState(false);
+  const [triedImages, setTriedImages] = useState<string[]>([]);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const [imgError, setImgError] = useState<string | null>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function selectLead(leadId: string) {
     const lead = leads.find((l) => l.id === leadId);
@@ -245,6 +273,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
       setForm((f) => ({ ...f, lead_id: null }));
       return;
     }
+    const leadCover = (lead.profile as Record<string, string> | undefined)?.cover_image;
     setForm((f) => ({
       ...f,
       lead_id: lead.id,
@@ -253,16 +282,120 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
       budget: f.budget || Number(lead.value) || 0,
       title: f.title || `Roteiro - ${lead.name}`,
     }));
+    if (leadCover && !coverImage) setCoverImage(leadCover);
   }
+
+  function pickFromLibrary(value: string) {
+    setCoverImage(value);
+    setPendingImage(null);
+    setImgError(null);
+    setShowLibraryPicker(false);
+    setTriedImages((prev) => [...prev, value]);
+    toast.success("Imagem selecionada da biblioteca.");
+  }
+
+  async function handleUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const dest = (form.destination || "").trim();
+    if (!dest) {
+      toast.error("Informe o destino antes de enviar a imagem.");
+      return;
+    }
+    setUploadingImg(true);
+    setImgError(null);
+    try {
+      const url = await uploadImageToLibraryForDestination(file, dest);
+      setCoverImage(url);
+      setPendingImage(null);
+      setTriedImages((prev) => [...prev, url]);
+      toast.success("Imagem enviada e salva na biblioteca.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setUploadingImg(false);
+    }
+  }
+
+  async function findDestinationImage() {
+    const dest = (form.destination || "").trim();
+    if (!dest || !aiActive) return;
+    const wantNew = !!coverImage || triedImages.length > 0;
+    setSearchingImg(true);
+    setImgError(null);
+    try {
+      if (!wantNew) {
+        const fromLibrary = await searchLibraryImageForDestination(dest);
+        if (fromLibrary) {
+          setCoverImage(fromLibrary);
+          setTriedImages([fromLibrary]);
+          toast.success("Imagem encontrada na biblioteca.");
+          return;
+        }
+      }
+      const res = await downloadImage({ data: { destination: dest, exclude: triedImages } });
+      if (res?.imageUrl) {
+        setPendingImage(res.imageUrl);
+        setTriedImages((prev) => [...prev, res.imageUrl]);
+        toast.info("Confirme se deseja usar esta imagem.");
+      } else {
+        const msg = "Nenhuma imagem encontrada para este destino.";
+        setImgError(msg);
+        toast.error(msg);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Não foi possível buscar a imagem.";
+      setImgError(msg);
+      toast.error(msg);
+    } finally {
+      setSearchingImg(false);
+    }
+  }
+
+  async function confirmPendingImage() {
+    if (!pendingImage) return;
+    setConfirming(true);
+    try {
+      const saved = await saveExternalImageToLibrary(pendingImage, (form.destination || "").trim());
+      setCoverImage(saved);
+      setTriedImages((prev) => [...prev, saved]);
+      setPendingImage(null);
+      toast.success("Imagem baixada e salva na biblioteca.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível salvar a imagem.");
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  function rejectPendingImage() {
+    setPendingImage(null);
+    void findDestinationImage();
+  }
+
+  const isComplete =
+    !!form.lead_id &&
+    !!(form.title || "").trim() &&
+    !!(form.destination || "").trim() &&
+    !!form.start_date &&
+    !!form.end_date &&
+    Number(form.passengers) > 0 &&
+    Number(form.budget) > 0;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.lead_id) {
-      toast.error("Selecione um lead.");
+    if (!isComplete) {
+      toast.error("Preencha todos os campos.");
       return;
     }
     setSaving(true);
     const res = await createItinerary(form);
+    if (res && coverImage && form.lead_id) {
+      const lead = leads.find((l) => l.id === form.lead_id);
+      const profile = { ...((lead?.profile as Record<string, unknown>) || {}), cover_image: coverImage };
+      await updateLead(form.lead_id, { profile });
+    }
     setSaving(false);
     if (res) {
       dispatchWebhook("itinerary.created", res);
@@ -273,21 +406,35 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">Novo Roteiro</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
+      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-card shadow-xl">
+        <div className="flex items-start justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <Map className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">Novo Roteiro</h2>
+              <p className="text-xs text-muted-foreground">Preencha todos os campos para criar o roteiro</p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
-        <form onSubmit={submit} className="space-y-3">
+
+        <form onSubmit={submit} className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium">Lead</span>
+            <span className="mb-1 flex h-8 items-center text-sm font-semibold">
+              Lead <span className="ml-1 text-primary">*</span>
+            </span>
             <select
               required
               value={form.lead_id || ""}
               onChange={(e) => selectLead(e.target.value)}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
             >
               <option value="">Selecione um lead…</option>
               {leads.map((l) => (
@@ -296,20 +443,65 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
             </select>
           </label>
           <F label="Título" required value={form.title || ""} onChange={(v) => setForm({ ...form, title: v })} />
-          <F label="Destino" value={form.destination || ""} onChange={(v) => setForm({ ...form, destination: v })} />
+
+          <ModalField
+            label="Destino"
+            required
+            placeholder="Ex: Paris, França"
+            value={form.destination || ""}
+            onChange={(v) => setForm({ ...form, destination: v })}
+            actions={[
+              {
+                icon: ImageIcon,
+                onClick: findDestinationImage,
+                loading: searchingImg,
+                disabled: !(form.destination || "").trim() || !aiActive,
+                title: !aiActive
+                  ? "Ative e conecte a IA nas configurações para buscar imagens"
+                  : coverImage
+                    ? "Buscar outra imagem do destino (IA)"
+                    : "Buscar imagem do destino (IA)",
+              },
+              {
+                icon: Images,
+                onClick: () => setShowLibraryPicker(true),
+                title: "Escolher da biblioteca de imagens",
+              },
+              {
+                icon: Upload,
+                onClick: () => fileInputRef.current?.click(),
+                loading: uploadingImg,
+                disabled: !(form.destination || "").trim(),
+                title: "Enviar imagem do meu dispositivo",
+              },
+            ]}
+            hint={coverImage ? undefined : aiActive ? undefined : "IA inativa — use a biblioteca ou envie uma imagem"}
+            previewImage={coverImage || undefined}
+            onClearPreview={() => { setCoverImage(""); setPendingImage(null); setTriedImages([]); }}
+            pendingImage={pendingImage || undefined}
+            confirming={confirming}
+            onConfirmPending={confirmPendingImage}
+            onRejectPending={rejectPendingImage}
+            errorMessage={imgError || undefined}
+            onRetry={findDestinationImage}
+          />
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUploadImage} />
+          {showLibraryPicker && (
+            <LibraryImagePicker onClose={() => setShowLibraryPicker(false)} onPick={pickFromLibrary} />
+          )}
 
           <div className="grid grid-cols-2 gap-3">
-            <F label="Início" type="date" value={form.start_date || ""} onChange={(v) => setForm({ ...form, start_date: v })} />
-            <F label="Fim" type="date" value={form.end_date || ""} onChange={(v) => setForm({ ...form, end_date: v })} />
+            <F label="Início" type="date" required value={form.start_date || ""} onChange={(v) => setForm({ ...form, start_date: v })} />
+            <F label="Fim" type="date" required value={form.end_date || ""} onChange={(v) => setForm({ ...form, end_date: v })} />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <F label="Passageiros" type="number" value={String(form.passengers ?? "")} onChange={(v) => setForm({ ...form, passengers: Number(v) })} />
-            <F label="Orçamento" format="currency" value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
+            <F label="Passageiros" type="number" required value={String(form.passengers ?? "")} onChange={(v) => setForm({ ...form, passengers: Number(v) })} />
+            <F label="Orçamento" format="currency" required value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
           </div>
           <button
             type="submit"
-            disabled={saving}
-            className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            disabled={saving || !isComplete}
+            className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {saving ? "Salvando…" : "Criar Roteiro"}
           </button>
