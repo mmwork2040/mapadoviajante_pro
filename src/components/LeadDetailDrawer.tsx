@@ -950,7 +950,7 @@ function NotasTab({
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => value !== notes && onSave(value)}
           rows={5}
-          placeholder="Anotações sobre o lead…"
+          placeholder="Detalhes…"
           className="w-full resize-y rounded-xl border border-input bg-background p-3 text-sm outline-none focus:border-primary"
         />
       </section>
