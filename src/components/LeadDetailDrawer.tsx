@@ -428,6 +428,8 @@ function AtividadesTab({
       if (!ok) return toast.error("Erro ao excluir atividade.");
       toast.success("Atividade excluída.");
       qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
     onError: () => toast.error("Erro ao excluir atividade."),
   });
