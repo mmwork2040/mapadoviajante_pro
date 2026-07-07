@@ -696,10 +696,12 @@ function AtividadesTab({
   const register = useMutation({
     mutationFn: () => {
       if (!dueDate) throw new Error("A data de execução é obrigatória.");
+      if (!details.trim()) throw new Error("Os detalhes são obrigatórios.");
+      if (details.trim().length > 250) throw new Error("Os detalhes devem ter no máximo 250 caracteres.");
       return createLeadActivity(leadId, {
         type,
         title: title.trim() || ACTIVITY_TYPES.find((t) => t.key === type)?.label || "Atividade",
-        details,
+        details: details.trim(),
         assigned_to_id: assigned || null,
         due_date: new Date(`${dueDate}T09:00:00`).toISOString(),
       });
