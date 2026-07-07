@@ -2,8 +2,9 @@ import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2 } from "lucide-react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon } from "lucide-react";
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
+import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
