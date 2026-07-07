@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+
 import {
   Plus,
   X,
@@ -17,16 +19,22 @@ import {
   Files,
   Download,
   Eye,
+  Wand2,
+  Loader2,
 } from "lucide-react";
+
 import { toast } from "sonner";
 import {
   createLibraryItem,
   deleteLibraryItem,
+  fetchAiConfig,
   fetchLibraryItems,
   getLibraryAssetUrl,
   updateLibraryItem,
   uploadLibraryAsset,
 } from "@/lib/services";
+import { generateLibraryContent } from "@/lib/ai.functions";
+
 import {
   fetchAgencyDocuments,
   documentOrigin,
@@ -306,6 +314,46 @@ function LibraryModal({
   const [tagsText, setTagsText] = useState((item?.tags ?? []).join(", "));
   const [file, setFile] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [aiField, setAiField] = useState<"description" | "content" | null>(null);
+
+  const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+  const aiActive =
+    aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
+  const genContent = useServerFn(generateLibraryContent);
+
+  async function aiAssist(field: "description" | "content") {
+    if (!aiActive) return;
+    if (!form.title?.trim()) {
+      toast.error("Informe um título antes de usar a IA.");
+      return;
+    }
+    setAiField(field);
+    try {
+      const res = await genContent({
+        data: {
+          itemType: effectiveType,
+          title: form.title.trim(),
+          location: form.location?.trim() || "",
+          description: form.description?.trim() || "",
+          content: form.content?.trim() || "",
+          tags: tagsText.split(",").map((t) => t.trim()).filter(Boolean),
+          field,
+        },
+      });
+      const text = res.text?.trim();
+      if (!text) {
+        toast.error("A IA não retornou conteúdo.");
+        return;
+      }
+      setForm((f) => ({ ...f, [field]: text }));
+      toast.success(field === "description" ? "Descrição gerada!" : "Conteúdo gerado!");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar com IA.");
+    } finally {
+      setAiField(null);
+    }
+  }
+
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -356,7 +404,15 @@ function LibraryModal({
           <Fld label="Título" required value={form.title || ""} onChange={(v) => setForm({ ...form, title: v })} />
           <Fld label="Local / Destino" value={form.location || ""} onChange={(v) => setForm({ ...form, location: v })} />
           <label className="block">
-            <span className="mb-1 block text-sm font-medium">Descrição curta</span>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">Descrição curta</span>
+              <AiAssistButton
+                loading={aiField === "description"}
+                disabled={!aiActive || aiField !== null}
+                title={aiActive ? "Gerar descrição com IA" : "IA inativa — configure para usar"}
+                onClick={() => aiAssist("description")}
+              />
+            </div>
             <textarea
               value={form.description || ""}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -365,7 +421,15 @@ function LibraryModal({
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium">Conteúdo (base de conhecimento p/ IA)</span>
+            <div className="mb-1 flex items-center justify-between gap-2">
+              <span className="text-sm font-medium">Conteúdo (base de conhecimento p/ IA)</span>
+              <AiAssistButton
+                loading={aiField === "content"}
+                disabled={!aiActive || aiField !== null}
+                title={aiActive ? "Elaborar conteúdo com IA" : "IA inativa — configure para usar"}
+                onClick={() => aiAssist("content")}
+              />
+            </div>
             <textarea
               value={form.content || ""}
               onChange={(e) => setForm({ ...form, content: e.target.value })}
@@ -374,6 +438,7 @@ function LibraryModal({
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </label>
+
           {isPackage && (
             <div className="grid grid-cols-2 gap-3">
               <Fld label="Preço base" type="number" value={String(form.price ?? "")} onChange={(v) => setForm({ ...form, price: Number(v) })} />
@@ -419,6 +484,37 @@ function LibraryModal({
     </div>
   );
 }
+
+function AiAssistButton({
+  loading,
+  disabled,
+  title,
+  onClick,
+}: {
+  loading: boolean;
+  disabled: boolean;
+  title: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className="flex items-center gap-1 rounded-md border border-primary/30 bg-primary/10 px-2 py-1 text-xs font-medium text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-50"
+    >
+      {loading ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+      ) : (
+        <Wand2 className="h-3.5 w-3.5" />
+      )}
+      IA
+    </button>
+  );
+}
+
+
 
 function Fld({
   label,
