@@ -105,6 +105,86 @@ export const parseTravelPeriodFn = createServerFn({ method: "POST" })
     );
   });
 
+type LibraryContentInput = {
+  itemType: string;
+  title: string;
+  location?: string;
+  description?: string;
+  content?: string;
+  tags?: string[];
+  field: "description" | "content";
+};
+
+// Gera/ajuda a redigir a descrição curta ou o conteúdo (base de conhecimento)
+// de um item da biblioteca. Requer IA configurada e conectada.
+export const generateLibraryContent = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: LibraryContentInput) => {
+    if (!d?.title?.trim()) throw new Error("Informe um título para o item.");
+    if (d?.field !== "description" && d?.field !== "content") {
+      throw new Error("Campo inválido.");
+    }
+    return {
+      itemType: d.itemType || "item",
+      title: d.title.trim(),
+      location: d.location?.trim() || "",
+      description: d.description?.trim() || "",
+      content: d.content?.trim() || "",
+      tags: Array.isArray(d.tags) ? d.tags : [],
+      field: d.field,
+    };
+  })
+  .handler(async ({ data, context }): Promise<{ text: string }> => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+
+    const typeLabel: Record<string, string> = {
+      experience: "experiência de viagem (passeio, tour ou atividade)",
+      package: "pacote de viagem pronto",
+      image: "imagem de destino",
+      itinerary: "roteiro modelo reutilizável",
+    };
+    const kind = typeLabel[data.itemType] || "item de biblioteca de viagem";
+    const details = [
+      `Tipo: ${kind}`,
+      `Título: ${data.title}`,
+      data.location ? `Local/Destino: ${data.location}` : "",
+      data.tags.length ? `Tags: ${data.tags.join(", ")}` : "",
+      data.description ? `Descrição atual: ${data.description}` : "",
+      data.content ? `Conteúdo atual: ${data.content}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    const instruction =
+      data.field === "description"
+        ? `Escreva uma DESCRIÇÃO CURTA (1 a 2 frases, no máximo ~240 caracteres) e atraente para este item da biblioteca de uma agência de viagens. Português do Brasil, tom profissional e vendedor, sem títulos nem aspas.`
+        : `Escreva um CONTEÚDO detalhado para servir de base de conhecimento da IA sobre este item. Inclua informações úteis como visão geral, principais atrações/atividades, dicas práticas, melhor época, duração sugerida e observações operacionais relevantes. Português do Brasil, texto corrido e/ou listas objetivas. Não repita o título como cabeçalho.`;
+
+    const prompt = `Você é um redator especialista de uma agência de viagens.\n${instruction}\n\nDados do item:\n${details}\n\nResponda APENAS com o texto final, sem comentários extras.`;
+
+    const { askCopilot } = await import("./ai.server");
+    const text = await askCopilot(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: data.field === "content" ? 2048 : 400,
+      },
+      prompt,
+    );
+    return { text: text.trim() };
+  });
+
+
 type CopilotInput = { prompt: string };
 
 type KnowledgeState = {
