@@ -124,8 +124,9 @@ function TaskList({ tasks, onToggle }: { tasks: Task[]; onToggle: (t: Task) => v
                 {t.lead?.name && <span>👤 {t.lead.name}</span>}
                 {t.assigned?.name && <span>• {t.assigned.name}</span>}
               </div>
-              {t.description && (
-                <p className="mt-1 text-xs text-muted-foreground">{t.description}</p>
+              {cleanTaskDescription(t.description) && (
+                <p className="mt-1 text-xs text-muted-foreground">{cleanTaskDescription(t.description)}</p>
+
               )}
             </div>
             <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.cls}`}>
