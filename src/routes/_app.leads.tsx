@@ -182,6 +182,7 @@ function LeadsPage() {
                           setOverCol(null);
                         }}
                         onMove={(status) => move.mutate({ id: l.id, status })}
+                        onOpen={() => setDetailId(l.id)}
                       />
                     ))
                   )}
