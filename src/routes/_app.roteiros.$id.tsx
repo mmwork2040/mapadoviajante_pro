@@ -706,7 +706,7 @@ function DayCard({
             {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
           </button>
           <button
-            onClick={duplicate}
+            onClick={openDuplicate}
             disabled={duplicating}
             title="Duplicar o dia inteiro"
             aria-label="Duplicar dia"
