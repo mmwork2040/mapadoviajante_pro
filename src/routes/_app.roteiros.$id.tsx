@@ -1147,6 +1147,110 @@ function ActivityDocuments({
   );
 }
 
+function AttachSourceModal({
+  onClose,
+  onDevice,
+  onLibrary,
+}: {
+  onClose: () => void;
+  onDevice: () => void;
+  onLibrary: (doc: LeadDocument) => void;
+}) {
+  const [view, setView] = useState<"choose" | "library">("choose");
+  const [search, setSearch] = useState("");
+  const { data: docs = [], isLoading } = useQuery({
+    queryKey: ["agency-docs"],
+    queryFn: () => fetchAgencyDocuments(),
+    enabled: view === "library",
+  });
+
+  const filtered = (docs as AgencyDocument[]).filter((d) =>
+    d.name.toLowerCase().includes(search.trim().toLowerCase()),
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <Paperclip className="h-4 w-4 text-primary" />
+          <span className="flex-1 text-sm font-semibold">
+            {view === "choose" ? "Anexar arquivo" : "Escolher da biblioteca"}
+          </span>
+          <button onClick={onClose} className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        {view === "choose" ? (
+          <div className="grid gap-3 p-4 sm:grid-cols-2">
+            <button
+              onClick={onDevice}
+              className="flex flex-col items-center gap-2 rounded-xl border border-border p-5 text-center hover:border-primary hover:bg-muted/40"
+            >
+              <FileUp className="h-7 w-7 text-primary" />
+              <span className="text-sm font-semibold">Do dispositivo</span>
+              <span className="text-xs text-muted-foreground">Enviar um arquivo novo</span>
+            </button>
+            <button
+              onClick={() => setView("library")}
+              className="flex flex-col items-center gap-2 rounded-xl border border-border p-5 text-center hover:border-primary hover:bg-muted/40"
+            >
+              <FileText className="h-7 w-7 text-primary" />
+              <span className="text-sm font-semibold">Da biblioteca</span>
+              <span className="text-xs text-muted-foreground">Reutilizar arquivo existente</span>
+            </button>
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 flex-col">
+            <div className="p-3">
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar documento…"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </div>
+            <div className="flex-1 space-y-1 overflow-y-auto px-3 pb-3">
+              {isLoading ? (
+                <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+              ) : filtered.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">Nenhum documento encontrado.</p>
+              ) : (
+                filtered.map((doc) => (
+                  <button
+                    key={doc.id}
+                    onClick={() => onLibrary(doc)}
+                    className="flex w-full items-center gap-2 rounded-lg border border-border px-3 py-2 text-left text-xs hover:border-primary hover:bg-muted/40"
+                  >
+                    <FileText className="h-4 w-4 shrink-0 text-primary" />
+                    <span className="min-w-0 flex-1 truncate">{doc.name}</span>
+                    {doc.category && (
+                      <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>
+                    )}
+                  </button>
+                ))
+              )}
+            </div>
+            <div className="border-t border-border p-3">
+              <button
+                onClick={() => setView("choose")}
+                className="text-xs font-medium text-muted-foreground hover:text-foreground"
+              >
+                ← Voltar
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+
 
 
 
