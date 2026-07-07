@@ -863,6 +863,18 @@ export async function bulkDeleteLibraryItems(items: LibraryItem[]): Promise<numb
 // Resolve um valor de imagem: URL http(s) direto ou caminho no bucket da biblioteca.
 export async function resolveDisplayImageUrl(value?: string | null): Promise<string | null> {
   if (!value) return null;
+  // URLs assinadas do bucket expiram (token). Extrai o caminho e re-assina.
+  const signMatch = value.match(/\/object\/sign\/library-assets\/([^?]+)/);
+  if (signMatch?.[1]) {
+    const path = decodeURIComponent(signMatch[1]);
+    return (await getLibraryAssetUrl(path)) ?? value;
+  }
+  // URL pública do bucket (sem token) também pode ser normalizada para assinada.
+  const pubMatch = value.match(/\/object\/public\/library-assets\/([^?]+)/);
+  if (pubMatch?.[1]) {
+    const path = decodeURIComponent(pubMatch[1]);
+    return (await getLibraryAssetUrl(path)) ?? value;
+  }
   if (/^https?:\/\//i.test(value) || value.startsWith("data:")) return value;
   return getLibraryAssetUrl(value);
 }
