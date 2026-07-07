@@ -20,6 +20,7 @@ import {
   HandHelping,
   Send,
   Check,
+  Pencil,
   Clock,
   CalendarClock,
   CreditCard,
@@ -34,6 +35,7 @@ import {
   createItinerary,
   createLeadActivity,
   deleteLeadActivity,
+  fetchItinerariesByLead,
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
@@ -79,6 +81,7 @@ function activityMeta(type?: string | null) {
 export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [tab, setTab] = useState<TabKey>("perfil");
   const tabsRef = useRef<HTMLDivElement>(null);
 
@@ -115,6 +118,32 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     },
     onError: () => toast.error("Erro ao criar roteiro."),
   });
+
+  async function handleCreateRoteiro() {
+    if (createRoteiro.isPending) return;
+    const existing = await fetchItinerariesByLead(leadId);
+    const openOne = existing.find((it) => it.status === "draft" || it.status === "active");
+    if (openOne) {
+      const goToExisting = await confirm({
+        title: "Roteiro em aberto",
+        description: `Este lead já possui um roteiro em ${
+          openOne.status === "draft" ? "rascunho" : "andamento"
+        }. Deseja abri-lo em vez de criar outro?`,
+        confirmLabel: "Abrir existente",
+        cancelLabel: "Criar novo",
+      });
+      if (goToExisting) {
+        navigate({ to: "/roteiros/$id", params: { id: openOne.id } });
+        return;
+      }
+    }
+    const ok = await confirm({
+      title: "Criar roteiro",
+      description: "Deseja criar um novo roteiro para este lead?",
+      confirmLabel: "Criar",
+    });
+    if (ok) createRoteiro.mutate();
+  }
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -193,7 +222,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   <MessageCircle className="h-4 w-4 text-[var(--success)]" /> WhatsApp
                 </button>
                 <button
-                  onClick={() => createRoteiro.mutate()}
+                  onClick={handleCreateRoteiro}
                   disabled={createRoteiro.isPending}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted disabled:opacity-60"
                 >
@@ -240,7 +269,15 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto scrollbar-thin p-5">
-              {tab === "perfil" && <PerfilTab lead={lead} activities={activities} onOpenActivities={() => setTab("atividades")} />}
+              {tab === "perfil" && (
+                <PerfilTab
+                  lead={lead}
+                  team={team}
+                  activities={activities}
+                  onUpdate={(u) => update.mutate(u)}
+                  onOpenActivities={() => setTab("atividades")}
+                />
+              )}
               {tab === "viagem" && <ViagemTab lead={lead} p={p} />}
               {tab === "atividades" && (
                 <AtividadesTab leadId={leadId} team={team} activities={activities} />
@@ -269,7 +306,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 <X className="h-4 w-4" /> Fechar
               </button>
               <button
-                onClick={() => createRoteiro.mutate()}
+                onClick={handleCreateRoteiro}
                 disabled={createRoteiro.isPending}
                 className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
               >
@@ -306,18 +343,187 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function PerfilTab({ lead, activities, onOpenActivities }: { lead: Lead; activities: import("@/lib/types").LeadActivity[]; onOpenActivities?: () => void }) {
+function EditableField({
+  label,
+  value,
+  display,
+  type = "text",
+  onSave,
+}: {
+  label: string;
+  value?: string | null;
+  display?: string | null;
+  type?: string;
+  onSave: (value: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+
+  function start() {
+    setDraft(value ?? "");
+    setEditing(true);
+  }
+  function save() {
+    if ((draft ?? "") !== (value ?? "")) onSave(draft);
+    setEditing(false);
+  }
+
+  return (
+    <div className="group relative rounded-xl bg-muted/50 p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      {editing ? (
+        <div className="mt-1 flex items-center gap-1">
+          <input
+            autoFocus
+            type={type}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") save();
+              if (e.key === "Escape") setEditing(false);
+            }}
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
+          />
+          <button
+            onClick={save}
+            title="Salvar"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground hover:opacity-90"
+          >
+            <Check className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div className="mt-0.5 flex items-center gap-1">
+          <p className="min-w-0 flex-1 truncate text-sm font-medium">{display ?? value ?? "—"}</p>
+          <button
+            onClick={start}
+            title="Editar"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResponsibleField({
+  value,
+  team,
+  onSave,
+}: {
+  value?: string | null;
+  team: import("@/lib/types").AgencyMember[];
+  onSave: (value: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value ?? "");
+  const current = team.find((m) => m.id === value);
+
+  function start() {
+    setDraft(value ?? "");
+    setEditing(true);
+  }
+  function save() {
+    if ((draft ?? "") !== (value ?? "")) onSave(draft);
+    setEditing(false);
+  }
+
+  return (
+    <div className="group relative col-span-2 rounded-xl bg-muted/50 p-3">
+      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Responsável</p>
+      {editing ? (
+        <div className="mt-1 flex items-center gap-1">
+          <select
+            autoFocus
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
+          >
+            <option value="">Sem responsável</option>
+            {team.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={save}
+            title="Salvar"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground hover:opacity-90"
+          >
+            <Check className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      ) : (
+        <div className="mt-0.5 flex items-center gap-1">
+          <p className="min-w-0 flex-1 truncate text-sm font-medium">{current?.name || "—"}</p>
+          <button
+            onClick={start}
+            title="Editar"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground opacity-0 transition hover:bg-muted hover:text-foreground group-hover:opacity-100"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+function PerfilTab({
+  lead,
+  team,
+  activities,
+  onUpdate,
+  onOpenActivities,
+}: {
+  lead: Lead;
+  team: import("@/lib/types").AgencyMember[];
+  activities: import("@/lib/types").LeadActivity[];
+  onUpdate: (updates: Partial<Lead>) => void;
+  onOpenActivities?: () => void;
+}) {
   return (
     <div className="space-y-6">
       <section>
         <SectionTitle icon={User}>Dados de contato</SectionTitle>
         <div className="grid grid-cols-2 gap-2">
-          <Field label="E-mail" value={lead.email} />
-          <Field label="WhatsApp" value={lead.phone ? maskPhone(lead.phone) : null} />
-          <Field label="Orçamento" value={formatCurrency(lead.value)} />
-          <Field label="Origem" value={lead.origin} />
+          <EditableField
+            label="E-mail"
+            value={lead.email}
+            type="email"
+            onSave={(v) => onUpdate({ email: v })}
+          />
+          <EditableField
+            label="WhatsApp"
+            value={lead.phone}
+            display={lead.phone ? maskPhone(lead.phone) : null}
+            type="tel"
+            onSave={(v) => onUpdate({ phone: v })}
+          />
+          <EditableField
+            label="Orçamento"
+            value={lead.value != null ? String(lead.value) : ""}
+            display={formatCurrency(lead.value)}
+            type="number"
+            onSave={(v) => onUpdate({ value: Number(v) || 0 })}
+          />
+          <EditableField
+            label="Origem"
+            value={lead.origin}
+            onSave={(v) => onUpdate({ origin: v })}
+          />
+          <ResponsibleField
+            value={lead.assigned_to}
+            team={team}
+            onSave={(v) => onUpdate({ assigned_to: v || null })}
+          />
         </div>
       </section>
+
       <section>
         <SectionTitle icon={Clock}>Atividade recente</SectionTitle>
         {activities.length === 0 ? (
