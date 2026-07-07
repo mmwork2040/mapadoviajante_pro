@@ -193,20 +193,30 @@ Texto: "${dest.replace(/"/g, "'")}"`,
       first,
     ].filter((v, i, a) => !!v && a.indexOf(v) === i);
 
+    const excluded = new Set(data.exclude);
+    const notExcluded = (u: string | null): u is string => !!u && !excluded.has(u);
+
     // 1) Fotos reais no Wikimedia Commons (melhor para pontos turísticos).
+    // Pula imagens já mostradas para retornar uma nova a cada busca.
     for (const q of searchTerms) {
-      const img = await commonsPhoto(q);
-      if (img) return { imageUrl: img };
+      const imgs = await commonsPhotos(q);
+      const fresh = imgs.find(notExcluded);
+      if (fresh) return { imageUrl: fresh };
     }
 
     // 2) Foto principal do artigo da Wikipedia (apenas se for foto real).
     for (const lang of ["pt", "en"]) {
       for (const q of searchTerms) {
         const img = await wikipediaPhoto(lang, q);
-        if (img) return { imageUrl: img };
+        if (notExcluded(img)) return { imageUrl: img };
       }
     }
 
-    throw new Error("Nenhuma foto real do destino foi encontrada.");
+    throw new Error(
+      excluded.size
+        ? "Não há outras fotos disponíveis para este destino."
+        : "Nenhuma foto real do destino foi encontrada.",
+    );
   });
+
 
