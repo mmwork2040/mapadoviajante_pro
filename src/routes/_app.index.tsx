@@ -286,7 +286,15 @@ function DashboardPage() {
                     )}
                     {desc && <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>}
                   </div>
-                  <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                  <span className="shrink-0 text-right text-xs font-medium text-muted-foreground">
+                    {taskFilter !== "today" && (
+                      <span className="block">
+                        {new Date(t.due_date!).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                        })}
+                      </span>
+                    )}
                     {new Date(t.due_date!).toLocaleTimeString("pt-BR", {
                       hour: "2-digit",
                       minute: "2-digit",
