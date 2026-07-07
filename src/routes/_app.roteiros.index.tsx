@@ -1,15 +1,30 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users } from "lucide-react";
+import { useServerFn } from "@tanstack/react-start";
+import { useEffect, useRef, useState } from "react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads, resolveDisplayImageUrl } from "@/lib/services";
+import {
+  createItinerary,
+  deleteItinerary,
+  duplicateItinerary,
+  fetchItineraries,
+  fetchLeads,
+  resolveDisplayImageUrl,
+  updateLead,
+  fetchAiConfig,
+  searchLibraryImageForDestination,
+  saveExternalImageToLibrary,
+  uploadImageToLibraryForDestination,
+} from "@/lib/services";
+import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
 import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { ModalField, LibraryImagePicker } from "./_app.leads";
 import {
   DropdownMenu,
   DropdownMenuContent,
