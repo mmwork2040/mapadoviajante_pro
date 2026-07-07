@@ -538,23 +538,30 @@ export function NewLeadModal({
   const aiActive = aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
   const downloadImage = useServerFn(downloadDestinationImage);
   const [searchingImg, setSearchingImg] = useState(false);
+  const [triedImages, setTriedImages] = useState<string[]>([]);
 
   async function findDestinationImage() {
     const dest = form.destination.trim();
     if (!dest || !aiActive) return;
+    // Se já houver uma imagem, o usuário quer outra: busca externa evitando repetidas.
+    const wantNew = !!form.cover_image;
     setSearchingImg(true);
     try {
-      const fromLibrary = await searchLibraryImageForDestination(dest);
-      if (fromLibrary) {
-        set({ cover_image: fromLibrary });
-        toast.success("Imagem encontrada na biblioteca.");
-        return;
+      if (!wantNew) {
+        const fromLibrary = await searchLibraryImageForDestination(dest);
+        if (fromLibrary) {
+          set({ cover_image: fromLibrary });
+          setTriedImages([fromLibrary]);
+          toast.success("Imagem encontrada na biblioteca.");
+          return;
+        }
       }
-      const res = await downloadImage({ data: { destination: dest } });
+      const res = await downloadImage({ data: { destination: dest, exclude: triedImages } });
       if (res?.imageUrl) {
         const saved = await saveExternalImageToLibrary(res.imageUrl, dest);
         set({ cover_image: saved });
-        toast.success("Imagem baixada e salva na biblioteca.");
+        setTriedImages((prev) => [...prev, res.imageUrl, saved]);
+        toast.success(wantNew ? "Nova imagem encontrada." : "Imagem baixada e salva na biblioteca.");
       } else {
         toast.error("Nenhuma imagem encontrada para este destino.");
       }
@@ -564,6 +571,7 @@ export function NewLeadModal({
       setSearchingImg(false);
     }
   }
+
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -747,11 +755,13 @@ export function NewLeadModal({
                   disabled: !form.destination.trim() || !aiActive,
                   title: !aiActive
                     ? "Ative e conecte a IA nas configurações para buscar imagens"
-                    : "Buscar imagem do destino",
+                    : form.cover_image
+                      ? "Buscar outra imagem do destino"
+                      : "Buscar imagem do destino",
                 }}
                 hint={form.cover_image ? undefined : aiActive ? undefined : "IA inativa — configure para buscar imagens"}
                 previewImage={form.cover_image || undefined}
-                onClearPreview={() => set({ cover_image: "" })}
+                onClearPreview={() => { set({ cover_image: "" }); setTriedImages([]); }}
               />
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type DownloadInput = { destination: string };
+type DownloadInput = { destination: string; exclude?: string[] };
 
 // Termos que indicam que a imagem NÃO é uma foto real do lugar.
 const BAD_TERMS = [
@@ -46,14 +46,15 @@ function isPhoto(url: string): boolean {
 }
 
 // Busca fotos reais no Wikimedia Commons relacionadas ao destino.
-async function commonsPhoto(query: string): Promise<string | null> {
+// Retorna várias candidatas (para permitir alternar entre imagens).
+async function commonsPhotos(query: string): Promise<string[]> {
   const params = new URLSearchParams({
     action: "query",
     format: "json",
     generator: "search",
     gsrsearch: `${query} landscape city landmark`,
     gsrnamespace: "6", // File:
-    gsrlimit: "20",
+    gsrlimit: "30",
     prop: "imageinfo",
     iiprop: "url|mime",
     iiurlwidth: "1200",
@@ -64,16 +65,22 @@ async function commonsPhoto(query: string): Promise<string | null> {
     const res = await fetch(url, {
       headers: { Accept: "application/json", "User-Agent": "OSegredoDoViajante/1.0" },
     });
-    if (!res.ok) return null;
+    if (!res.ok) return [];
     const json = (await res.json()) as {
       query?: {
         pages?: Record<
           string,
-          { title?: string; imageinfo?: { url?: string; thumburl?: string; mime?: string }[] }
+          {
+            index?: number;
+            title?: string;
+            imageinfo?: { url?: string; thumburl?: string; mime?: string }[];
+          }
         >;
       };
     };
     const pages = json.query?.pages ? Object.values(json.query.pages) : [];
+    pages.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+    const out: string[] = [];
     for (const p of pages) {
       const info = p.imageinfo?.[0];
       if (!info) continue;
@@ -81,12 +88,12 @@ async function commonsPhoto(query: string): Promise<string | null> {
       const full = info.url ?? "";
       const title = p.title ?? "";
       if (full && isPhoto(full) && !isBadImage(title)) {
-        return info.thumburl ?? full;
+        out.push(info.thumburl ?? full);
       }
     }
-    return null;
+    return out;
   } catch {
-    return null;
+    return [];
   }
 }
 
@@ -110,13 +117,17 @@ async function wikipediaPhoto(lang: string, query: string): Promise<string | nul
   }
 }
 
+
 // Baixa (localiza) uma FOTO real do destino usando fontes abertas.
 // Só é permitido quando a IA da agência está configurada e conectada.
 export const downloadDestinationImage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: DownloadInput) => {
     if (!d?.destination?.trim()) throw new Error("Informe o destino.");
-    return { destination: d.destination.trim() };
+    const exclude = Array.isArray(d.exclude)
+      ? d.exclude.filter((x): x is string => typeof x === "string")
+      : [];
+    return { destination: d.destination.trim(), exclude };
   })
   .handler(async ({ data, context }): Promise<{ imageUrl: string }> => {
     const { data: cfg, error } = await context.supabase
@@ -182,20 +193,30 @@ Texto: "${dest.replace(/"/g, "'")}"`,
       first,
     ].filter((v, i, a) => !!v && a.indexOf(v) === i);
 
+    const excluded = new Set(data.exclude);
+    const notExcluded = (u: string | null): u is string => !!u && !excluded.has(u);
+
     // 1) Fotos reais no Wikimedia Commons (melhor para pontos turísticos).
+    // Pula imagens já mostradas para retornar uma nova a cada busca.
     for (const q of searchTerms) {
-      const img = await commonsPhoto(q);
-      if (img) return { imageUrl: img };
+      const imgs = await commonsPhotos(q);
+      const fresh = imgs.find(notExcluded);
+      if (fresh) return { imageUrl: fresh };
     }
 
     // 2) Foto principal do artigo da Wikipedia (apenas se for foto real).
     for (const lang of ["pt", "en"]) {
       for (const q of searchTerms) {
         const img = await wikipediaPhoto(lang, q);
-        if (img) return { imageUrl: img };
+        if (notExcluded(img)) return { imageUrl: img };
       }
     }
 
-    throw new Error("Nenhuma foto real do destino foi encontrada.");
+    throw new Error(
+      excluded.size
+        ? "Não há outras fotos disponíveis para este destino."
+        : "Nenhuma foto real do destino foi encontrada.",
+    );
   });
+
 
