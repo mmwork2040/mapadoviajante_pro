@@ -1082,6 +1082,7 @@ export function ModalField({
   format,
   suggestions,
   action,
+  actions,
   hint,
   previewImage,
   onClearPreview,
