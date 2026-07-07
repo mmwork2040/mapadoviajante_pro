@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users } from "lucide-react";
 import { toast } from "sonner";
-import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads } from "@/lib/services";
+import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries, fetchLeads, resolveDisplayImageUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
