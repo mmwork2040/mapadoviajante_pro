@@ -506,12 +506,24 @@ export function NewLeadModal({
                 </p>
               </div>
             </div>
-            <button
-              onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              {editing && onDelete && (
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  title="Excluir viajante"
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-red-500"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+              <button
+                onClick={onClose}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           <div className="mt-5 flex items-center">
