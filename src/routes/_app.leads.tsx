@@ -302,6 +302,7 @@ type WizardForm = {
   origin_other: string;
   departure: string;
   destination: string;
+  cover_image: string;
   travel_dates: string;
   passengers: string;
   trip_type: string;
