@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type DownloadInput = { destination: string };
+type DownloadInput = { destination: string; exclude?: string[] };
 
 // Termos que indicam que a imagem NÃO é uma foto real do lugar.
 const BAD_TERMS = [
