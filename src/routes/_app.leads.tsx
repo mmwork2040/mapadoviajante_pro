@@ -261,7 +261,7 @@ function LeadCard({
         dragging ? "opacity-50 ring-2 ring-primary" : ""
       }`}
     >
-      <div className="absolute right-2 top-2 flex items-center gap-0.5">
+      <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-card/80 p-0.5 shadow-sm backdrop-blur">
         <button
           type="button"
           aria-label="Ver detalhes do lead"
