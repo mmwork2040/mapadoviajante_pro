@@ -34,6 +34,7 @@ import {
   duplicateItineraryDay,
   deleteVoucher,
   fetchItineraryById,
+  resolveDisplayImageUrl,
   updateItinerary,
   updateItineraryActivity,
   updateItineraryDay,
