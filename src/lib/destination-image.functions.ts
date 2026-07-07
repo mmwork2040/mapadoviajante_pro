@@ -176,9 +176,9 @@ Texto: "${dest.replace(/"/g, "'")}"`,
       parsed = {};
     }
 
-    if (parsed.valid === false) {
-      throw new Error("O destino informado não parece ser um local de viagem válido.");
-    }
+    // Não rejeitamos por causa de "valid": false — a IA pode errar.
+    // Só descartamos se ela não trouxe nenhuma pista de local reconhecido.
+
 
     const first = dest.split(",")[0].trim();
     const aiQueries = Array.isArray(parsed.queries)
