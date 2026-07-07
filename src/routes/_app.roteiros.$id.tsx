@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Pencil, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -31,6 +31,7 @@ import {
   createVoucher,
   deleteItineraryActivity,
   deleteItineraryDay,
+  duplicateItineraryDay,
   deleteVoucher,
   fetchItineraryById,
   updateItinerary,
@@ -631,6 +632,21 @@ function DayCard({
     onChange();
   }
 
+  const [duplicating, setDuplicating] = useState(false);
+  async function duplicate() {
+    setDuplicating(true);
+    try {
+      const copy = await duplicateItineraryDay(day.id);
+      if (!copy) throw new Error("erro");
+      toast.success("Dia duplicado.");
+      onChange();
+    } catch {
+      toast.error("Não foi possível duplicar o dia.");
+    } finally {
+      setDuplicating(false);
+    }
+  }
+
   async function removeDay() {
     const ok = await confirm({
       title: "Excluir este dia?",
@@ -675,6 +691,15 @@ function DayCard({
           >
             {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
             Importar com IA
+          </button>
+          <button
+            onClick={duplicate}
+            disabled={duplicating}
+            title="Duplicar o dia inteiro"
+            className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-60"
+          >
+            {duplicating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
+            Duplicar
           </button>
           <button
             onClick={removeDay}
