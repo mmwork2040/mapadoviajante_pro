@@ -247,7 +247,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 )}
               </div>
 
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="relative mt-3 grid grid-cols-3 gap-2">
                 <button
                   onClick={openWhatsApp}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
