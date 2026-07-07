@@ -531,8 +531,13 @@ function AtividadesTab({
                     <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                       {meta.label}
                     </p>
-                    {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
-                  </div>
+                     {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
+                     {a.assigned?.name && (
+                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                         <User className="h-3 w-3" /> Atribuído a: <span className="font-medium text-foreground">{a.assigned.name}</span>
+                       </p>
+                     )}
+                   </div>
                   <button
                     onClick={async () => {
                       const ok = await confirm({
