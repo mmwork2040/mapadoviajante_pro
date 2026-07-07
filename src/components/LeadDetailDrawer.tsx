@@ -20,6 +20,7 @@ import {
   HandHelping,
   Send,
   Check,
+  Pencil,
   Clock,
   CalendarClock,
   CreditCard,
