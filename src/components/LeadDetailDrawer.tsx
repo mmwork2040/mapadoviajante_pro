@@ -337,6 +337,11 @@ function PerfilTab({ lead, activities, onOpenActivities }: { lead: Lead; activit
                       {meta.label}
                     </p>
                     {a.details && <p className="text-xs text-muted-foreground">{a.details}</p>}
+                    {a.due_date && (
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <CalendarClock className="h-3 w-3" /> {formatDate(a.due_date)}
+                      </p>
+                    )}
                   </div>
                   {onOpenActivities && (
                     <button
@@ -413,14 +418,16 @@ function AtividadesTab({
   const [dueDate, setDueDate] = useState("");
 
   const register = useMutation({
-    mutationFn: () =>
-      createLeadActivity(leadId, {
+    mutationFn: () => {
+      if (!dueDate) throw new Error("A data de execução é obrigatória.");
+      return createLeadActivity(leadId, {
         type,
         title: title.trim() || ACTIVITY_TYPES.find((t) => t.key === type)?.label || "Atividade",
         details,
         assigned_to_id: assigned || null,
-        due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
-      }),
+        due_date: new Date(`${dueDate}T09:00:00`).toISOString(),
+      });
+    },
     onSuccess: () => {
       setTitle("");
       setDetails("");
@@ -430,7 +437,7 @@ function AtividadesTab({
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: () => toast.error("Erro ao registrar atividade."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao registrar atividade."),
   });
 
   const remove = useMutation({
@@ -484,6 +491,7 @@ function AtividadesTab({
           <input
             type="date"
             value={dueDate}
+            required
             onChange={(e) => setDueDate(e.target.value)}
             className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
           />
@@ -506,7 +514,7 @@ function AtividadesTab({
           </select>
           <button
             onClick={() => register.mutate()}
-            disabled={register.isPending}
+            disabled={register.isPending || !dueDate}
             className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
             <Send className="h-4 w-4" /> Registrar
@@ -542,6 +550,11 @@ function AtividadesTab({
                       {meta.label}
                     </p>
                      {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
+                     {a.due_date && (
+                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                         <CalendarClock className="h-3 w-3" /> Execução: <span className="font-medium text-foreground">{formatDate(a.due_date)}</span>
+                       </p>
+                     )}
                      {a.assigned?.name && (
                        <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
                          <User className="h-3 w-3" /> Atribuído a: <span className="font-medium text-foreground">{a.assigned.name}</span>
