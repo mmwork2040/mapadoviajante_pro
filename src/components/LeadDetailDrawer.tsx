@@ -771,7 +771,7 @@ function AtividadesTab({
           />
         </label>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-primary">
+          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-red-600">
             <User className="h-4 w-4" /> Atribuir a:
           </span>
           <select
