@@ -471,6 +471,7 @@ function leadToForm(lead: Lead): WizardForm {
     value: lead.value ? maskCurrency(String(Math.round(Number(lead.value) * 100))) : "",
     origin: ORIGINS.includes(lead.origin || "") ? lead.origin || "" : lead.origin ? "Outro" : "",
     origin_other: ORIGINS.includes(lead.origin || "") ? "" : lead.origin || "",
+    departure: p.departure || "",
     destination: lead.destination || "",
     travel_dates: p.travel_dates || "",
     passengers: p.passengers || "",
