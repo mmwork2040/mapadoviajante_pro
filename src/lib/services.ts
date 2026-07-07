@@ -945,7 +945,49 @@ export async function duplicateItinerary(id: string): Promise<Itinerary | null> 
   return copy;
 }
 
-// A tabela usa a coluna `label`; a UI usa `title`.
+// Duplica um único dia (com suas atividades) dentro do mesmo roteiro.
+export async function duplicateItineraryDay(dayId: string): Promise<ItineraryDay | null> {
+  const { data: src, error } = await supabase
+    .from("crm_itinerary_days")
+    .select("*, activities:crm_itinerary_activities(*)")
+    .eq("id", dayId)
+    .single();
+  if (error || !src) {
+    console.error("duplicateItineraryDay:", error);
+    return null;
+  }
+  const source = src as unknown as ItineraryDay & { itinerary_id: string; label?: string | null };
+  const { count } = await supabase
+    .from("crm_itinerary_days")
+    .select("id", { count: "exact", head: true })
+    .eq("itinerary_id", source.itinerary_id);
+  const nextNumber = (count ?? 0) + 1;
+  const newDay = await createItineraryDay({
+    itinerary_id: source.itinerary_id,
+    day_number: nextNumber,
+    title: `${source.title || source.label || `Dia ${source.day_number}`} (cópia)`,
+    sort_order: nextNumber,
+  });
+  if (!newDay) return null;
+  const activities = [...(source.activities || [])].sort(
+    (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
+  );
+  for (const a of activities) {
+    await createItineraryActivity({
+      day_id: newDay.id,
+      title: a.title,
+      type: a.type,
+      time: a.time ?? null,
+      duration: a.duration ?? null,
+      location: a.location ?? null,
+      cost: a.cost ?? null,
+      description: a.description ?? null,
+      sort_order: a.sort_order,
+    });
+  }
+  return newDay;
+}
+
 function mapDayPayload(data: Partial<ItineraryDay>): Record<string, unknown> {
   const { title, ...rest } = data;
   const payload: Record<string, unknown> = { ...rest };
