@@ -42,7 +42,11 @@ function isBadImage(url: string): boolean {
 
 function isPhoto(url: string): boolean {
   const lower = url.toLowerCase();
-  return (lower.includes(".jpg") || lower.includes(".jpeg")) && !isBadImage(url);
+  // Aceita JPG e PNG (fotos), descartando SVG/mapas/bandeiras/logos por termo.
+  return (
+    (lower.includes(".jpg") || lower.includes(".jpeg") || lower.includes(".png")) &&
+    !isBadImage(url)
+  );
 }
 
 // Busca fotos reais no Wikimedia Commons relacionadas ao destino.
@@ -52,9 +56,9 @@ async function commonsPhotos(query: string): Promise<string[]> {
     action: "query",
     format: "json",
     generator: "search",
-    gsrsearch: `${query} landscape city landmark`,
+    gsrsearch: query,
     gsrnamespace: "6", // File:
-    gsrlimit: "30",
+    gsrlimit: "40",
     prop: "imageinfo",
     iiprop: "url|mime",
     iiurlwidth: "1200",
