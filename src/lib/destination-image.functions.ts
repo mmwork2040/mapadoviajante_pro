@@ -131,22 +131,71 @@ export const downloadDestinationImage = createServerFn({ method: "POST" })
     }
 
     const dest = data.destination;
-    const first = dest.split(",")[0].trim();
-    const variants = [dest, first].filter(Boolean);
 
-    // 1) Fotos reais no Wikimedia Commons (melhor para paisagens/pontos turísticos).
-    for (const q of variants) {
+    // Usa a IA para identificar o país/estado/cidade e o principal ponto turístico,
+    // garantindo que a foto seja realmente de um destino de viagem.
+    const { askCopilot } = await import("./ai.server");
+    const aiRaw = await askCopilot(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: 300,
+      },
+      `Você identifica destinos de viagem. Dado o texto abaixo, determine o local real (país, estado ou cidade) e seu PRINCIPAL ponto turístico/cartão-postal (o mais fotografado e reconhecível).
+Se o texto NÃO corresponder a um destino de viagem real, marque "valid": false.
+Responda APENAS com JSON válido, sem texto extra:
+{
+  "valid": true/false,
+  "place": "nome do local reconhecido (cidade, estado, país)",
+  "landmark": "nome do principal ponto turístico/cartão-postal",
+  "queries": ["3 a 5 termos de busca em inglês, começando pelo ponto turístico principal, para encontrar uma FOTO real do local"]
+}
+
+Texto: "${dest.replace(/"/g, "'")}"`,
+    );
+
+    let parsed: { valid?: boolean; place?: string; landmark?: string; queries?: unknown } = {};
+    try {
+      const cleaned = aiRaw.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const s = cleaned.indexOf("{");
+      const e = cleaned.lastIndexOf("}");
+      if (s !== -1 && e !== -1) parsed = JSON.parse(cleaned.slice(s, e + 1));
+    } catch {
+      parsed = {};
+    }
+
+    if (parsed.valid === false) {
+      throw new Error("O destino informado não parece ser um local de viagem válido.");
+    }
+
+    const first = dest.split(",")[0].trim();
+    const aiQueries = Array.isArray(parsed.queries)
+      ? parsed.queries.filter((q): q is string => typeof q === "string" && q.trim().length > 0)
+      : [];
+    // Prioriza o ponto turístico principal identificado pela IA.
+    const searchTerms = [
+      ...(parsed.landmark ? [parsed.landmark] : []),
+      ...aiQueries,
+      ...(parsed.place ? [parsed.place] : []),
+      dest,
+      first,
+    ].filter((v, i, a) => !!v && a.indexOf(v) === i);
+
+    // 1) Fotos reais no Wikimedia Commons (melhor para pontos turísticos).
+    for (const q of searchTerms) {
       const img = await commonsPhoto(q);
       if (img) return { imageUrl: img };
     }
 
     // 2) Foto principal do artigo da Wikipedia (apenas se for foto real).
     for (const lang of ["pt", "en"]) {
-      for (const q of variants) {
+      for (const q of searchTerms) {
         const img = await wikipediaPhoto(lang, q);
         if (img) return { imageUrl: img };
       }
     }
 
-    throw new Error("Nenhuma foto real encontrada para este destino.");
+    throw new Error("Nenhuma foto real do destino foi encontrada.");
   });
+
