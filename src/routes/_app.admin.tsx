@@ -180,6 +180,33 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
     remove.mutate(m.id);
   }
 
+  const blockToggle = useMutation({
+    mutationFn: ({ id, blocked }: { id: string; blocked: boolean }) => setMemberBlocked(id, blocked),
+    onSuccess: (ok, vars) => {
+      if (!ok) return toast.error("Erro ao atualizar o acesso.");
+      toast.success(vars.blocked ? "Acesso bloqueado." : "Acesso liberado.");
+      qc.invalidateQueries({ queryKey: ["team"] });
+    },
+    onError: () => toast.error("Erro ao atualizar o acesso."),
+  });
+
+  async function handleToggleBlock(m: { id: string; name?: string | null; email?: string | null; is_active?: boolean }) {
+    const blocking = m.is_active !== false;
+    const ok = await confirm({
+      title: blocking ? "Bloquear acesso?" : "Liberar acesso?",
+      description: blocking
+        ? `${m.name || m.email || "Este usuário"} não poderá mais acessar o sistema até ser liberado.`
+        : `${m.name || m.email || "Este usuário"} poderá acessar o sistema novamente.`,
+      confirmLabel: blocking ? "Bloquear" : "Liberar",
+      cancelLabel: "Cancelar",
+      destructive: blocking,
+    });
+    if (!ok) return;
+    blockToggle.mutate({ id: m.id, blocked: blocking });
+  }
+
+
+
   return (
     <div className="space-y-6">
       <div>
