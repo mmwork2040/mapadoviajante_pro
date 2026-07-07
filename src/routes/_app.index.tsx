@@ -168,6 +168,12 @@ function DashboardPage() {
 
 
 
+  const todayTasks = data.tasks
+    .filter(
+      (t) => t.due_date && new Date(t.due_date).toDateString() === todayKey && !t.completed,
+    )
+    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime());
+
   const recentLeads = [...data.leads]
     .sort(
       (a, b) =>
