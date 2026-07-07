@@ -537,6 +537,7 @@ export function NewLeadModal({
       value: parseCurrency(form.value),
       origin: (form.origin === "Outro" ? form.origin_other.trim() : form.origin) || "direto",
       profile: {
+        departure: form.departure,
         travel_dates: form.travel_dates,
         passengers: form.passengers,
         trip_type: form.trip_type,
