@@ -57,9 +57,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
   const leadsCount = leadsQ.data?.length ?? 0;
-  const showAdmin = isSuperAdminEmail(session?.user?.email);
-  const nav = showAdmin ? NAV : NAV.filter((i) => i.to !== "/admin");
-  const mobileNav = MOBILE_NAV;
+  const isAdmin = isAdminUser(member, session?.user?.email);
+  const showAdmin = isAdmin;
+  const nav = isAdmin ? NAV : NAV.filter((i) => !ADMIN_ONLY.includes(i.to as (typeof ADMIN_ONLY)[number]));
+  const mobileNav = isAdmin ? MOBILE_NAV : MOBILE_NAV.filter((i) => i.to !== "/financeiro");
 
   useEffect(() => {
     const channel = supabase
