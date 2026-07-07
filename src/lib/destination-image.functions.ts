@@ -205,6 +205,15 @@ Texto: "${dest.replace(/"/g, "'")}"`,
 
     const excluded = new Set(data.exclude);
 
+    // 0) SEMPRE tenta primeiro a foto canônica (cartão-postal) do principal
+    // atrativo, via artigo da Wikipedia — é a imagem mais reconhecível do lugar.
+    if (landmark) {
+      for (const lang of ["en", "pt"]) {
+        const img = await wikipediaPhoto(lang, landmark);
+        if (img && !excluded.has(img)) return { imageUrl: img };
+      }
+    }
+
     // 1) Junta um POOL de fotos reais do Wikimedia Commons de vários pontos
     // turísticos, preservando a ordem de relevância e sem duplicatas.
     const pool: string[] = [];
