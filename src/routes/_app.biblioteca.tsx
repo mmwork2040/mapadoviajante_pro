@@ -122,6 +122,48 @@ function LibraryPage() {
     } else toast.error("Erro ao excluir item.");
   }
 
+  const isImageTab = tab === "image";
+
+  function toggleSelectMode() {
+    setSelectMode((v) => !v);
+    setSelected(new Set());
+  }
+
+  function toggleItem(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((prev) =>
+      prev.size === items.length ? new Set() : new Set(items.map((i) => i.id)),
+    );
+  }
+
+  async function bulkRemove() {
+    const chosen = items.filter((i) => selected.has(i.id));
+    if (chosen.length === 0) return;
+    const ok = await confirm({
+      title: `Excluir ${chosen.length} ${chosen.length === 1 ? "imagem" : "imagens"}?`,
+      description:
+        "As imagens serão removidas da biblioteca e dos perfis de leads e roteiros que as utilizam. Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir tudo",
+      destructive: true,
+    });
+    if (!ok) return;
+    const n = await bulkDeleteLibraryItems(chosen);
+    if (n > 0) {
+      toast.success(`${n} ${n === 1 ? "imagem excluída" : "imagens excluídas"}.`);
+      setSelectMode(false);
+      setSelected(new Set());
+      invalidate();
+    } else toast.error("Erro ao excluir imagens.");
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
