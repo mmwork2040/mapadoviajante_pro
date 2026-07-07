@@ -51,6 +51,7 @@ import {
   removeMember,
   revokeMember,
   saveAiConfig,
+  setMemberBlocked,
   updateMemberRole,
 } from "@/lib/services";
 import { sendTeamInvite, getEmailConfigStatus } from "@/lib/invites.functions";
