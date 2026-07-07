@@ -582,12 +582,14 @@ function PerfilTab({
   activities,
   onUpdate,
   onOpenActivities,
+  onDelete,
 }: {
   lead: Lead;
   team: import("@/lib/types").AgencyMember[];
   activities: import("@/lib/types").LeadActivity[];
   onUpdate: (updates: Partial<Lead>) => void;
   onOpenActivities?: () => void;
+  onDelete?: () => void;
 }) {
   return (
     <div className="space-y-6">
