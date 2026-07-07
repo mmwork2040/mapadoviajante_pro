@@ -27,6 +27,9 @@ function formatDue(iso?: string | null) {
 function TarefasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["tasks"],
     queryFn: () => fetchTasks(),
@@ -46,9 +49,28 @@ function TarefasPage() {
     const tb = b.due_date ? new Date(b.due_date).getTime() : Infinity;
     return ta - tb;
   };
-  const tasks = data ?? [];
-  const pending = tasks.filter((t) => !t.completed).sort(byDue);
-  const done = tasks.filter((t) => t.completed).sort(byDue);
+
+  const inDateRange = (t: Task) => {
+    if (!fromDate && !toDate) return true;
+    if (!t.due_date) return false;
+    const due = new Date(t.due_date).getTime();
+    if (fromDate && due < new Date(`${fromDate}T00:00:00`).getTime()) return false;
+    if (toDate && due > new Date(`${toDate}T23:59:59`).getTime()) return false;
+    return true;
+  };
+
+  const allTasks = (data ?? []).filter(inDateRange);
+  const hasFilters = statusFilter !== "all" || !!fromDate || !!toDate;
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setFromDate("");
+    setToDate("");
+  };
+
+  const pending = allTasks.filter((t) => !t.completed).sort(byDue);
+  const done = allTasks.filter((t) => t.completed).sort(byDue);
+  const showPending = statusFilter !== "done";
+  const showDone = statusFilter !== "pending";
 
   return (
     <div className="space-y-6">
@@ -67,20 +89,68 @@ function TarefasPage() {
         </Button>
       </div>
 
+      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-3 shadow-sm">
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground">Status</label>
+          <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
+            {([
+              { key: "all", label: "Todas" },
+              { key: "pending", label: "Pendentes" },
+              { key: "done", label: "Concluídas" },
+            ] as const).map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setStatusFilter(f.key)}
+                className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
+                  statusFilter === f.key ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground">De</label>
+          <input
+            type="date"
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-[11px] font-medium text-muted-foreground">Até</label>
+          <input
+            type="date"
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            className="rounded-lg border border-input bg-background px-2 py-1.5 text-sm outline-none focus:border-primary"
+          />
+        </div>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
+            Limpar
+          </Button>
+        )}
+      </div>
+
       {isError ? (
         <QueryError message="Não foi possível carregar as tarefas." onRetry={() => refetch()} />
       ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
-      ) : tasks.length === 0 ? (
+      ) : allTasks.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-border p-12 text-center">
           <ListChecks className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
-          <p className="font-medium">Nenhuma tarefa ainda</p>
-          <p className="text-sm text-muted-foreground">Crie sua primeira tarefa para começar.</p>
+          <p className="font-medium">Nenhuma tarefa encontrada</p>
+          <p className="text-sm text-muted-foreground">Ajuste os filtros ou crie uma nova tarefa.</p>
         </div>
       ) : (
         <div className="space-y-6">
-          <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} />
-          {done.length > 0 && (
+          {showPending && pending.length > 0 && (
+            <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} />
+          )}
+          {showDone && done.length > 0 && (
             <div>
               <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
                 Concluídas ({done.length})
