@@ -432,7 +432,7 @@ function DashboardPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>
-              Novo agendamento
+              Agenda do dia
               {selectedDay && (
                 <span className="ml-1 font-normal text-muted-foreground">
                   — {selectedDay.getDate()}/{selectedDay.getMonth() + 1}/{selectedDay.getFullYear()}
