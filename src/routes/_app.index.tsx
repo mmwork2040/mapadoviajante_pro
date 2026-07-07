@@ -11,9 +11,11 @@ import {
   ArrowRight,
   CalendarDays,
   BarChart3,
-  
+  ListChecks,
+  CalendarClock,
+
 } from "lucide-react";
-import { fetchDashboardStats, createTask } from "@/lib/services";
+import { fetchDashboardStats, createTask, cleanTaskDescription } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import {
   Dialog,
