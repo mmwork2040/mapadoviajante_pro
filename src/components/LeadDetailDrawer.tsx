@@ -707,7 +707,8 @@ function AtividadesTab({
       });
     },
     onSuccess: () => {
-      setTitle("");
+      setTitle(ACTIVITY_TYPES.find((t) => t.key === "note")?.label || "Observação");
+      setType("note");
       setDetails("");
       setDueDate("");
       toast.success("Atividade registrada.");
