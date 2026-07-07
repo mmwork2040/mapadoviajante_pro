@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
-import { fetchLeads } from "@/lib/services";
+import { fetchLeads, fetchTasks } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
 import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
