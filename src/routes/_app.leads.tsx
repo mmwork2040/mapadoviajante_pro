@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon } from "lucide-react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw } from "lucide-react";
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import {
@@ -541,6 +541,7 @@ export function NewLeadModal({
   const [triedImages, setTriedImages] = useState<string[]>([]);
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [imgError, setImgError] = useState<string | null>(null);
 
   async function findDestinationImage() {
     const dest = form.destination.trim();
@@ -548,6 +549,7 @@ export function NewLeadModal({
     // Só busca na biblioteca na primeira tentativa; depois busca sempre uma nova.
     const wantNew = !!form.cover_image || triedImages.length > 0;
     setSearchingImg(true);
+    setImgError(null);
     try {
       if (!wantNew) {
         const fromLibrary = await searchLibraryImageForDestination(dest);
@@ -565,10 +567,14 @@ export function NewLeadModal({
         setTriedImages((prev) => [...prev, res.imageUrl]);
         toast.info("Confirme se deseja usar esta imagem.");
       } else {
-        toast.error("Nenhuma imagem encontrada para este destino.");
+        const msg = "Nenhuma imagem encontrada para este destino.";
+        setImgError(msg);
+        toast.error(msg);
       }
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Não foi possível buscar a imagem.");
+      const msg = e instanceof Error ? e.message : "Não foi possível buscar a imagem.";
+      setImgError(msg);
+      toast.error(msg);
     } finally {
       setSearchingImg(false);
     }
@@ -791,6 +797,8 @@ export function NewLeadModal({
                 confirming={confirming}
                 onConfirmPending={confirmPendingImage}
                 onRejectPending={rejectPendingImage}
+                errorMessage={imgError || undefined}
+                onRetry={findDestinationImage}
               />
 
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
@@ -1037,6 +1045,8 @@ export function ModalField({
   confirming,
   onConfirmPending,
   onRejectPending,
+  errorMessage,
+  onRetry,
 
 }: {
   label: string;
@@ -1062,6 +1072,8 @@ export function ModalField({
   confirming?: boolean;
   onConfirmPending?: () => void;
   onRejectPending?: () => void;
+  errorMessage?: string;
+  onRetry?: () => void;
 
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
@@ -1154,6 +1166,23 @@ export function ModalField({
             >
               <X className="h-4 w-4" /> Outra
             </button>
+          </div>
+        </div>
+      )}
+      {!previewImage && !pendingImage && errorMessage && (
+        <div className="mt-2 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+          <div className="flex-1 space-y-2">
+            <p className="text-xs text-destructive">{errorMessage}</p>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-semibold text-destructive transition hover:bg-destructive/10"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Tentar novamente
+              </button>
+            )}
           </div>
         </div>
       )}
