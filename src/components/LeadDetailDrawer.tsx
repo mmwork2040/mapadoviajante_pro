@@ -472,16 +472,36 @@ function AtividadesTab({
           <p className="text-sm text-muted-foreground">Nenhuma atividade ainda.</p>
         ) : (
           <ul className="space-y-3">
-            {activities.map((a) => (
-              <li key={a.id} className="rounded-xl border border-border p-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{a.title}</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
-                </div>
-                {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
-              </li>
-            ))}
+            {activities.map((a) => {
+              const meta = activityMeta(a.type);
+              return (
+                <li key={a.id} className="group flex gap-3 rounded-xl border border-border p-3">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <meta.icon className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="truncate text-sm font-medium">{a.title}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
+                    </div>
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {meta.label}
+                    </p>
+                    {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
+                  </div>
+                  <button
+                    onClick={() => remove.mutate(a.id)}
+                    disabled={remove.isPending}
+                    title="Excluir atividade"
+                    className="shrink-0 self-start text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
+
         )}
       </section>
     </div>
