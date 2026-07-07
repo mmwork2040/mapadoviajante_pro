@@ -686,7 +686,9 @@ function AtividadesTab({
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [type, setType] = useState("note");
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(
+    ACTIVITY_TYPES.find((t) => t.key === "note")?.label || "Observação",
+  );
   const [details, setDetails] = useState("");
   const [assigned, setAssigned] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -694,16 +696,19 @@ function AtividadesTab({
   const register = useMutation({
     mutationFn: () => {
       if (!dueDate) throw new Error("A data de execução é obrigatória.");
+      if (!details.trim()) throw new Error("Os detalhes são obrigatórios.");
+      if (details.trim().length > 250) throw new Error("Os detalhes devem ter no máximo 250 caracteres.");
       return createLeadActivity(leadId, {
         type,
         title: title.trim() || ACTIVITY_TYPES.find((t) => t.key === type)?.label || "Atividade",
-        details,
+        details: details.trim(),
         assigned_to_id: assigned || null,
         due_date: new Date(`${dueDate}T09:00:00`).toISOString(),
       });
     },
     onSuccess: () => {
-      setTitle("");
+      setTitle(ACTIVITY_TYPES.find((t) => t.key === "note")?.label || "Observação");
+      setType("note");
       setDetails("");
       setDueDate("");
       toast.success("Atividade registrada.");
@@ -758,6 +763,7 @@ function AtividadesTab({
           value={details}
           onChange={(e) => setDetails(e.target.value)}
           rows={3}
+          maxLength={250}
           placeholder="Detalhes…"
           className="mb-2 w-full resize-y rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
