@@ -39,6 +39,22 @@ const COLUMNS: { key: LeadStatus; label: string; dot: string }[] = [
   { key: "lost", label: "Perdido", dot: "bg-red-500" },
 ];
 
+// Resolve um valor de imagem (URL direto ou caminho do bucket) e renderiza a prévia.
+function CoverImage({ value, className, alt }: { value: string; className?: string; alt?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    resolveDisplayImageUrl(value).then((u) => {
+      if (active) setUrl(u);
+    });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+  if (!url) return null;
+  return <img src={url} alt={alt || "Imagem do destino"} className={className} loading="lazy" />;
+}
+
 function LeadsPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
