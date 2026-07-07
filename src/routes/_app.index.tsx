@@ -239,7 +239,24 @@ function DashboardPage() {
             <ListChecks className="h-5 w-5 shrink-0 text-primary" />
             <span className="truncate">Tarefas do Dia</span>
           </h2>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
+              {([
+                { key: "pending", label: "Pendentes" },
+                { key: "done", label: "Concluídas" },
+                { key: "all", label: "Todas" },
+              ] as const).map((s) => (
+                <button
+                  key={s.key}
+                  onClick={() => setTaskStatus(s.key)}
+                  className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
+                    taskStatus === s.key ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
             <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
               {([
                 { key: "today", label: "Hoje" },
