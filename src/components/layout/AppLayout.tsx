@@ -15,9 +15,10 @@ import {
   LogOut,
   Bot,
   ChevronLeft,
+  UserCog,
 
 } from "lucide-react";
-import { useAuth, isSuperAdminEmail } from "@/lib/auth";
+import { useAuth, isAdminUser } from "@/lib/auth";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
@@ -32,7 +33,11 @@ const NAV = [
   { to: "/biblioteca", label: "Biblioteca", icon: Images },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/admin", label: "Administração", icon: ShieldCheck },
+  { to: "/perfil", label: "Meu Perfil", icon: UserCog },
 ] as const;
+
+// Itens que exigem cargo de administrador
+const ADMIN_ONLY = ["/financeiro", "/admin"] as const;
 
 // Itens principais exibidos na barra de navegação inferior (mobile)
 const MOBILE_NAV = [
