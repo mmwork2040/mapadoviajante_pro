@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, ListChecks, Check, CalendarClock } from "lucide-react";
-import { fetchTasks, updateTask, cleanTaskDescription } from "@/lib/services";
+import { fetchTasks, updateTask, cleanTaskDescription, isOverdue } from "@/lib/services";
 import { Button } from "@/components/ui/button";
 import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
@@ -198,10 +198,15 @@ function TaskList({ tasks, onToggle }: { tasks: Task[]; onToggle: (t: Task) => v
                 {t.title}
               </p>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
+                <span className={`inline-flex items-center gap-1 ${isOverdue(t.due_date, t.completed) ? "font-semibold text-red-600 dark:text-red-400" : ""}`}>
                   <CalendarClock className="h-3.5 w-3.5" />
                   {formatDue(t.due_date)}
                 </span>
+                {isOverdue(t.due_date, t.completed) && (
+                  <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                    Atrasada
+                  </span>
+                )}
                 {t.lead?.name && <span>👤 {t.lead.name}</span>}
                 {t.assigned?.name && <span>• {t.assigned.name}</span>}
               </div>

@@ -422,11 +422,42 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
     console.error("fetchLeadActivities:", error);
     throw new Error("Não foi possível carregar o histórico.");
   }
-  return (data as LeadActivity[]) || [];
+  const activities = (data as LeadActivity[]) || [];
+
+  // Enriquece cada atividade com a data de execução e o status da tarefa vinculada.
+  const { data: tasks } = await supabase
+    .from("crm_tasks")
+    .select("due_date, completed, description")
+    .eq("lead_id", leadId);
+  if (tasks) {
+    for (const a of activities) {
+      const linked = (tasks as { due_date?: string | null; completed?: boolean | null; description?: string | null }[])
+        .find((t) => (t.description || "").includes(ACTIVITY_TASK_MARK(a.id)));
+      if (linked) {
+        a.due_date = linked.due_date ?? a.due_date;
+        a.completed = linked.completed ?? false;
+      }
+    }
+  }
+  return activities;
 }
+
 
 // Marca invisível que liga uma tarefa de agenda à atividade que a originou.
 const ACTIVITY_TASK_MARK = (id: string) => `[atv:${id}]`;
+
+/** Uma tarefa/atividade é considerada expirada (atrasada) quando a data de
+ * execução já passou e ainda não foi concluída pelo usuário. */
+export function isOverdue(due_date?: string | null, completed?: boolean | null): boolean {
+  if (!due_date || completed) return false;
+  const due = new Date(due_date);
+  if (Number.isNaN(due.getTime())) return false;
+  const dueDay = new Date(due.getFullYear(), due.getMonth(), due.getDate()).getTime();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  return dueDay < todayStart.getTime();
+}
+
 
 /** Remove a marca de vínculo interna da descrição de uma tarefa. */
 export function cleanTaskDescription(desc?: string | null): string {

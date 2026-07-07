@@ -17,7 +17,7 @@ import {
 
 } from "lucide-react";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
-import { fetchDashboardStats, createTask, cleanTaskDescription } from "@/lib/services";
+import { fetchDashboardStats, createTask, cleanTaskDescription, isOverdue } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import {
   Dialog,
@@ -207,7 +207,8 @@ function DashboardPage() {
         if (taskStatus === "pending" && t.completed) return false;
         if (taskStatus === "done" && !t.completed) return false;
         const due = startOfDay(new Date(t.due_date));
-        if (taskFilter === "today") return due.getTime() === today.getTime();
+        // "Hoje" também inclui tarefas expiradas (atrasadas) ainda não concluídas.
+        if (taskFilter === "today") return due.getTime() === today.getTime() || (due.getTime() < today.getTime() && !t.completed);
         if (taskFilter === "tomorrow") return due.getTime() === tomorrow.getTime();
         return due.getTime() >= today.getTime() && due.getTime() < weekEnd.getTime();
       })
@@ -323,7 +324,14 @@ function DashboardPage() {
                     <CalendarClock className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{t.title}</p>
+                    <p className="flex items-center gap-2 truncate text-sm font-medium">
+                      {t.title}
+                      {isOverdue(t.due_date, t.completed) && (
+                        <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                          Atrasada
+                        </span>
+                      )}
+                    </p>
                     {t.lead?.name && (
                       <p className="truncate text-xs text-muted-foreground">👤 {t.lead.name}</p>
                     )}
