@@ -62,7 +62,7 @@ import {
 } from "@/lib/payments.functions";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
 import { formatDate, initials } from "@/lib/ui";
-import { useAuth, isSuperAdminEmail } from "@/lib/auth";
+import { useAuth, isAdminUser } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
 import type { AiConfig } from "@/lib/types";
