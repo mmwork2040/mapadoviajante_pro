@@ -81,6 +81,7 @@ function activityMeta(type?: string | null) {
 export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const confirm = useConfirm();
   const [tab, setTab] = useState<TabKey>("perfil");
   const tabsRef = useRef<HTMLDivElement>(null);
 
