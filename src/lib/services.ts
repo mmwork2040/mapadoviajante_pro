@@ -888,9 +888,26 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
     throw new Error("Não foi possível carregar os roteiros.");
   }
   const items = (data as Itinerary[]) || [];
+
+  // Carrega no card a foto do destino já existente na biblioteca (se houver).
+  try {
+    const [destinations, libItems] = await Promise.all([
+      fetchDestinations().catch(() => [] as Destination[]),
+      fetchLibraryItems().catch(() => [] as LibraryItem[]),
+    ]);
+    for (const it of items) {
+      if (it.destination) {
+        it.cover_image = matchLibraryImage(it.destination, destinations, libItems);
+      }
+    }
+  } catch (e) {
+    console.error("fetchItineraries cover:", e);
+  }
+
   return items.sort((a, b) =>
     ((a.lead?.name ?? "").localeCompare(b.lead?.name ?? "", "pt", { sensitivity: "base" })),
   );
+
 }
 
 export async function fetchPublicItinerary(id: string): Promise<Itinerary | null> {
