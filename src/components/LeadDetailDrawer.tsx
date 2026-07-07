@@ -78,6 +78,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [tab, setTab] = useState<TabKey>("perfil");
+  const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: lead } = useQuery({ queryKey: ["lead", leadId], queryFn: () => fetchLeadById(leadId) });
   const { data: activities = [] } = useQuery({
