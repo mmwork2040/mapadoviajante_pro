@@ -157,20 +157,22 @@ export const downloadDestinationImage = createServerFn({ method: "POST" })
         apiKey: cfg.api_key_encrypted,
         maxTokens: 600,
       },
-      `Você é um especialista em turismo. Dado o texto abaixo, identifique o local real (país, estado ou cidade).
-Liste os PRINCIPAIS pontos turísticos/cartões-postais e cidades icônicas desse destino (os mais fotografados e reconhecíveis). Quanto maior o local (ex: um país), mais opções liste.
+      `Você é um especialista em turismo. Dado o texto abaixo, identifique o local real (país, estado, região ou cidade).
+Determine o PRINCIPAL cartão-postal / atrativo turístico mais icônico e reconhecível desse local (o símbolo nº 1 do lugar, ex: "Cristo Redentor" para o Rio, "Torre Eiffel" para Paris, "Machu Picchu" para o Peru, "Torres del Paine" para o Chile).
+Depois liste outros pontos turísticos icônicos como alternativas, em ordem de importância.
 Se o texto NÃO corresponder a um destino de viagem real, marque "valid": false.
 Responda APENAS com JSON válido, sem texto extra:
 {
   "valid": true/false,
   "place": "nome do local reconhecido (cidade, estado, país) em inglês",
-  "queries": ["8 a 12 termos de busca em inglês para encontrar FOTOS reais, começando pelos pontos turísticos e cidades mais icônicos do destino (ex: 'Torres del Paine', 'Valparaiso Chile', 'Atacama Desert', 'Santiago Chile skyline')"]
+  "landmark": "o PRINCIPAL cartão-postal do local em inglês (apenas o nome do atrativo, ex: 'Christ the Redeemer')",
+  "queries": ["8 a 12 termos de busca em inglês para FOTOS reais, do MAIS icônico ao menos, sempre incluindo o nome do local para desambiguar (ex: 'Christ the Redeemer Rio de Janeiro', 'Sugarloaf Mountain Rio')"]
 }
 
 Texto: "${dest.replace(/"/g, "'")}"`,
     );
 
-    let parsed: { valid?: boolean; place?: string; queries?: unknown } = {};
+    let parsed: { valid?: boolean; place?: string; landmark?: string; queries?: unknown } = {};
     try {
       const cleaned = aiRaw.replace(/```json/gi, "").replace(/```/g, "").trim();
       const s = cleaned.indexOf("{");
@@ -183,18 +185,34 @@ Texto: "${dest.replace(/"/g, "'")}"`,
     // Não rejeitamos por causa de "valid": false — a IA pode errar.
 
     const first = dest.split(",")[0].trim();
+    const landmark = typeof parsed.landmark === "string" ? parsed.landmark.trim() : "";
+    const place = typeof parsed.place === "string" ? parsed.place.trim() : "";
+    // Combina o cartão-postal com o nome do local para busca mais precisa.
+    const landmarkQuery = landmark && place ? `${landmark} ${place}` : landmark;
     const aiQueries = Array.isArray(parsed.queries)
       ? parsed.queries.filter((q): q is string => typeof q === "string" && q.trim().length > 0)
       : [];
-    // Prioriza os pontos turísticos identificados pela IA, depois o destino em si.
+    // SEMPRE prioriza o principal cartão-postal, depois os demais atrativos.
     const searchTerms = [
+      ...(landmarkQuery ? [landmarkQuery] : []),
+      ...(landmark ? [landmark] : []),
       ...aiQueries,
-      ...(parsed.place ? [parsed.place] : []),
+      ...(place ? [place] : []),
       dest,
       first,
     ].filter((v, i, a) => !!v && a.indexOf(v) === i);
 
+
     const excluded = new Set(data.exclude);
+
+    // 0) SEMPRE tenta primeiro a foto canônica (cartão-postal) do principal
+    // atrativo, via artigo da Wikipedia — é a imagem mais reconhecível do lugar.
+    if (landmark) {
+      for (const lang of ["en", "pt"]) {
+        const img = await wikipediaPhoto(lang, landmark);
+        if (img && !excluded.has(img)) return { imageUrl: img };
+      }
+    }
 
     // 1) Junta um POOL de fotos reais do Wikimedia Commons de vários pontos
     // turísticos, preservando a ordem de relevância e sem duplicatas.
