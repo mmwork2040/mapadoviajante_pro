@@ -373,9 +373,17 @@ QUANDO TODAS AS 4 INFORMAÇÕES ESSENCIAIS ESTIVEREM PRESENTES:
 - Distribua tudo em dias na ordem cronológica correta. Quando faltarem detalhes não essenciais, complemente com sugestões úteis e dicas locais.
 - Se houver falha na identificação de algum documento/imagem, me informe no "reply" com tom respeitoso e profissional.
 
+COMPLETAR ATIVIDADES JÁ EXISTENTES (MUITO IMPORTANTE):
+- No CONTEXTO DO ROTEIRO cada atividade já criada vem com um identificador no formato [id:XXXX]. Use esse id para propor alterações via "updates".
+- Identifique atividades INCOMPLETAS ou com títulos genéricos/padrão (ex: "Nova atividade", "Novo Voo", "Nova Hospedagem", "Novo Transfer") e/ou sem horário, sem local, sem descrição ou sem dados essenciais. Elas provavelmente foram adicionadas pelo consultor sem serem preenchidas.
+- Quando um documento/anexo enviado corresponder a uma dessas atividades (mesmo tipo, mesmo dia ou contexto compatível), INTERPRETE o anexo e COMPLETE a atividade existente preenchendo os campos faltantes (título correto, horário, local, tipo, descrição, duração e custo). Use "updates" com o "activityId" dessa atividade — NÃO crie uma atividade nova duplicada.
+- Se o anexo trouxer uma atividade que ainda não existe no roteiro, aí sim crie via "days".
+- Se apenas o item foi adicionado sem anexo e sem outras informações, sugira no "reply" o que falta preencher e, quando puder deduzir com segurança dos dados do lead/roteiro, proponha o preenchimento em "updates".
+- Só inclua em "updates" os campos que você realmente conseguiu preencher/melhorar; deixe de fora os campos que não deve alterar.
+
 Responda SEMPRE apenas com um JSON válido, sem texto extra, no formato:
 {
-  "reply": "mensagem amigável em português: dicas, o que montou, o que sugere e/ou o que ainda falta",
+  "reply": "mensagem amigável em português: dicas, o que montou, o que completou, o que sugere e/ou o que ainda falta",
   "days": [
     {
       "title": "Dia 1 - Embarque",
@@ -391,6 +399,18 @@ Responda SEMPRE apenas com um JSON válido, sem texto extra, no formato:
           "cost": valor numérico ou 0
         }
       ]
+    }
+  ],
+  "updates": [
+    {
+      "activityId": "id da atividade existente a ser completada/corrigida",
+      "time": "HH:MM (opcional)",
+      "title": "título correto (opcional)",
+      "location": "local (opcional)",
+      "type": "flight|hotel|transfer|restaurant|activity|note (opcional)",
+      "description": "detalhes (opcional)",
+      "duration": "ex: 2h (opcional)",
+      "cost": valor numérico (opcional)
     }
   ]
 }`;
