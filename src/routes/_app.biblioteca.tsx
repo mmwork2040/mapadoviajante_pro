@@ -319,14 +319,25 @@ function LibraryCard({
   item,
   onEdit,
   onRemove,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
 }: {
   item: LibraryItem;
   onEdit: () => void;
   onRemove: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }) {
   const img = useAssetUrl(item);
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div
+      className={`group flex flex-col overflow-hidden rounded-2xl border bg-card transition ${
+        selected ? "border-primary ring-2 ring-primary" : "border-border"
+      } ${selectable ? "cursor-pointer" : ""}`}
+      onClick={selectable ? onToggleSelect : undefined}
+    >
       <div className="relative">
         {img ? (
           <img src={img} alt={item.title} className="h-36 w-full object-cover" />
@@ -335,6 +346,16 @@ function LibraryCard({
             <Globe className="h-8 w-8" />
           </div>
         )}
+        {selectable && (
+          <div className="absolute left-2 top-2">
+            {selected ? (
+              <CheckSquare className="h-5 w-5 rounded bg-primary text-primary-foreground" />
+            ) : (
+              <Square className="h-5 w-5 rounded bg-card/90 text-foreground" />
+            )}
+          </div>
+        )}
+        {!selectable && (
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
           <button onClick={onEdit} className="rounded-lg bg-card/90 p-1.5 text-foreground hover:bg-card">
             <Pencil className="h-4 w-4" />
@@ -343,6 +364,7 @@ function LibraryCard({
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
+        )}
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-semibold">{item.title}</h3>
