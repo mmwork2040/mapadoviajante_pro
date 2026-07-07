@@ -771,7 +771,7 @@ function AtividadesTab({
           />
         </label>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-primary">
+          <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-red-600">
             <User className="h-4 w-4" /> Atribuir a:
           </span>
           <select
@@ -847,7 +847,7 @@ function AtividadesTab({
                     }}
                     disabled={remove.isPending}
                     title="Excluir atividade"
-                    className="shrink-0 self-start text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
+                    className="shrink-0 self-start text-muted-foreground transition hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -950,7 +950,7 @@ function NotasTab({
           onChange={(e) => setValue(e.target.value)}
           onBlur={() => value !== notes && onSave(value)}
           rows={5}
-          placeholder="Anotações sobre o lead…"
+          placeholder="Detalhes…"
           className="w-full resize-y rounded-xl border border-input bg-background p-3 text-sm outline-none focus:border-primary"
         />
       </section>
