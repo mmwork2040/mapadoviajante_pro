@@ -874,6 +874,32 @@ export async function saveExternalImageToLibrary(
   }
 }
 
+// Envia uma imagem escolhida pelo usuário para a biblioteca, associada ao
+// destino, e retorna uma URL exibível. Lança erro em caso de falha.
+export async function uploadImageToLibraryForDestination(
+  imageFile: File,
+  destination: string,
+): Promise<string> {
+  const ext = (imageFile.name.split(".").pop() || "jpg").replace(/[^a-z0-9]/gi, "") || "jpg";
+  const safeDest = sanitizeFileName(destination) || "destino";
+  const file = new File([imageFile], `${safeDest}.${ext}`, {
+    type: imageFile.type || "image/jpeg",
+  });
+  const up = await uploadLibraryAsset(file);
+  if (!up) throw new Error("Não foi possível enviar a imagem.");
+  await createLibraryItem({
+    type: "image",
+    title: destination,
+    location: destination,
+    file_url: up.path,
+    file_name: up.name,
+    tags: [normalizeText(destination)].filter(Boolean),
+  });
+  return (await getLibraryAssetUrl(up.path)) ?? up.path;
+}
+
+
+
 
 
 export async function fetchItineraries(): Promise<Itinerary[]> {
