@@ -44,9 +44,12 @@ import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
   fetchActivityDocuments,
+  fetchAgencyDocuments,
+  attachLibraryDocumentToActivity,
   downloadDocument,
   uploadLeadDocument,
   type LeadDocument,
+  type AgencyDocument,
 } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
