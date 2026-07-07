@@ -353,12 +353,14 @@ function EditableField({
   value,
   display,
   type = "text",
+  mask,
   onSave,
 }: {
   label: string;
   value?: string | null;
   display?: string | null;
   type?: string;
+  mask?: (raw: string) => string;
   onSave: (value: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -380,15 +382,17 @@ function EditableField({
         <div className="mt-1 flex items-center gap-1">
           <input
             autoFocus
-            type={type}
+            type={mask ? "text" : type}
+            inputMode={mask ? "numeric" : undefined}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => setDraft(mask ? mask(e.target.value) : e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") save();
               if (e.key === "Escape") setEditing(false);
             }}
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
           />
+
           <button
             onClick={save}
             title="Salvar"
