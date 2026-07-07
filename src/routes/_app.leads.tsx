@@ -214,14 +214,17 @@ function LeadCard({
   onDragStart,
   onDragEnd,
   onMove,
+  onOpen,
 }: {
   lead: Lead;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
   onMove: (status: LeadStatus) => void;
+  onOpen: () => void;
 }) {
   const navigate = useNavigate();
+
 
   return (
     <div
