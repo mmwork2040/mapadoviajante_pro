@@ -386,6 +386,21 @@ const LOYALTY_PROGRAMS = [
   "Air France-KLM Flying Blue",
 ];
 
+const PREFERENCE_PRESETS = [
+  "Assento na janela",
+  "Assento no corredor",
+  "Sem escalas",
+  "Alimentação vegetariana",
+  "Alimentação sem glúten",
+  "Acessibilidade / mobilidade reduzida",
+  "Viaja com crianças",
+  "Viaja com pet",
+  "Quarto silencioso",
+  "Andar alto",
+  "Cama King",
+  "Late check-out",
+];
+
 function leadToForm(lead: Lead): WizardForm {
   const p = (lead.profile || {}) as Record<string, string>;
   return {
@@ -586,7 +601,7 @@ export function NewLeadModal({
               <ModalField label="Programas de Fidelidade" placeholder="Ex: Smiles, LATAM Pass" value={form.loyalty_programs} onChange={(v) => set({ loyalty_programs: v })} suggestions={LOYALTY_PROGRAMS} />
               <ModalField label="Pontos / Milhas" placeholder="Ex: 80.000" value={form.points_miles} onChange={(v) => set({ points_miles: maskMiles(v) })} />
               <ModalSelect label="Possui Passaporte?" value={form.has_passport} onChange={(v) => set({ has_passport: v })} options={["Sim", "Não", "Vencido"]} />
-              <ModalTextarea label="Preferências do cliente" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} />
+              <ModalTextarea label="Preferências do cliente" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} presets={PREFERENCE_PRESETS} />
             </Section>
           )}
 
@@ -892,12 +907,22 @@ function ModalTextarea({
   value,
   onChange,
   placeholder,
+  presets,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
+  presets?: string[];
 }) {
+  const items = value
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const addPreset = (p: string) => {
+    if (items.some((i) => i.toLowerCase() === p.toLowerCase())) return;
+    onChange([...items, p].join(", "));
+  };
   return (
     <label className="block sm:col-span-2">
       <span className="mb-1 block text-sm font-semibold">{label}</span>
@@ -908,6 +933,30 @@ function ModalTextarea({
         onChange={(e) => onChange(e.target.value)}
         className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
       />
+      {presets && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {presets.map((p) => {
+            const active = items.some((i) => i.toLowerCase() === p.toLowerCase());
+            return (
+              <button
+                key={p}
+                type="button"
+                onClick={() => addPreset(p)}
+                disabled={active}
+                className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                  active
+                    ? "cursor-default border-primary bg-primary/10 text-primary"
+                    : "border-border text-muted-foreground hover:border-primary hover:text-primary"
+                }`}
+              >
+                {active ? "✓ " : "+ "}
+                {p}
+              </button>
+            );
+          })}
+        </div>
+      )}
     </label>
   );
 }
+
