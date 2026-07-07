@@ -347,6 +347,65 @@ const STEPS = [
 
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
 
+const AIRPORTS = [
+  "GRU - São Paulo/Guarulhos",
+  "CGH - São Paulo/Congonhas",
+  "VCP - Campinas/Viracopos",
+  "GIG - Rio de Janeiro/Galeão",
+  "SDU - Rio de Janeiro/Santos Dumont",
+  "BSB - Brasília",
+  "CNF - Belo Horizonte/Confins",
+  "PLU - Belo Horizonte/Pampulha",
+  "CWB - Curitiba",
+  "POA - Porto Alegre",
+  "FLN - Florianópolis",
+  "SSA - Salvador",
+  "REC - Recife",
+  "FOR - Fortaleza",
+  "NAT - Natal",
+  "MCZ - Maceió",
+  "JPA - João Pessoa",
+  "AJU - Aracaju",
+  "BEL - Belém",
+  "MAO - Manaus",
+  "SLZ - São Luís",
+  "THE - Teresina",
+  "PMW - Palmas",
+  "CGB - Cuiabá",
+  "CGR - Campo Grande",
+  "GYN - Goiânia",
+  "VIX - Vitória",
+  "IGU - Foz do Iguaçu",
+  "NVT - Navegantes",
+  "LDB - Londrina",
+  "MGF - Maringá",
+  "UDI - Uberlândia",
+  "RAO - Ribeirão Preto",
+  "PVH - Porto Velho",
+  "RBR - Rio Branco",
+  "BVB - Boa Vista",
+  "MCP - Macapá",
+  "LIS - Lisboa",
+  "OPO - Porto",
+  "MAD - Madri",
+  "BCN - Barcelona",
+  "CDG - Paris/Charles de Gaulle",
+  "ORY - Paris/Orly",
+  "LHR - Londres/Heathrow",
+  "FCO - Roma/Fiumicino",
+  "FRA - Frankfurt",
+  "AMS - Amsterdã",
+  "MIA - Miami",
+  "JFK - Nova York/JFK",
+  "MCO - Orlando",
+  "LAX - Los Angeles",
+  "EZE - Buenos Aires/Ezeiza",
+  "SCL - Santiago",
+  "PTY - Cidade do Panamá",
+  "DXB - Dubai",
+  "DOH - Doha",
+];
+
 const AIRLINES = [
   "LATAM",
   "GOL",
@@ -596,6 +655,7 @@ export function NewLeadModal({
 
           {step === 1 && (
             <Section icon={Plane} title="Detalhes da Viagem">
+              <ModalField label="Ponto de partida" placeholder="Ex: GRU - São Paulo/Guarulhos" value={form.departure} onChange={(v) => set({ departure: v })} suggestions={AIRPORTS} />
               <ModalField label="Destino" placeholder="Ex: Paris, França" value={form.destination} onChange={(v) => set({ destination: v })} />
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
