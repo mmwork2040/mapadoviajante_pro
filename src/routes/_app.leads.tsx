@@ -1054,7 +1054,7 @@ export function ModalField({
       {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
       {previewImage && (
         <div className="relative mt-2 overflow-hidden rounded-xl border border-border">
-          <img src={previewImage} alt="Prévia do destino" className="h-28 w-full object-cover" />
+          <CoverImage value={previewImage} alt="Prévia do destino" className="h-28 w-full object-cover" />
           {onClearPreview && (
             <button
               type="button"
