@@ -63,7 +63,7 @@ import {
   type AgencyPaymentConfig,
 } from "@/lib/payments.functions";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
-import { formatDate, initials } from "@/lib/ui";
+import { formatDate, initials, maskPhone, maskCpfCnpj } from "@/lib/ui";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
