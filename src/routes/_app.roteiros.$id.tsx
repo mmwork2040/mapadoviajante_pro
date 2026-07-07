@@ -632,6 +632,21 @@ function DayCard({
     onChange();
   }
 
+  const [duplicating, setDuplicating] = useState(false);
+  async function duplicate() {
+    setDuplicating(true);
+    try {
+      const copy = await duplicateItineraryDay(day.id);
+      if (!copy) throw new Error("erro");
+      toast.success("Dia duplicado.");
+      onChange();
+    } catch {
+      toast.error("Não foi possível duplicar o dia.");
+    } finally {
+      setDuplicating(false);
+    }
+  }
+
   async function removeDay() {
     const ok = await confirm({
       title: "Excluir este dia?",
