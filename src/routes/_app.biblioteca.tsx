@@ -73,6 +73,34 @@ function LibraryPage() {
   const [tab, setTab] = useState<TabKey>("experience");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryItem | null>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    setUploadingImg(true);
+    try {
+      for (const file of files) {
+        const up = await uploadLibraryAsset(file);
+        if (!up) continue;
+        const title = file.name.replace(/\.[^.]+$/, "");
+        await createLibraryItem({
+          type: "image",
+          title,
+          file_url: up.path,
+          file_name: up.name,
+        });
+      }
+      toast.success(files.length === 1 ? "Imagem enviada." : `${files.length} imagens enviadas.`);
+      qc.invalidateQueries({ queryKey: ["library"] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setUploadingImg(false);
+    }
+  }
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
