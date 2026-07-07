@@ -830,6 +830,36 @@ export async function searchLibraryImageForDestination(destination: string): Pro
     console.error("searchLibraryImageForDestination:", e);
   }
   return null;
+ }
+
+// Baixa uma imagem externa, salva no bucket da biblioteca e cria um item "image"
+// reutilizável. Retorna uma URL exibível (assinada) ou a própria URL externa em caso de falha.
+export async function saveExternalImageToLibrary(
+  imageUrl: string,
+  destination: string,
+): Promise<string> {
+  try {
+    const res = await fetch(imageUrl);
+    if (!res.ok) return imageUrl;
+    const blob = await res.blob();
+    const ext = (blob.type.split("/")[1] || "jpg").replace(/[^a-z0-9]/gi, "") || "jpg";
+    const safeDest = sanitizeFileName(destination) || "destino";
+    const file = new File([blob], `${safeDest}.${ext}`, { type: blob.type || "image/jpeg" });
+    const up = await uploadLibraryAsset(file);
+    if (!up) return imageUrl;
+    await createLibraryItem({
+      type: "image",
+      title: destination,
+      location: destination,
+      file_url: up.path,
+      file_name: up.name,
+      tags: [normalizeText(destination)].filter(Boolean),
+    });
+    return (await getLibraryAssetUrl(up.path)) ?? imageUrl;
+  } catch (e) {
+    console.error("saveExternalImageToLibrary:", e);
+    return imageUrl;
+  }
 }
 
 
