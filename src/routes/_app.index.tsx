@@ -72,6 +72,7 @@ function DashboardPage() {
   const [agendaMode, setAgendaMode] = useState<"week" | "month">("week");
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
+  const [taskFilter, setTaskFilter] = useState<"today" | "tomorrow" | "week">("today");
 
   const week = useMemo(() => {
     const today = new Date();
@@ -168,11 +169,24 @@ function DashboardPage() {
 
 
 
-  const todayTasks = data.tasks
-    .filter(
-      (t) => t.due_date && new Date(t.due_date).toDateString() === todayKey && !t.completed,
-    )
-    .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime());
+  const todayTasks = (() => {
+    const now = new Date();
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const today = startOfDay(now);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() + 7);
+    return data.tasks
+      .filter((t) => {
+        if (!t.due_date || t.completed) return false;
+        const due = startOfDay(new Date(t.due_date));
+        if (taskFilter === "today") return due.getTime() === today.getTime();
+        if (taskFilter === "tomorrow") return due.getTime() === tomorrow.getTime();
+        return due.getTime() >= today.getTime() && due.getTime() < weekEnd.getTime();
+      })
+      .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime());
+  })();
 
   const recentLeads = [...data.leads]
     .sort(
@@ -215,20 +229,43 @@ function DashboardPage() {
         ))}
       </div>
 
-      {/* Tarefas de Hoje */}
+      {/* Tarefas / Compromissos */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
             <ListChecks className="h-5 w-5 shrink-0 text-primary" />
-            <span className="truncate">Tarefas de Hoje</span>
+            <span className="truncate">Tarefas do Dia</span>
           </h2>
-          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-            {todayTasks.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
+              {([
+                { key: "today", label: "Hoje" },
+                { key: "tomorrow", label: "Amanhã" },
+                { key: "week", label: "Semana" },
+              ] as const).map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setTaskFilter(f.key)}
+                  className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
+                    taskFilter === f.key ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              {todayTasks.length}
+            </span>
+          </div>
         </div>
         {todayTasks.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Nenhuma tarefa para hoje.
+            {taskFilter === "today"
+              ? "Nenhuma tarefa para hoje."
+              : taskFilter === "tomorrow"
+                ? "Nenhuma tarefa para amanhã."
+                : "Nenhuma tarefa para esta semana."}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -249,7 +286,15 @@ function DashboardPage() {
                     )}
                     {desc && <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>}
                   </div>
-                  <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                  <span className="shrink-0 text-right text-xs font-medium text-muted-foreground">
+                    {taskFilter !== "today" && (
+                      <span className="block">
+                        {new Date(t.due_date!).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "2-digit",
+                        })}
+                      </span>
+                    )}
                     {new Date(t.due_date!).toLocaleTimeString("pt-BR", {
                       hour: "2-digit",
                       minute: "2-digit",
