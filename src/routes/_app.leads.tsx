@@ -299,6 +299,7 @@ type WizardForm = {
   value: string;
   origin: string;
   origin_other: string;
+  departure: string;
   destination: string;
   travel_dates: string;
   passengers: string;
@@ -322,6 +323,7 @@ const EMPTY_FORM: WizardForm = {
   value: "",
   origin: "",
   origin_other: "",
+  departure: "",
   destination: "",
   travel_dates: "",
   passengers: "",
