@@ -205,17 +205,27 @@ Texto: "${dest.replace(/"/g, "'")}"`,
 
     const excluded = new Set(data.exclude);
 
-    // 0) SEMPRE tenta primeiro a foto canônica (cartão-postal) do principal
-    // atrativo, via artigo da Wikipedia — é a imagem mais reconhecível do lugar.
-    if (landmark) {
+    // Termos, em ordem de importância, cujo artigo da Wikipedia tende a ter
+    // como imagem de destaque justamente o cartão-postal do lugar.
+    const canonicalTerms = [
+      ...(landmark ? [landmark] : []),
+      ...(landmarkQuery ? [landmarkQuery] : []),
+      ...aiQueries,
+      ...(place ? [place] : []),
+      dest,
+    ].filter((v, i, a) => !!v && a.indexOf(v) === i);
+
+    // 0) SEMPRE prioriza a foto canônica (cartão-postal) via artigo da Wikipedia:
+    // é a imagem de destaque, mais reconhecível e curada do atrativo/local.
+    for (const q of canonicalTerms) {
       for (const lang of ["en", "pt"]) {
-        const img = await wikipediaPhoto(lang, landmark);
+        const img = await wikipediaPhoto(lang, q);
         if (img && !excluded.has(img)) return { imageUrl: img };
       }
     }
 
-    // 1) Junta um POOL de fotos reais do Wikimedia Commons de vários pontos
-    // turísticos, preservando a ordem de relevância e sem duplicatas.
+    // 1) Fallback: junta um POOL de fotos reais do Wikimedia Commons dos
+    // atrativos, preservando a ordem de relevância e sem duplicatas.
     const pool: string[] = [];
     const seen = new Set<string>();
     for (const q of searchTerms) {
@@ -231,6 +241,7 @@ Texto: "${dest.replace(/"/g, "'")}"`,
     }
     const fresh = pool.find((u) => !excluded.has(u));
     if (fresh) return { imageUrl: fresh };
+
 
     // 2) Foto principal do artigo da Wikipedia (apenas se for foto real).
     for (const lang of ["pt", "en"]) {
