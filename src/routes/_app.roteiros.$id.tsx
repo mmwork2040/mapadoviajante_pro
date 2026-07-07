@@ -1456,12 +1456,35 @@ ${dias || "(nenhum dia ainda)"}`;
         }
       }
 
+      let updatedActs = 0;
+      for (const u of res.updates || []) {
+        const { activityId, ...fields } = u;
+        if (!activityId || Object.keys(fields).length === 0) continue;
+        try {
+          await updateItineraryActivity(activityId, {
+            ...(fields.title !== undefined ? { title: fields.title } : {}),
+            ...(fields.time !== undefined ? { time: fields.time || null } : {}),
+            ...(fields.location !== undefined ? { location: fields.location || null } : {}),
+            ...(fields.duration !== undefined ? { duration: fields.duration || null } : {}),
+            ...(fields.description !== undefined ? { description: fields.description || null } : {}),
+            ...(fields.type !== undefined ? { type: mapType(fields.type) } : {}),
+            ...(fields.cost !== undefined ? { cost: fields.cost && fields.cost > 0 ? fields.cost : null } : {}),
+          });
+          updatedActs++;
+        } catch {
+          /* ignora atualização individual com erro */
+        }
+      }
+
+      const changes: string[] = [];
+      if (createdDays > 0) changes.push(`${createdDays} dia(s) e ${createdActs} atividade(s) adicionados`);
+      if (updatedActs > 0) changes.push(`${updatedActs} atividade(s) completada(s)`);
       const summary =
-        createdDays > 0
-          ? `${res.reply}\n\n✓ ${createdDays} dia(s) e ${createdActs} atividade(s) adicionados ao roteiro.`
+        changes.length > 0
+          ? `${res.reply}\n\n✓ ${changes.join(" · ")}.`
           : res.reply || "Não encontrei informações suficientes para montar os dias.";
       setMessages((m) => [...m, { role: "assistant", text: summary }]);
-      if (createdDays > 0) onChange();
+      if (createdDays > 0 || updatedActs > 0) onChange();
     } catch (err) {
       setMessages((m) => [
         ...m,
