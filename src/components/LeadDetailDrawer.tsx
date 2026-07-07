@@ -508,10 +508,10 @@ function PerfilTab({
           />
           <EditableField
             label="WhatsApp"
-            value={lead.phone}
+            value={lead.phone ? maskPhone(lead.phone) : ""}
             display={lead.phone ? maskPhone(lead.phone) : null}
-            type="tel"
-            onSave={(v) => onUpdate({ phone: v })}
+            mask={maskPhone}
+            onSave={(v) => onUpdate({ phone: v.replace(/\D/g, "") })}
           />
           <EditableField
             label="Orçamento"
