@@ -1109,6 +1109,13 @@ export function ModalField({
     disabled?: boolean;
     title?: string;
   };
+  actions?: {
+    icon: typeof User;
+    onClick: () => void;
+    loading?: boolean;
+    disabled?: boolean;
+    title?: string;
+  }[];
   hint?: string;
   previewImage?: string;
   onClearPreview?: () => void;
