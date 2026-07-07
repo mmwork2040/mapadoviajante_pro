@@ -539,12 +539,14 @@ export function NewLeadModal({
   const downloadImage = useServerFn(downloadDestinationImage);
   const [searchingImg, setSearchingImg] = useState(false);
   const [triedImages, setTriedImages] = useState<string[]>([]);
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
 
   async function findDestinationImage() {
     const dest = form.destination.trim();
     if (!dest || !aiActive) return;
-    // Se já houver uma imagem, o usuário quer outra: busca externa evitando repetidas.
-    const wantNew = !!form.cover_image;
+    // Só busca na biblioteca na primeira tentativa; depois busca sempre uma nova.
+    const wantNew = !!form.cover_image || triedImages.length > 0;
     setSearchingImg(true);
     try {
       if (!wantNew) {
@@ -556,12 +558,12 @@ export function NewLeadModal({
           return;
         }
       }
+      // Não salva ainda: mostra a imagem para o usuário confirmar.
       const res = await downloadImage({ data: { destination: dest, exclude: triedImages } });
       if (res?.imageUrl) {
-        const saved = await saveExternalImageToLibrary(res.imageUrl, dest);
-        set({ cover_image: saved });
-        setTriedImages((prev) => [...prev, res.imageUrl, saved]);
-        toast.success(wantNew ? "Nova imagem encontrada." : "Imagem baixada e salva na biblioteca.");
+        setPendingImage(res.imageUrl);
+        setTriedImages((prev) => [...prev, res.imageUrl]);
+        toast.info("Confirme se deseja usar esta imagem.");
       } else {
         toast.error("Nenhuma imagem encontrada para este destino.");
       }
@@ -570,6 +572,29 @@ export function NewLeadModal({
     } finally {
       setSearchingImg(false);
     }
+  }
+
+  // Confirma a imagem pendente: só então baixa e salva na biblioteca.
+  async function confirmPendingImage() {
+    if (!pendingImage) return;
+    setConfirming(true);
+    try {
+      const saved = await saveExternalImageToLibrary(pendingImage, form.destination.trim());
+      set({ cover_image: saved });
+      setTriedImages((prev) => [...prev, saved]);
+      setPendingImage(null);
+      toast.success("Imagem baixada e salva na biblioteca.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível salvar a imagem.");
+    } finally {
+      setConfirming(false);
+    }
+  }
+
+  // Usuário não gostou: descarta e busca outra automaticamente.
+  function rejectPendingImage() {
+    setPendingImage(null);
+    void findDestinationImage();
   }
 
 
