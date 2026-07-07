@@ -81,17 +81,24 @@ function AcceptInvitePage() {
     }
   }, [token, refreshMember, goHome]);
 
-  // Se o usuário já pertence a uma agência (convite já aceito), vai para a home.
+  // Verifica se a sessão atual é do mesmo e-mail do convite.
+  const sessionEmail = session?.user?.email?.toLowerCase() ?? "";
+  const inviteEmail = info?.email?.toLowerCase() ?? "";
+  const emailMatches = Boolean(session && inviteEmail && sessionEmail === inviteEmail);
+  const wrongUser = Boolean(session && inviteEmail && sessionEmail !== inviteEmail);
+
+  // Se já pertence a uma agência E é o e-mail do convite (convite já aceito), vai para a home.
   useEffect(() => {
-    if (session && member) goHome();
-  }, [session, member, goHome]);
+    if (session && member && emailMatches) goHome();
+  }, [session, member, emailMatches, goHome]);
 
   // Se já estiver logado com o e-mail certo, aceita direto uma única vez.
   useEffect(() => {
-    if (!session || !info?.valid || !token || autoAcceptStarted.current) return;
+    if (!emailMatches || !info?.valid || !token || autoAcceptStarted.current) return;
     autoAcceptStarted.current = true;
     void confirmInvite();
-  }, [session, info?.valid, token, confirmInvite]);
+  }, [emailMatches, info?.valid, token, confirmInvite]);
+
 
 
   async function handleSubmit(e: React.FormEvent) {
@@ -157,7 +164,29 @@ function AcceptInvitePage() {
               Este convite não existe ou já foi utilizado. Peça um novo convite ao administrador.
             </p>
           </div>
-        ) : session ? (
+        ) : wrongUser ? (
+          <div>
+            <h1 className="text-xl font-bold">Conta diferente conectada</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Você está logado como <strong>{sessionEmail}</strong>, mas este convite é para{" "}
+              <strong>{inviteEmail}</strong>. Saia e entre com o e-mail do convite para continuar.
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                await supabase.auth.signOut();
+                autoAcceptStarted.current = false;
+                setError("");
+                setBusy(false);
+              }}
+              className="mt-5 w-full rounded-lg bg-primary py-3 font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            >
+              {busy ? "Aguarde…" : "Sair e usar o e-mail do convite"}
+            </button>
+          </div>
+        ) : emailMatches ? (
           <div>
             {!error ? (
               <p className="text-sm text-muted-foreground">Confirmando seu convite…</p>
