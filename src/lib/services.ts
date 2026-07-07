@@ -983,29 +983,34 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
   if (!_agencyId) return [];
   const { data, error } = await supabase
     .from("crm_itineraries")
-    .select("*, lead:crm_leads!crm_itineraries_lead_id_fkey(name)")
+    .select("*, lead:crm_leads!crm_itineraries_lead_id_fkey(name, profile)")
     .eq("agency_id", _agencyId)
     .order("created_at", { ascending: false });
   if (error) {
     console.error("fetchItineraries:", error);
     throw new Error("Não foi possível carregar os roteiros.");
   }
-  const items = (data as Itinerary[]) || [];
+  const items = (data as (Itinerary & { lead?: { name?: string; profile?: Record<string, unknown> } })[]) || [];
 
-  // Carrega no card a foto do destino já existente na biblioteca (se houver).
+  // Carrega no card a foto do destino: prioriza a imagem já configurada no lead
+  // (profile.cover_image) e, se não houver, tenta casar com a biblioteca.
   try {
     const [destinations, libItems] = await Promise.all([
       fetchDestinations().catch(() => [] as Destination[]),
       fetchLibraryItems().catch(() => [] as LibraryItem[]),
     ]);
     for (const it of items) {
-      if (it.destination) {
+      const leadCover = (it.lead?.profile as Record<string, string> | undefined)?.cover_image;
+      if (leadCover) {
+        it.cover_image = leadCover;
+      } else if (it.destination) {
         it.cover_image = matchLibraryImage(it.destination, destinations, libItems);
       }
     }
   } catch (e) {
     console.error("fetchItineraries cover:", e);
   }
+
 
   return items.sort((a, b) =>
     ((a.lead?.name ?? "").localeCompare(b.lead?.name ?? "", "pt", { sensitivity: "base" })),
@@ -1024,7 +1029,10 @@ export async function fetchPublicItinerary(id: string): Promise<Itinerary | null
 }
 
 export async function fetchItineraryById(id: string): Promise<Itinerary | null> {
-  let itQuery = supabase.from("crm_itineraries").select("*").eq("id", id);
+  let itQuery = supabase
+    .from("crm_itineraries")
+    .select("*, lead:crm_leads!crm_itineraries_lead_id_fkey(profile)")
+    .eq("id", id);
   if (_agencyId) itQuery = itQuery.eq("agency_id", _agencyId);
   const { data: itinerary, error: itErr } = await itQuery.maybeSingle();
   if (itErr) {
@@ -1032,6 +1040,16 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     throw new Error("Não foi possível carregar o roteiro.");
   }
   if (!itinerary) return null;
+
+  // Resolve a imagem de capa: prioriza a foto configurada no lead.
+  const itAny = itinerary as Itinerary & { lead?: { profile?: Record<string, unknown> } };
+  const leadCover = (itAny.lead?.profile as Record<string, string> | undefined)?.cover_image;
+  if (leadCover) {
+    itAny.cover_image = leadCover;
+  } else if (itAny.destination && !itAny.cover_image) {
+    itAny.cover_image = await searchLibraryImageForDestination(itAny.destination);
+  }
+
   const { data: days } = await supabase
     .from("crm_itinerary_days")
     .select("*, activities:crm_itinerary_activities(*)")

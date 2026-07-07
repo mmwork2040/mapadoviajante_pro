@@ -34,6 +34,7 @@ import {
   duplicateItineraryDay,
   deleteVoucher,
   fetchItineraryById,
+  resolveDisplayImageUrl,
   updateItinerary,
   updateItineraryActivity,
   updateItineraryDay,
@@ -129,6 +130,12 @@ function ItineraryDetailPage() {
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
   });
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    resolveDisplayImageUrl(it?.cover_image).then((u) => { if (active) setCoverUrl(u); });
+    return () => { active = false; };
+  }, [it?.cover_image]);
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["itinerary", id] });
 
@@ -372,14 +379,24 @@ function ItineraryDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <div className="relative flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-2xl border border-border bg-card p-5">
+        {coverUrl && (
+          <>
+            <div
+              className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-40"
+              style={{ backgroundImage: `url(${coverUrl})` }}
+              aria-hidden
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-card/40 to-card/70" aria-hidden />
+          </>
+        )}
+        <div className="relative">
           <h1 className="text-2xl font-bold">{it.title}</h1>
           <p className="text-sm text-muted-foreground">
             {it.destination} · {it.client_name} · {formatCurrency(it.budget)} · <span>{STATUS_LABELS[it.status || "draft"] || it.status}</span>
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="relative flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
