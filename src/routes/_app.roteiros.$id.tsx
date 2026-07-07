@@ -1106,7 +1106,7 @@ function ActivityDocuments({
             </select>
             <input ref={fileRef} type="file" onChange={handleFile} className="hidden" accept="image/*,application/pdf" />
             <button
-              onClick={() => fileRef.current?.click()}
+              onClick={() => setPickerOpen(true)}
               disabled={uploading}
               className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
             >
@@ -1115,6 +1115,16 @@ function ActivityDocuments({
             </button>
           </div>
         </div>
+      )}
+      {pickerOpen && (
+        <AttachSourceModal
+          onClose={() => setPickerOpen(false)}
+          onDevice={() => {
+            setPickerOpen(false);
+            fileRef.current?.click();
+          }}
+          onLibrary={handleLibraryPick}
+        />
       )}
       <DocumentPreviewModal doc={preview} onClose={() => setPreview(null)} />
     </div>
