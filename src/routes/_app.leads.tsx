@@ -552,8 +552,9 @@ export function NewLeadModal({
       }
       const res = await downloadImage({ data: { destination: dest } });
       if (res?.imageUrl) {
-        set({ cover_image: res.imageUrl });
-        toast.success("Imagem do destino baixada.");
+        const saved = await saveExternalImageToLibrary(res.imageUrl, dest);
+        set({ cover_image: saved });
+        toast.success("Imagem baixada e salva na biblioteca.");
       } else {
         toast.error("Nenhuma imagem encontrada para este destino.");
       }
