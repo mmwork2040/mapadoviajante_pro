@@ -657,7 +657,7 @@ function DashboardPage() {
             <tbody>
               {recentLeads.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-muted-foreground">
+                  <td colSpan={6} className="py-8 text-center text-muted-foreground">
                     Nenhum lead encontrado
                   </td>
                 </tr>
