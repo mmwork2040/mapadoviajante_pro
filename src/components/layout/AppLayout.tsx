@@ -56,7 +56,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const [mobileMenu, setMobileMenu] = useState(false);
   const qc = useQueryClient();
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
-  const leadsCount = leadsQ.data?.length ?? 0;
+  const leadsCount = (leadsQ.data ?? []).filter((l) => l.status === "new").length;
   const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
   const todayTasksCount = (tasksQ.data ?? []).filter((t) => {
     if (!t.due_date || t.completed) return false;
