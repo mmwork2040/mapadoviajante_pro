@@ -946,7 +946,10 @@ export async function duplicateItinerary(id: string): Promise<Itinerary | null> 
 }
 
 // Duplica um único dia (com suas atividades) dentro do mesmo roteiro.
-export async function duplicateItineraryDay(dayId: string): Promise<ItineraryDay | null> {
+export async function duplicateItineraryDay(
+  dayId: string,
+  targetPosition?: number,
+): Promise<ItineraryDay | null> {
   const { data: src, error } = await supabase
     .from("crm_itinerary_days")
     .select("*, activities:crm_itinerary_activities(*)")
@@ -957,16 +960,31 @@ export async function duplicateItineraryDay(dayId: string): Promise<ItineraryDay
     return null;
   }
   const source = src as unknown as ItineraryDay & { itinerary_id: string; label?: string | null };
-  const { count } = await supabase
+
+  // Carrega todos os dias do roteiro para remanejar a numeração.
+  const { data: allDaysRaw } = await supabase
     .from("crm_itinerary_days")
-    .select("id", { count: "exact", head: true })
-    .eq("itinerary_id", source.itinerary_id);
-  const nextNumber = (count ?? 0) + 1;
+    .select("id, day_number")
+    .eq("itinerary_id", source.itinerary_id)
+    .order("day_number", { ascending: true });
+  const allDays = (allDaysRaw as { id: string; day_number: number }[]) || [];
+
+  const insertAt = targetPosition ?? allDays.length + 1;
+
+  // Abre espaço: incrementa o day_number/sort_order dos dias iguais ou posteriores.
+  const toShift = allDays.filter((d) => d.day_number >= insertAt);
+  for (const d of toShift.sort((a, b) => b.day_number - a.day_number)) {
+    await updateItineraryDay(d.id, {
+      day_number: d.day_number + 1,
+      sort_order: d.day_number + 1,
+    });
+  }
+
   const newDay = await createItineraryDay({
     itinerary_id: source.itinerary_id,
-    day_number: nextNumber,
-    title: `${source.title || source.label || `Dia ${source.day_number}`} (cópia)`,
-    sort_order: nextNumber,
+    day_number: insertAt,
+    title: source.title || source.label || `Dia ${insertAt}`,
+    sort_order: insertAt,
   });
   if (!newDay) return null;
   const activities = [...(source.activities || [])].sort(
