@@ -17,7 +17,7 @@ import {
 
 } from "lucide-react";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
-import { fetchDashboardStats, createTask, cleanTaskDescription } from "@/lib/services";
+import { fetchDashboardStats, createTask, cleanTaskDescription, isOverdue } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import {
   Dialog,
