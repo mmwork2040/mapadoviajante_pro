@@ -347,8 +347,8 @@ function DashboardPage() {
                     )}
                   </div>
                   <span className="shrink-0 text-right text-xs font-medium text-muted-foreground">
-                    {taskFilter !== "today" && (
-                      <span className="block">
+                    {(taskFilter !== "today" || isOverdue(t.due_date, t.completed)) && (
+                      <span className={`block ${isOverdue(t.due_date, t.completed) ? "font-semibold text-red-600 dark:text-red-400" : ""}`}>
                         {new Date(t.due_date!).toLocaleDateString("pt-BR", {
                           day: "2-digit",
                           month: "2-digit",
