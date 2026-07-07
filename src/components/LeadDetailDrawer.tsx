@@ -847,7 +847,7 @@ function AtividadesTab({
                     }}
                     disabled={remove.isPending}
                     title="Excluir atividade"
-                    className="shrink-0 self-start text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
+                    className="shrink-0 self-start text-muted-foreground transition hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
