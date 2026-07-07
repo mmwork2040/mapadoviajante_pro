@@ -503,7 +503,15 @@ function AtividadesTab({
                     {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
                   </div>
                   <button
-                    onClick={() => remove.mutate(a.id)}
+                    onClick={async () => {
+                      const ok = await confirm({
+                        title: "Excluir atividade",
+                        description: `Deseja excluir "${a.title}"? Esta ação não pode ser desfeita.`,
+                        confirmLabel: "Excluir",
+                        destructive: true,
+                      });
+                      if (ok) remove.mutate(a.id);
+                    }}
                     disabled={remove.isPending}
                     title="Excluir atividade"
                     className="shrink-0 self-start text-muted-foreground opacity-0 transition hover:text-destructive group-hover:opacity-100"
