@@ -40,6 +40,7 @@ import {
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
+  resolveDisplayImageUrl,
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
@@ -181,6 +182,12 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
 
   const p = ((lead?.profile as Record<string, string>) || {});
   const phoneDigits = (lead?.phone || "").replace(/\D/g, "");
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    resolveDisplayImageUrl(p.cover_image).then((url) => { if (active) setCoverUrl(url); });
+    return () => { active = false; };
+  }, [p.cover_image]);
 
   function openWhatsApp() {
     if (!phoneDigits) return toast.error("Lead sem telefone cadastrado.");
@@ -198,8 +205,18 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
         ) : (
           <>
             {/* Header */}
-            <div className="border-b border-border p-5">
-              <div className="flex items-start gap-3">
+            <div className="relative overflow-hidden border-b border-border p-5">
+              {coverUrl && (
+                <>
+                  <div
+                    className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-[0.12]"
+                    style={{ backgroundImage: `url(${coverUrl})` }}
+                    aria-hidden
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-card/60 to-card/85" aria-hidden />
+                </>
+              )}
+              <div className="relative flex items-start gap-3">
                 <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary text-lg font-bold text-primary-foreground">
                   {initials(lead.name)}
                 </span>
@@ -219,7 +236,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 </button>
               </div>
 
-              <div className="mt-3 flex items-center justify-between gap-2">
+              <div className="relative mt-3 flex items-center justify-between gap-2">
                 <StatusDropdown
                   value={lead.status}
                   onChange={(status) => update.mutate({ status })}
@@ -230,7 +247,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 )}
               </div>
 
-              <div className="mt-3 grid grid-cols-3 gap-2">
+              <div className="relative mt-3 grid grid-cols-3 gap-2">
                 <button
                   onClick={openWhatsApp}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
