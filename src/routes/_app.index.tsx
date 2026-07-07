@@ -654,9 +654,7 @@ function DashboardPage() {
                   <td className="py-2 text-muted-foreground">{l.destination || "—"}</td>
                   <td className="py-2">{formatCurrency(l.value)}</td>
                   <td className="py-2">
-                    <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-                      {STATUS_LABEL[l.status] || l.status}
-                    </span>
+                    <StatusBadge status={l.status} />
                   </td>
                   <td className="py-2 text-muted-foreground">{timeAgo(l.last_activity_at || l.created_at)}</td>
                 </tr>
