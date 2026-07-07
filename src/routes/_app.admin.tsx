@@ -305,6 +305,28 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                 {isAdmin && m.status !== "pending" && m.id !== member?.id && (
                   <button
                     type="button"
+                    title={m.is_active === false ? "Liberar acesso" : "Bloquear acesso"}
+                    disabled={blockToggle.isPending}
+                    onClick={() => handleToggleBlock(m)}
+                    className={`flex items-center gap-1 rounded-lg border px-2 py-1 text-xs disabled:opacity-50 ${
+                      m.is_active === false
+                        ? "border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                        : "border-amber-500/40 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
+                    }`}
+                  >
+                    {blockToggle.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : m.is_active === false ? (
+                      <LockOpen className="h-3.5 w-3.5" />
+                    ) : (
+                      <Ban className="h-3.5 w-3.5" />
+                    )}
+                    {m.is_active === false ? "Liberar" : "Bloquear"}
+                  </button>
+                )}
+                {isAdmin && m.status !== "pending" && m.id !== member?.id && (
+                  <button
+                    type="button"
                     title="Remover da equipe"
                     disabled={remove.isPending}
                     onClick={() => handleRemoveMember(m)}
