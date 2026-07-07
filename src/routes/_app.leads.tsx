@@ -558,7 +558,7 @@ export function NewLeadModal({
           {step === 1 && (
             <Section icon={Plane} title="Detalhes da Viagem">
               <ModalField label="Destino" placeholder="Ex: Paris, França" value={form.destination} onChange={(v) => set({ destination: v })} />
-              <ModalField label="Datas / Período" placeholder="Ex: Jul/2026, 10 dias" value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
+              <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
               <ModalSelect label="Tipo de Viagem" value={form.trip_type} onChange={(v) => set({ trip_type: v })} options={["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"]} />
               <ModalTextarea label="Observações da viagem" placeholder="Preferências, ocasião especial…" value={form.trip_notes} onChange={(v) => set({ trip_notes: v })} />
