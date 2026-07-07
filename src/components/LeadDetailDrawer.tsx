@@ -46,12 +46,12 @@ import { formatCurrency, formatDate, initials, maskPhone } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
 import type { Lead, LeadStatus } from "@/lib/types";
 
-const STATUSES: { key: LeadStatus; label: string }[] = [
-  { key: "new", label: "Novo" },
-  { key: "contacted", label: "Contatado" },
-  { key: "negotiating", label: "Negociando" },
-  { key: "closed", label: "Fechado" },
-  { key: "lost", label: "Perdido" },
+const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
+  { key: "new", label: "Novo", dot: "bg-blue-500" },
+  { key: "contacted", label: "Contatado", dot: "bg-sky-500" },
+  { key: "negotiating", label: "Negociando", dot: "bg-amber-400" },
+  { key: "closed", label: "Fechado", dot: "bg-emerald-500" },
+  { key: "lost", label: "Perdido", dot: "bg-red-500" },
 ];
 
 const TABS = [
@@ -197,11 +197,16 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               </div>
 
               <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="relative">
+                <div className="relative flex items-center gap-2 rounded-full border border-border bg-muted/40 pl-3 pr-1">
+                  <span
+                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
+                      STATUSES.find((s) => s.key === lead.status)?.dot || "bg-muted-foreground"
+                    }`}
+                  />
                   <select
                     value={lead.status}
                     onChange={(e) => update.mutate({ status: e.target.value as LeadStatus })}
-                    className="appearance-none rounded-full border border-primary/40 bg-primary/10 py-1.5 pl-3 pr-8 text-xs font-bold uppercase tracking-wide text-primary outline-none"
+                    className="appearance-none bg-transparent py-1.5 pr-6 text-xs font-semibold text-foreground outline-none"
                   >
                     {STATUSES.map((s) => (
                       <option key={s.key} value={s.key}>
@@ -209,7 +214,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-primary" />
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
                 </div>
                 <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
               </div>
@@ -348,12 +353,14 @@ function EditableField({
   value,
   display,
   type = "text",
+  mask,
   onSave,
 }: {
   label: string;
   value?: string | null;
   display?: string | null;
   type?: string;
+  mask?: (raw: string) => string;
   onSave: (value: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -375,15 +382,17 @@ function EditableField({
         <div className="mt-1 flex items-center gap-1">
           <input
             autoFocus
-            type={type}
+            type={mask ? "text" : type}
+            inputMode={mask ? "numeric" : undefined}
             value={draft}
-            onChange={(e) => setDraft(e.target.value)}
+            onChange={(e) => setDraft(mask ? mask(e.target.value) : e.target.value)}
             onKeyDown={(e) => {
               if (e.key === "Enter") save();
               if (e.key === "Escape") setEditing(false);
             }}
             className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
           />
+
           <button
             onClick={save}
             title="Salvar"
@@ -499,10 +508,10 @@ function PerfilTab({
           />
           <EditableField
             label="WhatsApp"
-            value={lead.phone}
+            value={lead.phone ? maskPhone(lead.phone) : ""}
             display={lead.phone ? maskPhone(lead.phone) : null}
-            type="tel"
-            onSave={(v) => onUpdate({ phone: v })}
+            mask={maskPhone}
+            onSave={(v) => onUpdate({ phone: v.replace(/\D/g, "") })}
           />
           <EditableField
             label="Orçamento"
