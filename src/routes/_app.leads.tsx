@@ -327,6 +327,7 @@ const EMPTY_FORM: WizardForm = {
   origin_other: "",
   departure: "",
   destination: "",
+  cover_image: "",
   travel_dates: "",
   passengers: "",
   trip_type: "",
