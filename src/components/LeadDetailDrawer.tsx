@@ -686,7 +686,9 @@ function AtividadesTab({
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [type, setType] = useState("note");
-  const [title, setTitle] = useState("");
+  const [title, setTitle] = useState(
+    ACTIVITY_TYPES.find((t) => t.key === "note")?.label || "Observação",
+  );
   const [details, setDetails] = useState("");
   const [assigned, setAssigned] = useState("");
   const [dueDate, setDueDate] = useState("");
