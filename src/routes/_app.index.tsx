@@ -687,6 +687,10 @@ function DashboardPage() {
           </table>
         </div>
       </div>
+
+      {detailLeadId && (
+        <LeadDetailDrawer leadId={detailLeadId} onClose={() => setDetailLeadId(null)} />
+      )}
     </div>
   );
 }
