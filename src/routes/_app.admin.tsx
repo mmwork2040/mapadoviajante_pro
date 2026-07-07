@@ -63,7 +63,7 @@ import {
   type AgencyPaymentConfig,
 } from "@/lib/payments.functions";
 import { testAiConnection, extractKnowledgeDoc } from "@/lib/ai.functions";
-import { formatDate, initials } from "@/lib/ui";
+import { formatDate, initials, maskPhone, maskCpfCnpj } from "@/lib/ui";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -538,7 +538,7 @@ function AgencyCard() {
           <span className="mb-1 block text-sm font-medium">Telefone</span>
           <input
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            onChange={(e) => setForm({ ...form, phone: maskPhone(e.target.value) })}
             className={inputCls}
             placeholder="(00) 00000-0000"
           />
@@ -556,7 +556,7 @@ function AgencyCard() {
           <span className="mb-1 block text-sm font-medium">CNPJ</span>
           <input
             value={form.cnpj}
-            onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+            onChange={(e) => setForm({ ...form, cnpj: maskCpfCnpj(e.target.value) })}
             className={inputCls}
             placeholder="Obrigatório se emitir nota fiscal"
           />
