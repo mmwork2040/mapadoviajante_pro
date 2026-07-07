@@ -439,6 +439,16 @@ function EditableField({
           >
             <Check className="h-3.5 w-3.5" />
           </button>
+          <button
+            onClick={() => {
+              setDraft(value ?? "");
+              setEditing(false);
+            }}
+            title="Cancelar"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       ) : (
         <div className="mt-0.5 flex items-center gap-1">
