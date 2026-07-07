@@ -1277,7 +1277,7 @@ export function ModalField({
 }
 
 // Modal para escolher uma imagem já existente na biblioteca interna.
-function LibraryImagePicker({
+export function LibraryImagePicker({
   onClose,
   onPick,
 }: {
