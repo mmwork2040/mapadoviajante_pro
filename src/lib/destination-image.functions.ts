@@ -151,22 +151,22 @@ export const downloadDestinationImage = createServerFn({ method: "POST" })
         provider: cfg.provider ?? "openai",
         model: cfg.model ?? "",
         apiKey: cfg.api_key_encrypted,
-        maxTokens: 300,
+        maxTokens: 600,
       },
-      `Você identifica destinos de viagem. Dado o texto abaixo, determine o local real (país, estado ou cidade) e seu PRINCIPAL ponto turístico/cartão-postal (o mais fotografado e reconhecível).
+      `Você é um especialista em turismo. Dado o texto abaixo, identifique o local real (país, estado ou cidade).
+Liste os PRINCIPAIS pontos turísticos/cartões-postais e cidades icônicas desse destino (os mais fotografados e reconhecíveis). Quanto maior o local (ex: um país), mais opções liste.
 Se o texto NÃO corresponder a um destino de viagem real, marque "valid": false.
 Responda APENAS com JSON válido, sem texto extra:
 {
   "valid": true/false,
-  "place": "nome do local reconhecido (cidade, estado, país)",
-  "landmark": "nome do principal ponto turístico/cartão-postal",
-  "queries": ["3 a 5 termos de busca em inglês, começando pelo ponto turístico principal, para encontrar uma FOTO real do local"]
+  "place": "nome do local reconhecido (cidade, estado, país) em inglês",
+  "queries": ["8 a 12 termos de busca em inglês para encontrar FOTOS reais, começando pelos pontos turísticos e cidades mais icônicos do destino (ex: 'Torres del Paine', 'Valparaiso Chile', 'Atacama Desert', 'Santiago Chile skyline')"]
 }
 
 Texto: "${dest.replace(/"/g, "'")}"`,
     );
 
-    let parsed: { valid?: boolean; place?: string; landmark?: string; queries?: unknown } = {};
+    let parsed: { valid?: boolean; place?: string; queries?: unknown } = {};
     try {
       const cleaned = aiRaw.replace(/```json/gi, "").replace(/```/g, "").trim();
       const s = cleaned.indexOf("{");
@@ -177,16 +177,13 @@ Texto: "${dest.replace(/"/g, "'")}"`,
     }
 
     // Não rejeitamos por causa de "valid": false — a IA pode errar.
-    // Só descartamos se ela não trouxe nenhuma pista de local reconhecido.
-
 
     const first = dest.split(",")[0].trim();
     const aiQueries = Array.isArray(parsed.queries)
       ? parsed.queries.filter((q): q is string => typeof q === "string" && q.trim().length > 0)
       : [];
-    // Prioriza o ponto turístico principal identificado pela IA.
+    // Prioriza os pontos turísticos identificados pela IA, depois o destino em si.
     const searchTerms = [
-      ...(parsed.landmark ? [parsed.landmark] : []),
       ...aiQueries,
       ...(parsed.place ? [parsed.place] : []),
       dest,
@@ -194,21 +191,30 @@ Texto: "${dest.replace(/"/g, "'")}"`,
     ].filter((v, i, a) => !!v && a.indexOf(v) === i);
 
     const excluded = new Set(data.exclude);
-    const notExcluded = (u: string | null): u is string => !!u && !excluded.has(u);
 
-    // 1) Fotos reais no Wikimedia Commons (melhor para pontos turísticos).
-    // Pula imagens já mostradas para retornar uma nova a cada busca.
+    // 1) Junta um POOL de fotos reais do Wikimedia Commons de vários pontos
+    // turísticos, preservando a ordem de relevância e sem duplicatas.
+    const pool: string[] = [];
+    const seen = new Set<string>();
     for (const q of searchTerms) {
       const imgs = await commonsPhotos(q);
-      const fresh = imgs.find(notExcluded);
-      if (fresh) return { imageUrl: fresh };
+      for (const img of imgs) {
+        if (!seen.has(img)) {
+          seen.add(img);
+          pool.push(img);
+        }
+      }
+      // já temos candidatos suficientes para variar bastante
+      if (pool.filter((u) => !excluded.has(u)).length >= 12) break;
     }
+    const fresh = pool.find((u) => !excluded.has(u));
+    if (fresh) return { imageUrl: fresh };
 
     // 2) Foto principal do artigo da Wikipedia (apenas se for foto real).
     for (const lang of ["pt", "en"]) {
       for (const q of searchTerms) {
         const img = await wikipediaPhoto(lang, q);
-        if (notExcluded(img)) return { imageUrl: img };
+        if (img && !excluded.has(img)) return { imageUrl: img };
       }
     }
 
@@ -218,5 +224,6 @@ Texto: "${dest.replace(/"/g, "'")}"`,
         : "Nenhuma foto real do destino foi encontrada.",
     );
   });
+
 
 
