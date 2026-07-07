@@ -432,6 +432,20 @@ function parsePlannerJson(text: string): PlannerResult {
             activities: d.activities.filter((a) => a && a.title),
           }))
       : [],
+    updates: Array.isArray(parsed.updates)
+      ? parsed.updates
+          .filter((u): u is PlannedUpdate => !!u && typeof u.activityId === "string" && !!u.activityId)
+          .map((u) => ({
+            activityId: u.activityId,
+            ...(typeof u.time === "string" ? { time: u.time } : {}),
+            ...(typeof u.title === "string" ? { title: u.title } : {}),
+            ...(typeof u.location === "string" ? { location: u.location } : {}),
+            ...(typeof u.type === "string" ? { type: u.type } : {}),
+            ...(typeof u.description === "string" ? { description: u.description } : {}),
+            ...(typeof u.duration === "string" ? { duration: u.duration } : {}),
+            ...(typeof u.cost === "number" ? { cost: u.cost } : {}),
+          }))
+      : [],
   };
 }
 
