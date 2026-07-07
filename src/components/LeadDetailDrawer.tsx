@@ -42,7 +42,7 @@ import {
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, formatDate, initials, maskPhone } from "@/lib/ui";
+import { formatCurrency, formatDate, initials, maskCurrency, maskPhone, parseCurrency } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
 import type { Lead, LeadStatus } from "@/lib/types";
 
@@ -439,6 +439,16 @@ function EditableField({
           >
             <Check className="h-3.5 w-3.5" />
           </button>
+          <button
+            onClick={() => {
+              setDraft(value ?? "");
+              setEditing(false);
+            }}
+            title="Cancelar"
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
         </div>
       ) : (
         <div className="mt-0.5 flex items-center gap-1">
@@ -554,10 +564,10 @@ function PerfilTab({
           />
           <EditableField
             label="Orçamento"
-            value={lead.value != null ? String(lead.value) : ""}
+            value={lead.value ? maskCurrency(Math.round(Number(lead.value) * 100)) : ""}
             display={formatCurrency(lead.value)}
-            type="number"
-            onSave={(v) => onUpdate({ value: Number(v) || 0 })}
+            mask={maskCurrency}
+            onSave={(v) => onUpdate({ value: parseCurrency(v) })}
           />
           <EditableField
             label="Origem"
