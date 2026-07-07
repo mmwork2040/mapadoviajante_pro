@@ -337,6 +337,11 @@ function PerfilTab({ lead, activities, onOpenActivities }: { lead: Lead; activit
                       {meta.label}
                     </p>
                     {a.details && <p className="text-xs text-muted-foreground">{a.details}</p>}
+                    {a.due_date && (
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                        <CalendarClock className="h-3 w-3" /> {formatDate(a.due_date)}
+                      </p>
+                    )}
                   </div>
                   {onOpenActivities && (
                     <button
