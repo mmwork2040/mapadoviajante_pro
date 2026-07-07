@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import {
   createLibraryItem,
   deleteLibraryItem,
+  bulkDeleteLibraryItems,
   fetchAiConfig,
   fetchLibraryItems,
   getLibraryAssetUrl,
