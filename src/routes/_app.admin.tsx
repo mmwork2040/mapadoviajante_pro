@@ -538,7 +538,7 @@ function AgencyCard() {
           <span className="mb-1 block text-sm font-medium">Telefone</span>
           <input
             value={form.phone}
-            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            onChange={(e) => setForm({ ...form, phone: maskPhone(e.target.value) })}
             className={inputCls}
             placeholder="(00) 00000-0000"
           />
