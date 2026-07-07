@@ -432,7 +432,7 @@ function AtividadesTab({
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: () => toast.error("Erro ao registrar atividade."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao registrar atividade."),
   });
 
   const remove = useMutation({
