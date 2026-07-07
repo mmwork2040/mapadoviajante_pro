@@ -332,15 +332,18 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
         )}
       </aside>
       {editOpen && lead && (
-        <NewLeadModal
-          lead={lead}
-          onClose={() => setEditOpen(false)}
-          onCreated={() => {
-            setEditOpen(false);
-            qc.invalidateQueries({ queryKey: ["lead", leadId] });
-            qc.invalidateQueries({ queryKey: ["leads"] });
-          }}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <NewLeadModal
+            lead={lead}
+            onClose={() => setEditOpen(false)}
+            onDelete={handleDelete}
+            onCreated={() => {
+              setEditOpen(false);
+              qc.invalidateQueries({ queryKey: ["lead", leadId] });
+              qc.invalidateQueries({ queryKey: ["leads"] });
+            }}
+          />
+        </div>
       )}
     </div>
   );
