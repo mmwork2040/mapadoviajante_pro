@@ -207,7 +207,8 @@ function DashboardPage() {
         if (taskStatus === "pending" && t.completed) return false;
         if (taskStatus === "done" && !t.completed) return false;
         const due = startOfDay(new Date(t.due_date));
-        if (taskFilter === "today") return due.getTime() === today.getTime();
+        // "Hoje" também inclui tarefas expiradas (atrasadas) ainda não concluídas.
+        if (taskFilter === "today") return due.getTime() === today.getTime() || (due.getTime() < today.getTime() && !t.completed);
         if (taskFilter === "tomorrow") return due.getTime() === tomorrow.getTime();
         return due.getTime() >= today.getTime() && due.getTime() < weekEnd.getTime();
       })
