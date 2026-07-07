@@ -7,6 +7,7 @@ import { createItinerary, deleteItinerary, duplicateItinerary, fetchItineraries,
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Itinerary } from "@/lib/types";
+import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
 import {
