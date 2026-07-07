@@ -69,6 +69,10 @@ const ACTIVITY_TYPES = [
   { key: "document", label: "Documento", icon: FileText },
 ];
 
+function activityMeta(type?: string | null) {
+  return ACTIVITY_TYPES.find((t) => t.key === type) ?? { label: "Atividade", icon: ClipboardList };
+}
+
 export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose: () => void }) {
   const qc = useQueryClient();
   const navigate = useNavigate();
