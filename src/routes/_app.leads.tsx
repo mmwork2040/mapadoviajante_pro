@@ -1053,6 +1053,11 @@ export function ModalField({
   hint?: string;
   previewImage?: string;
   onClearPreview?: () => void;
+  pendingImage?: string;
+  confirming?: boolean;
+  onConfirmPending?: () => void;
+  onRejectPending?: () => void;
+
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
   const masks = {
