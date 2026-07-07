@@ -285,6 +285,15 @@ function DashboardPage() {
                       <p className="truncate text-xs text-muted-foreground">👤 {t.lead.name}</p>
                     )}
                     {desc && <p className="mt-0.5 text-xs text-muted-foreground">{desc}</p>}
+                    {t.assigned?.name && (
+                      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground/80">
+                        <span
+                          className="inline-block h-1.5 w-1.5 rounded-full"
+                          style={{ backgroundColor: t.assigned.avatar_color || "currentColor" }}
+                        />
+                        {t.assigned.name}
+                      </p>
+                    )}
                   </div>
                   <span className="shrink-0 text-right text-xs font-medium text-muted-foreground">
                     {taskFilter !== "today" && (
