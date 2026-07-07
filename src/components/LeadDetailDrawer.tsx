@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -206,7 +206,14 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
             </div>
 
             {/* Tabs */}
-            <div className="flex overflow-x-auto border-b border-border px-2">
+            <div
+              ref={tabsRef}
+              onWheel={(e) => {
+                if (e.deltaY === 0) return;
+                e.currentTarget.scrollLeft += e.deltaY;
+              }}
+              className="flex overflow-x-auto scrollbar-thin border-b border-border px-2"
+            >
               {TABS.map((t) => (
                 <button
                   key={t.key}
