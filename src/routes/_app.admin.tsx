@@ -75,7 +75,7 @@ const ROLES = ["admin", "gerente", "consultor"];
 
 function AdminPage() {
   const { session, member } = useAuth();
-  if (!isSuperAdminEmail(session?.user?.email)) {
+  if (!isAdminUser(member, session?.user?.email)) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center text-center">
         <h1 className="text-xl font-bold">Acesso restrito</h1>
