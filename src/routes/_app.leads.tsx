@@ -543,7 +543,17 @@ export function NewLeadModal({
   const [confirming, setConfirming] = useState(false);
   const [imgError, setImgError] = useState<string | null>(null);
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function pickFromLibrary(value: string) {
+    set({ cover_image: value });
+    setPendingImage(null);
+    setImgError(null);
+    setShowLibraryPicker(false);
+    setTriedImages((prev) => [...prev, value]);
+    toast.success("Imagem selecionada da biblioteca.");
+  }
 
   async function handleUploadImage(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
