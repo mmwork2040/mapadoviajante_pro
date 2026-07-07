@@ -236,7 +236,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 </button>
               </div>
 
-              <div className="mt-3 flex items-center justify-between gap-2">
+              <div className="relative mt-3 flex items-center justify-between gap-2">
                 <StatusDropdown
                   value={lead.status}
                   onChange={(status) => update.mutate({ status })}
