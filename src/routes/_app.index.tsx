@@ -41,6 +41,26 @@ const STATUS_LABEL: Record<string, string> = {
   lost: "Perdido",
 };
 
+const STATUS_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
+  new: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  contacted: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
+  negotiating: { bg: "bg-violet-50", text: "text-violet-700", dot: "bg-violet-500" },
+  closed: { bg: "bg-green-50", text: "text-green-700", dot: "bg-green-500" },
+  lost: { bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const s = STATUS_STYLE[status] || { bg: "bg-accent", text: "text-accent-foreground", dot: "bg-muted-foreground" };
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase ${s.bg} ${s.text}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+      {STATUS_LABEL[status] || status}
+    </span>
+  );
+}
+
 const WEEK_DAYS = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
 const MONTH_NAMES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
@@ -595,9 +615,7 @@ function DashboardPage() {
             <div key={l.id} className="rounded-xl border border-border p-3">
               <div className="flex items-start justify-between gap-2">
                 <p className="min-w-0 flex-1 truncate font-medium">{l.name}</p>
-                <span className="shrink-0 rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-                  {STATUS_LABEL[l.status] || l.status}
-                </span>
+                <StatusBadge status={l.status} />
               </div>
               <p className="mt-1 truncate text-sm text-muted-foreground">{l.destination || "—"}</p>
               <div className="mt-2 flex items-center justify-between text-sm">
@@ -636,9 +654,7 @@ function DashboardPage() {
                   <td className="py-2 text-muted-foreground">{l.destination || "—"}</td>
                   <td className="py-2">{formatCurrency(l.value)}</td>
                   <td className="py-2">
-                    <span className="rounded-full bg-accent px-2 py-0.5 text-xs font-medium text-accent-foreground">
-                      {STATUS_LABEL[l.status] || l.status}
-                    </span>
+                    <StatusBadge status={l.status} />
                   </td>
                   <td className="py-2 text-muted-foreground">{timeAgo(l.last_activity_at || l.created_at)}</td>
                 </tr>
