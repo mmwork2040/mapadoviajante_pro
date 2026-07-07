@@ -197,25 +197,11 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               </div>
 
               <div className="mt-3 flex items-center justify-between gap-2">
-                <div className="relative flex items-center gap-2 rounded-full border border-border bg-muted/40 pl-3 pr-1">
-                  <span
-                    className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                      STATUSES.find((s) => s.key === lead.status)?.dot || "bg-muted-foreground"
-                    }`}
-                  />
-                  <select
-                    value={lead.status}
-                    onChange={(e) => update.mutate({ status: e.target.value as LeadStatus })}
-                    className="appearance-none bg-transparent py-1.5 pr-6 text-xs font-semibold text-foreground outline-none"
-                  >
-                    {STATUSES.map((s) => (
-                      <option key={s.key} value={s.key}>
-                        {s.label}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-                </div>
+                <StatusDropdown
+                  value={lead.status}
+                  onChange={(status) => update.mutate({ status })}
+                />
+                <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
                 <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
               </div>
 
@@ -324,6 +310,59 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     </div>
   );
 }
+
+function StatusDropdown({
+  value,
+  onChange,
+}: {
+  value: LeadStatus;
+  onChange: (status: LeadStatus) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const current = STATUSES.find((s) => s.key === value);
+
+  useEffect(() => {
+    function onDoc(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1.5 pl-3 pr-2 text-xs font-semibold text-foreground"
+      >
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${current?.dot || "bg-muted-foreground"}`} />
+        {current?.label || "—"}
+        <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+      </button>
+      {open && (
+        <div className="absolute left-0 z-10 mt-1 min-w-40 overflow-hidden rounded-xl border border-border bg-card py-1 shadow-lg">
+          {STATUSES.map((s) => (
+            <button
+              key={s.key}
+              onClick={() => {
+                onChange(s.key);
+                setOpen(false);
+              }}
+              className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition hover:bg-muted ${
+                s.key === value ? "font-semibold" : ""
+              }`}
+            >
+              <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${s.dot}`} />
+              {s.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 function checklistCount(c: Record<string, boolean>) {
   const entries = Object.values(c);
