@@ -26,6 +26,7 @@ import {
   Info,
   ChevronDown,
   Trash2,
+  Plus,
 
 } from "lucide-react";
 import { toast } from "sonner";
@@ -239,7 +240,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
 
             {/* Body */}
             <div className="flex-1 overflow-y-auto scrollbar-thin p-5">
-              {tab === "perfil" && <PerfilTab lead={lead} activities={activities} />}
+              {tab === "perfil" && <PerfilTab lead={lead} activities={activities} onOpenActivities={() => setTab("atividades")} />}
               {tab === "viagem" && <ViagemTab lead={lead} p={p} />}
               {tab === "atividades" && (
                 <AtividadesTab leadId={leadId} team={team} activities={activities} />
@@ -305,7 +306,7 @@ function Field({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function PerfilTab({ lead, activities }: { lead: Lead; activities: import("@/lib/types").LeadActivity[] }) {
+function PerfilTab({ lead, activities, onOpenActivities }: { lead: Lead; activities: import("@/lib/types").LeadActivity[]; onOpenActivities?: () => void }) {
   return (
     <div className="space-y-6">
       <section>
@@ -337,6 +338,15 @@ function PerfilTab({ lead, activities }: { lead: Lead; activities: import("@/lib
                     </p>
                     {a.details && <p className="text-xs text-muted-foreground">{a.details}</p>}
                   </div>
+                  {onOpenActivities && (
+                    <button
+                      onClick={onOpenActivities}
+                      className="shrink-0 self-start inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-1 text-[11px] font-medium text-primary transition hover:bg-primary/20"
+                      title="Ver detalhes na aba Atividades"
+                    >
+                      <Plus className="h-3 w-3" /> info
+                    </button>
+                  )}
                 </li>
               );
             })}
