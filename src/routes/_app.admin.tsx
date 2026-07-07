@@ -455,6 +455,199 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
   );
 }
 
+function AgencyCard() {
+  const qc = useQueryClient();
+  const q = useQuery({ queryKey: ["agency-info"], queryFn: getAgencyInfo });
+  const [form, setForm] = useState<AgencyInfo | null>(null);
+  const [cepLoading, setCepLoading] = useState(false);
+
+  useEffect(() => {
+    if (q.data) setForm(q.data);
+  }, [q.data]);
+
+  const save = useMutation({
+    mutationFn: (info: AgencyInfo) => saveAgencyInfo(info),
+    onSuccess: (res) => {
+      if (!res.ok) return toast.error(res.error || "Erro ao salvar.");
+      toast.success("Dados da agência salvos.");
+      qc.invalidateQueries({ queryKey: ["agency-info"] });
+    },
+    onError: () => toast.error("Erro ao salvar."),
+  });
+
+  if (q.isError) {
+    return <QueryError message="Não foi possível carregar os dados da agência." onRetry={() => q.refetch()} />;
+  }
+  if (!form) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+      </div>
+    );
+  }
+
+  const addr = form.address;
+  const setAddr = (patch: Partial<AgencyInfo["address"]>) =>
+    setForm({ ...form, address: { ...form.address, ...patch } });
+
+  async function handleCep(cep: string) {
+    setAddr({ cep });
+    if (cep.replace(/\D/g, "").length !== 8) return;
+    setCepLoading(true);
+    const res = await lookupCep(cep);
+    setCepLoading(false);
+    if (!res) return toast.error("CEP não encontrado.");
+    setForm((f) =>
+      f
+        ? {
+            ...f,
+            address: {
+              ...f.address,
+              cep,
+              street: res.street,
+              district: res.district,
+              city: res.city,
+              state: res.state,
+            },
+          }
+        : f,
+    );
+  }
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (form) save.mutate(form);
+  }
+
+  const inputCls =
+    "w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary";
+
+  return (
+    <form onSubmit={submit} className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="block sm:col-span-2">
+          <span className="mb-1 block text-sm font-medium">Nome da empresa *</span>
+          <input
+            required
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className={inputCls}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">Telefone</span>
+          <input
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            className={inputCls}
+            placeholder="(00) 00000-0000"
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-sm font-medium">E-mail</span>
+          <input
+            type="email"
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            className={inputCls}
+          />
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="mb-1 block text-sm font-medium">CNPJ</span>
+          <input
+            value={form.cnpj}
+            onChange={(e) => setForm({ ...form, cnpj: e.target.value })}
+            className={inputCls}
+            placeholder="Obrigatório se emitir nota fiscal"
+          />
+          <span className="mt-1 block text-xs text-muted-foreground">
+            Obrigatório se a agência emitir nota fiscal.
+          </span>
+        </label>
+      </div>
+
+      <div className="border-t border-border pt-4">
+        <h3 className="mb-3 text-sm font-semibold">Endereço</h3>
+        <div className="grid gap-4 sm:grid-cols-6">
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-sm font-medium">CEP</span>
+            <div className="relative">
+              <input
+                value={addr.cep ?? ""}
+                onChange={(e) => handleCep(e.target.value)}
+                className={inputCls}
+                placeholder="00000-000"
+              />
+              {cepLoading && (
+                <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+          </label>
+          <label className="block sm:col-span-4">
+            <span className="mb-1 block text-sm font-medium">Logradouro</span>
+            <input
+              value={addr.street ?? ""}
+              onChange={(e) => setAddr({ street: e.target.value })}
+              className={inputCls}
+            />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-sm font-medium">Número</span>
+            <input
+              value={addr.number ?? ""}
+              onChange={(e) => setAddr({ number: e.target.value })}
+              className={inputCls}
+            />
+          </label>
+          <label className="block sm:col-span-4">
+            <span className="mb-1 block text-sm font-medium">Complemento</span>
+            <input
+              value={addr.complement ?? ""}
+              onChange={(e) => setAddr({ complement: e.target.value })}
+              className={inputCls}
+            />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="mb-1 block text-sm font-medium">Bairro</span>
+            <input
+              value={addr.district ?? ""}
+              onChange={(e) => setAddr({ district: e.target.value })}
+              className={inputCls}
+            />
+          </label>
+          <label className="block sm:col-span-3">
+            <span className="mb-1 block text-sm font-medium">Cidade</span>
+            <input
+              value={addr.city ?? ""}
+              onChange={(e) => setAddr({ city: e.target.value })}
+              className={inputCls}
+            />
+          </label>
+          <label className="block sm:col-span-1">
+            <span className="mb-1 block text-sm font-medium">UF</span>
+            <input
+              value={addr.state ?? ""}
+              onChange={(e) => setAddr({ state: e.target.value.toUpperCase().slice(0, 2) })}
+              className={inputCls}
+              maxLength={2}
+            />
+          </label>
+        </div>
+      </div>
+
+      <button
+        type="submit"
+        disabled={save.isPending}
+        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+      >
+        {save.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        Salvar dados da agência
+      </button>
+    </form>
+  );
+}
+
+
 function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: () => void }) {
   const [form, setForm] = useState({ name: "", email: "", role: "consultor" });
   const [saving, setSaving] = useState(false);
