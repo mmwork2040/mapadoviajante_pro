@@ -21,12 +21,15 @@ import {
   Eye,
   Wand2,
   Loader2,
+  CheckSquare,
+  Square,
 } from "lucide-react";
 
 import { toast } from "sonner";
 import {
   createLibraryItem,
   deleteLibraryItem,
+  bulkDeleteLibraryItems,
   fetchAiConfig,
   fetchLibraryItems,
   getLibraryAssetUrl,
@@ -70,6 +73,8 @@ function LibraryPage() {
   const [tab, setTab] = useState<TabKey>("experience");
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<LibraryItem | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const isDocuments = tab === "documents";
 
@@ -115,6 +120,48 @@ function LibraryPage() {
       toast.success("Item excluído.");
       invalidate();
     } else toast.error("Erro ao excluir item.");
+  }
+
+  const isImageTab = tab === "image";
+
+  function toggleSelectMode() {
+    setSelectMode((v) => !v);
+    setSelected(new Set());
+  }
+
+  function toggleItem(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleAll() {
+    setSelected((prev) =>
+      prev.size === items.length ? new Set() : new Set(items.map((i) => i.id)),
+    );
+  }
+
+  async function bulkRemove() {
+    const chosen = items.filter((i) => selected.has(i.id));
+    if (chosen.length === 0) return;
+    const ok = await confirm({
+      title: `Excluir ${chosen.length} ${chosen.length === 1 ? "imagem" : "imagens"}?`,
+      description:
+        "As imagens serão removidas da biblioteca e dos perfis de leads e roteiros que as utilizam. Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir tudo",
+      destructive: true,
+    });
+    if (!ok) return;
+    const n = await bulkDeleteLibraryItems(chosen);
+    if (n > 0) {
+      toast.success(`${n} ${n === 1 ? "imagem excluída" : "imagens excluídas"}.`);
+      setSelectMode(false);
+      setSelected(new Set());
+      invalidate();
+    } else toast.error("Erro ao excluir imagens.");
   }
 
   return (
@@ -169,6 +216,38 @@ function LibraryPage() {
 
       <p className="text-sm text-muted-foreground">{active.hint}</p>
 
+      {isImageTab && items.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={toggleSelectMode}
+            className={`flex items-center gap-2 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+              selectMode
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-card text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <CheckSquare className="h-4 w-4" /> {selectMode ? "Cancelar seleção" : "Selecionar imagens"}
+          </button>
+          {selectMode && (
+            <>
+              <button
+                onClick={toggleAll}
+                className="rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                {selected.size === items.length ? "Limpar seleção" : "Selecionar todas"}
+              </button>
+              <button
+                onClick={bulkRemove}
+                disabled={selected.size === 0}
+                className="flex items-center gap-2 rounded-lg bg-destructive px-3 py-1.5 text-sm font-semibold text-destructive-foreground hover:opacity-90 disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" /> Excluir {selected.size > 0 ? `(${selected.size})` : ""}
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       {isDocuments ? (
         <DocumentsPanel />
       ) : isError ? (
@@ -180,7 +259,15 @@ function LibraryPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <LibraryCard key={item.id} item={item} onEdit={() => setEditing(item)} onRemove={() => remove(item)} />
+            <LibraryCard
+              key={item.id}
+              item={item}
+              onEdit={() => setEditing(item)}
+              onRemove={() => remove(item)}
+              selectable={selectMode && isImageTab}
+              selected={selected.has(item.id)}
+              onToggleSelect={() => toggleItem(item.id)}
+            />
           ))}
         </div>
       )}
@@ -232,14 +319,25 @@ function LibraryCard({
   item,
   onEdit,
   onRemove,
+  selectable = false,
+  selected = false,
+  onToggleSelect,
 }: {
   item: LibraryItem;
   onEdit: () => void;
   onRemove: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }) {
   const img = useAssetUrl(item);
   return (
-    <div className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card">
+    <div
+      className={`group flex flex-col overflow-hidden rounded-2xl border bg-card transition ${
+        selected ? "border-primary ring-2 ring-primary" : "border-border"
+      } ${selectable ? "cursor-pointer" : ""}`}
+      onClick={selectable ? onToggleSelect : undefined}
+    >
       <div className="relative">
         {img ? (
           <img src={img} alt={item.title} className="h-36 w-full object-cover" />
@@ -248,6 +346,16 @@ function LibraryCard({
             <Globe className="h-8 w-8" />
           </div>
         )}
+        {selectable && (
+          <div className="absolute left-2 top-2">
+            {selected ? (
+              <CheckSquare className="h-5 w-5 rounded bg-primary text-primary-foreground" />
+            ) : (
+              <Square className="h-5 w-5 rounded bg-card/90 text-foreground" />
+            )}
+          </div>
+        )}
+        {!selectable && (
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
           <button onClick={onEdit} className="rounded-lg bg-card/90 p-1.5 text-foreground hover:bg-card">
             <Pencil className="h-4 w-4" />
@@ -256,6 +364,7 @@ function LibraryCard({
             <Trash2 className="h-4 w-4" />
           </button>
         </div>
+        )}
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-semibold">{item.title}</h3>
