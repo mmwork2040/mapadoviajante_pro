@@ -1049,6 +1049,21 @@ function ActivityDocuments({
     }
   }
 
+  async function handleLibraryPick(source: LeadDocument) {
+    setPickerOpen(false);
+    setUploading(true);
+    try {
+      await attachLibraryDocumentToActivity({ source, agencyId, leadId, itineraryId, activityId });
+      toast.success("Documento da biblioteca anexado.");
+      qc.invalidateQueries({ queryKey: ["activity-docs", activityId] });
+      if (leadId) qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao anexar documento.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function download(doc: LeadDocument) {
     const ok = await downloadDocument(doc);
     if (!ok) toast.error("Não foi possível baixar o documento.");
