@@ -34,6 +34,7 @@ import {
   createItinerary,
   createLeadActivity,
   deleteLeadActivity,
+  fetchItinerariesByLead,
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
