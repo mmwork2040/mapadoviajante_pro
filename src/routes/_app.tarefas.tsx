@@ -66,7 +66,7 @@ function TarefasPage() {
   };
 
   const allTasks = (data ?? []).filter(inDateRange);
-  const hasFilters = statusFilter !== "all" || !!fromDate || !!toDate;
+  const hasFilters = statusFilter !== "all" || fromDate !== todayStr() || toDate !== todayStr();
   const clearFilters = () => {
     setStatusFilter("all");
     setFromDate(todayStr());
