@@ -509,7 +509,7 @@ function AtividadesTab({
           </select>
           <button
             onClick={() => register.mutate()}
-            disabled={register.isPending}
+            disabled={register.isPending || !dueDate}
             className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
           >
             <Send className="h-4 w-4" /> Registrar
