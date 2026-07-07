@@ -225,7 +225,9 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   onChange={(status) => update.mutate({ status })}
                 />
                 <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
-                <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
+                {lead.updated_at && (
+                  <span className="text-xs text-muted-foreground">Atualizado: {formatDate(lead.updated_at)}</span>
+                )}
               </div>
 
               <div className="mt-3 grid grid-cols-3 gap-2">
