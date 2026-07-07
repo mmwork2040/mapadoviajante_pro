@@ -761,7 +761,7 @@ export function NewLeadModal({
                 }}
                 hint={form.cover_image ? undefined : aiActive ? undefined : "IA inativa — configure para buscar imagens"}
                 previewImage={form.cover_image || undefined}
-                onClearPreview={() => set({ cover_image: "" })}
+                onClearPreview={() => { set({ cover_image: "" }); setTriedImages([]); }}
               />
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
