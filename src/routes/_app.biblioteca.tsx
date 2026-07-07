@@ -27,11 +27,14 @@ import { toast } from "sonner";
 import {
   createLibraryItem,
   deleteLibraryItem,
+  fetchAiConfig,
   fetchLibraryItems,
   getLibraryAssetUrl,
   updateLibraryItem,
   uploadLibraryAsset,
 } from "@/lib/services";
+import { generateLibraryContent } from "@/lib/ai.functions";
+
 import {
   fetchAgencyDocuments,
   documentOrigin,
