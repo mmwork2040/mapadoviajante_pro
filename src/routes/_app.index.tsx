@@ -73,6 +73,7 @@ function DashboardPage() {
   const [selectedDay, setSelectedDay] = useState<Date | null>(null);
   const [taskTitle, setTaskTitle] = useState("");
   const [taskFilter, setTaskFilter] = useState<"today" | "tomorrow" | "week">("today");
+  const [taskStatus, setTaskStatus] = useState<"all" | "pending" | "done">("pending");
 
   const week = useMemo(() => {
     const today = new Date();
