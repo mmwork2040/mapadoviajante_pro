@@ -82,6 +82,49 @@ export async function uploadLeadDocument(params: {
   return data as unknown as LeadDocument;
 }
 
+/** Link an existing agency document (from the library) to an activity by copying its stored file. */
+export async function attachLibraryDocumentToActivity(params: {
+  source: LeadDocument;
+  agencyId: string;
+  leadId?: string | null;
+  itineraryId?: string | null;
+  activityId: string;
+}): Promise<LeadDocument | null> {
+  const { source, agencyId, leadId, itineraryId, activityId } = params;
+  const id = crypto.randomUUID();
+  const path = `${agencyId}/${leadId || "geral"}/${id}-${sanitize(source.name)}`;
+
+  const { error: copyErr } = await supabase.storage.from(BUCKET).copy(source.file_path, path);
+  if (copyErr) {
+    console.error("copy doc", copyErr);
+    throw new Error("Não foi possível copiar o arquivo da biblioteca.");
+  }
+
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .insert({
+      id,
+      agency_id: agencyId,
+      lead_id: leadId ?? null,
+      itinerary_id: itineraryId ?? null,
+      activity_id: activityId,
+      name: source.name,
+      category: source.category ?? null,
+      file_path: path,
+      mime_type: source.mime_type ?? null,
+      size: source.size ?? null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    await supabase.storage.from(BUCKET).remove([path]);
+    console.error("insert linked doc", error);
+    throw new Error("Não foi possível anexar o documento.");
+  }
+  return data as unknown as LeadDocument;
+}
+
 export async function fetchActivityDocuments(activityId: string): Promise<LeadDocument[]> {
   const { data, error } = await db()
     .from("crm_lead_documents")
