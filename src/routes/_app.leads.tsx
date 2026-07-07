@@ -510,6 +510,36 @@ export function NewLeadModal({
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<WizardForm>) => setForm((f) => ({ ...f, ...patch }));
 
+  const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+  const aiActive = aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
+  const downloadImage = useServerFn(downloadDestinationImage);
+  const [searchingImg, setSearchingImg] = useState(false);
+
+  async function findDestinationImage() {
+    const dest = form.destination.trim();
+    if (!dest || !aiActive) return;
+    setSearchingImg(true);
+    try {
+      const fromLibrary = await searchLibraryImageForDestination(dest);
+      if (fromLibrary) {
+        set({ cover_image: fromLibrary });
+        toast.success("Imagem encontrada na biblioteca.");
+        return;
+      }
+      const res = await downloadImage({ data: { destination: dest } });
+      if (res?.imageUrl) {
+        set({ cover_image: res.imageUrl });
+        toast.success("Imagem do destino baixada.");
+      } else {
+        toast.error("Nenhuma imagem encontrada para este destino.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível buscar a imagem.");
+    } finally {
+      setSearchingImg(false);
+    }
+  }
+
   useEffect(() => {
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
