@@ -865,6 +865,7 @@ export async function createItinerary(d: Partial<Itinerary>): Promise<Itinerary 
       budget: d.budget || 0,
       spent: d.spent || 0,
       status: d.status || "draft",
+      share_token: crypto.randomUUID(),
     })
     .select()
     .single();
