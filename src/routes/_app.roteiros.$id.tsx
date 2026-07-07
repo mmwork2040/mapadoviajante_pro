@@ -681,35 +681,36 @@ function DayCard({
           onBlur={saveDayTitle}
           className="w-full min-w-0 rounded-lg bg-transparent px-2 py-1 font-semibold outline-none hover:bg-muted/50 focus:bg-muted/50"
         />
-        <div className="flex items-center justify-between gap-1">
+        <div className="flex items-center gap-1.5">
           <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
           <button
             onClick={() => fileRef.current?.click()}
             disabled={extracting}
             title="Enviar documento para a IA preencher"
-            className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-60"
+            aria-label="Importar com IA"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border hover:bg-muted disabled:opacity-60"
           >
-            {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
-            Importar com IA
+            {extracting ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
           </button>
           <button
             onClick={duplicate}
             disabled={duplicating}
             title="Duplicar o dia inteiro"
-            className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs font-medium hover:bg-muted disabled:opacity-60"
+            aria-label="Duplicar dia"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-border hover:bg-muted disabled:opacity-60"
           >
-            {duplicating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
-            Duplicar
+            {duplicating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />}
           </button>
           <button
             onClick={removeDay}
             title="Excluir o dia inteiro"
-            className="flex items-center gap-1 rounded-lg border border-destructive/40 px-2 py-1 text-xs font-medium text-destructive hover:bg-destructive hover:text-destructive-foreground"
+            aria-label="Excluir dia"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
           >
-            <Trash2 className="h-3.5 w-3.5" />
-            Excluir dia
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
+
 
       </div>
 
