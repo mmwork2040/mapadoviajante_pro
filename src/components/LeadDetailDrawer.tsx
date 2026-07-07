@@ -182,6 +182,12 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
 
   const p = ((lead?.profile as Record<string, string>) || {});
   const phoneDigits = (lead?.phone || "").replace(/\D/g, "");
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    resolveDisplayImageUrl(p.cover_image).then((url) => { if (active) setCoverUrl(url); });
+    return () => { active = false; };
+  }, [p.cover_image]);
 
   function openWhatsApp() {
     if (!phoneDigits) return toast.error("Lead sem telefone cadastrado.");
