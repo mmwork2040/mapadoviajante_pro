@@ -2,8 +2,9 @@ import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router"
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2 } from "lucide-react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon } from "lucide-react";
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
+import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Lead, LeadStatus } from "@/lib/types";
@@ -37,6 +38,22 @@ const COLUMNS: { key: LeadStatus; label: string; dot: string }[] = [
   { key: "closed", label: "Fechado", dot: "bg-emerald-500" },
   { key: "lost", label: "Perdido", dot: "bg-red-500" },
 ];
+
+// Resolve um valor de imagem (URL direto ou caminho do bucket) e renderiza a prévia.
+function CoverImage({ value, className, alt }: { value: string; className?: string; alt?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    resolveDisplayImageUrl(value).then((u) => {
+      if (active) setUrl(u);
+    });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+  if (!url) return null;
+  return <img src={url} alt={alt || "Imagem do destino"} className={className} loading="lazy" />;
+}
 
 function LeadsPage() {
   const qc = useQueryClient();
@@ -285,6 +302,14 @@ function LeadCard({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      {(() => {
+        const cover = (lead.profile as Record<string, string> | undefined)?.cover_image;
+        return cover ? (
+          <div className="mb-2 -mr-12 overflow-hidden rounded-lg">
+            <CoverImage value={cover} alt={lead.destination || "Destino"} className="h-24 w-full object-cover" />
+          </div>
+        ) : null;
+      })()}
       <p className="font-medium">{lead.name}</p>
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
       <p className="mt-2 text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
@@ -301,6 +326,7 @@ type WizardForm = {
   origin_other: string;
   departure: string;
   destination: string;
+  cover_image: string;
   travel_dates: string;
   passengers: string;
   trip_type: string;
@@ -325,6 +351,7 @@ const EMPTY_FORM: WizardForm = {
   origin_other: "",
   departure: "",
   destination: "",
+  cover_image: "",
   travel_dates: "",
   passengers: "",
   trip_type: "",
@@ -473,6 +500,7 @@ function leadToForm(lead: Lead): WizardForm {
     origin_other: ORIGINS.includes(lead.origin || "") ? "" : lead.origin || "",
     departure: p.departure || "",
     destination: lead.destination || "",
+    cover_image: p.cover_image || "",
     travel_dates: p.travel_dates || "",
     passengers: p.passengers || "",
     trip_type: p.trip_type || "",
@@ -505,6 +533,36 @@ export function NewLeadModal({
   const [form, setForm] = useState<WizardForm>(lead ? leadToForm(lead) : EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const set = (patch: Partial<WizardForm>) => setForm((f) => ({ ...f, ...patch }));
+
+  const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+  const aiActive = aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
+  const downloadImage = useServerFn(downloadDestinationImage);
+  const [searchingImg, setSearchingImg] = useState(false);
+
+  async function findDestinationImage() {
+    const dest = form.destination.trim();
+    if (!dest || !aiActive) return;
+    setSearchingImg(true);
+    try {
+      const fromLibrary = await searchLibraryImageForDestination(dest);
+      if (fromLibrary) {
+        set({ cover_image: fromLibrary });
+        toast.success("Imagem encontrada na biblioteca.");
+        return;
+      }
+      const res = await downloadImage({ data: { destination: dest } });
+      if (res?.imageUrl) {
+        set({ cover_image: res.imageUrl });
+        toast.success("Imagem do destino baixada.");
+      } else {
+        toast.error("Nenhuma imagem encontrada para este destino.");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Não foi possível buscar a imagem.");
+    } finally {
+      setSearchingImg(false);
+    }
+  }
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -553,6 +611,7 @@ export function NewLeadModal({
       origin: (form.origin === "Outro" ? form.origin_other.trim() : form.origin) || "direto",
       profile: {
         departure,
+        cover_image: form.cover_image || "",
         travel_dates: form.travel_dates,
         passengers: form.passengers,
         trip_type: form.trip_type,
@@ -675,7 +734,24 @@ export function NewLeadModal({
           {step === 1 && (
             <Section icon={Plane} title="Detalhes da Viagem">
               <ModalField label="Ponto de partida" placeholder="Ex: GRU - São Paulo/Guarulhos" value={form.departure} onChange={(v) => set({ departure: v })} suggestions={AIRPORTS} />
-              <ModalField label="Destino" placeholder="Ex: Paris, França" value={form.destination} onChange={(v) => set({ destination: v })} />
+              <ModalField
+                label="Destino"
+                placeholder="Ex: Paris, França"
+                value={form.destination}
+                onChange={(v) => set({ destination: v })}
+                action={{
+                  icon: ImageIcon,
+                  onClick: findDestinationImage,
+                  loading: searchingImg,
+                  disabled: !form.destination.trim() || !aiActive,
+                  title: !aiActive
+                    ? "Ative e conecte a IA nas configurações para buscar imagens"
+                    : "Buscar imagem do destino",
+                }}
+                hint={form.cover_image ? undefined : aiActive ? undefined : "IA inativa — configure para buscar imagens"}
+                previewImage={form.cover_image || undefined}
+                onClearPreview={() => set({ cover_image: "" })}
+              />
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
               <ModalSelect label="Tipo de Viagem" value={form.trip_type} onChange={(v) => set({ trip_type: v })} options={["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"]} />
@@ -912,6 +988,10 @@ export function ModalField({
   full,
   format,
   suggestions,
+  action,
+  hint,
+  previewImage,
+  onClearPreview,
 }: {
   label: string;
   value: string;
@@ -922,6 +1002,16 @@ export function ModalField({
   full?: boolean;
   format?: "currency" | "phone" | "cpfcnpj";
   suggestions?: string[];
+  action?: {
+    icon: typeof User;
+    onClick: () => void;
+    loading?: boolean;
+    disabled?: boolean;
+    title?: string;
+  };
+  hint?: string;
+  previewImage?: string;
+  onClearPreview?: () => void;
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
   const masks = {
@@ -932,22 +1022,59 @@ export function ModalField({
   const handleChange = (raw: string) => {
     onChange(format ? masks[format](raw) : raw);
   };
+  const ActionIcon = action?.icon;
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
       <span className="mb-1 flex h-8 items-center text-sm font-semibold">
         {label} {required && <span className="text-primary">*</span>}
       </span>
 
-      <input
-        type={format ? "text" : type}
-        inputMode={format ? "numeric" : undefined}
-        required={required}
-        value={value}
-        placeholder={placeholder}
-        list={listId}
-        onChange={(e) => handleChange(e.target.value)}
-        className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
-      />
+      <div className="relative">
+        <input
+          type={format ? "text" : type}
+          inputMode={format ? "numeric" : undefined}
+          required={required}
+          value={value}
+          placeholder={placeholder}
+          list={listId}
+          onChange={(e) => handleChange(e.target.value)}
+          className={`w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background ${
+            action ? "pr-12" : "pr-4"
+          }`}
+        />
+        {action && ActionIcon && (
+          <button
+            type="button"
+            onClick={action.onClick}
+            disabled={action.disabled || action.loading}
+            title={action.title}
+            aria-label={action.title || "Ação"}
+            className="absolute right-1.5 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-lg text-primary transition hover:bg-primary/10 disabled:cursor-not-allowed disabled:text-muted-foreground disabled:hover:bg-transparent"
+          >
+            {action.loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ActionIcon className="h-4 w-4" />
+            )}
+          </button>
+        )}
+      </div>
+      {hint && <span className="mt-1 block text-xs text-muted-foreground">{hint}</span>}
+      {previewImage && (
+        <div className="relative mt-2 overflow-hidden rounded-xl border border-border">
+          <CoverImage value={previewImage} alt="Prévia do destino" className="h-28 w-full object-cover" />
+          {onClearPreview && (
+            <button
+              type="button"
+              onClick={onClearPreview}
+              title="Remover imagem"
+              className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-black/50 text-white hover:bg-black/70"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
       {suggestions && (
         <datalist id={listId}>
           {suggestions.map((s) => (

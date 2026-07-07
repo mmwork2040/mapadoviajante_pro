@@ -783,6 +783,57 @@ export async function deleteLibraryItem(item: LibraryItem): Promise<boolean> {
   return true;
 }
 
+// Resolve um valor de imagem: URL http(s) direto ou caminho no bucket da biblioteca.
+export async function resolveDisplayImageUrl(value?: string | null): Promise<string | null> {
+  if (!value) return null;
+  if (/^https?:\/\//i.test(value) || value.startsWith("data:")) return value;
+  return getLibraryAssetUrl(value);
+}
+
+function normalizeText(s: string): string {
+  return s
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+}
+
+// Procura na biblioteca (destinos e itens) uma imagem relacionada ao destino informado.
+export async function searchLibraryImageForDestination(destination: string): Promise<string | null> {
+  const term = normalizeText(destination);
+  if (!term) return null;
+  const tokens = term.split(/[\s,/]+/).filter((t) => t.length >= 3);
+  const matches = (haystack?: string | null) => {
+    if (!haystack) return false;
+    const h = normalizeText(haystack);
+    return h.includes(term) || tokens.some((t) => h.includes(t));
+  };
+
+  try {
+    const [destinations, items] = await Promise.all([
+      fetchDestinations().catch(() => [] as Destination[]),
+      fetchLibraryItems().catch(() => [] as LibraryItem[]),
+    ]);
+
+    const destHit = destinations.find(
+      (d) => d.image_url && (matches(d.title) || matches(d.name) || matches(d.country)),
+    );
+    if (destHit?.image_url) return destHit.image_url;
+
+    const itemHit = items.find(
+      (i) =>
+        i.image_url &&
+        (matches(i.title) || matches(i.location) || matches((i.tags || []).join(" "))),
+    );
+    if (itemHit?.image_url) return itemHit.image_url;
+  } catch (e) {
+    console.error("searchLibraryImageForDestination:", e);
+  }
+  return null;
+}
+
+
+
 export async function fetchItineraries(): Promise<Itinerary[]> {
   if (!_agencyId) return [];
   const { data, error } = await supabase
