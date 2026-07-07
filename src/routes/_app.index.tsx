@@ -229,20 +229,43 @@ function DashboardPage() {
         ))}
       </div>
 
-      {/* Tarefas de Hoje */}
+      {/* Tarefas / Compromissos */}
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
-        <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex min-w-0 items-center gap-2 text-sm font-semibold sm:text-base">
             <ListChecks className="h-5 w-5 shrink-0 text-primary" />
-            <span className="truncate">Tarefas de Hoje</span>
+            <span className="truncate">Tarefas do Dia</span>
           </h2>
-          <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
-            {todayTasks.length}
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-full bg-muted p-1 text-xs font-medium">
+              {([
+                { key: "today", label: "Hoje" },
+                { key: "tomorrow", label: "Amanhã" },
+                { key: "week", label: "Semana" },
+              ] as const).map((f) => (
+                <button
+                  key={f.key}
+                  onClick={() => setTaskFilter(f.key)}
+                  className={`whitespace-nowrap rounded-full px-3 py-1 transition ${
+                    taskFilter === f.key ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
+              {todayTasks.length}
+            </span>
+          </div>
         </div>
         {todayTasks.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
-            Nenhuma tarefa para hoje.
+            {taskFilter === "today"
+              ? "Nenhuma tarefa para hoje."
+              : taskFilter === "tomorrow"
+                ? "Nenhuma tarefa para amanhã."
+                : "Nenhuma tarefa para esta semana."}
           </p>
         ) : (
           <ul className="space-y-2">
