@@ -522,6 +522,7 @@ function AddDayDropzone({ onClick }: { onClick: () => void }) {
 
 function DayCard({
   day,
+  allDays,
   onChange,
   agencyId,
   leadId,
@@ -529,6 +530,7 @@ function DayCard({
   pendingActivity = false,
 }: {
   day: ItineraryDay;
+  allDays: ItineraryDay[];
   onChange: () => void;
   agencyId: string;
   leadId: string | null;
