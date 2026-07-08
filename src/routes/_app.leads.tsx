@@ -385,35 +385,30 @@ const STEPS = [
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
 
 const DEFAULT_TRIP_TYPES = ["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"];
-const TRIP_TYPES_KEY = "custom_trip_types";
 
-function loadTripTypes(): string[] {
-  const base = [...DEFAULT_TRIP_TYPES];
-  try {
-    const saved = JSON.parse(localStorage.getItem(TRIP_TYPES_KEY) || "[]");
-    if (Array.isArray(saved)) {
-      for (const t of saved) {
-        if (typeof t === "string" && t.trim() && !base.some((b) => b.toLowerCase() === t.trim().toLowerCase())) {
-          base.push(t.trim());
-        }
-      }
+function normalizeTripType(v: string): string {
+  return v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+// Combina os tipos padrão com os personalizados, sem duplicados (ignora caixa/acento/espaços).
+function mergeTripTypes(custom: string[]): string[] {
+  const out = [...DEFAULT_TRIP_TYPES];
+  const seen = new Set(out.map(normalizeTripType));
+  for (const t of custom) {
+    const n = normalizeTripType(t);
+    if (t.trim() && !seen.has(n)) {
+      seen.add(n);
+      out.push(t.trim());
     }
-  } catch { /* ignora */ }
-  return base;
+  }
+  return out;
 }
 
-function saveTripType(value: string, current: string[]): string[] {
-  const v = value.trim();
-  if (!v || current.some((t) => t.toLowerCase() === v.toLowerCase())) return current;
-  const next = [...current, v];
-  try {
-    localStorage.setItem(
-      TRIP_TYPES_KEY,
-      JSON.stringify(next.filter((t) => !DEFAULT_TRIP_TYPES.some((d) => d.toLowerCase() === t.toLowerCase()))),
-    );
-  } catch { /* ignora */ }
-  return next;
-}
 
 const AIRPORTS = [
   "GRU - São Paulo/Guarulhos",
