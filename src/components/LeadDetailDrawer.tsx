@@ -46,13 +46,14 @@ import {
   resolveDisplayImageUrl,
   isOverdue,
   setLeadActivityCompleted,
+  updateItinerary,
   updateLead,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, initials, maskCurrency, maskPhone, parseCurrency } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { NewLeadModal } from "@/routes/_app.leads";
-import type { Lead, LeadStatus } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
   { key: "new", label: "Novo", dot: "bg-blue-500" },
@@ -92,6 +93,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const confirm = useConfirm();
   const [tab, setTab] = useState<TabKey>("perfil");
   const [editOpen, setEditOpen] = useState(false);
+  const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: lead } = useQuery({ queryKey: ["lead", leadId], queryFn: () => fetchLeadById(leadId) });
@@ -175,6 +177,59 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     });
     if (ok) createRoteiro.mutate();
   }
+
+  const ITINERARY_STATUS_LABELS: Record<string, string> = {
+    draft: "Rascunho",
+    active: "Em andamento",
+    completed: "Concluído",
+    cancelled: "Cancelado",
+  };
+
+  async function handleEdit() {
+    const existing = await fetchItinerariesByLead(leadId);
+    const linked = existing.find((it) => it.status !== "cancelled") ?? null;
+
+    // Sem roteiro vinculado: edição normal, sem impacto.
+    if (!linked) {
+      setLinkedItinerary(null);
+      setEditOpen(true);
+      return;
+    }
+
+    if (linked.status === "draft") {
+      const ok = await confirm({
+        title: "Roteiro em rascunho",
+        description:
+          "Este viajante possui um roteiro em rascunho. As alterações feitas aqui podem afetar o rascunho diretamente. Deseja continuar?",
+        confirmLabel: "Continuar",
+        cancelLabel: "Cancelar",
+      });
+      if (!ok) return;
+      setLinkedItinerary(linked);
+      setEditOpen(true);
+      return;
+    }
+
+    // Roteiro em outro status: precisa voltar para rascunho antes de editar.
+    const ok = await confirm({
+      title: "Roteiro não editável",
+      description: `Este viajante possui um roteiro em "${
+        ITINERARY_STATUS_LABELS[linked.status] || linked.status
+      }". Para editar o viajante, o roteiro será movido para Rascunho. Deseja continuar?`,
+      confirmLabel: "Mover para Rascunho",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+    const moved = await updateItinerary(linked.id, { status: "draft" });
+    if (!moved) {
+      toast.error("Erro ao mover o roteiro para rascunho.");
+      return;
+    }
+    toast.success("Roteiro movido para rascunho.");
+    setLinkedItinerary(moved);
+    setEditOpen(true);
+  }
+
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -269,7 +324,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   <MapIcon className="h-4 w-4" /> Criar Roteiro
                 </button>
                 <button
-                  onClick={() => setEditOpen(true)}
+                  onClick={handleEdit}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
                 >
                   <Pencil className="h-4 w-4" /> Editar
@@ -360,10 +415,12 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
         <div onClick={(e) => e.stopPropagation()}>
           <NewLeadModal
             lead={lead}
+            linkedItinerary={linkedItinerary}
             onClose={() => setEditOpen(false)}
             onDelete={handleDelete}
             onCreated={() => {
               setEditOpen(false);
+              setLinkedItinerary(null);
               qc.invalidateQueries({ queryKey: ["lead", leadId] });
               qc.invalidateQueries({ queryKey: ["leads"] });
             }}

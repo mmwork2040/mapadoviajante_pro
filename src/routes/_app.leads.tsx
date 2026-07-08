@@ -15,10 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, updateItinerary, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
-import type { Lead, LeadStatus } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { supabase } from "@/integrations/supabase/client";
@@ -559,12 +559,14 @@ export function NewLeadModal({
   onDelete,
   lead,
   allLeads = [],
+  linkedItinerary = null,
 }: {
   onClose: () => void;
   onCreated: () => void;
   onDelete?: () => void;
   lead?: Lead;
   allLeads?: Lead[];
+  linkedItinerary?: Itinerary | null;
 }) {
   const editing = !!lead;
   const [step, setStep] = useState(0);
@@ -833,6 +835,27 @@ export function NewLeadModal({
     const res = editing
       ? await updateLead(lead!.id, payload)
       : await createLead({ ...payload, status: "new" });
+
+    // Sincroniza o rascunho do roteiro vinculado quando o resumo muda.
+    if (res && editing && linkedItinerary) {
+      const nextSummary = {
+        title: `Roteiro - ${payload.name}`,
+        client_name: payload.name,
+        destination: payload.destination || "",
+        budget: payload.value || 0,
+      };
+      const changed =
+        nextSummary.title !== (linkedItinerary.title || "") ||
+        nextSummary.client_name !== (linkedItinerary.client_name || "") ||
+        nextSummary.destination !== (linkedItinerary.destination || "") ||
+        nextSummary.budget !== (linkedItinerary.budget || 0);
+      if (changed) {
+        const upd = await updateItinerary(linkedItinerary.id, nextSummary);
+        if (upd) toast.success("Rascunho do roteiro atualizado.");
+        else toast.error("Erro ao atualizar o rascunho do roteiro.");
+      }
+    }
+
     setSaving(false);
     if (res) {
       dispatchWebhook(editing ? "lead.updated" : "lead.created", res);
