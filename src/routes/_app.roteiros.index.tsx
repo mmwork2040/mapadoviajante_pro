@@ -452,7 +452,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
             onChange={(v) => setForm({ ...form, destination: v })}
             actions={[
               {
-                icon: ImageIcon,
+                icon: Bot,
                 onClick: findDestinationImage,
                 loading: searchingImg,
                 disabled: !(form.destination || "").trim() || !aiActive,
