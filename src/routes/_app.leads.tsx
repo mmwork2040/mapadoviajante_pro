@@ -685,6 +685,11 @@ export function NewLeadModal({
         return;
       }
     }
+    if (!form.trip_type.trim()) {
+      toast.error("Selecione o Tipo de Viagem.");
+      setStep(1);
+      return;
+    }
     setSaving(true);
     const payload = {
       name: form.name.trim(),
@@ -879,7 +884,7 @@ export function NewLeadModal({
 
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
-              <ModalSelect label="Tipo de Viagem" value={form.trip_type} onChange={(v) => set({ trip_type: v })} options={["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"]} />
+              <ModalSelect label="Tipo de Viagem" required value={form.trip_type} onChange={(v) => set({ trip_type: v })} options={["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"]} />
               <ModalTextarea label="Detalhes e Expectativas" placeholder="Ex: Lua de mel, querem praias tranquilas, não gostam de aventura extrema…" value={form.trip_notes} onChange={(v) => set({ trip_notes: v })} />
             </Section>
           )}
@@ -1369,16 +1374,24 @@ function ModalSelect({
   onChange,
   options,
   full,
+  required,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
   full?: boolean;
+  required?: boolean;
 }) {
+  // Garante que um valor vindo de outro cadastro (ex.: formulário/n8n) que não
+  // esteja na lista padrão continue visível e selecionado no campo.
+  const allOptions = value && !options.includes(value) ? [value, ...options] : options;
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1 flex h-8 items-center text-sm font-semibold">{label}</span>
+      <span className="mb-1 flex h-8 items-center text-sm font-semibold">
+        {label}
+        {required && <span className="ml-0.5 text-destructive">*</span>}
+      </span>
 
       <select
         value={value}
@@ -1386,7 +1399,7 @@ function ModalSelect({
         className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
       >
         <option value="">Selecionar…</option>
-        {options.map((o) => (
+        {allOptions.map((o) => (
           <option key={o} value={o}>
             {o}
           </option>
