@@ -804,25 +804,24 @@ function AtividadesTab({
       if (!dueDate) throw new Error("A data de execução é obrigatória.");
       if (!details.trim()) throw new Error("Os detalhes são obrigatórios.");
       if (details.trim().length > 250) throw new Error("Os detalhes devem ter no máximo 250 caracteres.");
-      return createLeadActivity(leadId, {
+      const payload = {
         type,
         title: title.trim() || ACTIVITY_TYPES.find((t) => t.key === type)?.label || "Atividade",
         details: details.trim(),
         assigned_to_id: assigned || null,
         due_date: new Date(`${dueDate}T09:00:00`).toISOString(),
-      });
+      };
+      return editingId ? updateLeadActivity(editingId, payload) : createLeadActivity(leadId, payload);
     },
-    onSuccess: () => {
-      setTitle(ACTIVITY_TYPES.find((t) => t.key === "note")?.label || "Observação");
-      setType("note");
-      setDetails("");
-      setDueDate("");
-      toast.success("Atividade registrada.");
+    onSuccess: (res) => {
+      if (editingId && !res) return toast.error("Erro ao atualizar atividade.");
+      toast.success(editingId ? "Atividade atualizada." : "Atividade registrada.");
+      resetForm();
       qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao registrar atividade."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar atividade."),
   });
 
   const remove = useMutation({
