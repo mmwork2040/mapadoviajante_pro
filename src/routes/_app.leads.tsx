@@ -558,17 +558,38 @@ export function NewLeadModal({
   onCreated,
   onDelete,
   lead,
+  allLeads = [],
 }: {
   onClose: () => void;
   onCreated: () => void;
   onDelete?: () => void;
   lead?: Lead;
+  allLeads?: Lead[];
 }) {
   const editing = !!lead;
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<WizardForm>(lead ? leadToForm(lead) : EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [nameFocused, setNameFocused] = useState(false);
   const set = (patch: Partial<WizardForm>) => setForm((f) => ({ ...f, ...patch }));
+
+  // Sugestões de leads existentes ao digitar o nome (facilita novo plano p/ mesmo cliente).
+  const nameQuery = form.name.trim().toLowerCase();
+  const nameSuggestions = editing
+    ? []
+    : Array.from(new Map(allLeads.map((l) => [`${l.name}|${l.email || ""}`, l])).values())
+        .filter((l) => l.name && (!nameQuery || l.name.toLowerCase().includes(nameQuery)))
+        .slice(0, 8);
+  function selectExistingLead(l: Lead) {
+    set({
+      name: l.name || "",
+      email: l.email || "",
+      phone: l.phone || "",
+      origin: ORIGINS.includes(l.origin || "") ? l.origin || "" : l.origin ? "Outro" : "",
+      origin_other: ORIGINS.includes(l.origin || "") ? "" : l.origin || "",
+    });
+    setNameFocused(false);
+  }
 
   const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
   const aiActive = aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
