@@ -1315,7 +1315,8 @@ export function ModalField({
   errorMessage?: string;
   onRetry?: () => void;
   onCommit?: (v: string) => void;
-
+  onFocus?: () => void;
+  onBlur?: () => void;
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
   const masks = {
