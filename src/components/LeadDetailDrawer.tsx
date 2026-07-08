@@ -48,6 +48,7 @@ import {
   setLeadActivityCompleted,
   updateItinerary,
   updateLead,
+  updateLeadActivity,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, initials, maskPhone } from "@/lib/ui";
