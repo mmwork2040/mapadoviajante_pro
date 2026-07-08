@@ -586,6 +586,20 @@ export async function createLeadActivity(
     .from("crm_leads")
     .update({ last_activity_at: new Date().toISOString() })
     .eq("id", leadId);
+
+  // Notifica o membro atribuído (se for diferente do autor).
+  if (activityData.assigned_to_id && activityData.assigned_to_id !== _memberId) {
+    const { data: leadRow } = await supabase.from("crm_leads").select("name").eq("id", leadId).maybeSingle();
+    const leadName = (leadRow as { name?: string } | null)?.name || "um lead";
+    await createNotification({
+      recipientId: activityData.assigned_to_id,
+      type: "activity_assigned",
+      title: "Nova atividade atribuída a você",
+      body: `${activity.title} — ${leadName}`,
+      link: `/leads?lead=${leadId}`,
+      leadId,
+    });
+  }
   return activity;
 }
 
