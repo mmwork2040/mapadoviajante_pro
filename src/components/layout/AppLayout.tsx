@@ -23,6 +23,7 @@ import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads, fetchTasks } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
+import { NotificationBell } from "@/components/NotificationBell";
 import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
 
 const NAV = [
@@ -215,6 +216,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </button>
 
           <div className="flex items-center gap-1">
+            <NotificationBell />
             <button
               onClick={toggle}
               aria-label="Alternar tema"
@@ -222,6 +224,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             >
               {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+
 
             {/* Menu do usuário (mobile) */}
             <div className="relative md:hidden">

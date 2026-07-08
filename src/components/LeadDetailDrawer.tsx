@@ -37,6 +37,8 @@ import { toast } from "sonner";
 import {
   createItinerary,
   createLeadActivity,
+  createNotification,
+  getMemberId,
   deleteLead,
   deleteLeadActivity,
   fetchItinerariesByLead,
@@ -113,6 +115,29 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     onError: () => toast.error("Erro ao atualizar lead."),
   });
 
+  const assign = useMutation({
+    mutationFn: (memberId: string) => updateLead(leadId, { assigned_to: memberId || null }),
+    onSuccess: async (_res, memberId) => {
+      qc.invalidateQueries({ queryKey: ["lead", leadId] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      if (memberId && memberId !== getMemberId()) {
+        await createNotification({
+          recipientId: memberId,
+          type: "lead_assigned",
+          title: "Lead atribuído a você",
+          body: lead?.name || "",
+          link: `/leads?lead=${leadId}`,
+          leadId,
+        });
+        toast.success("Lead atribuído e notificação enviada.");
+      } else {
+        toast.success("Lead atribuído.");
+      }
+    },
+    onError: () => toast.error("Erro ao atribuir lead."),
+  });
+
+
   async function handleDelete() {
     const ok = await confirm({
       title: "Excluir viajante",
@@ -130,8 +155,6 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
       toast.error("Erro ao excluir viajante.");
     }
   }
-
-
 
   const createRoteiro = useMutation({
     mutationFn: () =>
@@ -178,6 +201,10 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     });
     if (ok) createRoteiro.mutate();
   }
+
+
+
+
 
   const ITINERARY_STATUS_LABELS: Record<string, string> = {
     draft: "Rascunho",
@@ -310,19 +337,12 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 )}
               </div>
 
-              <div className="relative mt-3 grid grid-cols-3 gap-2">
+              <div className="relative mt-3 grid grid-cols-2 gap-2">
                 <button
                   onClick={openWhatsApp}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
                 >
                   <MessageCircle className="h-4 w-4 text-[var(--success)]" /> WhatsApp
-                </button>
-                <button
-                  onClick={handleCreateRoteiro}
-                  disabled={createRoteiro.isPending}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted disabled:opacity-60"
-                >
-                  <MapIcon className="h-4 w-4" /> Criar Roteiro
                 </button>
                 <button
                   onClick={handleEdit}
@@ -331,7 +351,27 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   <Pencil className="h-4 w-4" /> Editar
                 </button>
               </div>
+
+              <div className="relative mt-2 flex items-center gap-2">
+                <span className="flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-muted-foreground">
+                  <User className="h-4 w-4 text-primary" /> Atribuir a:
+                </span>
+                <select
+                  value={lead.assigned_to || ""}
+                  onChange={(e) => assign.mutate(e.target.value)}
+                  disabled={assign.isPending}
+                  className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-xs outline-none focus:border-primary disabled:opacity-60"
+                >
+                  <option value="">Ninguém</option>
+                  {team.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+
 
             {/* Tabs */}
             <div

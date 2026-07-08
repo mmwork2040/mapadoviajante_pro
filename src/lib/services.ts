@@ -586,6 +586,20 @@ export async function createLeadActivity(
     .from("crm_leads")
     .update({ last_activity_at: new Date().toISOString() })
     .eq("id", leadId);
+
+  // Notifica o membro atribuído (se for diferente do autor).
+  if (activityData.assigned_to_id && activityData.assigned_to_id !== _memberId) {
+    const { data: leadRow } = await supabase.from("crm_leads").select("name").eq("id", leadId).maybeSingle();
+    const leadName = (leadRow as { name?: string } | null)?.name || "um lead";
+    await createNotification({
+      recipientId: activityData.assigned_to_id,
+      type: "activity_assigned",
+      title: "Nova atividade atribuída a você",
+      body: `${activity.title} — ${leadName}`,
+      link: `/leads?lead=${leadId}`,
+      leadId,
+    });
+  }
   return activity;
 }
 
@@ -1455,7 +1469,85 @@ export async function fetchLeadItineraryStatuses(): Promise<Record<string, strin
   return map;
 }
 
-// ── AI config ──────────────────────────────────────────────────
+// ── Notificações ───────────────────────────────────────────────
+export async function fetchNotifications(): Promise<import("@/lib/types").AppNotification[]> {
+  if (!_memberId) await loadAgencyContext();
+  if (!_memberId) return [];
+  const { data, error } = await supabase
+    .from("crm_notifications")
+    .select("*, actor:agency_members!crm_notifications_actor_id_fkey(id, name, avatar_color)")
+    .eq("recipient_id", _memberId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) {
+    console.error("fetchNotifications:", error);
+    return [];
+  }
+  return (data as import("@/lib/types").AppNotification[]) || [];
+}
+
+export async function markNotificationRead(id: string, read = true): Promise<boolean> {
+  const { error } = await supabase.from("crm_notifications").update({ read }).eq("id", id);
+  if (error) {
+    console.error("markNotificationRead:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function markAllNotificationsRead(): Promise<boolean> {
+  if (!_memberId) return false;
+  const { error } = await supabase
+    .from("crm_notifications")
+    .update({ read: true })
+    .eq("recipient_id", _memberId)
+    .eq("read", false);
+  if (error) {
+    console.error("markAllNotificationsRead:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function deleteNotification(id: string): Promise<boolean> {
+  const { error } = await supabase.from("crm_notifications").delete().eq("id", id);
+  if (error) {
+    console.error("deleteNotification:", error);
+    return false;
+  }
+  return true;
+}
+
+/** Cria uma notificação para outro membro. Ignora se o destinatário for o próprio autor. */
+export async function createNotification(input: {
+  recipientId: string;
+  title: string;
+  body?: string | null;
+  link?: string | null;
+  leadId?: string | null;
+  type?: string;
+}): Promise<boolean> {
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId || !input.recipientId) return false;
+  if (input.recipientId === _memberId) return false; // não notifica a si mesmo
+  const { error } = await supabase.from("crm_notifications").insert({
+    agency_id: _agencyId,
+    recipient_id: input.recipientId,
+    actor_id: _memberId,
+    type: input.type || "info",
+    title: input.title,
+    body: input.body || null,
+    link: input.link || null,
+    lead_id: input.leadId || null,
+  });
+  if (error) {
+    console.error("createNotification:", error);
+    return false;
+  }
+  return true;
+}
+
+
 export async function fetchAiConfig(): Promise<AiConfig | null> {
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return null;
