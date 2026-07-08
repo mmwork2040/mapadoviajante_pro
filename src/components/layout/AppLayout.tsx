@@ -23,6 +23,7 @@ import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads, fetchTasks } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
+import { NotificationBell } from "@/components/NotificationBell";
 import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
 
 const NAV = [
