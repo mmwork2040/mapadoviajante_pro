@@ -855,7 +855,12 @@ function AtividadesTab({
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-border p-4">
-        <CollapsibleSection icon={ClipboardList} title="Registrar atividade">
+        <CollapsibleSection
+          icon={ClipboardList}
+          title={editingId ? "Editar atividade" : "Registrar atividade"}
+          controlledOpen={registerOpen}
+          onToggle={setRegisterOpen}
+        >
         <div className="mb-3 flex flex-wrap gap-1.5">
           {ACTIVITY_TYPES.map((t) => (
             <button
