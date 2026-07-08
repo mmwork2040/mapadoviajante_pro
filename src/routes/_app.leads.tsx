@@ -151,7 +151,7 @@ function LeadsPage() {
             onClick={() => setOpen(true)}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
           >
-            <Plus className="h-4 w-4" /> Novo Lead
+            <Plus className="h-4 w-4" /> Nova Proposta
           </button>
         </div>
       </div>
