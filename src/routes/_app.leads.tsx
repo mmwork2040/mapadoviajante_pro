@@ -574,11 +574,13 @@ export function NewLeadModal({
   const set = (patch: Partial<WizardForm>) => setForm((f) => ({ ...f, ...patch }));
 
   // Sugestões de leads existentes ao digitar o nome (facilita novo plano p/ mesmo cliente).
-  const nameQuery = form.name.trim().toLowerCase();
+  const foldName = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const nameQuery = foldName(form.name);
   const nameSuggestions = editing
     ? []
     : Array.from(new Map(allLeads.map((l) => [`${l.name}|${l.email || ""}`, l])).values())
-        .filter((l) => l.name && (!nameQuery || l.name.toLowerCase().includes(nameQuery)))
+        .filter((l) => l.name && (!nameQuery || foldName(l.name).includes(nameQuery)))
         .slice(0, 8);
   function selectExistingLead(l: Lead) {
     set({
