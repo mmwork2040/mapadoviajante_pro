@@ -909,40 +909,52 @@ function AtividadesTab({
           <ul className="space-y-3">
             {activities.map((a) => {
               const meta = activityMeta(a.type);
+              const isOpen = expanded.has(a.id);
               return (
                 <li key={a.id} className="group flex gap-3 rounded-xl border border-border p-3">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <meta.icon className="h-4 w-4" />
                   </span>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpanded(a.id)}
+                      className="flex w-full items-center gap-2 text-left"
+                    >
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? "" : "-rotate-90"}`}
+                      />
                       <span className="truncate text-sm font-medium">{a.title}</span>
-                      <span className="shrink-0 text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
-                    </div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {meta.label}
-                    </p>
-                     {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
-                     {a.due_date && (
-                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                         <CalendarClock className="h-3 w-3" /> Execução: <span className="font-medium text-foreground">{formatDate(a.due_date)}</span>
-                         {isOverdue(a.due_date, a.completed) && (
-                           <span className="ml-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
-                             Atrasada
-                           </span>
-                         )}
-                         {a.completed && (
-                           <span className="ml-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
-                             Concluída
-                           </span>
-                         )}
-                       </p>
-                     )}
-                     {a.assigned?.name && (
-                       <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
-                         <User className="h-3 w-3" /> Atribuído a: <span className="font-medium text-foreground">{a.assigned.name}</span>
-                       </p>
-                     )}
+                      {a.completed && (
+                        <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+                          Concluída
+                        </span>
+                      )}
+                      {isOverdue(a.due_date, a.completed) && (
+                        <span className="shrink-0 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                          Atrasada
+                        </span>
+                      )}
+                      <span className="ml-auto shrink-0 text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
+                    </button>
+                    {isOpen && (
+                      <div className="mt-1 pl-6">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                          {meta.label}
+                        </p>
+                        {a.details && <p className="mt-1 text-sm text-muted-foreground">{a.details}</p>}
+                        {a.due_date && (
+                          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                            <CalendarClock className="h-3 w-3" /> Execução: <span className="font-medium text-foreground">{formatDate(a.due_date)}</span>
+                          </p>
+                        )}
+                        {a.assigned?.name && (
+                          <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                            <User className="h-3 w-3" /> Atribuído a: <span className="font-medium text-foreground">{a.assigned.name}</span>
+                          </p>
+                        )}
+                      </div>
+                    )}
                    </div>
                   <div className="flex shrink-0 flex-col items-center gap-2 self-start">
                     {a.due_date && (
