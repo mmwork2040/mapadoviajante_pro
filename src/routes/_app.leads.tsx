@@ -384,6 +384,37 @@ const STEPS = [
 
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
 
+const DEFAULT_TRIP_TYPES = ["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"];
+const TRIP_TYPES_KEY = "custom_trip_types";
+
+function loadTripTypes(): string[] {
+  const base = [...DEFAULT_TRIP_TYPES];
+  try {
+    const saved = JSON.parse(localStorage.getItem(TRIP_TYPES_KEY) || "[]");
+    if (Array.isArray(saved)) {
+      for (const t of saved) {
+        if (typeof t === "string" && t.trim() && !base.some((b) => b.toLowerCase() === t.trim().toLowerCase())) {
+          base.push(t.trim());
+        }
+      }
+    }
+  } catch { /* ignora */ }
+  return base;
+}
+
+function saveTripType(value: string, current: string[]): string[] {
+  const v = value.trim();
+  if (!v || current.some((t) => t.toLowerCase() === v.toLowerCase())) return current;
+  const next = [...current, v];
+  try {
+    localStorage.setItem(
+      TRIP_TYPES_KEY,
+      JSON.stringify(next.filter((t) => !DEFAULT_TRIP_TYPES.some((d) => d.toLowerCase() === t.toLowerCase()))),
+    );
+  } catch { /* ignora */ }
+  return next;
+}
+
 const AIRPORTS = [
   "GRU - São Paulo/Guarulhos",
   "CGH - São Paulo/Congonhas",
