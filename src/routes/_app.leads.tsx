@@ -765,10 +765,19 @@ export function NewLeadModal({
     };
   }, []);
 
-  function next() {
+  async function next() {
     if (step === 0 && !form.name.trim()) {
       toast.error("Informe o nome completo.");
       return;
+    }
+    // Alerta (não bloqueia) se o lead selecionado já tem roteiro em rascunho.
+    // Ignora quando aberto pela edição do modal de detalhes (já verificado lá).
+    if (step === 0 && !editing && selectedLeadId && !draftAlerted) {
+      setDraftAlerted(true);
+      const itineraries = await fetchItinerariesByLead(selectedLeadId);
+      if (itineraries.some((it) => it.status === "draft")) {
+        toast.warning("Este lead já possui um roteiro em rascunho.");
+      }
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
