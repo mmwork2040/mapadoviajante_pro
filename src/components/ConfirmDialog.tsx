@@ -15,10 +15,13 @@ type ConfirmOptions = {
   description?: string;
   confirmLabel?: string;
   cancelLabel?: string;
+  thirdLabel?: string;
   destructive?: boolean;
 };
 
-type ConfirmFn = (options?: ConfirmOptions) => Promise<boolean>;
+export type ConfirmResult = boolean | "third";
+
+type ConfirmFn = (options?: ConfirmOptions) => Promise<ConfirmResult>;
 
 const ConfirmContext = createContext<ConfirmFn | null>(null);
 
@@ -31,17 +34,17 @@ export function useConfirm(): ConfirmFn {
 export function ConfirmProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const [opts, setOpts] = useState<ConfirmOptions>({});
-  const resolver = useRef<((value: boolean) => void) | null>(null);
+  const resolver = useRef<((value: ConfirmResult) => void) | null>(null);
 
   const confirm = useCallback<ConfirmFn>((options) => {
     setOpts(options || {});
     setOpen(true);
-    return new Promise<boolean>((resolve) => {
+    return new Promise<ConfirmResult>((resolve) => {
       resolver.current = resolve;
     });
   }, []);
 
-  function resolve(value: boolean) {
+  function resolve(value: ConfirmResult) {
     setOpen(false);
     resolver.current?.(value);
     resolver.current = null;
