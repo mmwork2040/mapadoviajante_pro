@@ -678,10 +678,9 @@ function PerfilTab({
             onSave={(v) => onUpdate({ assigned_to: v || null })}
           />
         </div>
-      </section>
+      </CollapsibleSection>
 
-      <section>
-        <SectionTitle icon={Clock}>Atividade recente</SectionTitle>
+      <CollapsibleSection icon={Clock} title="Atividade recente">
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhuma atividade ainda.</p>
         ) : (
