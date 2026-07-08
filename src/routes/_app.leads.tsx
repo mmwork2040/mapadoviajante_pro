@@ -951,7 +951,6 @@ export function NewLeadModal({
                 )}
               </div>
               <ModalField label="E-mail" type="email" placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} disabled={editing} />
-              <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} disabled={editing} />
               <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
               <ModalField label="Orçamento Estimado (R$)" format="currency" placeholder="R$ 0,00" value={form.value} onChange={(v) => set({ value: v })} />
               <ModalSelect label="Como nos encontrou?" value={form.origin} onChange={(v) => set({ origin: v })} options={ORIGINS} />
