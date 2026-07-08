@@ -23,6 +23,9 @@ import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/leads")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    lead: typeof search.lead === "string" ? search.lead : undefined,
+  }),
   component: LeadsRoute,
 });
 
@@ -57,11 +60,16 @@ function CoverImage({ value, className, alt }: { value: string; className?: stri
 
 function LeadsPage() {
   const qc = useQueryClient();
+  const { lead: leadParam } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
+  useEffect(() => {
+    if (leadParam) setDetailId(leadParam);
+  }, [leadParam]);
   const { data: leads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["leads", { search }],
     queryFn: () => fetchLeads({ search: search || undefined }),
@@ -224,7 +232,7 @@ function LeadsPage() {
         />
       )}
 
-      {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => setDetailId(null)} />}
+      {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => { setDetailId(null); if (leadParam) navigate({ search: {}, replace: true }); }} />}
     </div>
   );
 }
