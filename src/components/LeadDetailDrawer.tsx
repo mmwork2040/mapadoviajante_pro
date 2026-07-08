@@ -93,6 +93,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const confirm = useConfirm();
   const [tab, setTab] = useState<TabKey>("perfil");
   const [editOpen, setEditOpen] = useState(false);
+  const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: lead } = useQuery({ queryKey: ["lead", leadId], queryFn: () => fetchLeadById(leadId) });
