@@ -719,7 +719,7 @@ function PerfilTab({
           </ul>
 
         )}
-      </section>
+      </CollapsibleSection>
     </div>
   );
 }
