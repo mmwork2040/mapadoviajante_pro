@@ -645,8 +645,7 @@ function PerfilTab({
 }) {
   return (
     <div className="space-y-6">
-      <section>
-        <SectionTitle icon={User}>Dados de contato</SectionTitle>
+      <CollapsibleSection icon={User} title="Dados de contato">
         <div className="grid grid-cols-2 gap-2">
           <EditableField
             label="E-mail"
