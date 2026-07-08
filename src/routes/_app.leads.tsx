@@ -825,7 +825,7 @@ export function NewLeadModal({
                 onChange={(v) => set({ destination: v })}
                 actions={[
                   {
-                    icon: ImageIcon,
+                    icon: Bot,
                     onClick: findDestinationImage,
                     loading: searchingImg,
                     disabled: !form.destination.trim() || !aiActive,
