@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { UserCog, Lock, Save, Loader2 } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { UserCog, Lock, Save, Loader2, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { updateMyPassword, updateMyProfile } from "@/lib/services";
