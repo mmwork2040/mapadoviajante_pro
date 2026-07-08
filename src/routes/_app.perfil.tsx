@@ -92,112 +92,102 @@ function ProfilePage() {
         <p className="text-sm text-muted-foreground">Gerencie suas informações e sua senha.</p>
       </div>
 
-      <form onSubmit={saveProfile} className="space-y-4 rounded-2xl border border-border bg-card p-5">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <UserCog className="h-5 w-5" />
-          </span>
-          <div>
-            <h2 className="font-bold">Informações</h2>
-            <p className="text-xs text-muted-foreground">{session?.user?.email}</p>
-          </div>
+      <CollapsibleCard
+        icon={UserCog}
+        title="Informações"
+        subtitle={session?.user?.email ?? undefined}
+        right={
           <span
-            className="ml-auto flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white"
             style={{ backgroundColor: color }}
           >
             {initials(name)}
           </span>
-        </div>
+        }
+      >
+        <form onSubmit={saveProfile} className="space-y-4">
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">Nome</span>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </label>
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Nome</span>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-        </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">Telefone</span>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </label>
 
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Telefone</span>
-          <input
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-        </label>
-
-        <div>
-          <span className="mb-1.5 block text-sm font-medium">Cor do avatar</span>
-          <div className="flex flex-wrap gap-2">
-            {COLORS.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setColor(c)}
-                className={`h-8 w-8 rounded-full transition ${color === c ? "ring-2 ring-offset-2 ring-offset-card ring-foreground" : ""}`}
-                style={{ backgroundColor: c }}
-                aria-label={`Cor ${c}`}
-              />
-            ))}
+          <div>
+            <span className="mb-1.5 block text-sm font-medium">Cor do avatar</span>
+            <div className="flex flex-wrap gap-2">
+              {COLORS.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={`h-8 w-8 rounded-full transition ${color === c ? "ring-2 ring-offset-2 ring-offset-card ring-foreground" : ""}`}
+                  style={{ backgroundColor: c }}
+                  aria-label={`Cor ${c}`}
+                />
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-muted-foreground">
-            Cargo: <strong className="capitalize">{member?.role || "—"}</strong>
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">
+              Cargo: <strong className="capitalize">{member?.role || "—"}</strong>
+            </span>
+            <button
+              type="submit"
+              disabled={savingProfile}
+              className="ml-auto flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salvar
+            </button>
+          </div>
+        </form>
+      </CollapsibleCard>
+
+      <CollapsibleCard icon={Lock} title="Alterar senha" subtitle="Escolha uma nova senha de acesso.">
+        <form onSubmit={savePassword} className="space-y-4">
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">Nova senha</span>
+            <input
+              type="password"
+              value={pw}
+              onChange={(e) => setPw(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">Confirmar nova senha</span>
+            <input
+              type="password"
+              value={pw2}
+              onChange={(e) => setPw2(e.target.value)}
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </label>
+
           <button
             type="submit"
-            disabled={savingProfile}
-            className="ml-auto flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            disabled={savingPw}
+            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Salvar
+            {savingPw ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
+            Alterar senha
           </button>
-        </div>
-      </form>
-
-      <form onSubmit={savePassword} className="space-y-4 rounded-2xl border border-border bg-card p-5">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Lock className="h-5 w-5" />
-          </span>
-          <div>
-            <h2 className="font-bold">Alterar senha</h2>
-            <p className="text-xs text-muted-foreground">Escolha uma nova senha de acesso.</p>
-          </div>
-        </div>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Nova senha</span>
-          <input
-            type="password"
-            value={pw}
-            onChange={(e) => setPw(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-        </label>
-
-        <label className="block">
-          <span className="mb-1 block text-sm font-medium">Confirmar nova senha</span>
-          <input
-            type="password"
-            value={pw2}
-            onChange={(e) => setPw2(e.target.value)}
-            className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-          />
-        </label>
-
-        <button
-          type="submit"
-          disabled={savingPw}
-          className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-        >
-          {savingPw ? <Loader2 className="h-4 w-4 animate-spin" /> : <Lock className="h-4 w-4" />}
-          Alterar senha
-        </button>
-      </form>
+        </form>
+      </CollapsibleCard>
     </div>
   );
 }
