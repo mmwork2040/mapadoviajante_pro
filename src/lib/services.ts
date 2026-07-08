@@ -538,6 +538,7 @@ export async function updateLeadActivity(
   return true;
 }
 
+export async function createLeadActivity(
   leadId: string,
   activityData: Partial<LeadActivity> & { due_date?: string | null },
 ): Promise<LeadActivity | null> {
