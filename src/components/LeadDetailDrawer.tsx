@@ -513,18 +513,23 @@ function CollapsibleSection({
   title,
   count,
   children,
+  controlledOpen,
+  onToggle,
 }: {
   icon: React.ElementType;
   title: string;
   count?: number;
   children: React.ReactNode;
+  controlledOpen?: boolean;
+  onToggle?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internal, setInternal] = useState(false);
+  const open = controlledOpen ?? internal;
   return (
     <section>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (onToggle ? onToggle(!open) : setInternal((v) => !v))}
         className="mb-3 flex w-full items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"
       >
         <Icon className="h-4 w-4 text-primary" /> {title}
