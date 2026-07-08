@@ -930,6 +930,7 @@ export function NewLeadModal({
                   onChange={(v) => set({ name: v })}
                   onFocus={() => setNameFocused(true)}
                   onBlur={() => setTimeout(() => setNameFocused(false), 150)}
+                  disabled={editing}
                   full
                 />
                 {!editing && nameFocused && nameSuggestions.length > 0 && (
