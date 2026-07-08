@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, updateItinerary, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
@@ -584,6 +584,8 @@ export function NewLeadModal({
     : Array.from(new Map(allLeads.map((l) => [`${l.name}|${l.email || ""}`, l])).values())
         .filter((l) => l.name && (!nameQuery || foldName(l.name).includes(nameQuery)))
         .slice(0, 8);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [draftAlerted, setDraftAlerted] = useState(false);
   function selectExistingLead(l: Lead) {
     set({
       name: l.name || "",
@@ -592,6 +594,8 @@ export function NewLeadModal({
       origin: ORIGINS.includes(l.origin || "") ? l.origin || "" : l.origin ? "Outro" : "",
       origin_other: ORIGINS.includes(l.origin || "") ? "" : l.origin || "",
     });
+    setSelectedLeadId(l.id);
+    setDraftAlerted(false);
     setNameFocused(false);
   }
 
@@ -761,10 +765,19 @@ export function NewLeadModal({
     };
   }, []);
 
-  function next() {
+  async function next() {
     if (step === 0 && !form.name.trim()) {
       toast.error("Informe o nome completo.");
       return;
+    }
+    // Alerta (não bloqueia) se o lead selecionado já tem roteiro em rascunho.
+    // Ignora quando aberto pela edição do modal de detalhes (já verificado lá).
+    if (step === 0 && !editing && selectedLeadId && !draftAlerted) {
+      setDraftAlerted(true);
+      const itineraries = await fetchItinerariesByLead(selectedLeadId);
+      if (itineraries.some((it) => it.status === "draft")) {
+        toast.warning("Este lead já possui um roteiro em rascunho.");
+      }
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   }
