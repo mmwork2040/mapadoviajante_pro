@@ -1513,12 +1513,22 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
 
   useEffect(() => {
     if (open) {
-      // A cada abertura, refaz a leitura geral do lead e dos roteiros atuais.
+      // A cada abertura, atualiza a percepção da IA: recarrega dias, atividades e anexos.
       greeted.current = true;
+      onChange();
       setMessages([{ role: "assistant", text: buildGreeting() }]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  // Quando os dados do roteiro forem atualizados enquanto o chat está aberto
+  // e ainda só há a saudação, reescreve a saudação com os dados frescos.
+  useEffect(() => {
+    if (open && messages.length <= 1) {
+      setMessages([{ role: "assistant", text: buildGreeting() }]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [it]);
 
 
   function buildContext(): string {
@@ -1575,7 +1585,7 @@ ${dias || "(nenhum dia ainda)"}`;
         pending.map(async (f) => ({ base64: await fileToBase64(f), mime: f.type, name: f.name })),
       );
       setPending([]);
-      const res = await plan({ data: { message: text, context: buildContext(), files, leadId: it.lead_id ?? null } });
+      const res = await plan({ data: { message: text, context: buildContext(), files, leadId: it.lead_id ?? null, itineraryId: it.id } });
 
       let createdDays = 0;
       let createdActs = 0;
