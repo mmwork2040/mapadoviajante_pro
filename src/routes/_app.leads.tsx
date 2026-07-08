@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot } from "lucide-react";
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
+import { getTripTypes, addTripType } from "@/lib/trip-types.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -385,35 +386,30 @@ const STEPS = [
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
 
 const DEFAULT_TRIP_TYPES = ["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"];
-const TRIP_TYPES_KEY = "custom_trip_types";
 
-function loadTripTypes(): string[] {
-  const base = [...DEFAULT_TRIP_TYPES];
-  try {
-    const saved = JSON.parse(localStorage.getItem(TRIP_TYPES_KEY) || "[]");
-    if (Array.isArray(saved)) {
-      for (const t of saved) {
-        if (typeof t === "string" && t.trim() && !base.some((b) => b.toLowerCase() === t.trim().toLowerCase())) {
-          base.push(t.trim());
-        }
-      }
+function normalizeTripType(v: string): string {
+  return v
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+// Combina os tipos padrão com os personalizados, sem duplicados (ignora caixa/acento/espaços).
+function mergeTripTypes(custom: string[]): string[] {
+  const out = [...DEFAULT_TRIP_TYPES];
+  const seen = new Set(out.map(normalizeTripType));
+  for (const t of custom) {
+    const n = normalizeTripType(t);
+    if (t.trim() && !seen.has(n)) {
+      seen.add(n);
+      out.push(t.trim());
     }
-  } catch { /* ignora */ }
-  return base;
+  }
+  return out;
 }
 
-function saveTripType(value: string, current: string[]): string[] {
-  const v = value.trim();
-  if (!v || current.some((t) => t.toLowerCase() === v.toLowerCase())) return current;
-  const next = [...current, v];
-  try {
-    localStorage.setItem(
-      TRIP_TYPES_KEY,
-      JSON.stringify(next.filter((t) => !DEFAULT_TRIP_TYPES.some((d) => d.toLowerCase() === t.toLowerCase()))),
-    );
-  } catch { /* ignora */ }
-  return next;
-}
 
 const AIRPORTS = [
   "GRU - São Paulo/Guarulhos",
@@ -587,7 +583,23 @@ export function NewLeadModal({
 
   // Busca inteligente de destino (país, estado ou cidade) enquanto digita.
   const [destSuggestions, setDestSuggestions] = useState<string[]>([]);
-  const [tripTypes, setTripTypes] = useState<string[]>(() => loadTripTypes());
+  const [customTripTypes, setCustomTripTypes] = useState<string[]>([]);
+  const tripTypes = mergeTripTypes(customTripTypes);
+  const fetchTripTypes = useServerFn(getTripTypes);
+  const addTripTypeFn = useServerFn(addTripType);
+  useEffect(() => {
+    let active = true;
+    fetchTripTypes().then((r) => { if (active) setCustomTripTypes(r.types); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+  async function commitTripType(v: string) {
+    const value = v.trim().replace(/\s+/g, " ");
+    if (!value || tripTypes.some((t) => normalizeTripType(t) === normalizeTripType(value))) return;
+    try {
+      const r = await addTripTypeFn({ data: { type: value } });
+      setCustomTripTypes(r.types);
+    } catch { /* ignora */ }
+  }
   useEffect(() => {
     const q = form.destination.trim();
     if (q.length < 2) {
@@ -958,7 +970,7 @@ export function NewLeadModal({
                 placeholder="Selecione ou digite um novo tipo"
                 value={form.trip_type}
                 onChange={(v) => set({ trip_type: v })}
-                onCommit={(v) => setTripTypes((cur) => saveTripType(v, cur))}
+                onCommit={(v) => commitTripType(v)}
                 suggestions={tripTypes}
               />
               <ModalTextarea label="Detalhes e Expectativas" placeholder="Ex: Lua de mel, querem praias tranquilas, não gostam de aventura extrema…" value={form.trip_notes} onChange={(v) => set({ trip_notes: v })} />
