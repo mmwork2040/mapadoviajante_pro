@@ -803,8 +803,7 @@ export function NewLeadModal({
   }
 
   async function submit() {
-    if (!form.name.trim()) {
-      toast.error("Informe o nome completo.");
+    if (!validateContact()) {
       setStep(0);
       return;
     }
