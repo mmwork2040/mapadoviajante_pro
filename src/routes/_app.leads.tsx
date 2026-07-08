@@ -336,7 +336,7 @@ function LeadCard({
         <p className="text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
         {hasItinerary && (
           <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary" title="Este lead já possui roteiro">
-            <Map className="h-3 w-3" /> Roteiro
+            <MapIcon className="h-3 w-3" /> Roteiro
           </span>
         )}
       </div>
