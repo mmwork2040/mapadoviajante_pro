@@ -441,13 +441,14 @@ function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; child
 
 function Field({ label, value, wrap }: { label: string; value?: string | null; wrap?: boolean }) {
   const text = value || "—";
-  // Reduz a fonte conforme o tamanho do texto para exibir os dados completos sem cortar.
+  // Reduz a fonte conforme o tamanho do texto para exibir os dados completos sem quebrar.
   const len = text.length;
-  const sizeClass = len > 34 ? "text-[11px]" : len > 24 ? "text-xs" : "text-sm";
+  const sizeClass =
+    len > 44 ? "text-[9px]" : len > 34 ? "text-[10px]" : len > 24 ? "text-[11px]" : len > 18 ? "text-xs" : "text-sm";
   return (
     <div className="rounded-xl bg-muted/50 p-3">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-0.5 break-words font-medium ${wrap ? "whitespace-pre-wrap text-sm" : sizeClass}`}>{text}</p>
+      <p className={`mt-0.5 font-medium ${wrap ? "whitespace-pre-wrap break-words text-sm" : `truncate ${sizeClass}`}`}>{text}</p>
     </div>
   );
 }
