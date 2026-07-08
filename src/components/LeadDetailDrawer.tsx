@@ -324,7 +324,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   <MapIcon className="h-4 w-4" /> Criar Roteiro
                 </button>
                 <button
-                  onClick={() => setEditOpen(true)}
+                  onClick={handleEdit}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
                 >
                   <Pencil className="h-4 w-4" /> Editar
