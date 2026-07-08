@@ -1278,6 +1278,8 @@ export function ModalField({
   errorMessage,
   onRetry,
   onCommit,
+  onFocus,
+  onBlur,
 
 }: {
   label: string;
