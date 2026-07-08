@@ -23,6 +23,9 @@ import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_app/leads")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    lead: typeof search.lead === "string" ? search.lead : undefined,
+  }),
   component: LeadsRoute,
 });
 
