@@ -447,8 +447,35 @@ function Field({ label, value, wrap }: { label: string; value?: string | null; w
   return (
     <div className="rounded-xl bg-muted/50 p-3">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      <p className={`mt-0.5 font-medium ${wrap ? "whitespace-pre-wrap break-words text-sm" : `truncate ${sizeClass}`}`}>{text}</p>
+      <p className={`mt-0.5 break-words font-medium ${wrap ? "whitespace-pre-wrap text-sm" : sizeClass}`}>{text}</p>
     </div>
+  );
+}
+
+function CollapsibleSection({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <section>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="mb-3 flex w-full items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"
+      >
+        <Icon className="h-4 w-4 text-primary" /> {title}
+        <ChevronDown
+          className={`ml-auto h-4 w-4 transition-transform ${open ? "" : "-rotate-90"}`}
+        />
+      </button>
+      {open && children}
+    </section>
   );
 }
 
