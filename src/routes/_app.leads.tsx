@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import { createLead, fetchLeads, updateLead, updateItinerary, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
-import type { Lead, LeadStatus } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { supabase } from "@/integrations/supabase/client";
