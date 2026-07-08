@@ -770,6 +770,8 @@ function AtividadesTab({
   const [details, setDetails] = useState("");
   const [assigned, setAssigned] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggleExpanded = (id: string) =>
     setExpanded((prev) => {
@@ -777,6 +779,25 @@ function AtividadesTab({
       next.has(id) ? next.delete(id) : next.add(id);
       return next;
     });
+
+  function resetForm() {
+    setEditingId(null);
+    setType("note");
+    setTitle(ACTIVITY_TYPES.find((t) => t.key === "note")?.label || "Observação");
+    setDetails("");
+    setAssigned("");
+    setDueDate("");
+  }
+
+  function startEdit(a: import("@/lib/types").LeadActivity) {
+    setEditingId(a.id);
+    setType(a.type);
+    setTitle(a.title);
+    setDetails(a.details || "");
+    setAssigned(a.assigned?.id || "");
+    setDueDate(a.due_date ? a.due_date.slice(0, 10) : "");
+    setRegisterOpen(true);
+  }
 
   const register = useMutation({
     mutationFn: () => {
