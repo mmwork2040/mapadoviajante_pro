@@ -835,6 +835,27 @@ export function NewLeadModal({
     const res = editing
       ? await updateLead(lead!.id, payload)
       : await createLead({ ...payload, status: "new" });
+
+    // Sincroniza o rascunho do roteiro vinculado quando o resumo muda.
+    if (res && editing && linkedItinerary) {
+      const nextSummary = {
+        title: `Roteiro - ${payload.name}`,
+        client_name: payload.name,
+        destination: payload.destination || "",
+        budget: payload.value || 0,
+      };
+      const changed =
+        nextSummary.title !== (linkedItinerary.title || "") ||
+        nextSummary.client_name !== (linkedItinerary.client_name || "") ||
+        nextSummary.destination !== (linkedItinerary.destination || "") ||
+        nextSummary.budget !== (linkedItinerary.budget || 0);
+      if (changed) {
+        const upd = await updateItinerary(linkedItinerary.id, nextSummary);
+        if (upd) toast.success("Rascunho do roteiro atualizado.");
+        else toast.error("Erro ao atualizar o rascunho do roteiro.");
+      }
+    }
+
     setSaving(false);
     if (res) {
       dispatchWebhook(editing ? "lead.updated" : "lead.created", res);
