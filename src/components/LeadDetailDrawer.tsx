@@ -687,7 +687,7 @@ function PerfilTab({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection icon={Clock} title="Atividade recente">
+      <CollapsibleSection icon={Clock} title="Atividade recente" count={activities.length}>
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhuma atividade ainda.</p>
         ) : (
