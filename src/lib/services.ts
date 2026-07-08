@@ -483,6 +483,25 @@ export async function deleteLeadActivity(id: string): Promise<boolean> {
 
 
 
+/** Marca/desmarca a atividade como concluída, atualizando a tarefa vinculada. */
+export async function setLeadActivityCompleted(
+  activityId: string,
+  completed: boolean,
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("crm_tasks")
+    .update({
+      completed,
+      completed_at: completed ? new Date().toISOString() : null,
+    })
+    .ilike("description", `%${ACTIVITY_TASK_MARK(activityId)}%`);
+  if (error) {
+    console.error("setLeadActivityCompleted:", error);
+    return false;
+  }
+  return true;
+}
+
 export async function createLeadActivity(
   leadId: string,
   activityData: Partial<LeadActivity> & { due_date?: string | null },
