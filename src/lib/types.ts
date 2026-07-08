@@ -51,6 +51,21 @@ export interface LeadActivity {
   assigned?: { id: string; name: string; avatar_color?: string | null } | null;
 }
 
+export interface AppNotification {
+  id: string;
+  agency_id: string;
+  recipient_id: string;
+  actor_id?: string | null;
+  type: string;
+  title: string;
+  body?: string | null;
+  link?: string | null;
+  lead_id?: string | null;
+  read: boolean;
+  created_at: string;
+  actor?: { id: string; name: string; avatar_color?: string | null } | null;
+}
+
 export interface Task {
   id: string;
   agency_id: string;
