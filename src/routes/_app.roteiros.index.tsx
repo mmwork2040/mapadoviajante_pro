@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload } from "lucide-react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot } from "lucide-react";
 import { toast } from "sonner";
 import {
   createItinerary,
@@ -452,7 +452,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
             onChange={(v) => setForm({ ...form, destination: v })}
             actions={[
               {
-                icon: ImageIcon,
+                icon: Bot,
                 onClick: findDestinationImage,
                 loading: searchingImg,
                 disabled: !(form.destination || "").trim() || !aiActive,
