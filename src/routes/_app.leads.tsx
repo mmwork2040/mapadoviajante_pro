@@ -1345,13 +1345,14 @@ export function ModalField({
           type={format ? "text" : type}
           inputMode={format ? "numeric" : undefined}
           required={required}
+          disabled={disabled}
           value={value}
           placeholder={placeholder}
           list={listId}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={onFocus}
           onBlur={(e) => { onCommit?.(e.target.value); onBlur?.(); }}
-          className="w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background"
+          className="w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background disabled:cursor-not-allowed disabled:opacity-60"
           style={allActions.length ? { paddingRight: `${allActions.length * 36 + 8}px` } : undefined}
         />
         {allActions.length > 0 && (
