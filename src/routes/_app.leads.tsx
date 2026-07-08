@@ -225,6 +225,7 @@ function LeadsPage() {
 
       {open && (
         <NewLeadModal
+          allLeads={leads}
           onClose={() => setOpen(false)}
           onCreated={() => {
             setOpen(false);
