@@ -415,10 +415,12 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
         <div onClick={(e) => e.stopPropagation()}>
           <NewLeadModal
             lead={lead}
+            linkedItinerary={linkedItinerary}
             onClose={() => setEditOpen(false)}
             onDelete={handleDelete}
             onCreated={() => {
               setEditOpen(false);
+              setLinkedItinerary(null);
               qc.invalidateQueries({ queryKey: ["lead", leadId] });
               qc.invalidateQueries({ queryKey: ["leads"] });
             }}
