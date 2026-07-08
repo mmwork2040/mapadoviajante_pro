@@ -827,7 +827,7 @@ function AtividadesTab({
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-border p-4">
-        <SectionTitle icon={ClipboardList}>Registrar atividade</SectionTitle>
+        <CollapsibleSection icon={ClipboardList} title="Registrar atividade">
         <div className="mb-3 flex flex-wrap gap-1.5">
           {ACTIVITY_TYPES.map((t) => (
             <button
@@ -896,7 +896,7 @@ function AtividadesTab({
             <Send className="h-4 w-4" /> Registrar
           </button>
         </div>
-
+        </CollapsibleSection>
       </section>
 
       <section>
