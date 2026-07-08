@@ -956,7 +956,7 @@ function AtividadesTab({
                       <ChevronDown
                         className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${isOpen ? "" : "-rotate-90"}`}
                       />
-                      <span className="truncate text-sm font-medium">{a.title}</span>
+                      <span className="min-w-0 flex-1 break-words text-[13px] font-medium leading-snug">{a.title}</span>
                       {a.completed && (
                         <span className="shrink-0 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
                           Concluída
