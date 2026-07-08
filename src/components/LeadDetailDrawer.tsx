@@ -521,7 +521,7 @@ function EditableField({
                 setEditing(false);
               }
             }}
-            className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
           />
 
           <button
