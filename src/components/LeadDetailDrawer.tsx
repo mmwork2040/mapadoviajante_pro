@@ -153,15 +153,17 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     const existing = await fetchItinerariesByLead(leadId);
     const openOne = existing.find((it) => it.status === "draft" || it.status === "active");
     if (openOne) {
-      const goToExisting = await confirm({
+      const choice = await confirm({
         title: "Roteiro em aberto",
         description: `Este lead já possui um roteiro em ${
           openOne.status === "draft" ? "rascunho" : "andamento"
         }. Deseja abri-lo em vez de criar outro?`,
         confirmLabel: "Abrir existente",
         cancelLabel: "Criar novo",
+        thirdLabel: "Fechar",
       });
-      if (goToExisting) {
+      if (choice === "third") return;
+      if (choice === true) {
         navigate({ to: "/roteiros/$id", params: { id: openOne.id } });
         return;
       }
