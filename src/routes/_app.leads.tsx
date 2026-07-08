@@ -863,6 +863,7 @@ export function NewLeadModal({
                 placeholder="Ex: Paris, França"
                 value={form.destination}
                 onChange={(v) => set({ destination: v })}
+                suggestions={destSuggestions}
                 actions={[
                   {
                     icon: Bot,
