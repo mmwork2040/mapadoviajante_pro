@@ -78,12 +78,12 @@ function LeadsPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: itinLeadIds = [] } = useQuery({
-    queryKey: ["lead-ids-with-itineraries"],
-    queryFn: fetchLeadIdsWithItineraries,
+  const { data: itineraryStatuses = {} } = useQuery({
+    queryKey: ["lead-itinerary-statuses"],
+    queryFn: fetchLeadItineraryStatuses,
     refetchInterval: 15000,
   });
-  const leadIdsWithItineraries = useMemo(() => new Set(itinLeadIds), [itinLeadIds]);
+
 
   // Realtime: novos leads (ex.: criados via webhook do n8n) atualizam a lista.
   useEffect(() => {
