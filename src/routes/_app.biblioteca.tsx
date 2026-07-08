@@ -545,17 +545,32 @@ function LibraryModal({
   const isPackage = effectiveType === "package";
   const isImage = effectiveType === "image";
   const typeLabel = TABS.find((t) => t.key === effectiveType)?.label ?? "Item";
+  const HeaderIcon = TABS.find((t) => t.key === effectiveType)?.icon ?? ImageIcon;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-2xl bg-card p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-bold">{item ? "Editar" : "Novo"} · {typeLabel}</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-5 w-5" />
+      <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-card shadow-xl">
+        <div className="flex items-start justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+              <HeaderIcon className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold">{item ? "Editar" : "Novo"} · {typeLabel}</h2>
+              <p className="text-xs text-muted-foreground">
+                {item ? "Atualize as informações do item" : "Preencha os campos para adicionar o item"}
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
           </button>
         </div>
-        <form onSubmit={submit} className="space-y-3">
+        <form onSubmit={submit} className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
+
           <Fld label="Título" required value={form.title || ""} onChange={(v) => setForm({ ...form, title: v })} />
           <Fld label="Local / Destino" value={form.location || ""} onChange={(v) => setForm({ ...form, location: v })} />
           <label className="block">
