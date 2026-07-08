@@ -332,7 +332,14 @@ function LeadCard({
       })()}
       <p className="font-medium">{lead.name}</p>
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
-      <p className="mt-2 text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
+        {hasItinerary && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary" title="Este lead já possui roteiro">
+            <Map className="h-3 w-3" /> Roteiro
+          </span>
+        )}
+      </div>
     </div>
   );
 }
