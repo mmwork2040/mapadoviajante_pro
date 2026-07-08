@@ -584,6 +584,43 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
       }
     }
 
+    // Baixa os arquivos realmente anexados às atividades deste roteiro e os envia
+    // à IA para que ela leia/interprete o conteúdo (e não apenas o nome).
+    const attachedFiles: PlannerFile[] = [];
+    let attachmentsIndex = "";
+    if (data.itineraryId) {
+      const { data: atts } = await (context.supabase as any)
+        .from("crm_lead_documents")
+        .select("name,category,file_path,mime_type,activity_id")
+        .eq("itinerary_id", data.itineraryId)
+        .not("activity_id", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(8);
+      if (atts && atts.length) {
+        const lines: string[] = [];
+        for (const a of atts as any[]) {
+          try {
+            const { data: signed } = await context.supabase.storage
+              .from("trip-attachments")
+              .createSignedUrl(a.file_path, 600);
+            if (!signed?.signedUrl) continue;
+            const res = await fetch(signed.signedUrl);
+            if (!res.ok) continue;
+            const buf = await res.arrayBuffer();
+            const base64 = Buffer.from(buf).toString("base64");
+            const mime = a.mime_type || res.headers.get("content-type") || "application/octet-stream";
+            attachedFiles.push({ base64, mime, name: a.name });
+            lines.push(`- "${a.name}"${a.category ? ` [${a.category}]` : ""} → atividade [id:${a.activity_id}]`);
+          } catch {
+            /* ignora anexo com falha */
+          }
+        }
+        if (lines.length) {
+          attachmentsIndex = `\n\nANEXOS DAS ATIVIDADES (arquivos enviados junto nesta requisição — leia cada um e COMPLETE a atividade correspondente pelo [id:...] indicado, preenchendo horário, local, título correto, tipo, descrição, duração e custo):\n${lines.join("\n")}`;
+        }
+      }
+    }
+
     let library = "";
     {
       const { data: libItems } = await (context.supabase as any)
