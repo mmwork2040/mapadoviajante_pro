@@ -1268,6 +1268,7 @@ export function ModalField({
           placeholder={placeholder}
           list={listId}
           onChange={(e) => handleChange(e.target.value)}
+          onBlur={(e) => onCommit?.(e.target.value)}
           className="w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background"
           style={allActions.length ? { paddingRight: `${allActions.length * 36 + 8}px` } : undefined}
         />
