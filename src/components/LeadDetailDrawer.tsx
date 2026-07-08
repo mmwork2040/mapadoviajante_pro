@@ -896,7 +896,7 @@ function AtividadesTab({
             <Send className="h-4 w-4" /> Registrar
           </button>
         </div>
-
+        </CollapsibleSection>
       </section>
 
       <section>
