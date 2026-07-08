@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot } from "lucide-react";
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
+import { getTripTypes, addTripType } from "@/lib/trip-types.functions";
 import {
   DropdownMenu,
   DropdownMenuContent,
