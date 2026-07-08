@@ -713,31 +713,10 @@ function PerfilTab({
     <div className="space-y-6">
       <CollapsibleSection icon={User} title="Dados de contato">
         <div className="grid grid-cols-2 gap-2">
-          <EditableField
-            label="E-mail"
-            value={lead.email}
-            type="email"
-            onSave={(v) => onUpdate({ email: v })}
-          />
-          <EditableField
-            label="WhatsApp"
-            value={lead.phone ? maskPhone(lead.phone) : ""}
-            display={lead.phone ? maskPhone(lead.phone) : null}
-            mask={maskPhone}
-            onSave={(v) => onUpdate({ phone: v.replace(/\D/g, "") })}
-          />
-          <EditableField
-            label="Orçamento"
-            value={lead.value ? maskCurrency(Math.round(Number(lead.value) * 100)) : ""}
-            display={formatCurrency(lead.value)}
-            mask={maskCurrency}
-            onSave={(v) => onUpdate({ value: parseCurrency(v) })}
-          />
-          <EditableField
-            label="Origem"
-            value={lead.origin}
-            onSave={(v) => onUpdate({ origin: v })}
-          />
+          <ReadOnlyField label="E-mail" value={lead.email} />
+          <ReadOnlyField label="WhatsApp" value={lead.phone ? maskPhone(lead.phone) : null} />
+          <ReadOnlyField label="Orçamento" value={formatCurrency(lead.value)} />
+          <ReadOnlyField label="Origem" value={lead.origin} />
           <ResponsibleField
             value={lead.assigned_to}
             team={team}
