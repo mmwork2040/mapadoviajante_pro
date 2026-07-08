@@ -582,7 +582,23 @@ export function NewLeadModal({
 
   // Busca inteligente de destino (país, estado ou cidade) enquanto digita.
   const [destSuggestions, setDestSuggestions] = useState<string[]>([]);
-  const [tripTypes, setTripTypes] = useState<string[]>(() => loadTripTypes());
+  const [customTripTypes, setCustomTripTypes] = useState<string[]>([]);
+  const tripTypes = mergeTripTypes(customTripTypes);
+  const fetchTripTypes = useServerFn(getTripTypes);
+  const addTripTypeFn = useServerFn(addTripType);
+  useEffect(() => {
+    let active = true;
+    fetchTripTypes().then((r) => { if (active) setCustomTripTypes(r.types); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+  async function commitTripType(v: string) {
+    const value = v.trim().replace(/\s+/g, " ");
+    if (!value || tripTypes.some((t) => normalizeTripType(t) === normalizeTripType(value))) return;
+    try {
+      const r = await addTripTypeFn({ data: { type: value } });
+      setCustomTripTypes(r.types);
+    } catch { /* ignora */ }
+  }
   useEffect(() => {
     const q = form.destination.trim();
     if (q.length < 2) {
