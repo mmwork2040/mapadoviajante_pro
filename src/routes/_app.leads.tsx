@@ -249,6 +249,7 @@ function LeadsPage() {
 
 function LeadCard({
   lead,
+  hasItinerary,
   dragging,
   onDragStart,
   onDragEnd,
@@ -256,6 +257,7 @@ function LeadCard({
   onOpen,
 }: {
   lead: Lead;
+  hasItinerary?: boolean;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
