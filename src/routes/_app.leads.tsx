@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadIdsWithItineraries, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
@@ -78,12 +78,12 @@ function LeadsPage() {
     refetchOnWindowFocus: true,
   });
 
-  const { data: itinLeadIds = [] } = useQuery({
-    queryKey: ["lead-ids-with-itineraries"],
-    queryFn: fetchLeadIdsWithItineraries,
+  const { data: itineraryStatuses = {} } = useQuery({
+    queryKey: ["lead-itinerary-statuses"],
+    queryFn: fetchLeadItineraryStatuses,
     refetchInterval: 15000,
   });
-  const leadIdsWithItineraries = useMemo(() => new Set(itinLeadIds), [itinLeadIds]);
+
 
   // Realtime: novos leads (ex.: criados via webhook do n8n) atualizam a lista.
   useEffect(() => {
@@ -210,7 +210,7 @@ function LeadsPage() {
                       <LeadCard
                         key={l.id}
                         lead={l}
-                        hasItinerary={leadIdsWithItineraries.has(l.id)}
+                        itineraryStatus={itineraryStatuses[l.id]}
                         dragging={dragId === l.id}
                         onDragStart={() => setDragId(l.id)}
                         onDragEnd={() => {
@@ -247,9 +247,16 @@ function LeadsPage() {
   );
 }
 
+const ITINERARY_STATUS_LABELS: Record<string, string> = {
+  draft: "Rascunho",
+  active: "Em andamento",
+  completed: "Concluído",
+  cancelled: "Cancelado",
+};
+
 function LeadCard({
   lead,
-  hasItinerary,
+  itineraryStatus,
   dragging,
   onDragStart,
   onDragEnd,
@@ -257,7 +264,7 @@ function LeadCard({
   onOpen,
 }: {
   lead: Lead;
-  hasItinerary?: boolean;
+  itineraryStatus?: string;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
@@ -334,9 +341,9 @@ function LeadCard({
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
       <div className="mt-2 flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
-        {hasItinerary && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary" title="Este lead já possui roteiro">
-            <MapIcon className="h-3 w-3" /> Roteiro
+        {itineraryStatus && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary" title="Roteiro vinculado">
+            <MapIcon className="h-3 w-3" /> {ITINERARY_STATUS_LABELS[itineraryStatus] || itineraryStatus}
           </span>
         )}
       </div>
