@@ -521,7 +521,7 @@ function EditableField({
                 setEditing(false);
               }
             }}
-            className="w-full rounded-md border border-border bg-background px-2 py-1 text-sm outline-none focus:border-primary"
+            className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
           />
 
           <button
@@ -544,7 +544,7 @@ function EditableField({
         </div>
       ) : (
         <div className="mt-0.5 flex items-center gap-1">
-          <p className="min-w-0 flex-1 truncate text-sm font-medium">{display ?? value ?? "—"}</p>
+          <p className="min-w-0 flex-1 truncate text-xs font-medium">{display ?? value ?? "—"}</p>
           <button
             onClick={start}
             title="Editar"
