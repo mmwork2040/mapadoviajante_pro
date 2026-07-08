@@ -60,6 +60,8 @@ function CoverImage({ value, className, alt }: { value: string; className?: stri
 
 function LeadsPage() {
   const qc = useQueryClient();
+  const { lead: leadParam } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
