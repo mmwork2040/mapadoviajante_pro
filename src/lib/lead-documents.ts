@@ -218,9 +218,36 @@ export async function fetchAgencyDocuments(): Promise<AgencyDocument[]> {
   return (data as unknown as AgencyDocument[]) || [];
 }
 
+/** Find an existing general (repository) document with the same name and size. */
+export async function findDuplicateGeneralDocument(
+  agencyId: string,
+  name: string,
+  size: number | null,
+): Promise<LeadDocument | null> {
+  let q = db()
+    .from("crm_lead_documents")
+    .select("*")
+    .eq("agency_id", agencyId)
+    .is("lead_id", null)
+    .is("itinerary_id", null)
+    .is("activity_id", null)
+    .eq("name", name);
+  q = size == null ? q.is("size", null) : q.eq("size", size);
+  const { data, error } = await q.limit(1);
+  if (error) return null;
+  const rows = (data as unknown as LeadDocument[]) || [];
+  return rows[0] ?? null;
+}
+
 /** Upload a general (repository) document not tied to a lead/roteiro. */
-export async function uploadGeneralDocument(file: File, category?: string | null): Promise<LeadDocument | null> {
+export async function uploadGeneralDocument(
+  file: File,
+  category?: string | null,
+): Promise<{ document: LeadDocument | null; duplicate: boolean }> {
   const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
   if (!agencyId) throw new Error("Agência não encontrada.");
-  return uploadLeadDocument({ file, agencyId, category });
+  const existing = await findDuplicateGeneralDocument(agencyId, file.name, file.size);
+  if (existing) return { document: existing, duplicate: true };
+  const document = await uploadLeadDocument({ file, agencyId, category });
+  return { document, duplicate: false };
 }
