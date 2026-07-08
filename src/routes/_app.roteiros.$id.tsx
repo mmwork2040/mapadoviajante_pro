@@ -1417,6 +1417,7 @@ function VouchersCard({
 
 
 type ChatMsg = { role: "user" | "assistant"; text: string; files?: string[] };
+type ActivityDocSummary = Record<string, { count: number; names: string[]; categories: string[] }>;
 
 function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }) {
   const [open, setOpen] = useState(false);
@@ -1429,7 +1430,25 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
   const scrollRef = useRef<HTMLDivElement>(null);
   const plan = useServerFn(itineraryPlanner);
 
-  function buildGreeting(): string {
+  async function loadActivityDocSummary(): Promise<ActivityDocSummary> {
+    const activities = (it.days || []).flatMap((d) => d.activities || []);
+    const entries = await Promise.all(
+      activities.map(async (a) => {
+        const docs = await fetchActivityDocuments(a.id);
+        return [
+          a.id,
+          {
+            count: docs.length,
+            names: docs.map((doc) => doc.name).filter(Boolean).slice(0, 3),
+            categories: [...new Set(docs.map((doc) => doc.category).filter(Boolean) as string[])].slice(0, 3),
+          },
+        ] as const;
+      }),
+    );
+    return Object.fromEntries(entries.filter(([, docs]) => docs.count > 0));
+  }
+
+  function buildGreeting(docSummary: ActivityDocSummary = {}): string {
     const nome = it.client_name || it.lead?.name;
     const parts: string[] = [];
     if (it.destination) parts.push(`destino **${it.destination}**`);
@@ -1466,7 +1485,11 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
       msg += `\n\nO roteiro tem ${totalDias} dia(s) e ${totalAtivs} atividade(s) montados:`;
       (it.days || []).forEach((d) => {
         const acts = (d.activities || [])
-          .map((a) => [a.time, a.title || a.location].filter(Boolean).join(" "))
+          .map((a) => {
+            const doc = docSummary[a.id];
+            const label = [a.time, a.title || a.location].filter(Boolean).join(" ");
+            return doc?.count ? `${label || "(sem detalhes)"} — ${doc.count} anexo(s)` : label;
+          })
           .filter(Boolean);
         const titulo = d.title || `Dia ${d.day_number}`;
         msg += acts.length
@@ -1489,13 +1512,21 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
           if (genericTitle(a.title)) faltando.push("título");
           if (!a.time) faltando.push("horário");
           if (!a.location) faltando.push("local");
-          if (faltando.length)
-            incompletas.push(`- **${titulo}** → "${a.title || "sem título"}" (falta ${faltando.join(", ")})`);
+          if (faltando.length) {
+            const doc = docSummary[a.id];
+            const anexos = doc?.count
+              ? ` · possui ${doc.count} anexo(s) para interpretar${doc.names.length ? `: ${doc.names.join(", ")}` : ""}`
+              : "";
+            incompletas.push(`- **${titulo}** → "${a.title || "sem título"}" (falta ${faltando.join(", ")})${anexos}`);
+          }
         });
       });
       if (incompletas.length) {
         msg += `\n\n⚠️ Encontrei ${incompletas.length} atividade(s) que parecem incompletas ou com título genérico:\n${incompletas.join("\n")}`;
-        msg += "\n\nEnvie os anexos (passagens, vouchers, ingressos) dessas atividades que eu completo os dados automaticamente, ou me diga os detalhes.";
+        const totalDocs = Object.values(docSummary).reduce((sum, doc) => sum + doc.count, 0);
+        msg += totalDocs
+          ? "\n\nJá identifiquei anexo(s) nessas atividades. Posso interpretar os documentos anexados e sugerir o preenchimento dos dados faltantes."
+          : "\n\nEnvie os anexos (passagens, vouchers, ingressos) dessas atividades que eu completo os dados automaticamente, ou me diga os detalhes.";
       }
     } else {
       msg += "\n\nNenhum dia foi montado ainda. Envie passagens/reservas ou me diga o que precisa que eu monto os dias.";
@@ -1516,7 +1547,9 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
       // A cada abertura, atualiza a percepção da IA: recarrega dias, atividades e anexos.
       greeted.current = true;
       onChange();
-      setMessages([{ role: "assistant", text: buildGreeting() }]);
+      loadActivityDocSummary().then((docSummary) => {
+        setMessages([{ role: "assistant", text: buildGreeting(docSummary) }]);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
@@ -1525,7 +1558,9 @@ function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }
   // e ainda só há a saudação, reescreve a saudação com os dados frescos.
   useEffect(() => {
     if (open && messages.length <= 1) {
-      setMessages([{ role: "assistant", text: buildGreeting() }]);
+      loadActivityDocSummary().then((docSummary) => {
+        setMessages([{ role: "assistant", text: buildGreeting(docSummary) }]);
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [it]);
