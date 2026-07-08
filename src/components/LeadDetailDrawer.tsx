@@ -801,7 +801,7 @@ function AtividadesTab({
   }
 
   const register = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!dueDate) throw new Error("A data de execução é obrigatória.");
       if (!details.trim()) throw new Error("Os detalhes são obrigatórios.");
       if (details.trim().length > 250) throw new Error("Os detalhes devem ter no máximo 250 caracteres.");
