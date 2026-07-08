@@ -645,7 +645,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
       }
     }
 
-    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}${pastItineraries}${leadDocuments}${library}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
+    const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}${pastItineraries}${leadDocuments}${attachmentsIndex}${library}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
 
 
 
@@ -658,7 +658,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
         maxTokens: Math.max(cfg.max_tokens ?? 0, 4096),
       },
       prompt,
-      data.files,
+      [...data.files, ...attachedFiles],
     );
     return parsePlannerJson(text);
   });
