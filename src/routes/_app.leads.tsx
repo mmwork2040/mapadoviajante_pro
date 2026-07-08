@@ -67,6 +67,9 @@ function LeadsPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
+  useEffect(() => {
+    if (leadParam) setDetailId(leadParam);
+  }, [leadParam]);
   const { data: leads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["leads", { search }],
     queryFn: () => fetchLeads({ search: search || undefined }),
