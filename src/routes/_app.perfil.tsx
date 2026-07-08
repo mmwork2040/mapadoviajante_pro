@@ -25,7 +25,7 @@ function CollapsibleCard({
   right?: ReactNode;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <div className="rounded-2xl border border-border bg-card">
       <button
