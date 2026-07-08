@@ -587,6 +587,7 @@ export function NewLeadModal({
 
   // Busca inteligente de destino (país, estado ou cidade) enquanto digita.
   const [destSuggestions, setDestSuggestions] = useState<string[]>([]);
+  const [tripTypes, setTripTypes] = useState<string[]>(() => loadTripTypes());
   useEffect(() => {
     const q = form.destination.trim();
     if (q.length < 2) {
