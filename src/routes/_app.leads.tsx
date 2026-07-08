@@ -554,6 +554,41 @@ export function NewLeadModal({
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Busca inteligente de destino (país, estado ou cidade) enquanto digita.
+  const [destSuggestions, setDestSuggestions] = useState<string[]>([]);
+  useEffect(() => {
+    const q = form.destination.trim();
+    if (q.length < 2) {
+      setDestSuggestions([]);
+      return;
+    }
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      try {
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
+          q,
+        )}&count=8&language=pt&format=json`;
+        const res = await fetch(url, { signal: ctrl.signal });
+        if (!res.ok) return;
+        const json = (await res.json()) as {
+          results?: { name?: string; admin1?: string; country?: string }[];
+        };
+        const list = (json.results ?? [])
+          .map((r) =>
+            [r.name, r.admin1, r.country].filter((p) => p && p.trim()).join(", "),
+          )
+          .filter((v, i, a) => v && a.indexOf(v) === i);
+        setDestSuggestions(list);
+      } catch {
+        /* ignora aborto/erros de rede */
+      }
+    }, 300);
+    return () => {
+      ctrl.abort();
+      clearTimeout(t);
+    };
+  }, [form.destination]);
+
   function pickFromLibrary(value: string) {
     set({ cover_image: value });
     setPendingImage(null);
