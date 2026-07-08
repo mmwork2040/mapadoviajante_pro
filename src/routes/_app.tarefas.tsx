@@ -215,9 +215,22 @@ function TaskList({ tasks, onToggle }: { tasks: Task[]; onToggle: (t: Task) => v
 
               )}
             </div>
-            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.cls}`}>
-              {prio.label}
-            </span>
+            <div className="flex shrink-0 items-center gap-2">
+              {t.lead_id && (
+                <Link
+                  to="/leads"
+                  search={{ lead: t.lead_id }}
+                  aria-label="Abrir detalhes do lead"
+                  title="Abrir lead"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:border-primary hover:text-primary"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                </Link>
+              )}
+              <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.cls}`}>
+                {prio.label}
+              </span>
+            </div>
           </li>
         );
       })}
