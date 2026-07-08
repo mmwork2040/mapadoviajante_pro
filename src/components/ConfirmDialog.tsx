@@ -65,6 +65,11 @@ export function ConfirmProvider({ children }: { children: React.ReactNode }) {
             <AlertDialogCancel onClick={() => resolve(false)}>
               {opts.cancelLabel || "Cancelar"}
             </AlertDialogCancel>
+            {opts.thirdLabel && (
+              <AlertDialogCancel onClick={() => resolve("third")}>
+                {opts.thirdLabel}
+              </AlertDialogCancel>
+            )}
             <AlertDialogAction
               onClick={() => resolve(true)}
               className={
