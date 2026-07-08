@@ -12,6 +12,44 @@ export const Route = createFileRoute("/_app/perfil")({
 
 const COLORS = ["#ff7a1a", "#3b82f6", "#16a34a", "#a855f7", "#ef4444", "#0ea5e9", "#f59e0b", "#ec4899"];
 
+function CollapsibleCard({
+  icon: Icon,
+  title,
+  subtitle,
+  right,
+  children,
+}: {
+  icon: React.ElementType;
+  title: string;
+  subtitle?: string;
+  right?: ReactNode;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="rounded-2xl border border-border bg-card">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-3 p-5 text-left"
+      >
+        <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <Icon className="h-5 w-5" />
+        </span>
+        <div className="min-w-0">
+          <h2 className="font-bold">{title}</h2>
+          {subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+        </div>
+        <div className="ml-auto flex items-center gap-3">
+          {right}
+          <ChevronDown className={`h-4 w-4 transition-transform ${open ? "" : "-rotate-90"}`} />
+        </div>
+      </button>
+      {open && <div className="space-y-4 px-5 pb-5">{children}</div>}
+    </div>
+  );
+}
+
 function ProfilePage() {
   const { member, session, refreshMember } = useAuth();
   const [name, setName] = useState(member?.name ?? "");
