@@ -151,7 +151,7 @@ function LeadsPage() {
             onClick={() => setOpen(true)}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
           >
-            <Plus className="h-4 w-4" /> Novo Lead
+            <Plus className="h-4 w-4" /> Nova Proposta
           </button>
         </div>
       </div>
@@ -930,6 +930,7 @@ export function NewLeadModal({
                   onChange={(v) => set({ name: v })}
                   onFocus={() => setNameFocused(true)}
                   onBlur={() => setTimeout(() => setNameFocused(false), 150)}
+                  disabled={editing}
                   full
                 />
                 {!editing && nameFocused && nameSuggestions.length > 0 && (
@@ -949,7 +950,8 @@ export function NewLeadModal({
                   </div>
                 )}
               </div>
-              <ModalField label="E-mail" type="email" placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} />
+              <ModalField label="E-mail" type="email" placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} disabled={editing} />
+              <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} disabled={editing} />
               <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
               <ModalField label="Orçamento Estimado (R$)" format="currency" placeholder="R$ 0,00" value={form.value} onChange={(v) => set({ value: v })} />
               <ModalSelect label="Como nos encontrou?" value={form.origin} onChange={(v) => set({ origin: v })} options={ORIGINS} />
@@ -1282,6 +1284,7 @@ export function ModalField({
   onCommit,
   onFocus,
   onBlur,
+  disabled,
 
 }: {
   label: string;
@@ -1319,6 +1322,7 @@ export function ModalField({
   onCommit?: (v: string) => void;
   onFocus?: () => void;
   onBlur?: () => void;
+  disabled?: boolean;
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
   const masks = {
@@ -1341,13 +1345,14 @@ export function ModalField({
           type={format ? "text" : type}
           inputMode={format ? "numeric" : undefined}
           required={required}
+          disabled={disabled}
           value={value}
           placeholder={placeholder}
           list={listId}
           onChange={(e) => handleChange(e.target.value)}
           onFocus={onFocus}
           onBlur={(e) => { onCommit?.(e.target.value); onBlur?.(); }}
-          className="w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background"
+          className="w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background disabled:cursor-not-allowed disabled:opacity-60"
           style={allActions.length ? { paddingRight: `${allActions.length * 36 + 8}px` } : undefined}
         />
         {allActions.length > 0 && (
