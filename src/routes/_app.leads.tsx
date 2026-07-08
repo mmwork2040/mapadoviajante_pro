@@ -1240,6 +1240,7 @@ export function ModalField({
   onRejectPending?: () => void;
   errorMessage?: string;
   onRetry?: () => void;
+  onCommit?: (v: string) => void;
 
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
