@@ -341,9 +341,9 @@ function LeadCard({
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
       <div className="mt-2 flex items-center justify-between gap-2">
         <p className="text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
-        {hasItinerary && (
-          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary" title="Este lead já possui roteiro">
-            <MapIcon className="h-3 w-3" /> Roteiro
+        {itineraryStatus && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary" title="Roteiro vinculado">
+            <MapIcon className="h-3 w-3" /> {ITINERARY_STATUS_LABELS[itineraryStatus] || itineraryStatus}
           </span>
         )}
       </div>
