@@ -905,14 +905,14 @@ function AtividadesTab({
             className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
           />
         </label>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-red-600">
             <User className="h-4 w-4" /> Atribuir a:
           </span>
           <select
             value={assigned}
             onChange={(e) => setAssigned(e.target.value)}
-            className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
+            className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
           >
             <option value="">Ninguém</option>
             {team.map((m) => (
@@ -921,13 +921,23 @@ function AtividadesTab({
               </option>
             ))}
           </select>
-          <button
-            onClick={() => register.mutate()}
-            disabled={register.isPending || !dueDate}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-          >
-            <Send className="h-4 w-4" /> Registrar
-          </button>
+          <div className="flex gap-2">
+            {editingId && (
+              <button
+                onClick={resetForm}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" /> Cancelar
+              </button>
+            )}
+            <button
+              onClick={() => register.mutate()}
+              disabled={register.isPending || !dueDate}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+              <Send className="h-4 w-4" /> {editingId ? "Salvar" : "Registrar"}
+            </button>
+          </div>
         </div>
         </CollapsibleSection>
       </section>
