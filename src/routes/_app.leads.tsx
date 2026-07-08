@@ -685,6 +685,11 @@ export function NewLeadModal({
         return;
       }
     }
+    if (!form.trip_type.trim()) {
+      toast.error("Selecione o Tipo de Viagem.");
+      setStep(1);
+      return;
+    }
     setSaving(true);
     const payload = {
       name: form.name.trim(),
