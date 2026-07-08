@@ -384,6 +384,37 @@ const STEPS = [
 
 const ORIGINS = ["Indicação", "Instagram", "Facebook", "Google", "WhatsApp", "Site", "Outro"];
 
+const DEFAULT_TRIP_TYPES = ["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"];
+const TRIP_TYPES_KEY = "custom_trip_types";
+
+function loadTripTypes(): string[] {
+  const base = [...DEFAULT_TRIP_TYPES];
+  try {
+    const saved = JSON.parse(localStorage.getItem(TRIP_TYPES_KEY) || "[]");
+    if (Array.isArray(saved)) {
+      for (const t of saved) {
+        if (typeof t === "string" && t.trim() && !base.some((b) => b.toLowerCase() === t.trim().toLowerCase())) {
+          base.push(t.trim());
+        }
+      }
+    }
+  } catch { /* ignora */ }
+  return base;
+}
+
+function saveTripType(value: string, current: string[]): string[] {
+  const v = value.trim();
+  if (!v || current.some((t) => t.toLowerCase() === v.toLowerCase())) return current;
+  const next = [...current, v];
+  try {
+    localStorage.setItem(
+      TRIP_TYPES_KEY,
+      JSON.stringify(next.filter((t) => !DEFAULT_TRIP_TYPES.some((d) => d.toLowerCase() === t.toLowerCase()))),
+    );
+  } catch { /* ignora */ }
+  return next;
+}
+
 const AIRPORTS = [
   "GRU - São Paulo/Guarulhos",
   "CGH - São Paulo/Congonhas",
@@ -556,6 +587,7 @@ export function NewLeadModal({
 
   // Busca inteligente de destino (país, estado ou cidade) enquanto digita.
   const [destSuggestions, setDestSuggestions] = useState<string[]>([]);
+  const [tripTypes, setTripTypes] = useState<string[]>(() => loadTripTypes());
   useEffect(() => {
     const q = form.destination.trim();
     if (q.length < 2) {
@@ -920,7 +952,15 @@ export function NewLeadModal({
 
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
               <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
-              <ModalSelect label="Tipo de Viagem" required value={form.trip_type} onChange={(v) => set({ trip_type: v })} options={["Lazer", "Lua de mel", "Negócios", "Família", "Aventura", "Cruzeiro"]} />
+              <ModalField
+                label="Tipo de Viagem"
+                required
+                placeholder="Selecione ou digite um novo tipo"
+                value={form.trip_type}
+                onChange={(v) => set({ trip_type: v })}
+                onCommit={(v) => setTripTypes((cur) => saveTripType(v, cur))}
+                suggestions={tripTypes}
+              />
               <ModalTextarea label="Detalhes e Expectativas" placeholder="Ex: Lua de mel, querem praias tranquilas, não gostam de aventura extrema…" value={form.trip_notes} onChange={(v) => set({ trip_notes: v })} />
             </Section>
           )}
@@ -1165,6 +1205,7 @@ export function ModalField({
   onRejectPending,
   errorMessage,
   onRetry,
+  onCommit,
 
 }: {
   label: string;
@@ -1199,6 +1240,7 @@ export function ModalField({
   onRejectPending?: () => void;
   errorMessage?: string;
   onRetry?: () => void;
+  onCommit?: (v: string) => void;
 
 }) {
   const listId = suggestions ? `dl-${label.replace(/\s+/g, "-")}` : undefined;
@@ -1226,6 +1268,7 @@ export function ModalField({
           placeholder={placeholder}
           list={listId}
           onChange={(e) => handleChange(e.target.value)}
+          onBlur={(e) => onCommit?.(e.target.value)}
           className="w-full rounded-xl border border-input bg-muted/40 py-3 pl-4 text-sm outline-none focus:border-primary focus:bg-background"
           style={allActions.length ? { paddingRight: `${allActions.length * 36 + 8}px` } : undefined}
         />
