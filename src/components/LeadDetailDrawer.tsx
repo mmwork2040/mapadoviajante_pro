@@ -799,6 +799,19 @@ function AtividadesTab({
     onError: () => toast.error("Erro ao excluir atividade."),
   });
 
+  const toggleStatus = useMutation({
+    mutationFn: ({ id, completed }: { id: string; completed: boolean }) =>
+      setLeadActivityCompleted(id, completed),
+    onSuccess: (ok) => {
+      if (!ok) return toast.error("Erro ao alterar o status.");
+      toast.success("Status atualizado.");
+      qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: () => toast.error("Erro ao alterar o status."),
+  });
+
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-border p-4">
