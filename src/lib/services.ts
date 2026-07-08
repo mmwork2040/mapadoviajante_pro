@@ -502,7 +502,42 @@ export async function setLeadActivityCompleted(
   return true;
 }
 
-export async function createLeadActivity(
+/** Atualiza uma atividade e a tarefa de agenda vinculada. */
+export async function updateLeadActivity(
+  activityId: string,
+  activityData: Partial<LeadActivity> & { due_date?: string | null },
+): Promise<boolean> {
+  const { error } = await supabase
+    .from("crm_lead_activities")
+    .update({
+      type: activityData.type,
+      title: activityData.title,
+      details: activityData.details || null,
+      assigned_to_id: activityData.assigned_to_id || null,
+    })
+    .eq("id", activityId);
+  if (error) {
+    console.error("updateLeadActivity:", error);
+    return false;
+  }
+
+  // Atualiza a tarefa de agenda vinculada (se houver).
+  const desc = [activityData.details?.trim(), ACTIVITY_TASK_MARK(activityId)]
+    .filter(Boolean)
+    .join("\n\n");
+  const { error: taskErr } = await supabase
+    .from("crm_tasks")
+    .update({
+      title: activityData.title,
+      description: desc,
+      assigned_to: activityData.assigned_to_id || null,
+      ...(activityData.due_date ? { due_date: activityData.due_date } : {}),
+    })
+    .ilike("description", `%${ACTIVITY_TASK_MARK(activityId)}%`);
+  if (taskErr) console.error("updateLeadActivity(task):", taskErr);
+  return true;
+}
+
   leadId: string,
   activityData: Partial<LeadActivity> & { due_date?: string | null },
 ): Promise<LeadActivity | null> {
