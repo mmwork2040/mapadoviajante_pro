@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useEffect, useRef } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot, Map as MapIcon } from "lucide-react";
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { getTripTypes, addTripType } from "@/lib/trip-types.functions";
@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadIdsWithItineraries, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
@@ -77,6 +77,13 @@ function LeadsPage() {
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
+
+  const { data: itinLeadIds = [] } = useQuery({
+    queryKey: ["lead-ids-with-itineraries"],
+    queryFn: fetchLeadIdsWithItineraries,
+    refetchInterval: 15000,
+  });
+  const leadIdsWithItineraries = useMemo(() => new Set(itinLeadIds), [itinLeadIds]);
 
   // Realtime: novos leads (ex.: criados via webhook do n8n) atualizam a lista.
   useEffect(() => {
@@ -203,6 +210,7 @@ function LeadsPage() {
                       <LeadCard
                         key={l.id}
                         lead={l}
+                        hasItinerary={leadIdsWithItineraries.has(l.id)}
                         dragging={dragId === l.id}
                         onDragStart={() => setDragId(l.id)}
                         onDragEnd={() => {
@@ -241,6 +249,7 @@ function LeadsPage() {
 
 function LeadCard({
   lead,
+  hasItinerary,
   dragging,
   onDragStart,
   onDragEnd,
@@ -248,6 +257,7 @@ function LeadCard({
   onOpen,
 }: {
   lead: Lead;
+  hasItinerary?: boolean;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
@@ -322,7 +332,14 @@ function LeadCard({
       })()}
       <p className="font-medium">{lead.name}</p>
       <p className="text-xs text-muted-foreground">{lead.destination || "Sem destino"}</p>
-      <p className="mt-2 text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold text-primary">{formatCurrency(lead.value)}</p>
+        {hasItinerary && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary" title="Este lead já possui roteiro">
+            <MapIcon className="h-3 w-3" /> Roteiro
+          </span>
+        )}
+      </div>
     </div>
   );
 }

@@ -1438,6 +1438,18 @@ export async function fetchItinerariesByLead(leadId: string): Promise<Itinerary[
   return (data as Itinerary[]) || [];
 }
 
+/** Retorna os IDs de leads que já possuem ao menos um roteiro vinculado. */
+export async function fetchLeadIdsWithItineraries(): Promise<string[]> {
+  const { data, error } = await supabase.from("crm_itineraries").select("lead_id");
+  if (error) {
+    console.error("fetchLeadIdsWithItineraries:", error);
+    return [];
+  }
+  return Array.from(
+    new Set(((data as { lead_id: string | null }[]) || []).map((r) => r.lead_id).filter(Boolean) as string[]),
+  );
+}
+
 // ── AI config ──────────────────────────────────────────────────
 export async function fetchAiConfig(): Promise<AiConfig | null> {
   if (!_agencyId) await loadAgencyContext();
