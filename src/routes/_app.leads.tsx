@@ -559,12 +559,14 @@ export function NewLeadModal({
   onDelete,
   lead,
   allLeads = [],
+  linkedItinerary = null,
 }: {
   onClose: () => void;
   onCreated: () => void;
   onDelete?: () => void;
   lead?: Lead;
   allLeads?: Lead[];
+  linkedItinerary?: Itinerary | null;
 }) {
   const editing = !!lead;
   const [step, setStep] = useState(0);
