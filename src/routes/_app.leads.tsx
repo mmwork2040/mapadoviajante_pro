@@ -210,7 +210,7 @@ function LeadsPage() {
                       <LeadCard
                         key={l.id}
                         lead={l}
-                        hasItinerary={leadIdsWithItineraries.has(l.id)}
+                        itineraryStatus={itineraryStatuses[l.id]}
                         dragging={dragId === l.id}
                         onDragStart={() => setDragId(l.id)}
                         onDragEnd={() => {
