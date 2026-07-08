@@ -445,12 +445,6 @@ function ItineraryDetailPage() {
               <Eraser className="h-4 w-4" /> Limpar roteiro
             </button>
           )}
-          <button
-            onClick={() => setEditing(true)}
-            className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
-          >
-            <Pencil className="h-4 w-4" /> Editar
-          </button>
           {(() => {
             const canView =
               it.status === "completed" ||
