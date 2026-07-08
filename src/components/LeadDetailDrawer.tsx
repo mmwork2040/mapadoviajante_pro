@@ -158,52 +158,6 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
 
 
 
-  const createRoteiro = useMutation({
-    mutationFn: () =>
-      createItinerary({
-        lead_id: leadId,
-        title: `Roteiro - ${lead?.name}`,
-        client_name: lead?.name,
-        destination: lead?.destination || "",
-        budget: Number(lead?.value) || 0,
-        status: "draft",
-      }),
-    onSuccess: (res) => {
-      if (!res) return toast.error("Erro ao criar roteiro.");
-      toast.success("Roteiro criado!");
-      navigate({ to: "/roteiros/$id", params: { id: res.id } });
-    },
-    onError: () => toast.error("Erro ao criar roteiro."),
-  });
-
-  async function handleCreateRoteiro() {
-    if (createRoteiro.isPending) return;
-    const existing = await fetchItinerariesByLead(leadId);
-    const openOne = existing.find((it) => it.status === "draft" || it.status === "active");
-    if (openOne) {
-      const choice = await confirm({
-        title: "Roteiro em aberto",
-        description: `Este lead já possui um roteiro em ${
-          openOne.status === "draft" ? "rascunho" : "andamento"
-        }. Deseja abri-lo em vez de criar outro?`,
-        confirmLabel: "Abrir existente",
-        cancelLabel: "Criar novo",
-        thirdLabel: "Fechar",
-      });
-      if (choice === "third") return;
-      if (choice === true) {
-        navigate({ to: "/roteiros/$id", params: { id: openOne.id } });
-        return;
-      }
-    }
-    const ok = await confirm({
-      title: "Criar roteiro",
-      description: "Deseja criar um novo roteiro para este lead?",
-      confirmLabel: "Criar",
-    });
-    if (ok) createRoteiro.mutate();
-  }
-
   const ITINERARY_STATUS_LABELS: Record<string, string> = {
     draft: "Rascunho",
     active: "Em andamento",
