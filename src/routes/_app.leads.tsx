@@ -584,6 +584,8 @@ export function NewLeadModal({
     : Array.from(new Map(allLeads.map((l) => [`${l.name}|${l.email || ""}`, l])).values())
         .filter((l) => l.name && (!nameQuery || foldName(l.name).includes(nameQuery)))
         .slice(0, 8);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [draftAlerted, setDraftAlerted] = useState(false);
   function selectExistingLead(l: Lead) {
     set({
       name: l.name || "",
@@ -592,6 +594,8 @@ export function NewLeadModal({
       origin: ORIGINS.includes(l.origin || "") ? l.origin || "" : l.origin ? "Outro" : "",
       origin_other: ORIGINS.includes(l.origin || "") ? "" : l.origin || "",
     });
+    setSelectedLeadId(l.id);
+    setDraftAlerted(false);
     setNameFocused(false);
   }
 
