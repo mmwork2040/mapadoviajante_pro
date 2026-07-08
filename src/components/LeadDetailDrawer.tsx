@@ -726,7 +726,7 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
               <Field label="Pontos / milhas" value={p.points_miles} />
               <Field label="Possui passaporte?" value={p.has_passport} />
             </div>
-            {p.preferences && <Field label="Preferências do cliente" value={p.preferences} />}
+            {p.preferences && <Field label="Preferências do cliente" value={p.preferences} wrap />}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-6 text-center">
