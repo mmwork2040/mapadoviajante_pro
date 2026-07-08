@@ -452,10 +452,12 @@ function Field({ label, value, wrap }: { label: string; value?: string | null; w
 function CollapsibleSection({
   icon: Icon,
   title,
+  count,
   children,
 }: {
   icon: React.ElementType;
   title: string;
+  count?: number;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -467,6 +469,11 @@ function CollapsibleSection({
         className="mb-3 flex w-full items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"
       >
         <Icon className="h-4 w-4 text-primary" /> {title}
+        {typeof count === "number" && (
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary/10 px-1.5 text-[11px] font-bold text-primary">
+            {count}
+          </span>
+        )}
         <ChevronDown
           className={`ml-auto h-4 w-4 transition-transform ${open ? "" : "-rotate-90"}`}
         />
@@ -680,7 +687,7 @@ function PerfilTab({
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection icon={Clock} title="Atividade recente">
+      <CollapsibleSection icon={Clock} title="Atividade recente" count={activities.length}>
         {activities.length === 0 ? (
           <p className="text-sm text-muted-foreground">Nenhuma atividade ainda.</p>
         ) : (
