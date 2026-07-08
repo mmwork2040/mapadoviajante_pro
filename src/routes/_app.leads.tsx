@@ -765,9 +765,29 @@ export function NewLeadModal({
     };
   }, []);
 
-  async function next() {
-    if (step === 0 && !form.name.trim()) {
+  function validateContact(): boolean {
+    if (!form.name.trim()) {
       toast.error("Informe o nome completo.");
+      return false;
+    }
+    const email = form.email.trim();
+    if (!email) {
+      toast.error("Informe o e-mail.");
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Informe um e-mail válido.");
+      return false;
+    }
+    if (!form.phone.trim()) {
+      toast.error("Informe o WhatsApp.");
+      return false;
+    }
+    return true;
+  }
+
+  async function next() {
+    if (step === 0 && !validateContact()) {
       return;
     }
     // Alerta (não bloqueia) se o lead selecionado já tem roteiro em rascunho.
@@ -783,8 +803,7 @@ export function NewLeadModal({
   }
 
   async function submit() {
-    if (!form.name.trim()) {
-      toast.error("Informe o nome completo.");
+    if (!validateContact()) {
       setStep(0);
       return;
     }
@@ -986,8 +1005,8 @@ export function NewLeadModal({
                   </div>
                 )}
               </div>
-              <ModalField label="E-mail" type="email" placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} disabled={editing} />
-              <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
+              <ModalField label="E-mail" type="email" required placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} disabled={editing} />
+              <ModalField label="WhatsApp" format="phone" required placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
               <ModalField label="Orçamento Estimado (R$)" format="currency" placeholder="R$ 0,00" value={form.value} onChange={(v) => set({ value: v })} />
               <ModalSelect label="Como nos encontrou?" value={form.origin} onChange={(v) => set({ origin: v })} options={ORIGINS} />
               {form.origin === "Outro" && (
