@@ -919,7 +919,34 @@ export function NewLeadModal({
         <div className="flex-1 overflow-y-auto px-6 py-6">
           {step === 0 && (
             <Section icon={User} title="Dados de Contato">
-              <ModalField label="Nome Completo" required placeholder="Ex: Família Santos" value={form.name} onChange={(v) => set({ name: v })} full />
+              <div className="relative sm:col-span-2">
+                <ModalField
+                  label="Nome Completo"
+                  required
+                  placeholder="Ex: Família Santos"
+                  value={form.name}
+                  onChange={(v) => set({ name: v })}
+                  onFocus={() => setNameFocused(true)}
+                  onBlur={() => setTimeout(() => setNameFocused(false), 150)}
+                  full
+                />
+                {!editing && nameFocused && nameSuggestions.length > 0 && (
+                  <div className="absolute z-20 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border border-border bg-card shadow-lg">
+                    {nameSuggestions.map((l) => (
+                      <button
+                        key={l.id}
+                        type="button"
+                        onMouseDown={(e) => e.preventDefault()}
+                        onClick={() => selectExistingLead(l)}
+                        className="flex w-full flex-col items-start gap-0.5 px-3 py-2 text-left text-sm hover:bg-muted"
+                      >
+                        <span className="font-medium">{l.name}</span>
+                        <span className="text-xs text-muted-foreground">{l.email || l.phone || "Sem contato"}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <ModalField label="E-mail" type="email" placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} />
               <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
               <ModalField label="Orçamento Estimado (R$)" format="currency" placeholder="R$ 0,00" value={form.value} onChange={(v) => set({ value: v })} />
