@@ -919,32 +919,8 @@ function ActivityRow({
   leadId: string | null;
   itineraryId: string;
 }) {
-  const [edit, setEdit] = useState(false);
-  const [title, setTitle] = useState(activity.title);
-  const [time, setTime] = useState(activity.time || "");
-  const [location, setLocation] = useState(activity.location || "");
 
-  async function save() {
-    await updateItineraryActivity(activity.id, { title, time: time || null, location: location || null });
-    setEdit(false);
-    onChange();
-  }
 
-  if (edit) {
-    return (
-      <div className="min-w-0 flex-1 space-y-2 rounded-lg bg-muted/50 px-3 py-2">
-        <div className="flex min-w-0 gap-2">
-          <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="w-24 shrink-0 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Título" className="w-full min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
-        </div>
-        <input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Local" className="w-full rounded border border-input bg-background px-2 py-1 text-sm outline-none" />
-        <div className="flex gap-2">
-          <button onClick={save} className="rounded bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">Salvar</button>
-          <button onClick={() => setEdit(false)} className="rounded bg-muted px-3 py-1 text-xs">Cancelar</button>
-        </div>
-      </div>
-    );
-  }
 
 
   const done = activity.type === "done";
