@@ -542,84 +542,17 @@ function CollapsibleSection({
   );
 }
 
-function EditableField({
+function ReadOnlyField({
   label,
   value,
-  display,
-  type = "text",
-  mask,
-  onSave,
 }: {
   label: string;
   value?: string | null;
-  display?: string | null;
-  type?: string;
-  mask?: (raw: string) => string;
-  onSave: (value: string) => void;
 }) {
-  const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(value ?? "");
-
-  function start() {
-    setDraft(value ?? "");
-    setEditing(true);
-  }
-  function save() {
-    if ((draft ?? "") !== (value ?? "")) onSave(draft);
-    setEditing(false);
-  }
-
   return (
-    <div className="group relative rounded-xl bg-muted/50 p-3">
+    <div className="rounded-xl bg-muted/50 p-3">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
-      {editing ? (
-        <div className="mt-1 flex items-center gap-1">
-          <input
-            autoFocus
-            type={mask ? "text" : type}
-            inputMode={mask ? "numeric" : undefined}
-            value={draft}
-            onChange={(e) => setDraft(mask ? mask(e.target.value) : e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") save();
-              if (e.key === "Escape") {
-                setDraft(value ?? "");
-                setEditing(false);
-              }
-            }}
-            className="w-full rounded-md border border-border bg-background px-2 py-1 text-xs outline-none focus:border-primary"
-          />
-
-          <button
-            onClick={save}
-            title="Salvar"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground hover:opacity-90"
-          >
-            <Check className="h-3.5 w-3.5" />
-          </button>
-          <button
-            onClick={() => {
-              setDraft(value ?? "");
-              setEditing(false);
-            }}
-            title="Cancelar"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-muted hover:text-foreground"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      ) : (
-        <div className="mt-0.5 flex items-center gap-1">
-          <p className="min-w-0 flex-1 truncate text-xs font-medium">{display ?? value ?? "—"}</p>
-          <button
-            onClick={start}
-            title="Editar"
-            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      )}
+      <p className="mt-0.5 truncate text-xs font-medium">{value ?? "—"}</p>
     </div>
   );
 }
