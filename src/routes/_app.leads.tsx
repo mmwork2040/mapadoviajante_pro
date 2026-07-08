@@ -1284,6 +1284,7 @@ export function ModalField({
   onCommit,
   onFocus,
   onBlur,
+  disabled,
 
 }: {
   label: string;
