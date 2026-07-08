@@ -458,7 +458,7 @@ function CollapsibleSection({
   title: string;
   children: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   return (
     <section>
       <button
