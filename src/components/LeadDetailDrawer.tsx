@@ -1003,6 +1003,13 @@ function AtividadesTab({
                     )}
                    </div>
                   <div className="flex shrink-0 flex-col items-center gap-2 self-start">
+                    <button
+                      onClick={() => startEdit(a)}
+                      title="Editar atividade"
+                      className="text-muted-foreground transition hover:text-primary"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
                     {a.due_date && (
                       <button
                         onClick={async () => {
