@@ -969,7 +969,7 @@ export function NewLeadModal({
                 placeholder="Selecione ou digite um novo tipo"
                 value={form.trip_type}
                 onChange={(v) => set({ trip_type: v })}
-                onCommit={(v) => setTripTypes((cur) => saveTripType(v, cur))}
+                onCommit={(v) => commitTripType(v)}
                 suggestions={tripTypes}
               />
               <ModalTextarea label="Detalhes e Expectativas" placeholder="Ex: Lua de mel, querem praias tranquilas, não gostam de aventura extrema…" value={form.trip_notes} onChange={(v) => set({ trip_notes: v })} />
