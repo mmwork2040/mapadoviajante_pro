@@ -733,8 +733,7 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
   const hasBenefits = p.loyalty_programs || p.points_miles || p.has_passport || p.preferences;
   return (
     <div className="space-y-6">
-      <section>
-        <SectionTitle icon={Plane}>Detalhes da viagem</SectionTitle>
+      <CollapsibleSection icon={Plane} title="Detalhes da viagem">
         <div className="grid grid-cols-2 gap-2">
           <Field label="Ponto de partida" value={p.departure} />
           <Field label="Destino" value={lead.destination} />
@@ -747,9 +746,8 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
             <Field label="Detalhes e expectativas" value={p.trip_notes} />
           </div>
         )}
-      </section>
-      <section>
-        <SectionTitle icon={Gift}>Benefícios & fidelidade</SectionTitle>
+      </CollapsibleSection>
+      <CollapsibleSection icon={Gift} title="Benefícios & fidelidade">
         {hasBenefits ? (
           <div className="space-y-2">
             <div className="grid grid-cols-2 gap-2">
@@ -769,7 +767,8 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
             </p>
           </div>
         )}
-      </section>
+      </CollapsibleSection>
+
     </div>
   );
 }
