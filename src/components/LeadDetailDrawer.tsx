@@ -115,6 +115,29 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     onError: () => toast.error("Erro ao atualizar lead."),
   });
 
+  const assign = useMutation({
+    mutationFn: (memberId: string) => updateLead(leadId, { assigned_to: memberId || null }),
+    onSuccess: async (_res, memberId) => {
+      qc.invalidateQueries({ queryKey: ["lead", leadId] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      if (memberId && memberId !== getMemberId()) {
+        await createNotification({
+          recipientId: memberId,
+          type: "lead_assigned",
+          title: "Lead atribuído a você",
+          body: lead?.name || "",
+          link: `/leads?lead=${leadId}`,
+          leadId,
+        });
+        toast.success("Lead atribuído e notificação enviada.");
+      } else {
+        toast.success("Lead atribuído.");
+      }
+    },
+    onError: () => toast.error("Erro ao atribuir lead."),
+  });
+
+
   async function handleDelete() {
     const ok = await confirm({
       title: "Excluir viajante",
