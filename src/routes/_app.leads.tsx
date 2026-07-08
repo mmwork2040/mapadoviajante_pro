@@ -765,9 +765,29 @@ export function NewLeadModal({
     };
   }, []);
 
-  async function next() {
-    if (step === 0 && !form.name.trim()) {
+  function validateContact(): boolean {
+    if (!form.name.trim()) {
       toast.error("Informe o nome completo.");
+      return false;
+    }
+    const email = form.email.trim();
+    if (!email) {
+      toast.error("Informe o e-mail.");
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Informe um e-mail válido.");
+      return false;
+    }
+    if (!form.phone.trim()) {
+      toast.error("Informe o WhatsApp.");
+      return false;
+    }
+    return true;
+  }
+
+  async function next() {
+    if (step === 0 && !validateContact()) {
       return;
     }
     // Alerta (não bloqueia) se o lead selecionado já tem roteiro em rascunho.
