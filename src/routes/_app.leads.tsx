@@ -232,7 +232,7 @@ function LeadsPage() {
         />
       )}
 
-      {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => setDetailId(null)} />}
+      {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => { setDetailId(null); if (leadParam) navigate({ search: {}, replace: true }); }} />}
     </div>
   );
 }
