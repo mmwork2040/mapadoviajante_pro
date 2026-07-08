@@ -247,9 +247,16 @@ function LeadsPage() {
   );
 }
 
+const ITINERARY_STATUS_LABELS: Record<string, string> = {
+  draft: "Rascunho",
+  active: "Em andamento",
+  completed: "Concluído",
+  cancelled: "Cancelado",
+};
+
 function LeadCard({
   lead,
-  hasItinerary,
+  itineraryStatus,
   dragging,
   onDragStart,
   onDragEnd,
@@ -257,7 +264,7 @@ function LeadCard({
   onOpen,
 }: {
   lead: Lead;
-  hasItinerary?: boolean;
+  itineraryStatus?: string;
   dragging: boolean;
   onDragStart: () => void;
   onDragEnd: () => void;
