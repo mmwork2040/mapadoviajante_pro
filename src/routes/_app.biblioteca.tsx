@@ -729,8 +729,20 @@ function DocumentsPanel() {
     }
     setUploading(true);
     try {
-      for (const f of files) await uploadGeneralDocument(f);
-      toast.success(files.length > 1 ? "Arquivos enviados." : "Arquivo enviado.");
+      let sent = 0;
+      let dupes = 0;
+      for (const f of files) {
+        const { duplicate } = await uploadGeneralDocument(f);
+        if (duplicate) dupes++;
+        else sent++;
+      }
+      if (sent > 0) toast.success(sent > 1 ? "Arquivos enviados." : "Arquivo enviado.");
+      if (dupes > 0)
+        toast.info(
+          dupes > 1
+            ? `${dupes} arquivos já existiam na biblioteca e foram ignorados.`
+            : "Este arquivo já existe na biblioteca e foi ignorado.",
+        );
       invalidate();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao enviar arquivo.");
