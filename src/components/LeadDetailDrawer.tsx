@@ -812,7 +812,9 @@ function AtividadesTab({
         assigned_to_id: assigned || null,
         due_date: new Date(`${dueDate}T09:00:00`).toISOString(),
       };
-      return editingId ? updateLeadActivity(editingId, payload) : createLeadActivity(leadId, payload);
+      if (editingId) return updateLeadActivity(editingId, payload);
+      await createLeadActivity(leadId, payload);
+      return true;
     },
     onSuccess: (res) => {
       if (editingId && !res) return toast.error("Erro ao atualizar atividade.");
