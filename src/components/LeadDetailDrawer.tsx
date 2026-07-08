@@ -48,6 +48,7 @@ import {
   setLeadActivityCompleted,
   updateItinerary,
   updateLead,
+  updateLeadActivity,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, initials, maskPhone } from "@/lib/ui";
@@ -513,18 +514,23 @@ function CollapsibleSection({
   title,
   count,
   children,
+  controlledOpen,
+  onToggle,
 }: {
   icon: React.ElementType;
   title: string;
   count?: number;
   children: React.ReactNode;
+  controlledOpen?: boolean;
+  onToggle?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const [internal, setInternal] = useState(false);
+  const open = controlledOpen ?? internal;
   return (
     <section>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (onToggle ? onToggle(!open) : setInternal((v) => !v))}
         className="mb-3 flex w-full items-center gap-2 text-xs font-bold uppercase tracking-wide text-muted-foreground"
       >
         <Icon className="h-4 w-4 text-primary" /> {title}
@@ -765,6 +771,8 @@ function AtividadesTab({
   const [details, setDetails] = useState("");
   const [assigned, setAssigned] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const toggleExpanded = (id: string) =>
     setExpanded((prev) => {
@@ -773,30 +781,50 @@ function AtividadesTab({
       return next;
     });
 
+  function resetForm() {
+    setEditingId(null);
+    setType("note");
+    setTitle(ACTIVITY_TYPES.find((t) => t.key === "note")?.label || "Observação");
+    setDetails("");
+    setAssigned("");
+    setDueDate("");
+  }
+
+  function startEdit(a: import("@/lib/types").LeadActivity) {
+    setEditingId(a.id);
+    setType(a.type);
+    setTitle(a.title);
+    setDetails(a.details || "");
+    setAssigned(a.assigned?.id || "");
+    setDueDate(a.due_date ? a.due_date.slice(0, 10) : "");
+    setRegisterOpen(true);
+  }
+
   const register = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       if (!dueDate) throw new Error("A data de execução é obrigatória.");
       if (!details.trim()) throw new Error("Os detalhes são obrigatórios.");
       if (details.trim().length > 250) throw new Error("Os detalhes devem ter no máximo 250 caracteres.");
-      return createLeadActivity(leadId, {
+      const payload = {
         type,
         title: title.trim() || ACTIVITY_TYPES.find((t) => t.key === type)?.label || "Atividade",
         details: details.trim(),
         assigned_to_id: assigned || null,
         due_date: new Date(`${dueDate}T09:00:00`).toISOString(),
-      });
+      };
+      if (editingId) return updateLeadActivity(editingId, payload);
+      await createLeadActivity(leadId, payload);
+      return true;
     },
-    onSuccess: () => {
-      setTitle(ACTIVITY_TYPES.find((t) => t.key === "note")?.label || "Observação");
-      setType("note");
-      setDetails("");
-      setDueDate("");
-      toast.success("Atividade registrada.");
+    onSuccess: (res) => {
+      if (editingId && !res) return toast.error("Erro ao atualizar atividade.");
+      toast.success(editingId ? "Atividade atualizada." : "Atividade registrada.");
+      resetForm();
       qc.invalidateQueries({ queryKey: ["lead-activities", leadId] });
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao registrar atividade."),
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Erro ao salvar atividade."),
   });
 
   const remove = useMutation({
@@ -827,7 +855,12 @@ function AtividadesTab({
   return (
     <div className="space-y-6">
       <section className="rounded-2xl border border-border p-4">
-        <CollapsibleSection icon={ClipboardList} title="Registrar atividade">
+        <CollapsibleSection
+          icon={ClipboardList}
+          title={editingId ? "Editar atividade" : "Registrar atividade"}
+          controlledOpen={registerOpen}
+          onToggle={setRegisterOpen}
+        >
         <div className="mb-3 flex flex-wrap gap-1.5">
           {ACTIVITY_TYPES.map((t) => (
             <button
@@ -872,14 +905,14 @@ function AtividadesTab({
             className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
           />
         </label>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-red-600">
             <User className="h-4 w-4" /> Atribuir a:
           </span>
           <select
             value={assigned}
             onChange={(e) => setAssigned(e.target.value)}
-            className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
+            className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
           >
             <option value="">Ninguém</option>
             {team.map((m) => (
@@ -888,13 +921,23 @@ function AtividadesTab({
               </option>
             ))}
           </select>
-          <button
-            onClick={() => register.mutate()}
-            disabled={register.isPending || !dueDate}
-            className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
-          >
-            <Send className="h-4 w-4" /> Registrar
-          </button>
+          <div className="flex gap-2">
+            {editingId && (
+              <button
+                onClick={resetForm}
+                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" /> Cancelar
+              </button>
+            )}
+            <button
+              onClick={() => register.mutate()}
+              disabled={register.isPending || !dueDate}
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+            >
+              <Send className="h-4 w-4" /> {editingId ? "Salvar" : "Registrar"}
+            </button>
+          </div>
         </div>
         </CollapsibleSection>
       </section>
@@ -960,6 +1003,13 @@ function AtividadesTab({
                     )}
                    </div>
                   <div className="flex shrink-0 flex-col items-center gap-2 self-start">
+                    <button
+                      onClick={() => startEdit(a)}
+                      title="Editar atividade"
+                      className="text-muted-foreground transition hover:text-primary"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
                     {a.due_date && (
                       <button
                         onClick={async () => {
