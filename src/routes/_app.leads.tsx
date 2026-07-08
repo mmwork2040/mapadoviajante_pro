@@ -791,6 +791,17 @@ export function NewLeadModal({
       setStep(1);
       return;
     }
+    const emailNorm = form.email.trim().toLowerCase();
+    if (emailNorm) {
+      const dup = allLeads.some(
+        (l) => l.id !== lead?.id && (l.email || "").trim().toLowerCase() === emailNorm,
+      );
+      if (dup) {
+        toast.error("Já existe um lead cadastrado com este e-mail.");
+        setStep(0);
+        return;
+      }
+    }
     setSaving(true);
     const payload = {
       name: form.name.trim(),
