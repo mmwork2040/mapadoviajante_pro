@@ -1205,6 +1205,7 @@ export function ModalField({
   onRejectPending,
   errorMessage,
   onRetry,
+  onCommit,
 
 }: {
   label: string;
