@@ -935,22 +935,48 @@ function AtividadesTab({
                        </p>
                      )}
                    </div>
-                  <button
-                    onClick={async () => {
-                      const ok = await confirm({
-                        title: "Excluir atividade",
-                        description: `Deseja excluir "${a.title}"? Esta ação não pode ser desfeita.`,
-                        confirmLabel: "Excluir",
-                        destructive: true,
-                      });
-                      if (ok) remove.mutate(a.id);
-                    }}
-                    disabled={remove.isPending}
-                    title="Excluir atividade"
-                    className="shrink-0 self-start text-muted-foreground transition hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  <div className="flex shrink-0 flex-col items-center gap-2 self-start">
+                    {a.due_date && (
+                      <button
+                        onClick={async () => {
+                          const next = !a.completed;
+                          const ok = await confirm({
+                            title: next ? "Concluir atividade" : "Reabrir atividade",
+                            description: next
+                              ? `Marcar "${a.title}" como concluída?`
+                              : `Reabrir "${a.title}" como pendente?`,
+                            confirmLabel: next ? "Concluir" : "Reabrir",
+                          });
+                          if (ok) toggleStatus.mutate({ id: a.id, completed: next });
+                        }}
+                        disabled={toggleStatus.isPending}
+                        title={a.completed ? "Reabrir atividade" : "Concluir atividade"}
+                        className={`transition ${
+                          a.completed
+                            ? "text-emerald-600 hover:text-muted-foreground dark:text-emerald-400"
+                            : "text-muted-foreground hover:text-emerald-600"
+                        }`}
+                      >
+                        {a.completed ? <RotateCcw className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                      </button>
+                    )}
+                    <button
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: "Excluir atividade",
+                          description: `Deseja excluir "${a.title}"? Esta ação não pode ser desfeita.`,
+                          confirmLabel: "Excluir",
+                          destructive: true,
+                        });
+                        if (ok) remove.mutate(a.id);
+                      }}
+                      disabled={remove.isPending}
+                      title="Excluir atividade"
+                      className="text-muted-foreground transition hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </li>
               );
             })}
