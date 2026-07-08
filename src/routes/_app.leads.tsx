@@ -1369,16 +1369,24 @@ function ModalSelect({
   onChange,
   options,
   full,
+  required,
 }: {
   label: string;
   value: string;
   onChange: (v: string) => void;
   options: string[];
   full?: boolean;
+  required?: boolean;
 }) {
+  // Garante que um valor vindo de outro cadastro (ex.: formulário/n8n) que não
+  // esteja na lista padrão continue visível e selecionado no campo.
+  const allOptions = value && !options.includes(value) ? [value, ...options] : options;
   return (
     <label className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="mb-1 flex h-8 items-center text-sm font-semibold">{label}</span>
+      <span className="mb-1 flex h-8 items-center text-sm font-semibold">
+        {label}
+        {required && <span className="ml-0.5 text-destructive">*</span>}
+      </span>
 
       <select
         value={value}
@@ -1386,7 +1394,7 @@ function ModalSelect({
         className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
       >
         <option value="">Selecionar…</option>
-        {options.map((o) => (
+        {allOptions.map((o) => (
           <option key={o} value={o}>
             {o}
           </option>
