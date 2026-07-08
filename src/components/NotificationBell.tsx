@@ -49,7 +49,15 @@ export function NotificationBell() {
     }
     if (n.link) {
       setOpen(false);
-      navigate({ to: n.link as string });
+      const [path, query] = n.link.split("?");
+      const search: Record<string, string> = {};
+      if (query) {
+        for (const part of query.split("&")) {
+          const [k, v] = part.split("=");
+          if (k) search[decodeURIComponent(k)] = decodeURIComponent(v ?? "");
+        }
+      }
+      navigate({ to: path, search });
     }
   }
 
