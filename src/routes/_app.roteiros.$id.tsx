@@ -1575,7 +1575,7 @@ ${dias || "(nenhum dia ainda)"}`;
         pending.map(async (f) => ({ base64: await fileToBase64(f), mime: f.type, name: f.name })),
       );
       setPending([]);
-      const res = await plan({ data: { message: text, context: buildContext(), files, leadId: it.lead_id ?? null } });
+      const res = await plan({ data: { message: text, context: buildContext(), files, leadId: it.lead_id ?? null, itineraryId: it.id } });
 
       let createdDays = 0;
       let createdActs = 0;
