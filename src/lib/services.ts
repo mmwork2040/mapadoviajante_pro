@@ -66,10 +66,10 @@ export async function fetchTasksMinePref(): Promise<boolean> {
   if (!_memberId) return false;
   const { data } = await supabase
     .from("agency_members")
-    .select("pref_tasks_mine")
+    .select("pref_tasks_mine" as "id")
     .eq("id", _memberId)
     .maybeSingle();
-  return !!data?.pref_tasks_mine;
+  return !!(data as unknown as { pref_tasks_mine?: boolean })?.pref_tasks_mine;
 }
 
 export async function setTasksMinePref(value: boolean): Promise<boolean> {
@@ -77,7 +77,7 @@ export async function setTasksMinePref(value: boolean): Promise<boolean> {
   if (!_memberId) return false;
   const { error } = await supabase
     .from("agency_members")
-    .update({ pref_tasks_mine: value })
+    .update({ pref_tasks_mine: value } as never)
     .eq("id", _memberId);
   if (error) {
     console.error("setTasksMinePref:", error);
@@ -91,10 +91,10 @@ export async function fetchAgendaMinePref(): Promise<boolean> {
   if (!_memberId) return false;
   const { data } = await supabase
     .from("agency_members")
-    .select("pref_agenda_mine")
+    .select("pref_agenda_mine" as "id")
     .eq("id", _memberId)
     .maybeSingle();
-  return !!data?.pref_agenda_mine;
+  return !!(data as unknown as { pref_agenda_mine?: boolean })?.pref_agenda_mine;
 }
 
 export async function setAgendaMinePref(value: boolean): Promise<boolean> {
@@ -102,7 +102,7 @@ export async function setAgendaMinePref(value: boolean): Promise<boolean> {
   if (!_memberId) return false;
   const { error } = await supabase
     .from("agency_members")
-    .update({ pref_agenda_mine: value })
+    .update({ pref_agenda_mine: value } as never)
     .eq("id", _memberId);
   if (error) {
     console.error("setAgendaMinePref:", error);
