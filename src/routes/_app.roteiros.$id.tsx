@@ -44,7 +44,7 @@ import {
   updateItineraryDay,
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
-import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner } from "@/lib/ai.functions";
+import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
 import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
