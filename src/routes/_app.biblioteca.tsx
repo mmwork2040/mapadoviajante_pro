@@ -25,14 +25,8 @@ import {
   Square,
   Lock,
   ArrowUpRight,
-  MoreVertical,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+
 
 import { toast } from "sonner";
 import {
@@ -1024,46 +1018,32 @@ function DocumentRow({
         <FileText className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium leading-tight">{doc.name}</p>
-        <p className="truncate text-[11px] text-muted-foreground">
+        <p className="truncate text-sm font-medium leading-tight">{doc.name}</p>
+        <p className="truncate text-xs text-muted-foreground">
           {doc.category ? `${doc.category}` : "documento"}
           {source ? ` · ${source}` : ""}
         </p>
       </div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
-            title="Ações"
-          >
-            <MoreVertical className="h-4 w-4" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onPreview}>
-            <Eye className="mr-2 h-4 w-4" /> Visualizar
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => downloadDocument(doc)}>
-            <Download className="mr-2 h-4 w-4" /> Baixar
-          </DropdownMenuItem>
-          {itineraryLink ? (
-            <DropdownMenuItem asChild>
-              <Link to="/roteiros/$id" params={{ id: itineraryLink }}>
-                <ArrowUpRight className="mr-2 h-4 w-4" /> Abrir roteiro
-              </Link>
-            </DropdownMenuItem>
-          ) : null}
-          {onRemove ? (
-            <DropdownMenuItem onClick={onRemove} className="text-destructive focus:text-destructive">
-              <Trash2 className="mr-2 h-4 w-4" /> Excluir
-            </DropdownMenuItem>
-          ) : lockedHint ? (
-            <DropdownMenuItem disabled className="gap-2">
-              <Lock className="mr-2 h-4 w-4" /> {lockedHint}
-            </DropdownMenuItem>
-          ) : null}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <button onClick={onPreview} className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Visualizar">
+        <Eye className="h-4 w-4" />
+      </button>
+      <button onClick={() => downloadDocument(doc)} className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground" title="Baixar">
+        <Download className="h-4 w-4" />
+      </button>
+      {itineraryLink ? (
+        <Link to="/roteiros/$id" params={{ id: itineraryLink }} className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-primary" title="Abrir roteiro">
+          <ArrowUpRight className="h-4 w-4" />
+        </Link>
+      ) : null}
+      {onRemove ? (
+        <button onClick={onRemove} className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive" title="Excluir">
+          <Trash2 className="h-4 w-4" />
+        </button>
+      ) : lockedHint ? (
+        <span className="shrink-0 rounded-lg p-1.5 text-muted-foreground" title={lockedHint}>
+          <Lock className="h-4 w-4" />
+        </span>
+      ) : null}
     </div>
   );
 }

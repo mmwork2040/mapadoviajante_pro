@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy, Calendar, Users } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy, Calendar, Users, MoreVertical } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -1445,21 +1445,30 @@ function ActivityDocuments({
       {open_ && (
         <div className="mt-1 space-y-1">
           {docs.map((doc) => (
-            <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-xs">
+            <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-[11px]">
               <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <button onClick={() => setPreview(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left hover:underline" title={`Pré-visualizar ${doc.name}`}>
+              <button onClick={() => setPreview(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left" title={`Pré-visualizar ${doc.name}`}>
                 {doc.category && <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
                 <span className="truncate">{doc.name}</span>
               </button>
-              <button onClick={() => setPreview(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Pré-visualizar">
-                <Eye className="h-3 w-3" />
-              </button>
-              <button onClick={() => download(doc)} className="shrink-0 text-muted-foreground hover:text-primary" title="Baixar">
-                <Download className="h-3 w-3" />
-              </button>
-              <button onClick={() => remove(doc)} className="shrink-0 text-muted-foreground hover:text-destructive" title="Remover">
-                <X className="h-3 w-3" />
-              </button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground" title="Ações">
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setPreview(doc)}>
+                    <Eye className="mr-2 h-4 w-4" /> Visualizar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => download(doc)}>
+                    <Download className="mr-2 h-4 w-4" /> Baixar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => remove(doc)} className="text-destructive focus:text-destructive">
+                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ))}
           <div className="flex items-center gap-1">
