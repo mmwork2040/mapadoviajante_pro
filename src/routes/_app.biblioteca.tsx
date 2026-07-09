@@ -978,9 +978,10 @@ function DocumentsPanel() {
                         locked
                           ? `Anexado ${
                               attachedIn.length === 1 ? "ao roteiro" : "aos roteiros"
-                            } "${attachedIn.join('", "')}". Exclua pelo roteiro.`
+                            } "${attachedIn.map((a) => a.title).join('", "')}". Exclua pelo roteiro.`
                           : undefined
                       }
+                      itineraryLink={locked ? attachedIn[0].id : undefined}
                     />
                   );
                 })}
