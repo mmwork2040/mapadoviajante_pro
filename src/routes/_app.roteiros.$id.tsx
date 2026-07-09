@@ -1856,6 +1856,8 @@ ${dias || "(nenhum dia ainda)"}`;
       let createdActs = 0;
       let updatedActs = 0;
       const baseCount = it.days?.length || 0;
+      // Locais das atividades geradas pela IA, para buscar e arquivar imagens.
+      const activityLocations = new Set<string>();
 
       for (let i = 0; i < res.days.length; i++) {
         const d = res.days[i];
