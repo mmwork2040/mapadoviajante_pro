@@ -893,6 +893,8 @@ function ItineraryDetailPage() {
               leadId={it.lead_id ?? null}
               itineraryId={id}
               pendingActivity={pendingDayId === day.id}
+              autoEditId={autoEditId}
+              onAutoEditDone={() => setAutoEditId(null)}
             />
           ))}
           {pendingNewDay && (
