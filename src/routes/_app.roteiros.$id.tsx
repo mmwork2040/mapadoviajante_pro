@@ -1781,6 +1781,158 @@ function VouchersCard({
 type ChatMsg = { role: "user" | "assistant"; text: string; files?: string[] };
 type ActivityDocSummary = Record<string, { count: number; names: string[]; categories: string[] }>;
 
+function mapActivityType(t?: string): string {
+  const v = (t || "").toLowerCase();
+  const allowed = ["flight", "hotel", "activity", "transfer", "restaurant", "note"];
+  if (allowed.includes(v)) return v;
+  const aliases: Record<string, string> = {
+    voo: "flight", aviao: "flight", passagem: "flight",
+    hospedagem: "hotel", pousada: "hotel",
+    traslado: "transfer", carro: "transfer", transporte: "transfer",
+    restaurante: "restaurant", refeicao: "restaurant",
+    ingresso: "activity", passeio: "activity", tour: "activity",
+  };
+  return aliases[v] || "activity";
+}
+
+// Botão que usa a IA + biblioteca da agência para completar os dias vazios/incompletos
+// de todo o período da viagem, seguindo a estrutura por turnos (manhã/tarde/noite),
+// dicas, hospedagem e estimativas de custo.
+function CompleteWithAI({ it, onDone }: { it: Itinerary; onDone: () => void }) {
+  const [loading, setLoading] = useState(false);
+  const plan = useServerFn(itineraryPlanner);
+
+  // Só faz sentido em rascunho e com datas + destino definidos.
+  if (it.status && it.status !== "draft") return null;
+  if (!it.destination || !it.start_date || !it.end_date) return null;
+
+  const expected = (() => {
+    const ini = new Date(it.start_date + "T00:00:00");
+    const fim = new Date(it.end_date + "T00:00:00");
+    if (isNaN(ini.getTime()) || isNaN(fim.getTime())) return 0;
+    return Math.max(0, Math.round((fim.getTime() - ini.getTime()) / 86400000) + 1);
+  })();
+  const current = it.days?.length || 0;
+  const emptyDays = (it.days || []).filter((d) => (d.activities?.length || 0) === 0).length;
+  const needs = (expected > current) || emptyDays > 0;
+  if (!needs) return null;
+
+  function buildContext(): string {
+    const dias = (it.days || [])
+      .map((d) => {
+        const acts = (d.activities || [])
+          .map((a) => `  - [id:${a.id}] ${[a.time, a.title, a.location].filter(Boolean).join(" ") || "(sem detalhes)"}`)
+          .join("\n");
+        return `${d.title || `Dia ${d.day_number}`}\n${acts || "  (sem atividades)"}`;
+      })
+      .join("\n");
+    return `Roteiro: ${it.title}
+Destino: ${it.destination || "—"}
+Cliente: ${it.client_name || it.lead?.name || "—"}
+Datas: ${it.start_date || "—"} a ${it.end_date || "—"}
+Quantidade de passageiros: ${it.passengers ?? "—"}
+Orçamento: ${formatCurrency(it.budget)}
+Dias atuais:
+${dias || "(nenhum dia ainda)"}`;
+  }
+
+  async function run() {
+    setLoading(true);
+    try {
+      const message =
+        `Complete o roteiro para TODO o período da viagem (${expected} dia(s)). ` +
+        `Crie os dias que faltam e complemente os dias sem atividades, usando a biblioteca da agência e as informações do destino. ` +
+        `Organize cada dia por turnos (manhã, tarde e noite), inclua dicas de viajante, sugestões de hospedagem e estimativas de custo por atividade.`;
+      const res = await plan({
+        data: { message, context: buildContext(), files: [], leadId: it.lead_id ?? null, itineraryId: it.id },
+      });
+
+      let createdDays = 0;
+      let createdActs = 0;
+      let updatedActs = 0;
+      const baseCount = it.days?.length || 0;
+
+      for (let i = 0; i < res.days.length; i++) {
+        const d = res.days[i];
+        const day = await createItineraryDay({
+          itinerary_id: it.id,
+          day_number: baseCount + i + 1,
+          title: d.title || `Dia ${baseCount + i + 1}`,
+          date: d.date || null,
+          sort_order: baseCount + i + 1,
+        });
+        if (!day) continue;
+        createdDays++;
+        for (let j = 0; j < d.activities.length; j++) {
+          const a = d.activities[j];
+          try {
+            await createItineraryActivity({
+              day_id: day.id,
+              title: a.title,
+              time: a.time || null,
+              location: a.location || null,
+              duration: a.duration || null,
+              cost: typeof a.cost === "number" && a.cost > 0 ? a.cost : null,
+              description: a.description || null,
+              type: mapActivityType(a.type),
+              sort_order: j,
+            });
+            createdActs++;
+          } catch {
+            /* ignora atividade individual com erro */
+          }
+        }
+      }
+
+      for (const u of res.updates || []) {
+        const { activityId, ...fields } = u;
+        if (!activityId || Object.keys(fields).length === 0) continue;
+        try {
+          await updateItineraryActivity(activityId, {
+            ...(fields.title !== undefined ? { title: fields.title } : {}),
+            ...(fields.time !== undefined ? { time: fields.time || null } : {}),
+            ...(fields.location !== undefined ? { location: fields.location || null } : {}),
+            ...(fields.duration !== undefined ? { duration: fields.duration || null } : {}),
+            ...(fields.description !== undefined ? { description: fields.description || null } : {}),
+            ...(fields.type !== undefined ? { type: mapActivityType(fields.type) } : {}),
+            ...(fields.cost !== undefined ? { cost: fields.cost && fields.cost > 0 ? fields.cost : null } : {}),
+          });
+          updatedActs++;
+        } catch {
+          /* ignora atualização individual com erro */
+        }
+      }
+
+      if (createdDays > 0 || updatedActs > 0) {
+        toast.success(
+          `Roteiro complementado: ${createdDays} dia(s), ${createdActs} atividade(s)` +
+            (updatedActs ? ` e ${updatedActs} atualização(ões)` : "") + ".",
+        );
+        onDone();
+      } else {
+        toast.info(res.reply || "A IA não encontrou dados suficientes para completar o roteiro.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível completar o roteiro.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={run}
+      disabled={loading}
+      title="Usar IA + biblioteca para completar os dias vazios/incompletos"
+      className="flex items-center gap-1 rounded-lg border border-primary bg-primary/10 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/20 disabled:opacity-60"
+    >
+      {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Completar com IA
+    </button>
+  );
+}
+
+
+
 function ItineraryChat({ it, onChange }: { it: Itinerary; onChange: () => void }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
