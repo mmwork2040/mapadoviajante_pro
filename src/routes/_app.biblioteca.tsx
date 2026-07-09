@@ -45,6 +45,7 @@ import {
   downloadDocument,
   uploadGeneralDocument,
   deleteLeadDocument,
+  findItineraryAttachments,
   type AgencyDocument,
   type DocumentOrigin,
 } from "@/lib/lead-documents";
@@ -903,6 +904,15 @@ function DocumentsPanel() {
   }
 
   async function remove(doc: AgencyDocument) {
+    const attachedIn = await findItineraryAttachments(doc);
+    if (attachedIn.length > 0) {
+      toast.error(
+        `Este documento está anexado ${
+          attachedIn.length === 1 ? "ao roteiro" : "aos roteiros"
+        } "${attachedIn.join('", "')}". Exclua o anexo pelo roteiro antes de removê-lo da biblioteca.`,
+      );
+      return;
+    }
     const ok = await confirm({
       title: "Excluir documento?",
       description: `"${doc.name}" será removido definitivamente.`,
