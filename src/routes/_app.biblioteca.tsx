@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
 import {
@@ -727,6 +727,7 @@ function DocumentsPanel() {
   const { data: docs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["library", "documents"],
     queryFn: fetchAgencyDocuments,
+    placeholderData: keepPreviousData,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library", "documents"] });

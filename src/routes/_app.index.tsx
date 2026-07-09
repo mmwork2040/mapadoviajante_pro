@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { QueryError } from "@/components/QueryError";
+import { useAuth, isAdminUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/")({
   component: DashboardPage,
@@ -85,6 +86,8 @@ function timeAgo(value?: string | null): string {
 
 function DashboardPage() {
   const queryClient = useQueryClient();
+  const { member, session } = useAuth();
+  const isMaster = isAdminUser(member, session?.user?.email);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardStats,
@@ -405,6 +408,7 @@ function DashboardPage() {
 
 
       {/* Chart */}
+      {isMaster && (
       <div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
           <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -452,6 +456,7 @@ function DashboardPage() {
           )}
         </div>
       </div>
+      )}
 
 
       {/* Agenda da Semana */}

@@ -205,7 +205,7 @@ export function documentOrigin(doc: AgencyDocument): DocumentOrigin {
 /** All documents uploaded across the agency (leads, roteiros, avulsos). */
 export async function fetchAgencyDocuments(): Promise<AgencyDocument[]> {
   const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
-  if (!agencyId) return [];
+  if (!agencyId) throw new Error("Agência não encontrada.");
   const { data, error } = await db()
     .from("crm_lead_documents")
     .select("*, lead:crm_leads(name), itinerary:crm_itineraries(title)")
@@ -213,7 +213,9 @@ export async function fetchAgencyDocuments(): Promise<AgencyDocument[]> {
     .order("created_at", { ascending: false });
   if (error) {
     console.error("fetchAgencyDocuments", error);
-    return [];
+    // Throw instead of returning [] so React Query keeps previous data and
+    // surfaces a retryable error, never a false "no documents" state.
+    throw error;
   }
   return (data as unknown as AgencyDocument[]) || [];
 }
