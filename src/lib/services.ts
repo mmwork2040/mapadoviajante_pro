@@ -36,6 +36,31 @@ export function setAgencyContext(member: AgencyMember | null) {
   _memberRole = member?.role ?? null;
 }
 
+export async function fetchLeadsMinePref(): Promise<boolean> {
+  if (!_memberId) await loadAgencyContext();
+  if (!_memberId) return false;
+  const { data } = await supabase
+    .from("agency_members")
+    .select("pref_leads_mine")
+    .eq("id", _memberId)
+    .maybeSingle();
+  return !!data?.pref_leads_mine;
+}
+
+export async function setLeadsMinePref(value: boolean): Promise<boolean> {
+  if (!_memberId) await loadAgencyContext();
+  if (!_memberId) return false;
+  const { error } = await supabase
+    .from("agency_members")
+    .update({ pref_leads_mine: value })
+    .eq("id", _memberId);
+  if (error) {
+    console.error("setLeadsMinePref:", error);
+    return false;
+  }
+  return true;
+}
+
 export async function loadAgencyContext(): Promise<AgencyMember | null> {
   const {
     data: { user },
