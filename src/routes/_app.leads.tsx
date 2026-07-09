@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
@@ -68,15 +68,34 @@ function LeadsPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
+  const [onlyMine, setOnlyMine] = useState(false);
   useEffect(() => {
     if (leadParam) setDetailId(leadParam);
   }, [leadParam]);
-  const { data: leads = [], isLoading, isError, refetch } = useQuery({
+
+  const { data: minePref } = useQuery({
+    queryKey: ["leads-mine-pref"],
+    queryFn: fetchLeadsMinePref,
+  });
+  useEffect(() => {
+    if (typeof minePref === "boolean") setOnlyMine(minePref);
+  }, [minePref]);
+
+  async function toggleOnlyMine() {
+    const next = !onlyMine;
+    setOnlyMine(next);
+    qc.setQueryData(["leads-mine-pref"], next);
+    await setLeadsMinePref(next);
+  }
+
+  const { data: allLeads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["leads", { search }],
     queryFn: () => fetchLeads({ search: search || undefined }),
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
+  const myId = getMemberId();
+  const leads = onlyMine ? allLeads.filter((l) => l.assigned_to === myId) : allLeads;
 
   const { data: itineraryStatuses = {} } = useQuery({
     queryKey: ["lead-itinerary-statuses"],
@@ -154,6 +173,16 @@ function LeadsPage() {
             placeholder="Buscar nome, e-mail, destino…"
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary sm:w-56"
           />
+          <button
+            onClick={toggleOnlyMine}
+            className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+              onlyMine
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-input hover:bg-muted"
+            }`}
+          >
+            <User className="h-4 w-4" /> {onlyMine ? "Meus leads" : "Todos os leads"}
+          </button>
           <button
             onClick={() => setOpen(true)}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"

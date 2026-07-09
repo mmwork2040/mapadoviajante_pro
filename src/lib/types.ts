@@ -11,6 +11,7 @@ export interface AgencyMember {
   avatar_color?: string | null;
   is_active?: boolean;
   status?: string | null; // pending | active
+  pref_leads_mine?: boolean;
 }
 
 export type LeadStatus = "new" | "contacted" | "negotiating" | "closed" | "lost";

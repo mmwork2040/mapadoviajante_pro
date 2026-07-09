@@ -139,6 +139,45 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     onError: () => toast.error("Erro ao atribuir lead."),
   });
 
+  async function handleAssign(memberId: string) {
+    if (memberId === (lead?.assigned_to || "")) return;
+    const member = team.find((m) => m.id === memberId);
+    const ok = await confirm({
+      title: "Atribuir lead",
+      description: member
+        ? `Deseja atribuir este lead a ${member.name}?`
+        : "Deseja remover a atribuição deste lead?",
+      confirmLabel: "Confirmar",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+    assign.mutate(memberId);
+  }
+
+  async function handleStatusChange(status: LeadStatus) {
+    if (status === lead?.status) return;
+    update.mutate(
+      { status },
+      {
+        onSuccess: async () => {
+          const responsible = lead?.assigned_to;
+          if (responsible && responsible !== getMemberId()) {
+            const label = STATUSES.find((s) => s.key === status)?.label || status;
+            await createNotification({
+              recipientId: responsible,
+              type: "lead_status",
+              title: "Status de lead atualizado",
+              body: `${lead?.name || "Lead"} — ${label}`,
+              link: `/leads?lead=${leadId}`,
+              leadId,
+            });
+          }
+        },
+      },
+    );
+  }
+
+
 
   async function handleDelete() {
     const ok = await confirm({
@@ -331,7 +370,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               <div className="relative mt-3 flex items-center justify-between gap-2">
                 <StatusDropdown
                   value={lead.status}
-                  onChange={(status) => update.mutate({ status })}
+                  onChange={(status) => handleStatusChange(status)}
                 />
                 <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
                 {lead.updated_at && (
@@ -360,7 +399,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 </span>
                 <select
                   value={lead.assigned_to || ""}
-                  onChange={(e) => assign.mutate(e.target.value)}
+                  onChange={(e) => handleAssign(e.target.value)}
                   disabled={assign.isPending}
                   className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-xs outline-none focus:border-primary disabled:opacity-60"
                 >
@@ -372,7 +411,16 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   ))}
                 </select>
               </div>
+              {lead.assigned_to && (
+                <p className="relative mt-1 pl-6 text-[11px] text-muted-foreground">
+                  Responsável:{" "}
+                  <span className="font-medium text-foreground">
+                    {team.find((m) => m.id === lead.assigned_to)?.name || "—"}
+                  </span>
+                </p>
+              )}
             </div>
+
 
 
             {/* Tabs */}
