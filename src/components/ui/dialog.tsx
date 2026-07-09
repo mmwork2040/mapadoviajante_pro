@@ -5,8 +5,16 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
+import { useBackButtonClose } from "@/hooks/useBackButtonClose";
 
-const Dialog = DialogPrimitive.Root;
+const Dialog = ({
+  open,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Root>) => {
+  useBackButtonClose(!!open, () => onOpenChange?.(false));
+  return <DialogPrimitive.Root open={open} onOpenChange={onOpenChange} {...props} />;
+};
 
 const DialogTrigger = DialogPrimitive.Trigger;
 
