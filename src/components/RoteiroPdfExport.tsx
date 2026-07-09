@@ -155,7 +155,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: "#ffffff" },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"] },
+        pagebreak: { mode: ["css", "legacy"], before: ".pdf-page" },
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await html2pdf().set(opts as any).from(containerRef.current).save();
