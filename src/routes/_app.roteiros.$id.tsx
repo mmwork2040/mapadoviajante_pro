@@ -834,6 +834,7 @@ function ItineraryDetailPage() {
               </button>
             );
           })()}
+          <RoteiroPdfExport it={it} coverUrl={coverUrl} />
         </div>
         </div>
       </div>
