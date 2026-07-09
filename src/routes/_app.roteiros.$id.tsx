@@ -835,6 +835,7 @@ function ItineraryDetailPage() {
               </button>
             );
           })()}
+          <CompleteWithAI it={it} onDone={refresh} />
           <RoteiroPdfExport it={it} coverUrl={coverUrl} />
         </div>
         </div>
