@@ -1537,21 +1537,20 @@ function ActivityDocuments({
       if (file.type.startsWith("image/")) {
         const base64 = await fileToBase64(file);
         let info: { title?: string; location?: string; description?: string; content?: string } = {};
-        try {
-          const res = await analyzeImage({
-            data: { fileBase64: base64, mime: file.type, itineraryId, activityTitle },
-          });
-          info = {
-            title: res.title,
-            location: res.location,
-            description: res.description,
-            content: res.content,
-          };
-          if (res.title || res.type) toast.success(`Imagem interpretada: ${res.title || res.type}.`);
-        } catch (aiErr) {
-          console.error("analyze image", aiErr);
-          // Falha na IA não impede o anexo: apenas segue sem interpretação.
+        const res = await analyzeImage({
+          data: { fileBase64: base64, mime: file.type, itineraryId, activityTitle },
+        });
+        // Só anexa/salva se a IA tiver certeza de que a imagem se refere ao destino do lead.
+        if (!res.matches) {
+          toast.error(res.reason || "A imagem não parece ter relação com o destino do roteiro. Não foi anexada.");
+          return;
         }
+        info = {
+          title: res.title,
+          location: res.location,
+          description: res.description,
+          content: res.content,
+        };
         cat = "imagem";
         // Salva a imagem também na seção "Imagem" da biblioteca.
         try {
