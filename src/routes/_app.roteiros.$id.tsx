@@ -1228,6 +1228,7 @@ function DayCard({
           {ACTIVITY_TYPES.map((t) => (
             <option key={t.type} value={t.type}>{t.label}</option>
           ))}
+          <option value="image">Imagem</option>
         </select>
         <input
           type="time"
@@ -1240,13 +1241,20 @@ function DayCard({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Atividade…"
+          placeholder={newType === "image" ? "Legenda (opcional)…" : "Atividade…"}
           className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
         />
-        <button onClick={addActivity} className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">
-          <Plus className="h-4 w-4" />
+        <input ref={imgRef} type="file" accept="image/*" onChange={handleImageFile} className="hidden" />
+        <button
+          onClick={addActivity}
+          disabled={uploadingImg}
+          title={newType === "image" ? "Escolher imagem para anexar" : "Adicionar item"}
+          className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+        >
+          {uploadingImg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         </button>
       </div>
+
 
       {showDupModal && (
         <div
