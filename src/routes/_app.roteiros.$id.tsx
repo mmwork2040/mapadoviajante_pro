@@ -1312,21 +1312,21 @@ function ActivityRow({
 
   return (
     <div className="min-w-0 flex-1 space-y-1">
-      <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
-        <span className="flex items-center gap-2">
+      <div className="flex items-start justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs">
+        <span className="flex min-w-0 items-start gap-2">
           <button
             onClick={toggleDone}
-            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
               done ? "border-primary bg-primary text-primary-foreground" : "border-input"
             }`}
           >
             {done && <Check className="h-3 w-3" />}
           </button>
-          {TypeIcon && <TypeIcon className="h-4 w-4 shrink-0 text-primary" />}
-          <span className={done ? "text-muted-foreground line-through" : ""}>
+          {TypeIcon && <TypeIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />}
+          <span className={`min-w-0 break-words ${done ? "text-muted-foreground line-through" : ""}`}>
             {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
             {activity.title}
-            {activity.location && <span className="ml-2 text-xs text-muted-foreground">· {activity.location}</span>}
+            {activity.location && <span className="ml-2 text-[11px] text-muted-foreground">· {activity.location}</span>}
           </span>
         </span>
         <span className="flex gap-1">
