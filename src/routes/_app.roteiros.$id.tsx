@@ -784,6 +784,7 @@ function ItineraryDetailPage() {
             );
           })()}
         </div>
+        </div>
       </div>
 
       <DndContext
