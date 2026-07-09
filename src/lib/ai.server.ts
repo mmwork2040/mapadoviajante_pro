@@ -168,7 +168,75 @@ export async function extractDocument(
   return parseJsonLoose(text);
 }
 
-type InputFile = { base64: string; mime: string; name?: string };
+const MULTI_EXTRACTION_PROMPT = `Você é um assistente que lê documentos de viagem (ingressos, passeios, passagens aéreas, reservas de hotel, transfers e vouchers) que podem conter VÁRIOS itens/atividades.
+Identifique TODAS as atividades presentes no documento. Para cada uma, extraia obrigatoriamente o TIPO, a DATA e o HORÁRIO quando existirem. Se houver horário de início e fim, use o de início em "time".
+Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento tem o formato:
+{
+  "type": "voo|hotel|transfer|passeio|ingresso|outro",
+  "title": "título curto do item",
+  "date": "AAAA-MM-DD ou vazio",
+  "time": "HH:MM ou vazio",
+  "duration": "duração estimada ou vazio",
+  "location": "local/aeroporto/cidade/atração ou vazio",
+  "flight_number": "número do voo ou vazio",
+  "hotel_name": "nome do hotel ou vazio",
+  "room": "tipo/numero do quarto ou vazio",
+  "provider": "companhia/fornecedor ou vazio",
+  "code": "localizador/código da reserva ou vazio",
+  "cost": valor total como número (sem moeda) ou 0,
+  "people": quantidade de pessoas como número inteiro ou 0,
+  "description": "resumo das informações encontradas"
+}
+Se houver apenas um item, retorne um array com um único elemento. Nunca retorne texto fora do array JSON.`;
+
+function parseJsonArrayLoose(text: string): ExtractedDocData[] {
+  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("[");
+  const end = cleaned.lastIndexOf("]");
+  if (start !== -1 && end > start) {
+    try {
+      const arr = JSON.parse(cleaned.slice(start, end + 1));
+      if (Array.isArray(arr)) return arr as ExtractedDocData[];
+    } catch {
+      // fall through to single-object parsing
+    }
+  }
+  // Fallback: try to parse a single object.
+  return [parseJsonLoose(cleaned)];
+}
+
+export async function extractDocumentActivities(
+  cfg: ProviderConfig,
+  fileBase64: string,
+  mime: string,
+): Promise<ExtractedDocData[]> {
+  const isImage = mime.startsWith("image/");
+  const dataUrl = `data:${mime};base64,${fileBase64}`;
+  let text = "";
+
+  if (cfg.provider === "openai") {
+    const filePart = isImage
+      ? { type: "image_url", image_url: { url: dataUrl } }
+      : { type: "file", file: { filename: "documento.pdf", file_data: dataUrl } };
+    text = await callOpenAI(cfg, [{ type: "text", text: MULTI_EXTRACTION_PROMPT }, filePart]);
+  } else if (cfg.provider === "anthropic") {
+    const filePart = isImage
+      ? { type: "image", source: { type: "base64", media_type: mime, data: fileBase64 } }
+      : { type: "document", source: { type: "base64", media_type: mime, data: fileBase64 } };
+    text = await callAnthropic(cfg, [{ type: "text", text: MULTI_EXTRACTION_PROMPT }, filePart]);
+  } else if (cfg.provider === "google") {
+    text = await callGoogle(cfg, [
+      { text: MULTI_EXTRACTION_PROMPT },
+      { inline_data: { mime_type: mime, data: fileBase64 } },
+    ]);
+  } else {
+    throw new Error("Provedor não suportado.");
+  }
+
+  return parseJsonArrayLoose(text).filter((x) => x && (x.title || x.hotel_name || x.flight_number || x.description));
+}
+
+
 
 // Envia um prompt de texto + vários arquivos (imagens/PDFs) ao provedor e retorna o texto.
 export async function askWithFiles(
