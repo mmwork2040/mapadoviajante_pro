@@ -1448,8 +1448,7 @@ function ActivityDocuments({
             <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-[11px]">
               <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
               <button onClick={() => setPreview(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left" title={`Pré-visualizar ${doc.name}`}>
-                {doc.category && <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
-                <span className="truncate">{doc.name}</span>
+                <span className="line-clamp-2 break-words text-[10px] leading-tight">{doc.name}</span>
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
