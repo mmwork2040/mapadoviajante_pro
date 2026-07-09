@@ -424,10 +424,10 @@ export async function analyzeImageForItinerary(
   mime: string,
   ctx: { destination?: string; itineraryTitle?: string; activityTitle?: string; existingContext?: string },
 ): Promise<ImageActivityAnalysis> {
-  const prompt = `Você analisa uma IMAGEM que um agente de viagens quer anexar a um dia de um roteiro.
-Identifique o que a imagem representa e que TIPO de atividade turística ela sugere.
-Avalie se a imagem é COERENTE com o destino e o roteiro informados (ex: uma foto de uma atração/restaurante/hotel/paisagem que faça sentido para o destino).
-Considere coerente qualquer imagem relacionada ao destino ou a uma atividade plausível ali. Considere NÃO coerente imagens sem relação (ex: prints aleatórios, documentos, memes, outro destino distinto).
+  const prompt = `Você analisa uma IMAGEM que um agente de viagens quer anexar a um dia de um roteiro, SEMPRE com foco no DESTINO do lead.
+Faça uma análise PROFUNDA: a imagem pode mostrar um ponto turístico, atração, paisagem, hotel, restaurante, meio de transporte, mapa, ingresso, folheto ou informação útil da viagem. Identifique com precisão o que ela representa e a que local/atração se refere.
+Avalie com RIGOR se a imagem tem conteúdo REALMENTE relacionado ao destino informado. Só marque "matches": true se você tiver CERTEZA de que o conteúdo se refere ao destino do lead (a própria cidade/país, uma atração, hotel, restaurante ou informação claramente ligada a esse destino).
+Marque "matches": false quando: a imagem não tiver relação com o destino, for de outro destino distinto, for um print aleatório, meme, documento pessoal irrelevante, ou quando você estiver EM DÚVIDA. Na dúvida, escolha false.
 Destino: ${ctx.destination || "—"}
 Roteiro: ${ctx.itineraryTitle || "—"}
 Atividade do dia: ${ctx.activityTitle || "—"}
@@ -439,8 +439,8 @@ Responda APENAS com um JSON válido, sem texto extra:
   "title": "título curto do que a imagem mostra",
   "location": "local/cidade/atração/destino que a imagem representa ou vazio",
   "description": "descrição curta (1-2 frases) do que a imagem mostra",
-  "content": "texto mais detalhado para a base de conhecimento da IA: contexto, dicas e informações úteis sobre o que aparece na imagem",
-  "reason": "explicação curta em português"
+  "content": "texto detalhado para a base de conhecimento da IA: contexto, dicas e informações úteis sobre o ponto turístico/atração/serviço mostrado, sempre ligado ao destino",
+  "reason": "explicação curta em português do porquê a imagem se relaciona (ou não) com o destino"
 }`;
 
   const isImage = mime.startsWith("image/");
