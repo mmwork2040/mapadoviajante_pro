@@ -943,6 +943,8 @@ function DayCard({
   leadId,
   itineraryId,
   pendingActivity = false,
+  autoEditId = null,
+  onAutoEditDone,
 }: {
   day: ItineraryDay;
   allDays: ItineraryDay[];
@@ -951,6 +953,8 @@ function DayCard({
   leadId: string | null;
   itineraryId: string;
   pendingActivity?: boolean;
+  autoEditId?: string | null;
+  onAutoEditDone?: () => void;
 }) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
