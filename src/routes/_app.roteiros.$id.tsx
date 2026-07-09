@@ -1411,9 +1411,36 @@ function ActivityDocuments({
     if (!file) return;
     setUploading(true);
     try {
-      await uploadLeadDocument({ file, agencyId, leadId, itineraryId, activityId, category });
-      toast.success("Documento anexado à biblioteca do lead.");
+      let cat = category;
+      // Imagens são interpretadas pela IA antes de anexar: identifica o tipo de
+      // atividade e verifica se é coerente com o destino/roteiro.
+      if (file.type.startsWith("image/")) {
+        const base64 = await fileToBase64(file);
+        try {
+          const res = await analyzeImage({
+            data: { fileBase64: base64, mime: file.type, itineraryId, activityTitle },
+          });
+          if (!res.matches) {
+            const ok = window.confirm(
+              `A imagem não parece coerente com o roteiro.\n\n${res.reason || ""}\n\nDeseja anexar mesmo assim?`,
+            );
+            if (!ok) {
+              setUploading(false);
+              return;
+            }
+          } else {
+            toast.success(`Imagem interpretada: ${res.title || res.type}.`);
+          }
+        } catch (aiErr) {
+          console.error("analyze image", aiErr);
+          // Falha na IA não impede o anexo: apenas segue sem interpretação.
+        }
+        cat = "imagem";
+      }
+      await uploadLeadDocument({ file, agencyId, leadId, itineraryId, activityId, category: cat });
+      toast.success("Documento anexado e salvo na biblioteca.");
       qc.invalidateQueries({ queryKey: ["activity-docs", activityId] });
+      qc.invalidateQueries({ queryKey: ["library", "documents"] });
       if (leadId) qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao anexar documento.");
@@ -1421,6 +1448,7 @@ function ActivityDocuments({
       setUploading(false);
     }
   }
+
 
   async function handleLibraryPick(source: LeadDocument) {
     setPickerOpen(false);
