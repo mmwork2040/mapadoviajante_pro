@@ -904,7 +904,12 @@ function DocumentsPanel() {
     if (!ok) return;
     if (await deleteLeadDocument(doc)) {
       toast.success("Documento excluído.");
-      invalidate();
+      // Remove apenas o item excluído do cache (mantém os demais visíveis),
+      // em vez de forçar um refetch que pode voltar vazio.
+      qc.setQueryData<AgencyDocument[]>(["library", "documents"], (old) =>
+        (old ?? []).filter((d) => d.id !== doc.id),
+      );
+      qc.invalidateQueries({ queryKey: ["library", "counts"] });
     } else toast.error("Erro ao excluir documento.");
   }
 
