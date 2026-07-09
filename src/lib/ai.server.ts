@@ -426,8 +426,8 @@ export async function analyzeImageForItinerary(
 ): Promise<ImageActivityAnalysis> {
   const prompt = `Você analisa uma IMAGEM que um agente de viagens quer anexar a um dia de um roteiro, SEMPRE com foco no DESTINO do lead.
 Faça uma análise PROFUNDA: a imagem pode mostrar um ponto turístico, atração, paisagem, hotel, restaurante, meio de transporte, mapa, ingresso, folheto ou informação útil da viagem. Identifique com precisão o que ela representa e a que local/atração se refere.
-Avalie com RIGOR se a imagem tem conteúdo REALMENTE relacionado ao destino informado. Só marque "matches": true se você tiver CERTEZA de que o conteúdo se refere ao destino do lead (a própria cidade/país, uma atração, hotel, restaurante ou informação claramente ligada a esse destino).
-Marque "matches": false quando: a imagem não tiver relação com o destino, for de outro destino distinto, for um print aleatório, meme, documento pessoal irrelevante, ou quando você estiver EM DÚVIDA. Na dúvida, escolha false.
+Use seu conhecimento geográfico e turístico: pontos turísticos, monumentos, museus, catedrais, praças, bairros e paisagens famosas devem ser reconhecidos mesmo sem legenda (ex.: a Catedral de Notre-Dame, a Torre Eiffel e o Louvre pertencem a Paris/França). Se a imagem mostra uma atração reconhecidamente localizada no destino (a cidade, região ou país do lead), marque "matches": true.
+Marque "matches": false apenas quando a imagem claramente NÃO tiver relação com o destino: for de outro destino distinto, um print aleatório, meme, documento pessoal irrelevante ou conteúdo sem qualquer ligação turística com o destino. Não recuse imagens de atrações legítimas do destino só por falta de legenda.
 Destino: ${ctx.destination || "—"}
 Roteiro: ${ctx.itineraryTitle || "—"}
 Atividade do dia: ${ctx.activityTitle || "—"}
