@@ -91,18 +91,37 @@ function LibraryPage() {
     if (files.length === 0) return;
     setUploadingImg(true);
     try {
+      let added = 0;
+      let skipped = 0;
       for (const file of files) {
+        // Duplicidade por semelhança visual: evita imagens repetidas na biblioteca.
+        const dup = await findSimilarLibraryImage({ file, title: file.name });
+        if (dup) {
+          const msg = dup.identical
+            ? `"${file.name}" é praticamente idêntica a uma imagem já existente ("${dup.item.title}"). Enviar mesmo assim?`
+            : dup.similar
+              ? `"${file.name}" é muito parecida com uma imagem já existente ("${dup.item.title}"). Enviar mesmo assim?`
+              : `Já existe uma imagem deste local ("${dup.item.title}"). Enviar mesmo assim?`;
+          if (!window.confirm(msg)) {
+            skipped++;
+            continue;
+          }
+        }
         const up = await uploadLibraryAsset(file);
         if (!up) continue;
         const title = file.name.replace(/\.[^.]+$/, "");
+        const phash = await computeImagePHashFromFile(file).catch(() => null);
         await createLibraryItem({
           type: "image",
           title,
           file_url: up.path,
           file_name: up.name,
+          tags: phash ? [phashToTag(phash)] : [],
         });
+        added++;
       }
-      toast.success(files.length === 1 ? "Imagem enviada." : `${files.length} imagens enviadas.`);
+      if (added > 0) toast.success(added === 1 ? "Imagem enviada." : `${added} imagens enviadas.`);
+      if (skipped > 0) toast.info(skipped === 1 ? "1 imagem ignorada." : `${skipped} imagens ignoradas.`);
       qc.invalidateQueries({ queryKey: ["library"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
