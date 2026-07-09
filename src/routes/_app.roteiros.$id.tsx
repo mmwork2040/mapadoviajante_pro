@@ -105,6 +105,40 @@ const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
 
+// Shared helpers for AI document import.
+function mapActivityTypeGlobal(t?: string): string {
+  const v = (t || "").toLowerCase();
+  const allowed = ["flight", "hotel", "activity", "transfer", "restaurant", "note"];
+  if (allowed.includes(v)) return v;
+  const aliases: Record<string, string> = {
+    voo: "flight", voos: "flight", aviao: "flight", passagem: "flight",
+    hospedagem: "hotel", hotel: "hotel", pousada: "hotel",
+    transfer: "transfer", traslado: "transfer", carro: "transfer", transporte: "transfer",
+    restaurante: "restaurant", gastronomia: "restaurant", refeicao: "restaurant",
+    ingresso: "activity", passeio: "activity", tour: "activity", parque: "activity",
+  };
+  return aliases[v] || "activity";
+}
+
+function parseDocCost(cost: unknown): number | null {
+  if (cost == null) return null;
+  const n = Number(
+    String(cost).replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", "."),
+  );
+  return Number.isFinite(n) ? n : null;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+
+
 const kanbanCollisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
   if (pointerCollisions.length > 0) return pointerCollisions;
