@@ -183,6 +183,7 @@ function ItineraryDetailPage() {
   
   const [pendingDayId, setPendingDayId] = useState<string | null>(null);
   const [pendingNewDay, setPendingNewDay] = useState(false);
+  const [autoEditId, setAutoEditId] = useState<string | null>(null);
   const { data: it, isLoading, isError, refetch } = useQuery({
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
@@ -614,12 +615,13 @@ function ItineraryDetailPage() {
           sort_order: nextNumber,
         });
         if (!day) throw new Error("erro");
-        await createItineraryActivity({
+        const created = await createItineraryActivity({
           day_id: day.id,
           title: meta?.defaultTitle || "Novo item",
           type,
           sort_order: 0,
         });
+        if (created) setAutoEditId(created.id);
         refresh();
       } catch {
         toast.error("Não foi possível criar o dia.");
@@ -666,6 +668,7 @@ function ItineraryDetailPage() {
             sort_order: targetIndex,
           });
           if (!created) throw new Error("erro");
+          setAutoEditId(created.id);
           list.splice(Math.max(0, targetIndex), 0, created);
           await Promise.all(
             list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
@@ -890,6 +893,8 @@ function ItineraryDetailPage() {
               leadId={it.lead_id ?? null}
               itineraryId={id}
               pendingActivity={pendingDayId === day.id}
+              autoEditId={autoEditId}
+              onAutoEditDone={() => setAutoEditId(null)}
             />
           ))}
           {pendingNewDay && (
@@ -938,6 +943,8 @@ function DayCard({
   leadId,
   itineraryId,
   pendingActivity = false,
+  autoEditId = null,
+  onAutoEditDone,
 }: {
   day: ItineraryDay;
   allDays: ItineraryDay[];
@@ -946,6 +953,8 @@ function DayCard({
   leadId: string | null;
   itineraryId: string;
   pendingActivity?: boolean;
+  autoEditId?: string | null;
+  onAutoEditDone?: () => void;
 }) {
   const [title, setTitle] = useState("");
   const [time, setTime] = useState("");
@@ -1160,6 +1169,8 @@ function DayCard({
               agencyId={agencyId}
               leadId={leadId}
               itineraryId={itineraryId}
+              autoEdit={autoEditId === a.id}
+              onAutoEditDone={onAutoEditDone}
             />
           ))}
           {pendingActivity && (
@@ -1265,12 +1276,16 @@ function SortableActivity({
   agencyId,
   leadId,
   itineraryId,
+  autoEdit = false,
+  onAutoEditDone,
 }: {
   activity: NonNullable<ItineraryDay["activities"]>[number];
   onChange: () => void;
   agencyId: string;
   leadId: string | null;
   itineraryId: string;
+  autoEdit?: boolean;
+  onAutoEditDone?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `act:${activity.id}`,
@@ -1296,6 +1311,8 @@ function SortableActivity({
         agencyId={agencyId}
         leadId={leadId}
         itineraryId={itineraryId}
+        autoEdit={autoEdit}
+        onAutoEditDone={onAutoEditDone}
       />
     </li>
   );
@@ -1308,12 +1325,16 @@ function ActivityRow({
   agencyId,
   leadId,
   itineraryId,
+  autoEdit = false,
+  onAutoEditDone,
 }: {
   activity: NonNullable<ItineraryDay["activities"]>[number];
   onChange: () => void;
   agencyId: string;
   leadId: string | null;
   itineraryId: string;
+  autoEdit?: boolean;
+  onAutoEditDone?: () => void;
 }) {
   const qc = useQueryClient();
 
@@ -1333,6 +1354,14 @@ function ActivityRow({
     setEType(done ? "activity" : activity.type || "activity");
     setEditing(true);
   }
+
+  useEffect(() => {
+    if (autoEdit) {
+      startEdit();
+      onAutoEditDone?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoEdit]);
 
   async function saveEdit() {
     if (!eTitle.trim()) {
