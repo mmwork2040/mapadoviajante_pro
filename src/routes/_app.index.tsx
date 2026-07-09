@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { toast } from "sonner";
 import {
   CircleDollarSign,
@@ -17,7 +17,7 @@ import {
 
 } from "lucide-react";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
-import { fetchDashboardStats, createTask, cleanTaskDescription, isOverdue } from "@/lib/services";
+import { fetchDashboardStats, createTask, cleanTaskDescription, isOverdue, getMemberId, fetchTasksMinePref, setTasksMinePref, fetchAgendaMinePref, setAgendaMinePref } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
 import {
   Dialog,
@@ -97,6 +97,31 @@ function DashboardPage() {
   const [taskFilter, setTaskFilter] = useState<"today" | "tomorrow" | "week">("today");
   const [taskStatus, setTaskStatus] = useState<"all" | "pending" | "done">("pending");
   const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
+  const [onlyMineTasks, setOnlyMineTasks] = useState(false);
+  const [onlyMineAgenda, setOnlyMineAgenda] = useState(false);
+  const myId = getMemberId();
+
+  const { data: tasksMinePref } = useQuery({ queryKey: ["tasks-mine-pref"], queryFn: fetchTasksMinePref });
+  const { data: agendaMinePref } = useQuery({ queryKey: ["agenda-mine-pref"], queryFn: fetchAgendaMinePref });
+  useEffect(() => {
+    if (typeof tasksMinePref === "boolean") setOnlyMineTasks(tasksMinePref);
+  }, [tasksMinePref]);
+  useEffect(() => {
+    if (typeof agendaMinePref === "boolean") setOnlyMineAgenda(agendaMinePref);
+  }, [agendaMinePref]);
+
+  async function toggleOnlyMineTasks() {
+    const next = !onlyMineTasks;
+    setOnlyMineTasks(next);
+    queryClient.setQueryData(["tasks-mine-pref"], next);
+    await setTasksMinePref(next);
+  }
+  async function toggleOnlyMineAgenda() {
+    const next = !onlyMineAgenda;
+    setOnlyMineAgenda(next);
+    queryClient.setQueryData(["agenda-mine-pref"], next);
+    await setAgendaMinePref(next);
+  }
 
   const week = useMemo(() => {
     const today = new Date();
@@ -204,6 +229,7 @@ function DashboardPage() {
     return data.tasks
       .filter((t) => {
         if (!t.due_date) return false;
+        if (onlyMineTasks && t.assigned_to !== myId) return false;
         if (taskStatus === "pending" && t.completed) return false;
         if (taskStatus === "done" && !t.completed) return false;
         const due = startOfDay(new Date(t.due_date));
@@ -298,6 +324,14 @@ function DashboardPage() {
                 </button>
               ))}
             </div>
+            <button
+              onClick={toggleOnlyMineTasks}
+              className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition ${
+                onlyMineTasks ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {onlyMineTasks ? "Minhas tarefas" : "Todas"}
+            </button>
             <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
               {todayTasks.length}
             </span>
@@ -447,6 +481,14 @@ function DashboardPage() {
               Mês
             </button>
           </div>
+          <button
+            onClick={toggleOnlyMineAgenda}
+            className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition ${
+              onlyMineAgenda ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {onlyMineAgenda ? "Minha agenda" : "Todas"}
+          </button>
         </div>
 
         {agendaMode === "week" ? (
@@ -454,7 +496,7 @@ function DashboardPage() {
             {week.map((d, i) => {
               const isToday = d.toDateString() === todayKey;
               const count = data.tasks.filter(
-                (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed,
+                (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed && (!onlyMineAgenda || t.assigned_to === myId),
               ).length;
               return (
                 <button
@@ -495,7 +537,7 @@ function DashboardPage() {
                 const isToday = d.toDateString() === todayKey;
                 const inMonth = d.getMonth() === new Date().getMonth();
                 const count = data.tasks.filter(
-                  (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed,
+                  (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed && (!onlyMineAgenda || t.assigned_to === myId),
                 ).length;
                 return (
                   <button
@@ -547,7 +589,7 @@ function DashboardPage() {
           </DialogHeader>
           {selectedDay && (() => {
             const dayTasks = data.tasks.filter(
-              (t) => t.due_date && new Date(t.due_date).toDateString() === selectedDay.toDateString(),
+              (t) => t.due_date && new Date(t.due_date).toDateString() === selectedDay.toDateString() && (!onlyMineAgenda || t.assigned_to === myId),
             );
             return (
               <div className="mb-4 space-y-2">
