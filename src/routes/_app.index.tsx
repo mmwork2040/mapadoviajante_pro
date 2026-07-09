@@ -481,6 +481,14 @@ function DashboardPage() {
               Mês
             </button>
           </div>
+          <button
+            onClick={toggleOnlyMineAgenda}
+            className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition ${
+              onlyMineAgenda ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {onlyMineAgenda ? "Minha agenda" : "Todas"}
+          </button>
         </div>
 
         {agendaMode === "week" ? (
