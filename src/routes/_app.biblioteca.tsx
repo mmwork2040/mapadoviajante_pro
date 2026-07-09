@@ -23,6 +23,7 @@ import {
   Loader2,
   CheckSquare,
   Square,
+  Lock,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -810,17 +811,21 @@ function DocumentsPanel() {
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {groups[origin].map((doc) => {
-                  // Deletable when it belongs to the general repository OR its
-                  // linked lead/roteiro no longer exists (orphan document).
-                  const orphan =
-                    (doc.lead_id && !doc.lead) || (doc.itinerary_id && !doc.itinerary);
-                  const canDelete = origin === "geral" || orphan;
+                  // Documents attached to an EXISTING roteiro can only be deleted
+                  // from that roteiro (on the day the file is attached). Everything
+                  // else — gerais, de leads e órfãos — pode ser excluído aqui.
+                  const attachedToItinerary = !!(doc.itinerary_id && doc.itinerary);
                   return (
                     <DocumentRow
                       key={doc.id}
                       doc={doc}
                       onPreview={() => setPreview(doc)}
-                      onRemove={canDelete ? () => remove(doc) : undefined}
+                      onRemove={attachedToItinerary ? undefined : () => remove(doc)}
+                      lockedHint={
+                        attachedToItinerary
+                          ? "Anexado a um roteiro — exclua pelo próprio roteiro, no dia do arquivo."
+                          : undefined
+                      }
                     />
                   );
                 })}
@@ -838,10 +843,12 @@ function DocumentRow({
   doc,
   onPreview,
   onRemove,
+  lockedHint,
 }: {
   doc: AgencyDocument;
   onPreview: () => void;
   onRemove?: () => void;
+  lockedHint?: string;
 }) {
   const source = doc.itinerary?.title || doc.lead?.name || null;
   return (
@@ -870,7 +877,7 @@ function DocumentRow({
       >
         <Download className="h-4 w-4" />
       </button>
-      {onRemove && (
+      {onRemove ? (
         <button
           onClick={onRemove}
           className="rounded-lg p-1.5 text-destructive hover:bg-accent"
@@ -878,7 +885,14 @@ function DocumentRow({
         >
           <Trash2 className="h-4 w-4" />
         </button>
-      )}
+      ) : lockedHint ? (
+        <span
+          className="rounded-lg p-1.5 text-muted-foreground/60"
+          title={lockedHint}
+        >
+          <Lock className="h-4 w-4" />
+        </span>
+      ) : null}
     </div>
   );
 }

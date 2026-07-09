@@ -1223,9 +1223,7 @@ function ActivityRow({
   leadId: string | null;
   itineraryId: string;
 }) {
-
-
-
+  const qc = useQueryClient();
 
   const done = activity.type === "done";
 
@@ -1259,7 +1257,16 @@ function ActivityRow({
         <span className="flex gap-1">
           <button
             onClick={async () => {
+              // Deleting an activity also removes any documents attached to it
+              // from the library (they only existed within this roteiro).
+              try {
+                const attached = await fetchActivityDocuments(activity.id);
+                for (const d of attached) await deleteLeadDocument(d);
+              } catch {
+                // Non-fatal: still remove the activity.
+              }
               await deleteItineraryActivity(activity.id);
+              qc.invalidateQueries({ queryKey: ["library", "documents"] });
               onChange();
             }}
             className="text-muted-foreground hover:text-destructive"
@@ -1341,8 +1348,9 @@ function ActivityDocuments({
   async function remove(doc: LeadDocument) {
     const ok = await deleteLeadDocument(doc);
     if (ok) {
-      toast.success("Documento removido.");
+      toast.success("Documento removido do roteiro e da biblioteca.");
       qc.invalidateQueries({ queryKey: ["activity-docs", activityId] });
+      qc.invalidateQueries({ queryKey: ["library", "documents"] });
       if (leadId) qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
     } else {
       toast.error("Erro ao remover documento.");
