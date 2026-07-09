@@ -25,14 +25,8 @@ import {
   Square,
   Lock,
   ArrowUpRight,
-  MoreVertical,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
+
 
 import { toast } from "sonner";
 import {
