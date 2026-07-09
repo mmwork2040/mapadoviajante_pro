@@ -39,7 +39,7 @@ import {
   resolveDisplayImageUrl,
   saveActivityImageToLibrary,
   saveImageFileToLibrary,
-  findDuplicateLibraryImage,
+  findSimilarLibraryImage,
   searchLibraryImageForDestination,
   updateItinerary,
   updateItineraryActivity,
