@@ -222,7 +222,7 @@ function LibraryPage() {
     } else toast.error("Erro ao excluir item.");
   }
 
-  const isImageTab = tab === "image";
+
 
   function toggleSelectMode() {
     setSelectMode((v) => !v);
