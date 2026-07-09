@@ -68,15 +68,34 @@ function LeadsPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
+  const [onlyMine, setOnlyMine] = useState(false);
   useEffect(() => {
     if (leadParam) setDetailId(leadParam);
   }, [leadParam]);
-  const { data: leads = [], isLoading, isError, refetch } = useQuery({
+
+  const { data: minePref } = useQuery({
+    queryKey: ["leads-mine-pref"],
+    queryFn: fetchLeadsMinePref,
+  });
+  useEffect(() => {
+    if (typeof minePref === "boolean") setOnlyMine(minePref);
+  }, [minePref]);
+
+  async function toggleOnlyMine() {
+    const next = !onlyMine;
+    setOnlyMine(next);
+    qc.setQueryData(["leads-mine-pref"], next);
+    await setLeadsMinePref(next);
+  }
+
+  const { data: allLeads = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["leads", { search }],
     queryFn: () => fetchLeads({ search: search || undefined }),
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
+  const myId = getMemberId();
+  const leads = onlyMine ? allLeads.filter((l) => l.assigned_to === myId) : allLeads;
 
   const { data: itineraryStatuses = {} } = useQuery({
     queryKey: ["lead-itinerary-statuses"],
