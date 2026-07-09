@@ -1383,11 +1383,13 @@ function ActivityDocuments({
   agencyId,
   leadId,
   itineraryId,
+  activityTitle,
 }: {
   activityId: string;
   agencyId: string;
   leadId: string | null;
   itineraryId: string;
+  activityTitle?: string;
 }) {
   const qc = useQueryClient();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -1396,10 +1398,12 @@ function ActivityDocuments({
   const [open_, setOpen_] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [preview, setPreview] = useState<LeadDocument | null>(null);
+  const analyzeImage = useServerFn(analyzeImageActivityFn);
   const { data: docs = [] } = useQuery({
     queryKey: ["activity-docs", activityId],
     queryFn: () => fetchActivityDocuments(activityId),
   });
+
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
