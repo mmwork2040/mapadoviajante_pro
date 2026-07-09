@@ -85,6 +85,8 @@ function timeAgo(value?: string | null): string {
 
 function DashboardPage() {
   const queryClient = useQueryClient();
+  const { member, session } = useAuth();
+  const isMaster = isAdminUser(member, session?.user?.email);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardStats,
