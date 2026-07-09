@@ -953,17 +953,11 @@ function DayCard({
   const [dayTitle, setDayTitle] = useState(day.title || `Dia ${day.day_number}`);
   const [extracting, setExtracting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const imgRef = useRef<HTMLInputElement>(null);
-  const [uploadingImg, setUploadingImg] = useState(false);
   const dayQc = useQueryClient();
   const extract = useServerFn(extractDocumentData);
   const confirm = useConfirm();
 
   async function addActivity() {
-    if (newType === "image") {
-      imgRef.current?.click();
-      return;
-    }
     if (!title.trim()) return;
     try {
       await createItineraryActivity({
