@@ -509,6 +509,7 @@ function LibraryCard({
   onToggleSelect?: () => void;
 }) {
   const img = useAssetUrl(item);
+  const [zoom, setZoom] = useState(false);
   return (
     <div
       className={`group flex flex-col overflow-hidden rounded-2xl border bg-card transition ${
@@ -518,10 +519,48 @@ function LibraryCard({
     >
       <div className="relative">
         {img ? (
-          <img src={img} alt={item.title} className="h-36 w-full object-cover" />
+          <img
+            src={img}
+            alt={item.title}
+            className={`h-36 w-full object-cover ${!selectable ? "cursor-zoom-in" : ""}`}
+            onClick={
+              !selectable
+                ? (e) => {
+                    e.stopPropagation();
+                    setZoom(true);
+                  }
+                : undefined
+            }
+          />
         ) : (
           <div className="flex h-36 items-center justify-center bg-accent text-accent-foreground">
             <Globe className="h-8 w-8" />
+          </div>
+        )}
+        {zoom && img && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            onClick={(e) => {
+              e.stopPropagation();
+              setZoom(false);
+            }}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setZoom(false);
+              }}
+              className="absolute right-4 top-4 rounded-lg bg-card/90 p-2 text-foreground hover:bg-card"
+              title="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <img
+              src={img}
+              alt={item.title}
+              className="max-h-[90vh] max-w-full rounded-lg object-contain"
+              onClick={(e) => e.stopPropagation()}
+            />
           </div>
         )}
         {selectable && (
