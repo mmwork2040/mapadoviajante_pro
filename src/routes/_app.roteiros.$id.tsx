@@ -178,11 +178,15 @@ function ItineraryDetailPage() {
     queryFn: () => fetchItineraryById(id),
   });
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [coverLoaded, setCoverLoaded] = useState(false);
   useEffect(() => {
     let active = true;
+    setCoverLoaded(false);
+    setCoverUrl(null);
     resolveDisplayImageUrl(it?.cover_image).then((u) => { if (active) setCoverUrl(u); });
     return () => { active = false; };
   }, [it?.cover_image]);
+
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["itinerary", id] });
 
