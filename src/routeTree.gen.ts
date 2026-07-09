@@ -18,6 +18,7 @@ import { Route as ViajanteIdRouteImport } from './routes/viajante.$id'
 import { Route as AppTarefasRouteImport } from './routes/_app.tarefas'
 import { Route as AppRoteirosRouteImport } from './routes/_app.roteiros'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
+import { Route as AppNotificacoesRouteImport } from './routes/_app.notificacoes'
 import { Route as AppLeadsRouteImport } from './routes/_app.leads'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
@@ -70,6 +71,11 @@ const AppRoteirosRoute = AppRoteirosRouteImport.update({
 const AppPerfilRoute = AppPerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
   getParentRoute: () => AppRoute,
 } as any)
 const AppLeadsRoute = AppLeadsRouteImport.update({
@@ -127,6 +133,7 @@ export interface FileRoutesByFullPath {
   '/biblioteca': typeof AppBibliotecaRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
+  '/notificacoes': typeof AppNotificacoesRoute
   '/perfil': typeof AppPerfilRoute
   '/roteiros': typeof AppRoteirosRouteWithChildren
   '/tarefas': typeof AppTarefasRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/biblioteca': typeof AppBibliotecaRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
+  '/notificacoes': typeof AppNotificacoesRoute
   '/perfil': typeof AppPerfilRoute
   '/tarefas': typeof AppTarefasRoute
   '/viajante/$id': typeof ViajanteIdRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_app/biblioteca': typeof AppBibliotecaRoute
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/leads': typeof AppLeadsRoute
+  '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/roteiros': typeof AppRoteirosRouteWithChildren
   '/_app/tarefas': typeof AppTarefasRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/biblioteca'
     | '/financeiro'
     | '/leads'
+    | '/notificacoes'
     | '/perfil'
     | '/roteiros'
     | '/tarefas'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/biblioteca'
     | '/financeiro'
     | '/leads'
+    | '/notificacoes'
     | '/perfil'
     | '/tarefas'
     | '/viajante/$id'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/_app/biblioteca'
     | '/_app/financeiro'
     | '/_app/leads'
+    | '/_app/notificacoes'
     | '/_app/perfil'
     | '/_app/roteiros'
     | '/_app/tarefas'
@@ -312,6 +324,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPerfilRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/notificacoes': {
+      id: '/_app/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof AppNotificacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/leads': {
       id: '/_app/leads'
       path: '/leads'
@@ -397,6 +416,7 @@ interface AppRouteChildren {
   AppBibliotecaRoute: typeof AppBibliotecaRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppLeadsRoute: typeof AppLeadsRoute
+  AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPerfilRoute: typeof AppPerfilRoute
   AppRoteirosRoute: typeof AppRoteirosRouteWithChildren
   AppTarefasRoute: typeof AppTarefasRoute
@@ -408,6 +428,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBibliotecaRoute: AppBibliotecaRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppLeadsRoute: AppLeadsRoute,
+  AppNotificacoesRoute: AppNotificacoesRoute,
   AppPerfilRoute: AppPerfilRoute,
   AppRoteirosRoute: AppRoteirosRouteWithChildren,
   AppTarefasRoute: AppTarefasRoute,
