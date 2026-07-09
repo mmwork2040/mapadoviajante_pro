@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy, Calendar } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -699,6 +699,20 @@ function ItineraryDetailPage() {
           <p className="text-sm text-muted-foreground">
             {it.destination} · {it.client_name} · {formatCurrency(it.budget)} · <span>{STATUS_LABELS[it.status || "draft"] || it.status}</span>
           </p>
+          {(() => {
+            const fmt = (d: string) =>
+              new Date(d + (d.length === 10 ? "T00:00:00" : "")).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+            let label: string | null = null;
+            if (it.start_date && it.end_date) label = `${fmt(it.start_date)} — ${fmt(it.end_date)}`;
+            else if (it.start_date) label = fmt(it.start_date);
+            else if (it.end_date) label = fmt(it.end_date);
+            if (!label) return null;
+            return (
+              <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+                <Calendar className="h-4 w-4 text-muted-foreground" /> {label}
+              </p>
+            );
+          })()}
         </div>
         <div className="relative flex flex-wrap gap-2">
           <DropdownMenu>
