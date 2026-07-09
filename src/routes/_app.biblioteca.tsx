@@ -248,13 +248,14 @@ function LibraryPage() {
   }
 
   function toggleAll() {
+    const selectable = items.filter((i) => lockedFor(i).length === 0);
     setSelected((prev) =>
-      prev.size === items.length ? new Set() : new Set(items.map((i) => i.id)),
+      prev.size === selectable.length ? new Set() : new Set(selectable.map((i) => i.id)),
     );
   }
 
   async function bulkRemove() {
-    const chosen = items.filter((i) => selected.has(i.id));
+    const chosen = items.filter((i) => selected.has(i.id) && lockedFor(i).length === 0);
     if (chosen.length === 0) return;
     const ok = await confirm({
       title: `Excluir ${chosen.length} ${chosen.length === 1 ? "imagem" : "imagens"}?`,
