@@ -226,7 +226,7 @@ function NotificationsPage() {
                     title="Excluir"
                     className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-destructive"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="text-destructive h-4 w-4" />
                   </button>
                 </div>
               </li>

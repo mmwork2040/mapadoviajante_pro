@@ -1004,7 +1004,7 @@ export function NewLeadModal({
                   title="Excluir viajante"
                   className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-red-500"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="text-destructive h-4 w-4" />
                 </button>
               )}
               <button

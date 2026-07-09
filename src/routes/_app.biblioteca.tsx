@@ -539,7 +539,7 @@ function LibraryCard({
             <Pencil className="h-4 w-4" />
           </button>
           <button onClick={onRemove} className="rounded-lg bg-card/90 p-1.5 text-destructive hover:bg-card">
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="text-destructive h-4 w-4" />
           </button>
         </div>
         )}
@@ -1037,7 +1037,7 @@ function DocumentRow({
       ) : null}
       {onRemove ? (
         <button onClick={onRemove} className="shrink-0 rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-destructive" title="Excluir">
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="text-destructive h-4 w-4" />
         </button>
       ) : lockedHint ? (
         <span className="shrink-0 rounded-lg p-1.5 text-destructive" title={lockedHint}>
