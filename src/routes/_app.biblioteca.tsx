@@ -1046,12 +1046,24 @@ function DocumentRow({
           <Trash2 className="h-4 w-4" />
         </button>
       ) : lockedHint ? (
-        <span
-          className="rounded-lg p-1.5 text-muted-foreground/60"
-          title={lockedHint}
-        >
-          <Lock className="h-4 w-4" />
-        </span>
+        <>
+          <span
+            className="rounded-lg p-1.5 text-muted-foreground/60"
+            title={lockedHint}
+          >
+            <Lock className="h-4 w-4" />
+          </span>
+          {itineraryLink ? (
+            <Link
+              to="/roteiros/$id"
+              params={{ id: itineraryLink }}
+              className="rounded-lg p-1.5 text-primary hover:bg-accent"
+              title="Abrir roteiro"
+            >
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
