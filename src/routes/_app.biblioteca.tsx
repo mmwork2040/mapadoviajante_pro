@@ -1002,11 +1002,13 @@ function DocumentRow({
   onPreview,
   onRemove,
   lockedHint,
+  itineraryLink,
 }: {
   doc: AgencyDocument;
   onPreview: () => void;
   onRemove?: () => void;
   lockedHint?: string;
+  itineraryLink?: string;
 }) {
   const source = doc.itinerary?.title || doc.lead?.name || null;
   return (
