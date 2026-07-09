@@ -45,7 +45,8 @@ import {
   downloadDocument,
   uploadGeneralDocument,
   deleteLeadDocument,
-  findItineraryAttachments,
+  fetchItineraryAttachmentMap,
+  documentKey,
   type AgencyDocument,
   type DocumentOrigin,
 } from "@/lib/lead-documents";
