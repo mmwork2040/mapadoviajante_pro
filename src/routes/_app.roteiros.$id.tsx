@@ -188,6 +188,102 @@ function ItineraryDetailPage() {
 
   const confirm = useConfirm();
 
+  // AI document import (drag "Documento" onto a day → AI reads and adds activities).
+  const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+  const extractActivities = useServerFn(extractDocumentActivitiesData);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const docTargetDayRef = useRef<string | null>(null);
+
+  async function handleDocImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const dayId = docTargetDayRef.current;
+    docTargetDayRef.current = null;
+    if (!file || !dayId) return;
+
+    // 1. AI must be configured and connected before we auto-interpret documents.
+    const cfg = aiConfig ?? (await fetchAiConfig());
+    const connected = !!cfg?.api_key_encrypted && cfg?.knowledge_sources?.status === "connected";
+    if (!connected) {
+      toast.error("Configure e conecte a IA nas configurações antes de importar documentos.");
+      return;
+    }
+
+    setPendingDayId(dayId);
+    try {
+      // 2. Block the same document being imported twice into the same day.
+      const existingDocs = await fetchItineraryDocuments(id);
+      const dayActIds = new Set(
+        ((it?.days || []).find((d) => d.id === dayId)?.activities || []).map((a) => a.id),
+      );
+      const isDuplicate = existingDocs.some(
+        (d) => d.name === file.name && d.size === file.size && d.activity_id && dayActIds.has(d.activity_id),
+      );
+      if (isDuplicate) {
+        toast.error("Este documento já foi inserido neste dia.");
+        return;
+      }
+
+      // 3. Let the AI read the document and extract all activities.
+      const base64 = await fileToBase64(file);
+      const items: ExtractedDocData[] = await extractActivities({ data: { fileBase64: base64, mime: file.type } });
+      if (!items.length) {
+        toast.error("Nenhuma atividade encontrada no documento.");
+        return;
+      }
+
+      const day = (it?.days || []).find((d) => d.id === dayId);
+      let order = day?.activities?.length || 0;
+      let firstActivityId: string | null = null;
+      for (const data of items) {
+        const descParts = [
+          data.flight_number && `Voo ${data.flight_number}`,
+          data.hotel_name,
+          data.room && `Quarto ${data.room}`,
+          data.provider,
+          data.code && `Localizador ${data.code}`,
+          data.people ? `${data.people} pessoa(s)` : "",
+          data.description,
+        ].filter(Boolean);
+        const created = await createItineraryActivity({
+          day_id: dayId,
+          title: data.title || data.hotel_name || data.flight_number || "Item importado",
+          time: data.time || null,
+          duration: data.duration || null,
+          location: data.location || null,
+          cost: parseDocCost(data.cost),
+          description: descParts.join(" · ") || null,
+          type: mapActivityTypeGlobal(data.type),
+          sort_order: order++,
+        });
+        if (created && !firstActivityId) firstActivityId = created.id;
+      }
+
+      // 4. Persist the document so it can't be re-imported into this day.
+      try {
+        await uploadLeadDocument({
+          file,
+          agencyId: it!.agency_id,
+          itineraryId: id,
+          activityId: firstActivityId,
+          category: "Importado no roteiro",
+        });
+      } catch {
+        // Non-fatal: activities were created even if the file failed to store.
+      }
+
+      // 5. Always keep the day ordered by time.
+      await reorderDayActivitiesByTime(dayId);
+      toast.success(`${items.length} atividade(s) adicionada(s) a partir do documento.`);
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
+    } finally {
+      setPendingDayId(null);
+    }
+  }
+
+
   const addDay = useMutation({
     mutationFn: () =>
       createItineraryDay({
