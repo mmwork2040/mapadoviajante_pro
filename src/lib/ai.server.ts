@@ -405,3 +405,78 @@ export async function extractKnowledgeText(
   if (!text.trim()) throw new Error("Não foi possível extrair o conteúdo do documento.");
   return text.trim();
 }
+
+export type ImageActivityAnalysis = {
+  matches: boolean;
+  type: string;
+  title: string;
+  reason: string;
+};
+
+// Interpreta uma imagem anexada a um dia do roteiro: identifica o tipo de
+// atividade e avalia se ela é coerente com o destino e o roteiro.
+export async function analyzeImageForItinerary(
+  cfg: ProviderConfig,
+  fileBase64: string,
+  mime: string,
+  ctx: { destination?: string; itineraryTitle?: string; activityTitle?: string; existingContext?: string },
+): Promise<ImageActivityAnalysis> {
+  const prompt = `Você analisa uma IMAGEM que um agente de viagens quer anexar a um dia de um roteiro.
+Identifique o que a imagem representa e que TIPO de atividade turística ela sugere.
+Avalie se a imagem é COERENTE com o destino e o roteiro informados (ex: uma foto de uma atração/restaurante/hotel/paisagem que faça sentido para o destino).
+Considere coerente qualquer imagem relacionada ao destino ou a uma atividade plausível ali. Considere NÃO coerente imagens sem relação (ex: prints aleatórios, documentos, memes, outro destino distinto).
+Destino: ${ctx.destination || "—"}
+Roteiro: ${ctx.itineraryTitle || "—"}
+Atividade do dia: ${ctx.activityTitle || "—"}
+${ctx.existingContext ? `Contexto do roteiro:\n${ctx.existingContext}` : ""}
+Responda APENAS com um JSON válido, sem texto extra:
+{
+  "matches": true/false,
+  "type": "passeio|hotel|restaurante|voo|transfer|ingresso|paisagem|outro",
+  "title": "título curto do que a imagem mostra",
+  "reason": "explicação curta em português"
+}`;
+
+  const isImage = mime.startsWith("image/");
+  if (!isImage) throw new Error("O arquivo enviado não é uma imagem.");
+  const dataUrl = `data:${mime};base64,${fileBase64}`;
+  let text = "";
+
+  if (cfg.provider === "openai") {
+    text = await callOpenAI(cfg, [
+      { type: "text", text: prompt },
+      { type: "image_url", image_url: { url: dataUrl } },
+    ]);
+  } else if (cfg.provider === "anthropic") {
+    text = await callAnthropic(cfg, [
+      { type: "text", text: prompt },
+      { type: "image", source: { type: "base64", media_type: mime, data: fileBase64 } },
+    ]);
+  } else if (cfg.provider === "google") {
+    text = await callGoogle(cfg, [
+      { text: prompt },
+      { inline_data: { mime_type: mime, data: fileBase64 } },
+    ]);
+  } else {
+    throw new Error("Provedor não suportado.");
+  }
+
+  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) {
+    return { matches: false, type: "outro", title: "", reason: "Não foi possível interpretar a imagem." };
+  }
+  try {
+    const parsed = JSON.parse(cleaned.slice(start, end + 1)) as Partial<ImageActivityAnalysis>;
+    return {
+      matches: parsed.matches === true,
+      type: typeof parsed.type === "string" ? parsed.type : "outro",
+      title: typeof parsed.title === "string" ? parsed.title : "",
+      reason: typeof parsed.reason === "string" ? parsed.reason : "",
+    };
+  } catch {
+    return { matches: false, type: "outro", title: "", reason: "Não foi possível interpretar a imagem." };
+  }
+}
+
