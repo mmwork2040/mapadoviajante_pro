@@ -527,6 +527,7 @@ function LibraryCard({
   selectable = false,
   selected = false,
   onToggleSelect,
+  lockedIn = [],
 }: {
   item: LibraryItem;
   onEdit: () => void;
@@ -534,9 +535,16 @@ function LibraryCard({
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
+  lockedIn?: ItineraryAttachment[];
 }) {
   const img = useAssetUrl(item);
   const [zoom, setZoom] = useState(false);
+  const locked = lockedIn.length > 0;
+  const lockHint = locked
+    ? `Anexada ${lockedIn.length === 1 ? "ao roteiro" : "aos roteiros"} "${lockedIn
+        .map((a) => a.title)
+        .join('", "')}". Remova pelo roteiro para excluir.`
+    : "";
   return (
     <div
       className={`group flex flex-col overflow-hidden rounded-2xl border bg-card transition ${
