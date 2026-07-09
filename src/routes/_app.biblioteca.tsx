@@ -866,6 +866,11 @@ function DocumentsPanel() {
     queryFn: fetchAgencyDocuments,
     placeholderData: keepPreviousData,
   });
+  const { data: attachmentMap = {} } = useQuery({
+    queryKey: ["library", "documents", "attachments"],
+    queryFn: fetchItineraryAttachmentMap,
+    placeholderData: keepPreviousData,
+  });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library", "documents"] });
 
