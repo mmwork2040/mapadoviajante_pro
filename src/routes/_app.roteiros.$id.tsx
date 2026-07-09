@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy, Calendar, Users, MoreVertical, Sparkles } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Image as ImageIcon } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -108,6 +108,7 @@ const ACTIVITY_TYPES: {
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
+TYPE_META.image = { label: "Imagem", icon: ImageIcon };
 
 function getNextDayNumber(days?: ItineraryDay[]) {
   return Math.max(0, ...(days || []).map((day) => day.day_number || 0)) + 1;
@@ -952,10 +953,17 @@ function DayCard({
   const [dayTitle, setDayTitle] = useState(day.title || `Dia ${day.day_number}`);
   const [extracting, setExtracting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const imgRef = useRef<HTMLInputElement>(null);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const dayQc = useQueryClient();
   const extract = useServerFn(extractDocumentData);
   const confirm = useConfirm();
 
   async function addActivity() {
+    if (newType === "image") {
+      imgRef.current?.click();
+      return;
+    }
     if (!title.trim()) return;
     try {
       await createItineraryActivity({
@@ -974,6 +982,49 @@ function DayCard({
       toast.error(err instanceof Error ? err.message : "Erro ao adicionar atividade.");
     }
   }
+
+  // Anexa uma imagem ao dia: cria um item "Imagem" e sempre salva o arquivo na
+  // biblioteca (vinculado ao roteiro), para reutilização futura. Enquanto o
+  // arquivo estiver anexado a um roteiro, a exclusão fica bloqueada na
+  // biblioteca; ao remover do roteiro, a exclusão é liberada.
+  async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploadingImg(true);
+    try {
+      const created = await createItineraryActivity({
+        day_id: day.id,
+        title: title.trim() || file.name.replace(/\.[^.]+$/, ""),
+        type: "image",
+        time: time || null,
+        location: location || null,
+        sort_order: (day.activities?.length || 0) + 1,
+      });
+      if (!created) throw new Error("Não foi possível criar o item de imagem.");
+      await uploadLeadDocument({
+        file,
+        agencyId,
+        leadId,
+        itineraryId,
+        activityId: created.id,
+        category: "Imagem",
+      });
+      setTitle("");
+      setTime("");
+      setLocation("");
+      toast.success("Imagem anexada e salva na biblioteca.");
+      dayQc.invalidateQueries({ queryKey: ["activity-docs", created.id] });
+      dayQc.invalidateQueries({ queryKey: ["library", "documents"] });
+      dayQc.invalidateQueries({ queryKey: ["agency-docs"] });
+      onChange();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao anexar imagem.");
+    } finally {
+      setUploadingImg(false);
+    }
+  }
+
 
 
   function mapActivityType(t?: string): string {
@@ -1177,6 +1228,7 @@ function DayCard({
           {ACTIVITY_TYPES.map((t) => (
             <option key={t.type} value={t.type}>{t.label}</option>
           ))}
+          <option value="image">Imagem</option>
         </select>
         <input
           type="time"
@@ -1189,13 +1241,20 @@ function DayCard({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder="Atividade…"
+          placeholder={newType === "image" ? "Legenda (opcional)…" : "Atividade…"}
           className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
         />
-        <button onClick={addActivity} className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground">
-          <Plus className="h-4 w-4" />
+        <input ref={imgRef} type="file" accept="image/*" onChange={handleImageFile} className="hidden" />
+        <button
+          onClick={addActivity}
+          disabled={uploadingImg}
+          title={newType === "image" ? "Escolher imagem para anexar" : "Adicionar item"}
+          className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+        >
+          {uploadingImg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
         </button>
       </div>
+
 
       {showDupModal && (
         <div
