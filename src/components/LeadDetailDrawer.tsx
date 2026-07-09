@@ -139,6 +139,45 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
     onError: () => toast.error("Erro ao atribuir lead."),
   });
 
+  async function handleAssign(memberId: string) {
+    if (memberId === (lead?.assigned_to || "")) return;
+    const member = team.find((m) => m.id === memberId);
+    const ok = await confirm({
+      title: "Atribuir lead",
+      description: member
+        ? `Deseja atribuir este lead a ${member.name}?`
+        : "Deseja remover a atribuição deste lead?",
+      confirmLabel: "Confirmar",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
+    assign.mutate(memberId);
+  }
+
+  async function handleStatusChange(status: LeadStatus) {
+    if (status === lead?.status) return;
+    update.mutate(
+      { status },
+      {
+        onSuccess: async () => {
+          const responsible = lead?.assigned_to;
+          if (responsible && responsible !== getMemberId()) {
+            const label = STATUSES.find((s) => s.key === status)?.label || status;
+            await createNotification({
+              recipientId: responsible,
+              type: "lead_status",
+              title: "Status de lead atualizado",
+              body: `${lead?.name || "Lead"} — ${label}`,
+              link: `/leads?lead=${leadId}`,
+              leadId,
+            });
+          }
+        },
+      },
+    );
+  }
+
+
 
   async function handleDelete() {
     const ok = await confirm({
