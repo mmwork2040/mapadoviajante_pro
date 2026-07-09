@@ -503,7 +503,8 @@ COMPLETAR ATIVIDADES JÁ EXISTENTES (MUITO IMPORTANTE):
 
 COMPLETAR DIAS VAZIOS OU INCOMPLETOS PARA TODO O PERÍODO (ESTRUTURA DE REFERÊNCIA):
 - Quando eu pedir para completar/preencher o roteiro e as 4 informações essenciais estiverem presentes, cubra TODOS os dias do período (da data inicial à final). Se as datas indicarem N dias e existirem menos dias montados, crie os dias faltantes; se algum dia existente estiver sem atividades, complemente-o.
-- Baseie-se PRIORITARIAMENTE na BIBLIOTECA DA AGÊNCIA (experiências, pacotes, imagens e roteiros modelo) e nas informações do destino do lead. Reaproveite itens da biblioteca compatíveis com o destino.
+- A BIBLIOTECA DA AGÊNCIA é o seu ACERVO DE MEMÓRIA. Baseie-se PRIORITARIAMENTE nela (experiências, pacotes, imagens e roteiros modelo) e no destino do lead. Reaproveite itens compatíveis com o destino e NUNCA repita imagens, documentos ou dicas que já constam no roteiro (itens marcados como "(JÁ NO ROTEIRO)" ou já presentes no CONTEXTO DO ROTEIRO). A ideia é COMPLETAR o roteiro com conteúdo novo e relevante, sem duplicar o que já existe.
+- Quando o acervo tiver novas imagens do destino (veja "NOVAS IMAGENS ADICIONADAS AO ACERVO"), sugira aproveitá-las nas dicas/atividades correspondentes.
 - Para CADA dia, organize a programação por turnos, criando atividades separadas:
   · Manhã: atividade/passeio, com horário, local, duração estimada, custo médio (cost) e, na descrição, dica prática e se precisa de reserva.
   · Tarde: atividade ou deslocamento, com valores e logística na descrição.
@@ -601,6 +602,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
     }
 
     let leadKnowledge = "";
+    let leadDestination = "";
     if (data.leadId) {
       const { data: lead } = await context.supabase
         .from("crm_leads")
@@ -608,6 +610,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
         .eq("id", data.leadId)
         .maybeSingle();
       if (lead) {
+        if (typeof lead.destination === "string") leadDestination = lead.destination.trim();
         const lines: string[] = [];
         const profile = (lead.profile && typeof lead.profile === "object" ? lead.profile : {}) as Record<string, unknown>;
         const fmt = (val: unknown) =>
@@ -753,13 +756,62 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
       }
     }
 
+    // A biblioteca é o "acervo de memória" do assistente. Antes de compor, se o
+    // destino do lead for conhecido e ainda não houver fotos suficientes dele na
+    // biblioteca, buscamos fotos reais em fontes abertas e as armazenamos para
+    // reuso futuro em outros roteiros.
+    let libraryMemoryNote = "";
+    if (leadDestination) {
+      try {
+        const { data: member } = await context.supabase
+          .from("agency_members")
+          .select("agency_id,id")
+          .eq("user_id", context.userId)
+          .maybeSingle();
+        if (member?.agency_id) {
+          const { data: destImgs } = await (context.supabase as any)
+            .from("crm_library_items")
+            .select("title")
+            .eq("agency_id", member.agency_id)
+            .eq("type", "image")
+            .ilike("location", `%${leadDestination}%`);
+          const existingTitles = (destImgs as { title: string }[] | null)?.map((d) => d.title) ?? [];
+          if (existingTitles.length < 3) {
+            const first = leadDestination.split(",")[0].trim();
+            const { ensureDestinationImages } = await import("./library-memory.server");
+            const added = await ensureDestinationImages({
+              supabase: context.supabase as any,
+              agencyId: member.agency_id,
+              memberId: member.id ?? null,
+              destination: leadDestination,
+              queries: [
+                leadDestination,
+                `${leadDestination} landmark`,
+                `${leadDestination} tourist attraction`,
+                first,
+              ].filter((v, i, a) => !!v && a.indexOf(v) === i),
+              existingTitles,
+              maxToAdd: 4,
+            });
+            if (added.length) {
+              libraryMemoryNote = `\n\nNOVAS IMAGENS ADICIONADAS AO ACERVO DA BIBLIOTECA (fotos reais de ${leadDestination}, agora disponíveis para reuso): ${added
+                .map((a) => a.title)
+                .join("; ")}. Você pode sugerir usá-las nas dicas/atividades do destino.`;
+            }
+          }
+        }
+      } catch {
+        /* falha ao enriquecer a biblioteca não deve bloquear o planejamento */
+      }
+    }
+
     let library = "";
     {
       const { data: libItems } = await (context.supabase as any)
         .from("crm_library_items")
         .select("type,title,location,description,content,price,days,tags")
         .order("created_at", { ascending: false })
-        .limit(60);
+        .limit(80);
       if (libItems && libItems.length) {
         const typeLabel: Record<string, string> = {
           experience: "Experiência",
@@ -767,15 +819,27 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
           image: "Imagem",
           itinerary: "Roteiro modelo",
         };
-        const parts = (libItems as any[]).map((l) => {
-          const head = `- [${typeLabel[l.type] || l.type}] ${l.title}${l.location ? ` (${l.location})` : ""}${l.type === "package" && l.price ? ` — ${l.price}${l.days ? `/${l.days}d` : ""}` : ""}`;
+        const ctxLower = (data.context || "").toLowerCase();
+        const destLower = leadDestination.toLowerCase();
+        // Prioriza itens do destino do lead; mantém os demais como conhecimento geral.
+        const ranked = (libItems as any[]).slice().sort((a, b) => {
+          const am = destLower && `${a.location ?? ""} ${a.title ?? ""}`.toLowerCase().includes(destLower) ? 1 : 0;
+          const bm = destLower && `${b.location ?? ""} ${b.title ?? ""}`.toLowerCase().includes(destLower) ? 1 : 0;
+          return bm - am;
+        });
+        const parts = ranked.map((l) => {
+          const used = l.title && ctxLower.includes(String(l.title).toLowerCase()) ? " (JÁ NO ROTEIRO — não repetir)" : "";
+          const head = `- [${typeLabel[l.type] || l.type}] ${l.title}${l.location ? ` (${l.location})` : ""}${l.type === "package" && l.price ? ` — ${l.price}${l.days ? `/${l.days}d` : ""}` : ""}${used}`;
           const tags = Array.isArray(l.tags) && l.tags.length ? ` [tags: ${l.tags.join(", ")}]` : "";
           const body = [l.description, l.content].filter(Boolean).join(" ").slice(0, 600);
           return `${head}${tags}${body ? `\n    ${body}` : ""}`;
         });
-        library = `\n\nBIBLIOTECA DA AGÊNCIA (experiências, pacotes, imagens e roteiros modelo reutilizáveis — use como base de conhecimento e sugira itens relevantes ao compor o roteiro e as dicas):\n${parts.join("\n")}`;
+        library = `\n\nBIBLIOTECA DA AGÊNCIA — ACERVO DE MEMÓRIA (experiências, pacotes, imagens e roteiros modelo reutilizáveis). Priorize itens relacionados ao destino do lead e NÃO repita itens já marcados como "(JÁ NO ROTEIRO)":\n${parts.join("\n")}${libraryMemoryNote}`;
+      } else {
+        library = libraryMemoryNote;
       }
     }
+
 
     const prompt = `${PLANNER_PROMPT}\n\nCONTEXTO DO ROTEIRO:\n${data.context}${leadKnowledge}${pastItineraries}${leadDocuments}${attachmentsIndex}${library}\n\nMENSAGEM DO CONSULTOR:\n${data.message || "(sem mensagem — use os documentos enviados)"}`;
 
