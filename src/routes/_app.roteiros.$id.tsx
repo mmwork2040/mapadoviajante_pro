@@ -405,7 +405,14 @@ function ItineraryDetailPage() {
       for (const usedId of usedDayIds) {
         await reorderDayActivitiesByTime(usedId);
       }
-      toast.success(`${items.length} atividade(s) organizada(s) por data e hora a partir do documento.`);
+      const added = items.length - skipped;
+      if (added > 0) {
+        toast.success(
+          `${added} atividade(s) organizada(s) por data e hora${skipped ? ` (${skipped} já existente(s) ignorada(s))` : ""}.`,
+        );
+      } else {
+        toast.info("Nenhuma novidade: os itens do documento já constavam no roteiro.");
+      }
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
