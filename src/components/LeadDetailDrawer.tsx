@@ -370,42 +370,6 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               <div className="relative mt-3 flex items-center justify-between gap-2">
                 <StatusDropdown
                   value={lead.status}
-                  onChange={(status) => update.mutate({ status })}
-                />
-                <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
-                {lead.updated_at && (
-                  <span className="text-xs text-muted-foreground">Atualizado: {formatDate(lead.updated_at)}</span>
-                )}
-              </div>
-
-              <div className="relative mt-3 grid grid-cols-2 gap-2">
-                <button
-                  onClick={openWhatsApp}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
-                >
-                  <MessageCircle className="h-4 w-4 text-[var(--success)]" /> WhatsApp
-                </button>
-                <button
-                  onClick={handleEdit}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
-                >
-                  <Pencil className="h-4 w-4" /> Editar
-                </button>
-              </div>
-
-              <div className="relative mt-2 flex items-center gap-2">
-                <span className="flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-muted-foreground">
-                  <User className="h-4 w-4 text-primary" /> Atribuir a:
-                </span>
-                <select
-                  value={lead.assigned_to || ""}
-                  onChange={(e) => assign.mutate(e.target.value)}
-                  disabled={assign.isPending}
-                  className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-xs outline-none focus:border-primary disabled:opacity-60"
-                >
-                  <option value="">Ninguém</option>
-                <StatusDropdown
-                  value={lead.status}
                   onChange={(status) => handleStatusChange(status)}
                 />
                 <span className="text-xs text-muted-foreground">Criado: {formatDate(lead.created_at)}</span>
