@@ -34,17 +34,20 @@ import {
   duplicateItineraryDay,
   deleteVoucher,
   fetchItineraryById,
+  fetchAiConfig,
+  reorderDayActivitiesByTime,
   resolveDisplayImageUrl,
   updateItinerary,
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
-import { extractDocumentData, itineraryPlanner } from "@/lib/ai.functions";
+import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner } from "@/lib/ai.functions";
 import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
   fetchActivityDocuments,
   fetchAgencyDocuments,
+  fetchItineraryDocuments,
   attachLibraryDocumentToActivity,
   downloadDocument,
   uploadLeadDocument,
