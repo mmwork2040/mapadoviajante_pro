@@ -910,7 +910,7 @@ function DocumentsPanel() {
   }
 
   async function remove(doc: AgencyDocument) {
-    const attachedIn = await findItineraryAttachments(doc);
+    const attachedIn = attachmentMap[documentKey(doc)] ?? [];
     if (attachedIn.length > 0) {
       toast.error(
         `Este documento está anexado ${
