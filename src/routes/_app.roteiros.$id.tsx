@@ -686,12 +686,33 @@ function ItineraryDetailPage() {
 
       <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card sm:flex-row sm:items-stretch">
         <div className="relative h-40 w-full shrink-0 overflow-hidden bg-muted/60 sm:h-auto sm:w-56">
-          <img
-            src={coverUrl || roteiroFallback}
-            alt={it.destination || "Destino"}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+          {it.cover_image ? (
+            <>
+              {coverUrl && (
+                <img
+                  src={coverUrl}
+                  alt={it.destination || "Destino"}
+                  onLoad={() => setCoverLoaded(true)}
+                  onError={() => setCoverLoaded(true)}
+                  className={`absolute inset-0 h-full w-full object-cover transition-opacity ${coverLoaded ? "opacity-100" : "opacity-0"}`}
+                />
+              )}
+              {!coverLoaded && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span className="text-xs">Carregando…</span>
+                </div>
+              )}
+            </>
+          ) : (
+            <img
+              src={roteiroFallback}
+              alt={it.destination || "Destino"}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+
           <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-sm font-bold text-white">
             <MapPin className="h-4 w-4 shrink-0" />
             <span className="truncate">{it.destination || "—"}</span>
