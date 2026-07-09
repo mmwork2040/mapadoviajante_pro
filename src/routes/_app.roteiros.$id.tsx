@@ -1312,21 +1312,21 @@ function ActivityRow({
 
   return (
     <div className="min-w-0 flex-1 space-y-1">
-      <div className="flex items-center justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-sm">
-        <span className="flex items-center gap-2">
+      <div className="flex items-start justify-between gap-2 rounded-lg bg-muted/50 px-3 py-2 text-xs">
+        <span className="flex min-w-0 items-start gap-2">
           <button
             onClick={toggleDone}
-            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+            className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
               done ? "border-primary bg-primary text-primary-foreground" : "border-input"
             }`}
           >
             {done && <Check className="h-3 w-3" />}
           </button>
-          {TypeIcon && <TypeIcon className="h-4 w-4 shrink-0 text-primary" />}
-          <span className={done ? "text-muted-foreground line-through" : ""}>
+          {TypeIcon && <TypeIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />}
+          <span className={`min-w-0 break-words ${done ? "text-muted-foreground line-through" : ""}`}>
             {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
             {activity.title}
-            {activity.location && <span className="ml-2 text-xs text-muted-foreground">· {activity.location}</span>}
+            {activity.location && <span className="ml-2 text-[11px] text-muted-foreground">· {activity.location}</span>}
           </span>
         </span>
         <span className="flex gap-1">
@@ -1448,8 +1448,7 @@ function ActivityDocuments({
             <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-[11px]">
               <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
               <button onClick={() => setPreview(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left" title={`Pré-visualizar ${doc.name}`}>
-                {doc.category && <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-medium uppercase text-primary">{doc.category}</span>}
-                <span className="truncate">{doc.name}</span>
+                <span className="line-clamp-2 break-words text-[10px] leading-tight">{doc.name}</span>
               </button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
