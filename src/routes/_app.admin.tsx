@@ -333,7 +333,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                     onClick={() => handleRemoveMember(m)}
                     className="flex items-center gap-1 rounded-lg border border-destructive/40 px-2 py-1 text-xs text-destructive hover:bg-destructive/10 disabled:opacity-50"
                   >
-                    {remove.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                    {remove.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="text-destructive h-3.5 w-3.5" />}
                     Remover
                   </button>
                 )}
@@ -2202,7 +2202,7 @@ function AiConfigCard() {
                     className="text-muted-foreground hover:text-destructive"
                     aria-label="Remover documento"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="text-destructive h-4 w-4" />
                   </button>
                 </li>
               ))}

@@ -155,7 +155,7 @@ export function NotificationBell() {
                           title="Excluir"
                           className="rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-destructive"
                         >
-                          <Trash2 className="h-3.5 w-3.5" />
+                          <Trash2 className="text-destructive h-3.5 w-3.5" />
                         </button>
                       </div>
                     </li>

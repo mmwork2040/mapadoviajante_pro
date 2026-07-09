@@ -1144,7 +1144,7 @@ function DayCard({
             aria-label="Excluir dia"
             className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-destructive/40 text-destructive hover:bg-destructive hover:text-destructive-foreground"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="text-destructive h-4 w-4" />
           </button>
         </div>
 
@@ -1489,7 +1489,7 @@ function ActivityRow({
             }}
             className="text-muted-foreground hover:text-destructive"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="text-destructive h-3.5 w-3.5" />
           </button>
         </span>
       </div>
@@ -1672,7 +1672,7 @@ function ActivityDocuments({
                     <Download className="mr-2 h-4 w-4" /> Baixar
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => remove(doc)} className="text-destructive focus:text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                    <Trash2 className="text-destructive mr-2 h-4 w-4" /> Excluir
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -1952,7 +1952,7 @@ function VouchersCard({
                     </p>
                   </div>
                   <button onClick={() => removeVoucher(v)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="text-destructive h-4 w-4" />
                   </button>
                 </li>
               ))}
