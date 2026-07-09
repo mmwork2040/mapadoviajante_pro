@@ -144,10 +144,36 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
   const heroImg = coverUrl || "";
 
+  async function waitForImages(root: HTMLElement) {
+    const imgs = Array.from(root.querySelectorAll("img"));
+    await Promise.all(
+      imgs.map((img) => {
+        if (!img.getAttribute("src")) return Promise.resolve();
+        const done = () =>
+          img.decode?.().catch(() => undefined) ?? Promise.resolve();
+        if (img.complete && img.naturalWidth > 0) return done();
+        return new Promise<void>((resolve) => {
+          const finish = () => {
+            img.removeEventListener("load", finish);
+            img.removeEventListener("error", finish);
+            done().finally(() => resolve());
+          };
+          img.addEventListener("load", finish);
+          img.addEventListener("error", finish);
+          // Fallback timeout so a stalled image never blocks export forever.
+          setTimeout(finish, 8000);
+        });
+      }),
+    );
+  }
+
   async function handleExport() {
     if (!containerRef.current) return;
     setBusy(true);
     try {
+      // Garante que capa e polaroids estejam totalmente carregadas antes
+      // do html2canvas capturar o container (evita áreas em branco no PDF).
+      await waitForImages(containerRef.current);
       const html2pdf = (await import("html2pdf.js")).default;
       const opts = {
         margin: 0,
