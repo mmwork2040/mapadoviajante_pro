@@ -23,15 +23,15 @@ import type { AppNotification } from "@/lib/types";
 
 const PAGE_SIZE = 15;
 
-const searchSchema = z.object({
-  page: fallback(z.number().int(), 1).default(1),
-  q: fallback(z.string(), "").default(""),
-  filter: fallback(z.string(), "all").default("all"),
-  order: fallback(z.string(), "desc").default("desc"),
-});
+type NotifSearch = { page: number; q: string; filter: string; order: string };
 
 export const Route = createFileRoute("/_app/notificacoes")({
-  validateSearch: zodValidator(searchSchema),
+  validateSearch: (search: Record<string, unknown>): NotifSearch => ({
+    page: typeof search.page === "number" ? search.page : Number(search.page) || 1,
+    q: typeof search.q === "string" ? search.q : "",
+    filter: typeof search.filter === "string" ? search.filter : "all",
+    order: typeof search.order === "string" ? search.order : "desc",
+  }),
   component: NotificationsPage,
 });
 
