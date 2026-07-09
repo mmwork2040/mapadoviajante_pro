@@ -589,7 +589,7 @@ function DashboardPage() {
           </DialogHeader>
           {selectedDay && (() => {
             const dayTasks = data.tasks.filter(
-              (t) => t.due_date && new Date(t.due_date).toDateString() === selectedDay.toDateString(),
+              (t) => t.due_date && new Date(t.due_date).toDateString() === selectedDay.toDateString() && (!onlyMineAgenda || t.assigned_to === myId),
             );
             return (
               <div className="mb-4 space-y-2">
