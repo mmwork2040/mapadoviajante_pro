@@ -1012,59 +1012,51 @@ function DocumentRow({
 }) {
   const source = doc.itinerary?.title || doc.lead?.name || null;
   return (
-    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-border bg-card p-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
-        <FileText className="h-5 w-5" />
+    <div className="flex min-w-0 items-center gap-2.5 rounded-xl border border-border bg-card p-3">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-accent-foreground">
+        <FileText className="h-4 w-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{doc.name}</p>
-        <p className="truncate text-xs text-muted-foreground">
+        <p className="truncate text-[13px] font-medium leading-tight">{doc.name}</p>
+        <p className="truncate text-[11px] text-muted-foreground">
           {doc.category ? `${doc.category}` : "documento"}
           {source ? ` · ${source}` : ""}
         </p>
       </div>
-      <button
-        onClick={onPreview}
-        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-        title="Visualizar"
-      >
-        <Eye className="h-4 w-4" />
-      </button>
-      <button
-        onClick={() => downloadDocument(doc)}
-        className="rounded-lg p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-        title="Baixar"
-      >
-        <Download className="h-4 w-4" />
-      </button>
-      {onRemove ? (
-        <button
-          onClick={onRemove}
-          className="rounded-lg p-1.5 text-destructive hover:bg-accent"
-          title="Excluir"
-        >
-          <Trash2 className="h-4 w-4" />
-        </button>
-      ) : lockedHint ? (
-        <>
-          <span
-            className="rounded-lg p-1.5 text-muted-foreground/60"
-            title={lockedHint}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className="shrink-0 rounded-lg p-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+            title="Ações"
           >
-            <Lock className="h-4 w-4" />
-          </span>
+            <MoreVertical className="h-4 w-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onPreview}>
+            <Eye className="mr-2 h-4 w-4" /> Visualizar
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => downloadDocument(doc)}>
+            <Download className="mr-2 h-4 w-4" /> Baixar
+          </DropdownMenuItem>
           {itineraryLink ? (
-            <Link
-              to="/roteiros/$id"
-              params={{ id: itineraryLink }}
-              className="rounded-lg p-1.5 text-primary hover:bg-accent"
-              title="Abrir roteiro"
-            >
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
+            <DropdownMenuItem asChild>
+              <Link to="/roteiros/$id" params={{ id: itineraryLink }}>
+                <ArrowUpRight className="mr-2 h-4 w-4" /> Abrir roteiro
+              </Link>
+            </DropdownMenuItem>
           ) : null}
-        </>
-      ) : null}
+          {onRemove ? (
+            <DropdownMenuItem onClick={onRemove} className="text-destructive focus:text-destructive">
+              <Trash2 className="mr-2 h-4 w-4" /> Excluir
+            </DropdownMenuItem>
+          ) : lockedHint ? (
+            <DropdownMenuItem disabled className="gap-2">
+              <Lock className="mr-2 h-4 w-4" /> {lockedHint}
+            </DropdownMenuItem>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }
