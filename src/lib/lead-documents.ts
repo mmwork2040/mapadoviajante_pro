@@ -201,6 +201,33 @@ export async function downloadDocument(doc: LeadDocument): Promise<boolean> {
   return true;
 }
 
+/**
+ * Check whether a library document is currently attached to any roteiro
+ * (itinerary day/activity). Attaching from the library copies the file into a
+ * new row with `activity_id`/`itinerary_id` set, sharing the same name/size.
+ * Returns the titles of the roteiros where it is attached.
+ */
+export async function findItineraryAttachments(doc: LeadDocument): Promise<string[]> {
+  let q = db()
+    .from("crm_lead_documents")
+    .select("id, itinerary:crm_itineraries(title)")
+    .eq("agency_id", doc.agency_id)
+    .eq("name", doc.name)
+    .not("itinerary_id", "is", null)
+    .neq("id", doc.id);
+  q = doc.size == null ? q.is("size", null) : q.eq("size", doc.size);
+  const { data, error } = await q;
+  if (error) {
+    console.error("findItineraryAttachments", error);
+    return [];
+  }
+  const rows = (data as unknown as { itinerary?: { title?: string } | null }[]) || [];
+  const titles = rows
+    .map((r) => r.itinerary?.title)
+    .filter((t): t is string => Boolean(t));
+  return Array.from(new Set(titles));
+}
+
 export interface AgencyDocument extends LeadDocument {
   lead?: { name: string } | null;
   itinerary?: { title: string } | null;
