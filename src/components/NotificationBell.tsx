@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Check, CheckCheck, Trash2, X } from "lucide-react";
+import { Bell, Check, CheckCheck, List, Trash2, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchNotifications,
@@ -11,10 +11,12 @@ import {
   getMemberId,
 } from "@/lib/services";
 import { formatDate } from "@/lib/ui";
+import { useBackButtonClose } from "@/hooks/useBackButtonClose";
 import type { AppNotification } from "@/lib/types";
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
+  useBackButtonClose(open, () => setOpen(false));
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data: notifications = [] } = useQuery({
