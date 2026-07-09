@@ -1040,7 +1040,7 @@ function DocumentRow({
           <Trash2 className="h-4 w-4" />
         </button>
       ) : lockedHint ? (
-        <span className="shrink-0 rounded-lg p-1.5 text-muted-foreground" title={lockedHint}>
+        <span className="shrink-0 rounded-lg p-1.5 text-destructive" title={lockedHint}>
           <Lock className="h-4 w-4" />
         </span>
       ) : null}
