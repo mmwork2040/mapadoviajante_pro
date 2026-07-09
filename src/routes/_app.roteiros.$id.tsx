@@ -1276,12 +1276,16 @@ function SortableActivity({
   agencyId,
   leadId,
   itineraryId,
+  autoEdit = false,
+  onAutoEditDone,
 }: {
   activity: NonNullable<ItineraryDay["activities"]>[number];
   onChange: () => void;
   agencyId: string;
   leadId: string | null;
   itineraryId: string;
+  autoEdit?: boolean;
+  onAutoEditDone?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `act:${activity.id}`,
@@ -1307,6 +1311,8 @@ function SortableActivity({
         agencyId={agencyId}
         leadId={leadId}
         itineraryId={itineraryId}
+        autoEdit={autoEdit}
+        onAutoEditDone={onAutoEditDone}
       />
     </li>
   );
@@ -1319,12 +1325,16 @@ function ActivityRow({
   agencyId,
   leadId,
   itineraryId,
+  autoEdit = false,
+  onAutoEditDone,
 }: {
   activity: NonNullable<ItineraryDay["activities"]>[number];
   onChange: () => void;
   agencyId: string;
   leadId: string | null;
   itineraryId: string;
+  autoEdit?: boolean;
+  onAutoEditDone?: () => void;
 }) {
   const qc = useQueryClient();
 
