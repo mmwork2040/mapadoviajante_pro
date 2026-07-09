@@ -22,6 +22,7 @@ export const DOCUMENT_CATEGORIES = [
   { value: "voucher", label: "Voucher" },
   { value: "reserva", label: "Reserva" },
   { value: "seguro", label: "Seguro" },
+  { value: "imagem", label: "Imagem" },
   { value: "outro", label: "Outro" },
 ] as const;
 
