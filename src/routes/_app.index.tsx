@@ -97,6 +97,31 @@ function DashboardPage() {
   const [taskFilter, setTaskFilter] = useState<"today" | "tomorrow" | "week">("today");
   const [taskStatus, setTaskStatus] = useState<"all" | "pending" | "done">("pending");
   const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
+  const [onlyMineTasks, setOnlyMineTasks] = useState(false);
+  const [onlyMineAgenda, setOnlyMineAgenda] = useState(false);
+  const myId = getMemberId();
+
+  const { data: tasksMinePref } = useQuery({ queryKey: ["tasks-mine-pref"], queryFn: fetchTasksMinePref });
+  const { data: agendaMinePref } = useQuery({ queryKey: ["agenda-mine-pref"], queryFn: fetchAgendaMinePref });
+  useEffect(() => {
+    if (typeof tasksMinePref === "boolean") setOnlyMineTasks(tasksMinePref);
+  }, [tasksMinePref]);
+  useEffect(() => {
+    if (typeof agendaMinePref === "boolean") setOnlyMineAgenda(agendaMinePref);
+  }, [agendaMinePref]);
+
+  async function toggleOnlyMineTasks() {
+    const next = !onlyMineTasks;
+    setOnlyMineTasks(next);
+    queryClient.setQueryData(["tasks-mine-pref"], next);
+    await setTasksMinePref(next);
+  }
+  async function toggleOnlyMineAgenda() {
+    const next = !onlyMineAgenda;
+    setOnlyMineAgenda(next);
+    queryClient.setQueryData(["agenda-mine-pref"], next);
+    await setAgendaMinePref(next);
+  }
 
   const week = useMemo(() => {
     const today = new Date();
