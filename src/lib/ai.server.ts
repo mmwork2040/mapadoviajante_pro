@@ -238,6 +238,8 @@ export async function extractDocumentActivities(
 
 
 
+type InputFile = { base64: string; mime: string; name?: string };
+
 // Envia um prompt de texto + vários arquivos (imagens/PDFs) ao provedor e retorna o texto.
 export async function askWithFiles(
   cfg: ProviderConfig,
