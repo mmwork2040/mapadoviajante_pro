@@ -615,12 +615,13 @@ function ItineraryDetailPage() {
           sort_order: nextNumber,
         });
         if (!day) throw new Error("erro");
-        await createItineraryActivity({
+        const created = await createItineraryActivity({
           day_id: day.id,
           title: meta?.defaultTitle || "Novo item",
           type,
           sort_order: 0,
         });
+        if (created) setAutoEditId(created.id);
         refresh();
       } catch {
         toast.error("Não foi possível criar o dia.");
