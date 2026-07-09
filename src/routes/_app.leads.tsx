@@ -15,10 +15,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, fetchTeamMembers } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
-import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
+import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles, initials } from "@/lib/ui";
+import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,6 +96,11 @@ function LeadsPage() {
   });
   const myId = getMemberId();
   const leads = onlyMine ? allLeads.filter((l) => l.assigned_to === myId) : allLeads;
+
+  const { data: team = [] } = useQuery({
+    queryKey: ["team-members"],
+    queryFn: fetchTeamMembers,
+  });
 
   const { data: itineraryStatuses = {} } = useQuery({
     queryKey: ["lead-itinerary-statuses"],
@@ -239,6 +244,7 @@ function LeadsPage() {
                       <LeadCard
                         key={l.id}
                         lead={l}
+                        assignee={team.find((m) => m.id === l.assigned_to) || null}
                         itineraryStatus={itineraryStatuses[l.id]}
                         dragging={dragId === l.id}
                         onDragStart={() => setDragId(l.id)}
@@ -285,6 +291,7 @@ const ITINERARY_STATUS_LABELS: Record<string, string> = {
 
 function LeadCard({
   lead,
+  assignee,
   itineraryStatus,
   dragging,
   onDragStart,
@@ -293,6 +300,7 @@ function LeadCard({
   onOpen,
 }: {
   lead: Lead;
+  assignee?: AgencyMember | null;
   itineraryStatus?: string;
   dragging: boolean;
   onDragStart: () => void;
@@ -376,6 +384,17 @@ function LeadCard({
           </span>
         )}
       </div>
+      {assignee && (
+        <div className="mt-2 -mr-12 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+            style={{ backgroundColor: assignee.avatar_color || "#ff7a1a" }}
+          >
+            {initials(assignee.name)}
+          </span>
+          <span className="truncate">{assignee.name}</span>
+        </div>
+      )}
     </div>
   );
 }

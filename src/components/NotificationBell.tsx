@@ -81,7 +81,7 @@ export function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 top-full z-50 mt-1 w-80 max-w-[calc(100vw-2rem)] overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
+          <div className="fixed left-2 right-2 top-16 z-50 overflow-hidden rounded-xl border border-border bg-popover shadow-lg sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-1 sm:w-80">
             <div className="flex items-center justify-between border-b border-border px-3 py-2.5">
               <p className="text-sm font-semibold">Notificações</p>
               <div className="flex items-center gap-1">
