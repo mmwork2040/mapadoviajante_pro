@@ -168,11 +168,16 @@ export async function extractDocument(
   return parseJsonLoose(text);
 }
 
-const MULTI_EXTRACTION_PROMPT = `Você é um assistente que lê documentos de viagem (ingressos, passeios, passagens aéreas, reservas de hotel, transfers e vouchers) que podem conter VÁRIOS itens/atividades.
-Identifique TODAS as atividades presentes no documento. Para cada uma, extraia obrigatoriamente o TIPO, a DATA e o HORÁRIO quando existirem. Se houver horário de início e fim, use o de início em "time".
+const MULTI_EXTRACTION_PROMPT = `Você é um assistente especialista que analisa MINUCIOSAMENTE qualquer documento relacionado a uma viagem: ingressos, passagens aéreas/rodoviárias, tickets, e-tickets, vouchers, reservas de hotel/pousada, transfers, passeios, aluguel de carro, seguros de viagem, comprovantes e confirmações.
+Identifique TODAS as atividades/itens presentes no documento. Para cada um, extraia obrigatoriamente o TIPO, a DATA e o HORÁRIO quando existirem. Se houver horário de início e fim, use o de início em "time".
+Regras importantes de análise:
+- Passagens/voos: crie um item para a IDA e outro para a VOLTA (quando houver), cada um com sua própria data e horário. Inclua escalas relevantes no "description".
+- Hospedagem: use a data de check-in em "date" e registre check-in/check-out no "description".
+- Seguros: use a data de início da cobertura em "date" e o período no "description".
+- Seja minucioso: não invente dados; deixe vazio o que não constar no documento.
 Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento tem o formato:
 {
-  "type": "voo|hotel|transfer|passeio|ingresso|outro",
+  "type": "voo|hotel|transfer|passeio|ingresso|seguro|aluguel|outro",
   "title": "título curto do item",
   "date": "AAAA-MM-DD ou vazio",
   "time": "HH:MM ou vazio",
@@ -188,6 +193,10 @@ Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento 
   "description": "resumo das informações encontradas"
 }
 Se houver apenas um item, retorne um array com um único elemento. Nunca retorne texto fora do array JSON.`;
+
+// Contexto do roteiro já existente para evitar conflitos e duplicidades.
+const EXISTING_CONTEXT_PROMPT = (ctx: string) =>
+  `\n\nCONTEXTO DO ROTEIRO JÁ MONTADO (dias e itens já adicionados). Use-o para evitar conflitos de datas/horários e NÃO repetir itens que já existem. Se um item do documento já estiver presente no roteiro (mesmo voo, mesma reserva, mesmo ingresso, mesma data/horário), NÃO o inclua novamente na resposta:\n${ctx}`;
 
 function parseJsonArrayLoose(text: string): ExtractedDocData[] {
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
