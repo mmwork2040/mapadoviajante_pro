@@ -48,9 +48,12 @@ import {
   uploadGeneralDocument,
   deleteLeadDocument,
   fetchItineraryAttachmentMap,
+  fetchLibraryImageAttachmentMap,
+  libraryImageName,
   documentKey,
   type AgencyDocument,
   type DocumentOrigin,
+  type ItineraryAttachment,
 } from "@/lib/lead-documents";
 import { formatCurrency } from "@/lib/ui";
 import type { LibraryItem, LibraryItemType } from "@/lib/types";
