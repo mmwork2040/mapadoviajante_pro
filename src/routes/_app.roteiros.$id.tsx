@@ -1622,6 +1622,17 @@ function ActivityDocuments({
     }
   }
 
+  const attachLabel = (() => {
+    if (docs.length === 0) return "Anexar";
+    const cats = new Set(docs.map((d) => d.category || "outro"));
+    if (cats.size === 1) {
+      const c = DOCUMENT_CATEGORIES.find((x) => x.value === [...cats][0]);
+      const name = (c?.label || "documento").toLowerCase();
+      return `${docs.length} ${name}${docs.length > 1 ? "s" : ""}`;
+    }
+    return `${docs.length} documento${docs.length > 1 ? "s" : ""}`;
+  })();
+
   return (
     <div className="ml-1">
       <button
@@ -1629,7 +1640,7 @@ function ActivityDocuments({
         className="flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-foreground"
       >
         <Paperclip className="h-3 w-3" />
-        {docs.length > 0 ? `${docs.length} documento(s)` : "Anexar"}
+        {attachLabel}
         <ChevronDown className={`h-3 w-3 transition-transform ${open_ ? "rotate-180" : ""}`} />
       </button>
       {open_ && (
