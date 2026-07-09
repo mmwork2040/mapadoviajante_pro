@@ -965,14 +965,25 @@ function DocumentsPanel() {
                 {ORIGIN_LABELS[origin]} · {groups[origin].length}
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {groups[origin].map((doc) => (
-                  <DocumentRow
-                    key={doc.id}
-                    doc={doc}
-                    onPreview={() => setPreview(doc)}
-                    onRemove={() => remove(doc)}
-                  />
-                ))}
+                {groups[origin].map((doc) => {
+                  const attachedIn = attachmentMap[documentKey(doc)] ?? [];
+                  const locked = attachedIn.length > 0;
+                  return (
+                    <DocumentRow
+                      key={doc.id}
+                      doc={doc}
+                      onPreview={() => setPreview(doc)}
+                      onRemove={locked ? undefined : () => remove(doc)}
+                      lockedHint={
+                        locked
+                          ? `Anexado ${
+                              attachedIn.length === 1 ? "ao roteiro" : "aos roteiros"
+                            } "${attachedIn.join('", "')}". Exclua pelo roteiro.`
+                          : undefined
+                      }
+                    />
+                  );
+                })}
 
               </div>
             </div>
