@@ -105,6 +105,10 @@ const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
 
+function getNextDayNumber(days?: ItineraryDay[]) {
+  return Math.max(0, ...(days || []).map((day) => day.day_number || 0)) + 1;
+}
+
 // Shared helpers for AI document import.
 function mapActivityTypeGlobal(t?: string): string {
   const v = (t || "").toLowerCase();
@@ -215,7 +219,7 @@ function ItineraryDetailPage() {
 
     // Sem dia de destino → cria um novo dia automaticamente para receber o documento.
     if (dayId === "__new__") {
-      const nextNumber = (it?.days?.length || 0) + 1;
+      const nextNumber = getNextDayNumber(it?.days);
       const newDay = await createItineraryDay({
         itinerary_id: id,
         day_number: nextNumber,
@@ -445,13 +449,15 @@ function ItineraryDetailPage() {
 
 
   const addDay = useMutation({
-    mutationFn: () =>
-      createItineraryDay({
+    mutationFn: () => {
+      const nextNumber = getNextDayNumber(it?.days);
+      return createItineraryDay({
         itinerary_id: id,
-        day_number: (it?.days?.length || 0) + 1,
-        title: `Dia ${(it?.days?.length || 0) + 1}`,
-        sort_order: (it?.days?.length || 0) + 1,
-      }),
+        day_number: nextNumber,
+        title: `Dia ${nextNumber}`,
+        sort_order: nextNumber,
+      });
+    },
     onSuccess: refresh,
     onError: () => toast.error("Erro ao adicionar dia."),
   });
@@ -594,7 +600,7 @@ function ItineraryDetailPage() {
       try {
         const type = activeId.slice(4);
         const meta = ACTIVITY_TYPES.find((t) => t.type === type);
-        const nextNumber = days.length + 1;
+          const nextNumber = getNextDayNumber(days);
         const day = await createItineraryDay({
           itinerary_id: id,
           day_number: nextNumber,
