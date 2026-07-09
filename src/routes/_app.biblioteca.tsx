@@ -809,14 +809,21 @@ function DocumentsPanel() {
                 {ORIGIN_LABELS[origin]} · {groups[origin].length}
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {groups[origin].map((doc) => (
-                  <DocumentRow
-                    key={doc.id}
-                    doc={doc}
-                    onPreview={() => setPreview(doc)}
-                    onRemove={origin === "geral" ? () => remove(doc) : undefined}
-                  />
-                ))}
+                {groups[origin].map((doc) => {
+                  // Deletable when it belongs to the general repository OR its
+                  // linked lead/roteiro no longer exists (orphan document).
+                  const orphan =
+                    (doc.lead_id && !doc.lead) || (doc.itinerary_id && !doc.itinerary);
+                  const canDelete = origin === "geral" || orphan;
+                  return (
+                    <DocumentRow
+                      key={doc.id}
+                      doc={doc}
+                      onPreview={() => setPreview(doc)}
+                      onRemove={canDelete ? () => remove(doc) : undefined}
+                    />
+                  );
+                })}
               </div>
             </div>
           ),
