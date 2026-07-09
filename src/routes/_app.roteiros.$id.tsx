@@ -1936,7 +1936,8 @@ ${dias || "(nenhum dia ainda)"}`;
 
         toast.success(
           `Roteiro complementado: ${createdDays} dia(s), ${createdActs} atividade(s)` +
-            (updatedActs ? ` e ${updatedActs} atualização(ões)` : "") + ".",
+            (updatedActs ? ` e ${updatedActs} atualização(ões)` : "") +
+            (savedImgs ? ` · ${savedImgs} imagem(ns) salva(s) na biblioteca` : "") + ".",
         );
         onDone();
       } else {
