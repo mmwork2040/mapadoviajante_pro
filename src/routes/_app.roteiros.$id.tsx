@@ -724,8 +724,6 @@ function ItineraryDetailPage() {
         <div className="flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
               <button
                 disabled={advanceStatus.isPending}
                 className="flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1.5 pl-3 pr-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-60"
