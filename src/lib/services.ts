@@ -15,6 +15,15 @@ import type {
   Transaction,
   Voucher,
 } from "@/lib/types";
+import {
+  computeImagePHashFromFile,
+  computeImagePHashFromUrl,
+  getPhashFromTags,
+  hammingHex,
+  phashToTag,
+  IDENTICAL_MAX_DISTANCE,
+  SIMILAR_MAX_DISTANCE,
+} from "@/lib/image-hash";
 
 // ── Cache de contexto da agência ───────────────────────────────
 let _agencyId: string | null = null;
