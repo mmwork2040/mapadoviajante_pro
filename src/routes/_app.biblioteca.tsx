@@ -842,10 +842,12 @@ function DocumentRow({
   doc,
   onPreview,
   onRemove,
+  lockedHint,
 }: {
   doc: AgencyDocument;
   onPreview: () => void;
   onRemove?: () => void;
+  lockedHint?: string;
 }) {
   const source = doc.itinerary?.title || doc.lead?.name || null;
   return (
