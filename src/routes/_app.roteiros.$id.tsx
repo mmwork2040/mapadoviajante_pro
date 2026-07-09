@@ -1318,6 +1318,43 @@ function ActivityRow({
 
   const done = activity.type === "done";
 
+  const [editing, setEditing] = useState(false);
+  const [eTitle, setETitle] = useState(activity.title || "");
+  const [eTime, setETime] = useState(activity.time || "");
+  const [eLocation, setELocation] = useState(activity.location || "");
+  const [eType, setEType] = useState<string>(activity.type || "activity");
+  const [saving, setSaving] = useState(false);
+
+  function startEdit() {
+    setETitle(activity.title || "");
+    setETime(activity.time || "");
+    setELocation(activity.location || "");
+    setEType(done ? "activity" : activity.type || "activity");
+    setEditing(true);
+  }
+
+  async function saveEdit() {
+    if (!eTitle.trim()) {
+      toast.error("Informe um título.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await updateItineraryActivity(activity.id, {
+        title: eTitle.trim(),
+        time: eTime || null,
+        location: eLocation || null,
+        type: eType,
+      });
+      setEditing(false);
+      onChange();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function toggleDone() {
     await updateItineraryActivity(activity.id, { type: done ? null : "done" });
     onChange();
@@ -1325,6 +1362,57 @@ function ActivityRow({
 
   const meta = TYPE_META[activity.type || ""];
   const TypeIcon = meta?.icon;
+
+  if (editing) {
+    return (
+      <div className="min-w-0 flex-1 space-y-2 rounded-lg border border-primary/40 bg-muted/50 p-2">
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={eType}
+            onChange={(e) => setEType(e.target.value)}
+            className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          >
+            {ACTIVITY_TYPES.map((t) => (
+              <option key={t.type} value={t.type}>{t.label}</option>
+            ))}
+          </select>
+          <input
+            type="time"
+            value={eTime}
+            onChange={(e) => setETime(e.target.value)}
+            className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+        </div>
+        <input
+          value={eTitle}
+          onChange={(e) => setETitle(e.target.value)}
+          placeholder="Título…"
+          className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+        />
+        <input
+          value={eLocation}
+          onChange={(e) => setELocation(e.target.value)}
+          placeholder="Local (opcional)…"
+          className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+        />
+        <div className="flex justify-end gap-1.5">
+          <button
+            onClick={() => setEditing(false)}
+            className="rounded-lg border border-border px-2 py-1 text-xs hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={saveEdit}
+            disabled={saving}
+            className="rounded-lg bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            {saving ? "Salvando…" : "Salvar"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-w-0 flex-1 space-y-1">
@@ -1346,6 +1434,13 @@ function ActivityRow({
           </span>
         </span>
         <span className="flex gap-1">
+          <button
+            onClick={startEdit}
+            className="text-muted-foreground hover:text-primary"
+            title="Editar item"
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
           <button
             onClick={async () => {
               // Deleting an activity also removes any documents attached to it
