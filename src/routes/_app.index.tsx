@@ -408,6 +408,7 @@ function DashboardPage() {
 
 
       {/* Chart */}
+      {isMaster && (
       <div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
           <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
