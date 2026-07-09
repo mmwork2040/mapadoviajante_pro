@@ -1885,6 +1885,7 @@ ${dias || "(nenhum dia ainda)"}`;
               sort_order: j,
             });
             createdActs++;
+            if (a.location && a.location.trim()) activityLocations.add(a.location.trim());
           } catch {
             /* ignora atividade individual com erro */
           }
