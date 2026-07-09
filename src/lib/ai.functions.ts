@@ -4,6 +4,7 @@ import type { ExtractedDocData } from "@/lib/types";
 
 type TestInput = { provider: string; model: string; apiKey: string };
 type ExtractInput = { fileBase64: string; mime: string };
+type ExtractActivitiesInput = { fileBase64: string; mime: string; context?: string };
 
 export const testAiConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
