@@ -150,17 +150,16 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     setBusy(true);
     try {
       const html2pdf = (await import("html2pdf.js")).default;
-      await html2pdf()
-        .set({
-          margin: 0,
-          filename: `Roteiro_${destino}_${cliente}`.replace(/\s+/g, "_") + ".pdf",
-          image: { type: "jpeg", quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: "#ffffff" },
-          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-          pagebreak: { mode: ["css", "legacy"] },
-        } as Parameters<ReturnType<typeof html2pdf>["set"]>[0])
-        .from(containerRef.current)
-        .save();
+      const opts = {
+        margin: 0,
+        filename: `Roteiro_${destino}_${cliente}`.replace(/\s+/g, "_") + ".pdf",
+        image: { type: "jpeg", quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: "#ffffff" },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        pagebreak: { mode: ["css", "legacy"] },
+      };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await html2pdf().set(opts as any).from(containerRef.current).save();
       toast.success("PDF do roteiro gerado.");
     } catch (err) {
       console.error(err);
