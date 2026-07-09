@@ -23,6 +23,7 @@ import {
   Loader2,
   CheckSquare,
   Square,
+  Lock,
 } from "lucide-react";
 
 import { toast } from "sonner";
