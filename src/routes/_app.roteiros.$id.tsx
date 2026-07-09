@@ -570,12 +570,17 @@ function ItineraryDetailPage() {
         const actId = resolvedOverId.slice(4);
         dayId = days.find((x) => (x.activities || []).some((a) => a.id === actId))?.id ?? null;
       }
-      // No target day → sinaliza para criar um novo dia automaticamente após a
-      // leitura do documento (mantém o clique síncrono para o seletor de arquivo).
+      // Soltar sobre "Adicionar dia" (ou board vazio) cria um novo dia automaticamente.
+      const overNewDay = resolvedOverId === "new-day" || (!resolvedOverId && days.length === 0);
+      if (!dayId && !overNewDay) {
+        toast.error("Solte o documento sobre um dia existente ou em \"Adicionar dia\".");
+        return;
+      }
       docTargetDayRef.current = dayId ?? "__new__";
       docInputRef.current?.click();
       return;
     }
+
 
 
 
