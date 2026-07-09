@@ -408,6 +408,51 @@ function LibraryPage() {
           }}
         />
       )}
+
+      {itinFiles.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl">
+            <h2 className="text-lg font-bold">Enviar roteiro modelo</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {itinFiles.length === 1
+                ? `Arquivo: ${itinFiles[0].name}`
+                : `${itinFiles.length} arquivos selecionados`}
+            </p>
+            <label className="mt-4 block">
+              <span className="mb-1 block text-sm font-semibold">
+                Destino <span className="text-primary">*</span>
+              </span>
+              <input
+                autoFocus
+                value={itinDest}
+                onChange={(e) => setItinDest(e.target.value)}
+                placeholder="Ex: Paris, França"
+                className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
+              />
+            </label>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setItinFiles([]);
+                  setItinDest("");
+                }}
+                disabled={uploadingItin}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmItinUpload}
+                disabled={uploadingItin || !itinDest.trim()}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {uploadingItin ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
