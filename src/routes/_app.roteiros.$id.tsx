@@ -337,11 +337,27 @@ function ItineraryDetailPage() {
       }
 
       // 3.2 Distribute each item to the day that matches its date (fallback: dropped day).
+      // Safety net against duplicates: skip items whose title+time already exist in the target day.
+      const norm = (s?: string | null) => (s || "").trim().toLowerCase();
+      const existingKeys = new Set<string>();
+      for (const d of it?.days || []) {
+        for (const a of d.activities || []) {
+          existingKeys.add(`${d.id}|${norm(a.title)}|${norm(a.time)}`);
+        }
+      }
       const orderByDay = new Map<string, number>();
       const usedDayIds = new Set<string>();
       let firstActivityId: string | null = null;
+      let skipped = 0;
       for (const data of items) {
         const targetId = (isISO(data.date) && dateToDayId.get(data.date)) || dayId;
+        const title = data.title || data.hotel_name || data.flight_number || "Item importado";
+        const dupKey = `${targetId}|${norm(title)}|${norm(data.time)}`;
+        if (existingKeys.has(dupKey)) {
+          skipped++;
+          continue;
+        }
+        existingKeys.add(dupKey);
         if (!orderByDay.has(targetId)) {
           const dd = (it?.days || []).find((d) => d.id === targetId);
           orderByDay.set(targetId, dd?.activities?.length || 0);
@@ -357,7 +373,7 @@ function ItineraryDetailPage() {
         ].filter(Boolean);
         const created = await createItineraryActivity({
           day_id: targetId,
-          title: data.title || data.hotel_name || data.flight_number || "Item importado",
+          title,
           time: data.time || null,
           duration: data.duration || null,
           location: data.location || null,
@@ -370,6 +386,7 @@ function ItineraryDetailPage() {
         usedDayIds.add(targetId);
         if (created && !firstActivityId) firstActivityId = created.id;
       }
+
 
       // 4. Persist the document so it can't be re-imported into this day.
       try {
