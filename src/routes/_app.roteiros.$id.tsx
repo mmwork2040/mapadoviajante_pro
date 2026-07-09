@@ -1169,6 +1169,8 @@ function DayCard({
               agencyId={agencyId}
               leadId={leadId}
               itineraryId={itineraryId}
+              autoEdit={autoEditId === a.id}
+              onAutoEditDone={onAutoEditDone}
             />
           ))}
           {pendingActivity && (
