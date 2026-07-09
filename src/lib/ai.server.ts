@@ -411,6 +411,9 @@ export type ImageActivityAnalysis = {
   type: string;
   title: string;
   reason: string;
+  location: string;
+  description: string;
+  content: string;
 };
 
 // Interpreta uma imagem anexada a um dia do roteiro: identifica o tipo de
@@ -434,6 +437,9 @@ Responda APENAS com um JSON válido, sem texto extra:
   "matches": true/false,
   "type": "passeio|hotel|restaurante|voo|transfer|ingresso|paisagem|outro",
   "title": "título curto do que a imagem mostra",
+  "location": "local/cidade/atração/destino que a imagem representa ou vazio",
+  "description": "descrição curta (1-2 frases) do que a imagem mostra",
+  "content": "texto mais detalhado para a base de conhecimento da IA: contexto, dicas e informações úteis sobre o que aparece na imagem",
   "reason": "explicação curta em português"
 }`;
 
@@ -461,22 +467,33 @@ Responda APENAS com um JSON válido, sem texto extra:
     throw new Error("Provedor não suportado.");
   }
 
+  const empty: ImageActivityAnalysis = {
+    matches: false,
+    type: "outro",
+    title: "",
+    reason: "Não foi possível interpretar a imagem.",
+    location: "",
+    description: "",
+    content: "",
+  };
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end === -1) {
-    return { matches: false, type: "outro", title: "", reason: "Não foi possível interpretar a imagem." };
-  }
+  if (start === -1 || end === -1) return empty;
   try {
     const parsed = JSON.parse(cleaned.slice(start, end + 1)) as Partial<ImageActivityAnalysis>;
+    const str = (v: unknown) => (typeof v === "string" ? v : "");
     return {
       matches: parsed.matches === true,
-      type: typeof parsed.type === "string" ? parsed.type : "outro",
-      title: typeof parsed.title === "string" ? parsed.title : "",
-      reason: typeof parsed.reason === "string" ? parsed.reason : "",
+      type: str(parsed.type) || "outro",
+      title: str(parsed.title),
+      reason: str(parsed.reason),
+      location: str(parsed.location),
+      description: str(parsed.description),
+      content: str(parsed.content),
     };
   } catch {
-    return { matches: false, type: "outro", title: "", reason: "Não foi possível interpretar a imagem." };
+    return empty;
   }
 }
 

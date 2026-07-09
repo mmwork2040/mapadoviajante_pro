@@ -38,6 +38,7 @@ import {
   reorderDayActivitiesByTime,
   resolveDisplayImageUrl,
   saveActivityImageToLibrary,
+  saveImageFileToLibrary,
   searchLibraryImageForDestination,
   updateItinerary,
   updateItineraryActivity,
@@ -1507,20 +1508,35 @@ function ActivityDocuments({
     setUploading(true);
     try {
       let cat = category;
-      // Imagens são interpretadas pela IA apenas para categorizar e associar ao
-      // roteiro/destino na biblioteca — não cria nenhuma atividade.
+      // Imagens são interpretadas pela IA para categorizar e, além de anexar
+      // ao roteiro, também são salvas na seção "Imagem" da biblioteca com
+      // Título, Local/Destino, Descrição e Conteúdo para a base de conhecimento.
       if (file.type.startsWith("image/")) {
         const base64 = await fileToBase64(file);
+        let info: { title?: string; location?: string; description?: string; content?: string } = {};
         try {
           const res = await analyzeImage({
             data: { fileBase64: base64, mime: file.type, itineraryId, activityTitle },
           });
+          info = {
+            title: res.title,
+            location: res.location,
+            description: res.description,
+            content: res.content,
+          };
           if (res.title || res.type) toast.success(`Imagem interpretada: ${res.title || res.type}.`);
         } catch (aiErr) {
           console.error("analyze image", aiErr);
           // Falha na IA não impede o anexo: apenas segue sem interpretação.
         }
         cat = "imagem";
+        // Salva a imagem também na seção "Imagem" da biblioteca.
+        try {
+          await saveImageFileToLibrary(file, info);
+          qc.invalidateQueries({ queryKey: ["library"] });
+        } catch (libErr) {
+          console.error("save image to library", libErr);
+        }
       }
 
       await uploadLeadDocument({ file, agencyId, leadId, itineraryId, activityId, category: cat });
