@@ -345,6 +345,30 @@ function LibraryPage() {
         </div>
       )}
 
+      {tab === "itinerary" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={itinInputRef}
+            type="file"
+            accept="application/pdf"
+            multiple
+            className="hidden"
+            onChange={handleSelectItinFiles}
+          />
+          <button
+            onClick={() => itinInputRef.current?.click()}
+            disabled={uploadingItin}
+            className="flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+          >
+            {uploadingItin ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {uploadingItin ? "Enviando…" : "Enviar arquivos"}
+          </button>
+          <span className="text-xs text-muted-foreground">Envie roteiros em PDF por destino.</span>
+        </div>
+      )}
+
+
+
       {isDocuments ? (
         <DocumentsPanel />
       ) : isError ? (
