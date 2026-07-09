@@ -37,10 +37,13 @@ import {
   fetchAiConfig,
   reorderDayActivitiesByTime,
   resolveDisplayImageUrl,
+  saveActivityImageToLibrary,
+  searchLibraryImageForDestination,
   updateItinerary,
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
+import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner } from "@/lib/ai.functions";
 import {
   DOCUMENT_CATEGORIES,
