@@ -706,12 +706,19 @@ function ItineraryDetailPage() {
             if (it.start_date && it.end_date) label = `${fmt(it.start_date)} — ${fmt(it.end_date)}`;
             else if (it.start_date) label = fmt(it.start_date);
             else if (it.end_date) label = fmt(it.end_date);
-            if (!label) return null;
-            return (
-              <p className="mt-1 inline-flex items-center gap-1.5 text-sm font-medium text-foreground">
+            const parts: React.ReactNode[] = [];
+            if (label) parts.push(
+              <span key="date" className="inline-flex items-center gap-1.5">
                 <Calendar className="h-4 w-4 text-muted-foreground" /> {label}
-              </p>
+              </span>,
             );
+            if (it.passengers) parts.push(
+              <span key="pax" className="inline-flex items-center gap-1.5">
+                <Users className="h-4 w-4 text-muted-foreground" /> {it.passengers} viajante{it.passengers > 1 ? "s" : ""}
+              </span>,
+            );
+            if (!parts.length) return null;
+            return <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-foreground">{parts}</p>;
           })()}
         </div>
         <div className="relative flex flex-wrap gap-2">
