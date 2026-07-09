@@ -34,17 +34,20 @@ import {
   duplicateItineraryDay,
   deleteVoucher,
   fetchItineraryById,
+  fetchAiConfig,
+  reorderDayActivitiesByTime,
   resolveDisplayImageUrl,
   updateItinerary,
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
-import { extractDocumentData, itineraryPlanner } from "@/lib/ai.functions";
+import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner } from "@/lib/ai.functions";
 import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
   fetchActivityDocuments,
   fetchAgencyDocuments,
+  fetchItineraryDocuments,
   attachLibraryDocumentToActivity,
   downloadDocument,
   uploadLeadDocument,
@@ -62,7 +65,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
+import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData } from "@/lib/types";
 import roteiroFallback from "@/assets/roteiro-fallback.jpg";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
@@ -101,6 +104,40 @@ const ACTIVITY_TYPES: {
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
+
+// Shared helpers for AI document import.
+function mapActivityTypeGlobal(t?: string): string {
+  const v = (t || "").toLowerCase();
+  const allowed = ["flight", "hotel", "activity", "transfer", "restaurant", "note"];
+  if (allowed.includes(v)) return v;
+  const aliases: Record<string, string> = {
+    voo: "flight", voos: "flight", aviao: "flight", passagem: "flight",
+    hospedagem: "hotel", hotel: "hotel", pousada: "hotel",
+    transfer: "transfer", traslado: "transfer", carro: "transfer", transporte: "transfer",
+    restaurante: "restaurant", gastronomia: "restaurant", refeicao: "restaurant",
+    ingresso: "activity", passeio: "activity", tour: "activity", parque: "activity",
+  };
+  return aliases[v] || "activity";
+}
+
+function parseDocCost(cost: unknown): number | null {
+  if (cost == null) return null;
+  const n = Number(
+    String(cost).replace(/[^\d.,-]/g, "").replace(/\.(?=\d{3}\b)/g, "").replace(",", "."),
+  );
+  return Number.isFinite(n) ? n : null;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+
 
 const kanbanCollisionDetection: CollisionDetection = (args) => {
   const pointerCollisions = pointerWithin(args);
@@ -150,6 +187,102 @@ function ItineraryDetailPage() {
   const refresh = () => qc.invalidateQueries({ queryKey: ["itinerary", id] });
 
   const confirm = useConfirm();
+
+  // AI document import (drag "Documento" onto a day → AI reads and adds activities).
+  const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+  const extractActivities = useServerFn(extractDocumentActivitiesData);
+  const docInputRef = useRef<HTMLInputElement>(null);
+  const docTargetDayRef = useRef<string | null>(null);
+
+  async function handleDocImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    const dayId = docTargetDayRef.current;
+    docTargetDayRef.current = null;
+    if (!file || !dayId) return;
+
+    // 1. AI must be configured and connected before we auto-interpret documents.
+    const cfg = aiConfig ?? (await fetchAiConfig());
+    const connected = !!cfg?.api_key_encrypted && cfg?.knowledge_sources?.status === "connected";
+    if (!connected) {
+      toast.error("Configure e conecte a IA nas configurações antes de importar documentos.");
+      return;
+    }
+
+    setPendingDayId(dayId);
+    try {
+      // 2. Block the same document being imported twice into the same day.
+      const existingDocs = await fetchItineraryDocuments(id);
+      const dayActIds = new Set(
+        ((it?.days || []).find((d) => d.id === dayId)?.activities || []).map((a) => a.id),
+      );
+      const isDuplicate = existingDocs.some(
+        (d) => d.name === file.name && d.size === file.size && d.activity_id && dayActIds.has(d.activity_id),
+      );
+      if (isDuplicate) {
+        toast.error("Este documento já foi inserido neste dia.");
+        return;
+      }
+
+      // 3. Let the AI read the document and extract all activities.
+      const base64 = await fileToBase64(file);
+      const items: ExtractedDocData[] = await extractActivities({ data: { fileBase64: base64, mime: file.type } });
+      if (!items.length) {
+        toast.error("Nenhuma atividade encontrada no documento.");
+        return;
+      }
+
+      const day = (it?.days || []).find((d) => d.id === dayId);
+      let order = day?.activities?.length || 0;
+      let firstActivityId: string | null = null;
+      for (const data of items) {
+        const descParts = [
+          data.flight_number && `Voo ${data.flight_number}`,
+          data.hotel_name,
+          data.room && `Quarto ${data.room}`,
+          data.provider,
+          data.code && `Localizador ${data.code}`,
+          data.people ? `${data.people} pessoa(s)` : "",
+          data.description,
+        ].filter(Boolean);
+        const created = await createItineraryActivity({
+          day_id: dayId,
+          title: data.title || data.hotel_name || data.flight_number || "Item importado",
+          time: data.time || null,
+          duration: data.duration || null,
+          location: data.location || null,
+          cost: parseDocCost(data.cost),
+          description: descParts.join(" · ") || null,
+          type: mapActivityTypeGlobal(data.type),
+          sort_order: order++,
+        });
+        if (created && !firstActivityId) firstActivityId = created.id;
+      }
+
+      // 4. Persist the document so it can't be re-imported into this day.
+      try {
+        await uploadLeadDocument({
+          file,
+          agencyId: it!.agency_id,
+          itineraryId: id,
+          activityId: firstActivityId,
+          category: "Importado no roteiro",
+        });
+      } catch {
+        // Non-fatal: activities were created even if the file failed to store.
+      }
+
+      // 5. Always keep the day ordered by time.
+      await reorderDayActivitiesByTime(dayId);
+      toast.success(`${items.length} atividade(s) adicionada(s) a partir do documento.`);
+      refresh();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
+    } finally {
+      setPendingDayId(null);
+    }
+  }
+
 
   const addDay = useMutation({
     mutationFn: () =>
@@ -266,6 +399,26 @@ function ItineraryDetailPage() {
     lastOverId.current = null;
     dragStartPoint.current = null;
     const days = it?.days || [];
+
+    // Drop the "Documento" palette item onto a day → open a file picker so the AI
+    // can read the document and add the activities it finds. Must stay synchronous
+    // (no await before .click()) to keep the browser's user-gesture for the dialog.
+    if (activeId === "new:document") {
+      let dayId: string | null = null;
+      if (resolvedOverId?.startsWith("day:")) dayId = resolvedOverId.slice(4);
+      else if (resolvedOverId?.startsWith("act:")) {
+        const actId = resolvedOverId.slice(4);
+        dayId = days.find((x) => (x.activities || []).some((a) => a.id === actId))?.id ?? null;
+      }
+      if (!dayId) {
+        toast.error("Solte o documento sobre um dia existente.");
+        return;
+      }
+      docTargetDayRef.current = dayId;
+      docInputRef.current?.click();
+      return;
+    }
+
 
     // Drop a palette block onto an empty board OR onto the "Adicionar dia" card:
     // create a new day and place the item in it.
@@ -490,7 +643,20 @@ function ItineraryDetailPage() {
           {ACTIVITY_TYPES.map((t) => (
             <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} />
           ))}
+          <PaletteItem type="document" label="Documento (IA)" icon={FileUp} />
+          <input
+            ref={docInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleDocImport}
+            className="hidden"
+          />
         </div>
+        {pendingDayId && (
+          <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Lendo documento com a IA…
+          </p>
+        )}
 
         <div className="flex gap-4 overflow-x-auto pb-4">
           {(it.days || []).map((day) => (

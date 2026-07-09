@@ -145,6 +145,18 @@ export async function fetchLeadDocuments(leadId: string): Promise<LeadDocument[]
   return (data as unknown as LeadDocument[]) || [];
 }
 
+export async function fetchItineraryDocuments(itineraryId: string): Promise<LeadDocument[]> {
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .select("*")
+    .eq("itinerary_id", itineraryId)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return (data as unknown as LeadDocument[]) || [];
+}
+
+
+
 export async function deleteLeadDocument(doc: LeadDocument): Promise<boolean> {
   await supabase.storage.from(BUCKET).remove([doc.file_path]);
   const { error } = await db().from("crm_lead_documents").delete().eq("id", doc.id);

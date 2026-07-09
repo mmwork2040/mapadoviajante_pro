@@ -47,6 +47,37 @@ export const extractDocumentData = createServerFn({ method: "POST" })
     );
   });
 
+export const extractDocumentActivitiesData = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: ExtractInput) => {
+    if (!d?.fileBase64 || !d?.mime) throw new Error("Arquivo inválido.");
+    return d;
+  })
+  .handler(async ({ data, context }): Promise<ExtractedDocData[]> => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+    const { extractDocumentActivities } = await import("./ai.server");
+    return extractDocumentActivities(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        systemPrompt: cfg.system_prompt,
+        maxTokens: cfg.max_tokens,
+      },
+      data.fileBase64,
+      data.mime,
+    );
+  });
+
 type ExtractKnowledgeInput = {
   provider: string;
   model: string;

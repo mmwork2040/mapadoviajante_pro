@@ -1484,6 +1484,27 @@ export async function deleteItineraryActivity(id: string): Promise<boolean> {
   return !error;
 }
 
+/** Reordena as atividades de um dia por horário (time_start), vazios ao final. */
+export async function reorderDayActivitiesByTime(dayId: string): Promise<void> {
+  const { data, error } = await supabase
+    .from("crm_itinerary_activities")
+    .select("id, time_start")
+    .eq("day_id", dayId);
+  if (error || !data) return;
+  const rows = (data as { id: string; time_start: string | null }[]).slice();
+  rows.sort((a, b) => {
+    const ta = (a.time_start || "").trim();
+    const tb = (b.time_start || "").trim();
+    if (!ta && !tb) return 0;
+    if (!ta) return 1;
+    if (!tb) return -1;
+    return ta.localeCompare(tb);
+  });
+  await Promise.all(
+    rows.map((r, i) => supabase.from("crm_itinerary_activities").update({ sort_order: i }).eq("id", r.id)),
+  );
+}
+
 export async function createVoucher(voucherData: Partial<Voucher>): Promise<Voucher | null> {
   const row = {
     itinerary_id: voucherData.itinerary_id,
