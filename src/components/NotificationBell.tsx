@@ -163,6 +163,16 @@ export function NotificationBell() {
                 </ul>
               )}
             </div>
+            <button
+              onClick={() => {
+                setOpen(false);
+                navigate({ to: "/notificacoes" });
+              }}
+              className="flex w-full items-center justify-center gap-1.5 border-t border-border py-2.5 text-sm font-medium text-primary hover:bg-muted"
+            >
+              <List className="h-4 w-4" />
+              Ver todas as notificações
+            </button>
           </div>
         </>
       )}
