@@ -50,7 +50,7 @@ export const extractDocumentData = createServerFn({ method: "POST" })
 
 export const extractDocumentActivitiesData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: ExtractInput) => {
+  .inputValidator((d: ExtractActivitiesInput) => {
     if (!d?.fileBase64 || !d?.mime) throw new Error("Arquivo inválido.");
     return d;
   })
@@ -76,6 +76,7 @@ export const extractDocumentActivitiesData = createServerFn({ method: "POST" })
       },
       data.fileBase64,
       data.mime,
+      data.context,
     );
   });
 
