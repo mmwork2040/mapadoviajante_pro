@@ -336,3 +336,49 @@ export async function uploadGeneralDocument(
   const document = await uploadLeadDocument({ file, agencyId, category });
   return { document, duplicate: false };
 }
+
+/** Normalized key for matching a library image against roteiro attachments (name without extension). */
+export function libraryImageName(item: { file_name?: string | null; title?: string | null }): string {
+  const raw = (item.file_name || item.title || "").toLowerCase();
+  return raw.replace(/\.[a-z0-9]+$/i, "").replace(/[^a-z0-9]+/g, "").trim();
+}
+
+/**
+ * Map of image names currently attached to any roteiro (itinerary), keyed by the
+ * same normalized name used by `libraryImageName`. Lets the library lock images
+ * that are in use so they can't be deleted/edited/selected.
+ */
+export async function fetchLibraryImageAttachmentMap(): Promise<Record<string, ItineraryAttachment[]>> {
+  const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
+  if (!agencyId) return {};
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .select("name, mime_type, itinerary_id, itinerary:crm_itineraries(title)")
+    .eq("agency_id", agencyId)
+    .not("itinerary_id", "is", null);
+  if (error) {
+    console.error("fetchLibraryImageAttachmentMap", error);
+    return {};
+  }
+  const rows =
+    (data as unknown as {
+      name: string;
+      mime_type: string | null;
+      itinerary_id: string;
+      itinerary?: { title?: string } | null;
+    }[]) || [];
+  const map: Record<string, ItineraryAttachment[]> = {};
+  for (const r of rows) {
+    const isImage =
+      (r.mime_type?.startsWith("image/") ?? false) ||
+      /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(r.name || "");
+    if (!isImage) continue;
+    const key = libraryImageName({ file_name: r.name });
+    if (!key) continue;
+    if (!map[key]) map[key] = [];
+    if (r.itinerary_id && !map[key].some((a) => a.id === r.itinerary_id)) {
+      map[key].push({ id: r.itinerary_id, title: r.itinerary?.title || "Roteiro" });
+    }
+  }
+  return map;
+}

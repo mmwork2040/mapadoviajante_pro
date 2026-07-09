@@ -38,8 +38,10 @@ import {
   getLibraryAssetUrl,
   updateLibraryItem,
   uploadLibraryAsset,
+  findSimilarLibraryImage,
 } from "@/lib/services";
 import { generateLibraryContent } from "@/lib/ai.functions";
+import { visibleTags, computeImagePHashFromFile, phashToTag } from "@/lib/image-hash";
 
 import {
   fetchAgencyDocuments,
@@ -48,9 +50,12 @@ import {
   uploadGeneralDocument,
   deleteLeadDocument,
   fetchItineraryAttachmentMap,
+  fetchLibraryImageAttachmentMap,
+  libraryImageName,
   documentKey,
   type AgencyDocument,
   type DocumentOrigin,
+  type ItineraryAttachment,
 } from "@/lib/lead-documents";
 import { formatCurrency } from "@/lib/ui";
 import type { LibraryItem, LibraryItemType } from "@/lib/types";
@@ -87,18 +92,37 @@ function LibraryPage() {
     if (files.length === 0) return;
     setUploadingImg(true);
     try {
+      let added = 0;
+      let skipped = 0;
       for (const file of files) {
+        // Duplicidade por semelhança visual: evita imagens repetidas na biblioteca.
+        const dup = await findSimilarLibraryImage({ file, title: file.name });
+        if (dup) {
+          const msg = dup.identical
+            ? `"${file.name}" é praticamente idêntica a uma imagem já existente ("${dup.item.title}"). Enviar mesmo assim?`
+            : dup.similar
+              ? `"${file.name}" é muito parecida com uma imagem já existente ("${dup.item.title}"). Enviar mesmo assim?`
+              : `Já existe uma imagem deste local ("${dup.item.title}"). Enviar mesmo assim?`;
+          if (!window.confirm(msg)) {
+            skipped++;
+            continue;
+          }
+        }
         const up = await uploadLibraryAsset(file);
         if (!up) continue;
         const title = file.name.replace(/\.[^.]+$/, "");
+        const phash = await computeImagePHashFromFile(file).catch(() => null);
         await createLibraryItem({
           type: "image",
           title,
           file_url: up.path,
           file_name: up.name,
+          tags: phash ? [phashToTag(phash)] : [],
         });
+        added++;
       }
-      toast.success(files.length === 1 ? "Imagem enviada." : `${files.length} imagens enviadas.`);
+      if (added > 0) toast.success(added === 1 ? "Imagem enviada." : `${added} imagens enviadas.`);
+      if (skipped > 0) toast.info(skipped === 1 ? "1 imagem ignorada." : `${skipped} imagens ignoradas.`);
       qc.invalidateQueries({ queryKey: ["library"] });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
@@ -167,6 +191,16 @@ function LibraryPage() {
     enabled: !isDocuments,
   });
 
+  const isImageTab = tab === "image";
+  const { data: imageAttachmentMap = {} } = useQuery({
+    queryKey: ["library", "image", "attachments"],
+    queryFn: fetchLibraryImageAttachmentMap,
+    enabled: isImageTab,
+    placeholderData: keepPreviousData,
+  });
+  const lockedFor = (item: LibraryItem): ItineraryAttachment[] =>
+    isImageTab ? imageAttachmentMap[libraryImageName(item)] ?? [] : [];
+
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library"] });
   const active = TABS.find((t) => t.key === tab)!;
 
@@ -192,6 +226,15 @@ function LibraryPage() {
   });
 
   async function remove(item: LibraryItem) {
+    const locked = lockedFor(item);
+    if (locked.length > 0) {
+      toast.error(
+        `Esta imagem está anexada ${
+          locked.length === 1 ? "ao roteiro" : "aos roteiros"
+        } "${locked.map((a) => a.title).join('", "')}". Remova o anexo pelo roteiro antes de excluí-la.`,
+      );
+      return;
+    }
     const ok = await confirm({
       title: "Excluir item?",
       description: `"${item.title}" será removido da biblioteca.`,
@@ -209,7 +252,7 @@ function LibraryPage() {
     } else toast.error("Erro ao excluir item.");
   }
 
-  const isImageTab = tab === "image";
+
 
   function toggleSelectMode() {
     setSelectMode((v) => !v);
@@ -226,13 +269,14 @@ function LibraryPage() {
   }
 
   function toggleAll() {
+    const selectable = items.filter((i) => lockedFor(i).length === 0);
     setSelected((prev) =>
-      prev.size === items.length ? new Set() : new Set(items.map((i) => i.id)),
+      prev.size === selectable.length ? new Set() : new Set(selectable.map((i) => i.id)),
     );
   }
 
   async function bulkRemove() {
-    const chosen = items.filter((i) => selected.has(i.id));
+    const chosen = items.filter((i) => selected.has(i.id) && lockedFor(i).length === 0);
     if (chosen.length === 0) return;
     const ok = await confirm({
       title: `Excluir ${chosen.length} ${chosen.length === 1 ? "imagem" : "imagens"}?`,
@@ -391,17 +435,21 @@ function LibraryPage() {
         <p className="text-muted-foreground">Nenhum item cadastrado nesta seção.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <LibraryCard
-              key={item.id}
-              item={item}
-              onEdit={() => setEditing(item)}
-              onRemove={() => remove(item)}
-              selectable={selectMode && isImageTab}
-              selected={selected.has(item.id)}
-              onToggleSelect={() => toggleItem(item.id)}
-            />
-          ))}
+          {items.map((item) => {
+            const locked = lockedFor(item);
+            return (
+              <LibraryCard
+                key={item.id}
+                item={item}
+                onEdit={() => setEditing(item)}
+                onRemove={() => remove(item)}
+                selectable={selectMode && isImageTab && locked.length === 0}
+                selected={selected.has(item.id)}
+                onToggleSelect={() => toggleItem(item.id)}
+                lockedIn={locked}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -500,6 +548,7 @@ function LibraryCard({
   selectable = false,
   selected = false,
   onToggleSelect,
+  lockedIn = [],
 }: {
   item: LibraryItem;
   onEdit: () => void;
@@ -507,9 +556,16 @@ function LibraryCard({
   selectable?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
+  lockedIn?: ItineraryAttachment[];
 }) {
   const img = useAssetUrl(item);
   const [zoom, setZoom] = useState(false);
+  const locked = lockedIn.length > 0;
+  const lockHint = locked
+    ? `Anexada ${lockedIn.length === 1 ? "ao roteiro" : "aos roteiros"} "${lockedIn
+        .map((a) => a.title)
+        .join('", "')}". Remova pelo roteiro para excluir.`
+    : "";
   return (
     <div
       className={`group flex flex-col overflow-hidden rounded-2xl border bg-card transition ${
@@ -572,7 +628,15 @@ function LibraryCard({
             )}
           </div>
         )}
-        {!selectable && (
+        {locked && (
+          <div
+            className="absolute left-2 top-2 flex items-center gap-1 rounded-lg bg-card/90 px-2 py-1 text-xs font-medium text-destructive"
+            title={lockHint}
+          >
+            <Lock className="h-3.5 w-3.5" /> Em uso
+          </div>
+        )}
+        {!selectable && !locked && (
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
           <button onClick={onEdit} className="rounded-lg bg-card/90 p-1.5 text-foreground hover:bg-card">
             <Pencil className="h-4 w-4" />
@@ -582,6 +646,12 @@ function LibraryCard({
           </button>
         </div>
         )}
+        {!selectable && locked && (
+          <div className="absolute right-2 top-2 rounded-lg bg-card/90 p-1.5 text-destructive" title={lockHint}>
+            <Lock className="h-4 w-4" />
+          </div>
+        )}
+
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-semibold">{item.title}</h3>
@@ -593,9 +663,9 @@ function LibraryCard({
         {item.description && (
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
         )}
-        {item.tags && item.tags.length > 0 && (
+        {visibleTags(item.tags).length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {item.tags.slice(0, 4).map((t) => (
+            {visibleTags(item.tags).slice(0, 4).map((t) => (
               <span key={t} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-primary">
                 {t}
               </span>

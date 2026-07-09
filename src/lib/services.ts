@@ -15,6 +15,15 @@ import type {
   Transaction,
   Voucher,
 } from "@/lib/types";
+import {
+  computeImagePHashFromFile,
+  computeImagePHashFromUrl,
+  getPhashFromTags,
+  hammingHex,
+  phashToTag,
+  IDENTICAL_MAX_DISTANCE,
+  SIMILAR_MAX_DISTANCE,
+} from "@/lib/image-hash";
 
 // ── Cache de contexto da agência ───────────────────────────────
 let _agencyId: string | null = null;
@@ -1158,7 +1167,10 @@ export async function saveImageFileToLibrary(
     if (!up) return null;
     const title = (info.title || "").trim() || file.name.replace(/\.[^.]+$/, "");
     const location = (info.location || "").trim();
-    const tags = Array.from(new Set([normalizeText(location)].filter(Boolean)));
+    const phash = await computeImagePHashFromFile(file).catch(() => null);
+    const tags = Array.from(
+      new Set([normalizeText(location), phash ? phashToTag(phash) : ""].filter(Boolean)),
+    );
     return await createLibraryItem({
       type: "image",
       title,
@@ -1174,6 +1186,58 @@ export async function saveImageFileToLibrary(
     return null;
   }
 }
+
+// Verifica se já existe uma imagem VISUALMENTE semelhante na biblioteca,
+// comparando o hash perceptual (dHash) — não apenas nome/tamanho. Faz fallback
+// para correspondência por local/título. Usa hashes já salvos nas tags e, para
+// imagens antigas sem hash, calcula sob demanda (limitado, best-effort).
+export async function findSimilarLibraryImage(params: {
+  file: File;
+  location?: string;
+  title?: string;
+}): Promise<{ item: LibraryItem; identical: boolean; similar: boolean } | null> {
+  const { file, location, title } = params;
+  let items: LibraryItem[] = [];
+  try {
+    items = await fetchLibraryItems("image");
+  } catch {
+    return null;
+  }
+  if (items.length === 0) return null;
+
+  const fileHash = await computeImagePHashFromFile(file).catch(() => null);
+  if (fileHash) {
+    let best: { item: LibraryItem; dist: number } | null = null;
+    let computed = 0;
+    for (const it of items) {
+      let hash = getPhashFromTags(it.tags);
+      if (!hash && computed < 30 && it.file_url && /\.(png|jpe?g|gif|webp|bmp|avif)$/i.test(it.file_url)) {
+        const url = await getLibraryAssetUrl(it.file_url);
+        if (url) {
+          hash = await computeImagePHashFromUrl(url).catch(() => null);
+          computed++;
+        }
+      }
+      if (!hash) continue;
+      const dist = hammingHex(fileHash, hash);
+      if (dist <= SIMILAR_MAX_DISTANCE && (!best || dist < best.dist)) best = { item: it, dist };
+    }
+    if (best) {
+      return { item: best.item, identical: best.dist <= IDENTICAL_MAX_DISTANCE, similar: true };
+    }
+  }
+
+  // Fallback: mesmo local/título.
+  const key = normalizeText(location || title || "");
+  if (key) {
+    const samePlace = items.find(
+      (it) => normalizeText(it.location || "") === key || normalizeText(it.title || "") === key,
+    );
+    if (samePlace) return { item: samePlace, identical: false, similar: false };
+  }
+  return null;
+}
+
 
 // Verifica se já existe uma imagem na biblioteca referente ao mesmo lugar
 // (mesma location/título) e/ou idêntica (mesmo tamanho de arquivo).
