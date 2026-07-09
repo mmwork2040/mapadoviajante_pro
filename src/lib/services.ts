@@ -1523,6 +1523,7 @@ export async function fetchNotificationsPage(opts: {
   return { items: (data as import("@/lib/types").AppNotification[]) || [], total: count ?? 0 };
 }
 
+export async function markNotificationRead(id: string, read = true): Promise<boolean> {
   const { error } = await supabase.from("crm_notifications").update({ read }).eq("id", id);
   if (error) {
     console.error("markNotificationRead:", error);
