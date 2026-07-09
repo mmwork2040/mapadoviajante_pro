@@ -1107,6 +1107,41 @@ export async function saveExternalImageToLibrary(
   }
 }
 
+// Baixa uma imagem externa de uma ATIVIDADE/atrativo e salva na biblioteca,
+// associada ao local da atividade e ao destino do roteiro (tags) para
+// reutilização futura. Best-effort: nunca lança.
+export async function saveActivityImageToLibrary(
+  imageUrl: string,
+  activityLocation: string,
+  destination: string,
+): Promise<string | null> {
+  try {
+    const res = await fetch(imageUrl);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const ext = (blob.type.split("/")[1] || "jpg").replace(/[^a-z0-9]/gi, "") || "jpg";
+    const safe = sanitizeFileName(activityLocation || destination) || "atracao";
+    const file = new File([blob], `${safe}.${ext}`, { type: blob.type || "image/jpeg" });
+    const up = await uploadLibraryAsset(file);
+    if (!up) return null;
+    const tags = Array.from(
+      new Set([normalizeText(activityLocation), normalizeText(destination)].filter(Boolean)),
+    );
+    await createLibraryItem({
+      type: "image",
+      title: activityLocation || destination,
+      location: activityLocation || destination,
+      file_url: up.path,
+      file_name: up.name,
+      tags,
+    });
+    return (await getLibraryAssetUrl(up.path)) ?? up.path;
+  } catch (e) {
+    console.error("saveActivityImageToLibrary:", e);
+    return null;
+  }
+}
+
 // Envia uma imagem escolhida pelo usuário para a biblioteca, associada ao
 // destino, e retorna uma URL exibível. Lança erro em caso de falha.
 export async function uploadImageToLibraryForDestination(

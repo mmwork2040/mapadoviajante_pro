@@ -37,10 +37,13 @@ import {
   fetchAiConfig,
   reorderDayActivitiesByTime,
   resolveDisplayImageUrl,
+  saveActivityImageToLibrary,
+  searchLibraryImageForDestination,
   updateItinerary,
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
+import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner } from "@/lib/ai.functions";
 import {
   DOCUMENT_CATEGORIES,
@@ -1802,6 +1805,7 @@ function mapActivityType(t?: string): string {
 function CompleteWithAI({ it, onDone }: { it: Itinerary; onDone: () => void }) {
   const [loading, setLoading] = useState(false);
   const plan = useServerFn(itineraryPlanner);
+  const downloadImage = useServerFn(downloadDestinationImage);
 
   // Só faz sentido em rascunho e com datas + destino definidos.
   if (it.status && it.status !== "draft") return null;
@@ -1852,6 +1856,8 @@ ${dias || "(nenhum dia ainda)"}`;
       let createdActs = 0;
       let updatedActs = 0;
       const baseCount = it.days?.length || 0;
+      // Locais das atividades geradas pela IA, para buscar e arquivar imagens.
+      const activityLocations = new Set<string>();
 
       for (let i = 0; i < res.days.length; i++) {
         const d = res.days[i];
@@ -1879,6 +1885,7 @@ ${dias || "(nenhum dia ainda)"}`;
               sort_order: j,
             });
             createdActs++;
+            if (a.location && a.location.trim()) activityLocations.add(a.location.trim());
           } catch {
             /* ignora atividade individual com erro */
           }
@@ -1899,15 +1906,38 @@ ${dias || "(nenhum dia ainda)"}`;
             ...(fields.cost !== undefined ? { cost: fields.cost && fields.cost > 0 ? fields.cost : null } : {}),
           });
           updatedActs++;
+          if (fields.location && fields.location.trim()) activityLocations.add(fields.location.trim());
         } catch {
           /* ignora atualização individual com erro */
         }
       }
 
+      // Busca e arquiva na biblioteca imagens dos atrativos das atividades
+      // geradas pela IA, com referência ao destino, para uso em roteiros futuros.
+      let savedImgs = 0;
+      const locs = Array.from(activityLocations).slice(0, 8);
+      for (const loc of locs) {
+        try {
+          const term = `${loc}, ${it.destination}`;
+          // Só busca uma nova imagem se ainda não houver na biblioteca.
+          const existing = await searchLibraryImageForDestination(loc);
+          if (existing) continue;
+          const res2 = await downloadImage({ data: { destination: term } });
+          if (res2?.imageUrl) {
+            const saved = await saveActivityImageToLibrary(res2.imageUrl, loc, it.destination || "");
+            if (saved) savedImgs++;
+          }
+        } catch {
+          /* imagem opcional: ignora falhas individuais */
+        }
+      }
+
       if (createdDays > 0 || updatedActs > 0) {
+
         toast.success(
           `Roteiro complementado: ${createdDays} dia(s), ${createdActs} atividade(s)` +
-            (updatedActs ? ` e ${updatedActs} atualização(ões)` : "") + ".",
+            (updatedActs ? ` e ${updatedActs} atualização(ões)` : "") +
+            (savedImgs ? ` · ${savedImgs} imagem(ns) salva(s) na biblioteca` : "") + ".",
         );
         onDone();
       } else {
