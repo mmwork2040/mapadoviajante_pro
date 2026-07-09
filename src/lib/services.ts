@@ -44,7 +44,7 @@ export async function loadAgencyContext(): Promise<AgencyMember | null> {
 
   const { data: members, error } = await supabase
     .from("agency_members")
-    .select("id, agency_id, name, email, phone, role, avatar_color, is_active, user_id")
+    .select("id, agency_id, name, email, phone, role, avatar_color, is_active, user_id, pref_leads_mine")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .limit(1);
