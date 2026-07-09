@@ -224,13 +224,30 @@ function ItineraryDetailPage() {
         return;
       }
 
+      // 3. Build a summary of the days/items already in the itinerary so the AI can
+      //    avoid date/time conflicts and duplicate items during its analysis.
+      const existingContext = (it?.days || [])
+        .slice()
+        .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
+        .map((d) => {
+          const header = `Dia ${d.day_number ?? "?"}${d.date ? ` (${d.date})` : ""}${d.title ? ` - ${d.title}` : ""}`;
+          const acts = (d.activities || [])
+            .map((a) => `  • ${a.time ? `${a.time} ` : ""}[${a.type || "item"}] ${a.title}${a.location ? ` @ ${a.location}` : ""}`)
+            .join("\n");
+          return acts ? `${header}\n${acts}` : `${header}\n  (sem itens)`;
+        })
+        .join("\n");
+
       // 3. Let the AI read the document and extract all activities.
       const base64 = await fileToBase64(file);
-      const items: ExtractedDocData[] = await extractActivities({ data: { fileBase64: base64, mime: file.type } });
+      const items: ExtractedDocData[] = await extractActivities({
+        data: { fileBase64: base64, mime: file.type, context: existingContext || undefined },
+      });
       if (!items.length) {
-        toast.error("Nenhuma atividade encontrada no documento.");
+        toast.error("Nenhuma atividade nova encontrada no documento (ou já constava no roteiro).");
         return;
       }
+
 
       // 3.1 Date helpers to fit the extracted items into the right days.
       const isISO = (v?: string | null): v is string => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
