@@ -1240,17 +1240,15 @@ function DayCard({
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          placeholder={newType === "image" ? "Legenda (opcional)…" : "Atividade…"}
+          placeholder="Atividade…"
           className="flex-1 rounded-lg border border-input bg-background px-3 py-1.5 text-sm outline-none focus:border-primary"
         />
-        <input ref={imgRef} type="file" accept="image/*" onChange={handleImageFile} className="hidden" />
         <button
           onClick={addActivity}
-          disabled={uploadingImg}
-          title={newType === "image" ? "Escolher imagem para anexar" : "Adicionar item"}
+          title="Adicionar item"
           className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-60"
         >
-          {uploadingImg ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          <Plus className="h-4 w-4" />
         </button>
       </div>
 
