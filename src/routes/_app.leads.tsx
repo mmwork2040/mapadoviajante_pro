@@ -384,6 +384,17 @@ function LeadCard({
           </span>
         )}
       </div>
+      {assignee && (
+        <div className="mt-2 -mr-12 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <span
+            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[9px] font-bold text-white"
+            style={{ backgroundColor: assignee.avatar_color || "#ff7a1a" }}
+          >
+            {initials(assignee.name)}
+          </span>
+          <span className="truncate">{assignee.name}</span>
+        </div>
+      )}
     </div>
   );
 }
