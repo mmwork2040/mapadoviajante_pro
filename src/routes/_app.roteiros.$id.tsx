@@ -1906,12 +1906,34 @@ ${dias || "(nenhum dia ainda)"}`;
             ...(fields.cost !== undefined ? { cost: fields.cost && fields.cost > 0 ? fields.cost : null } : {}),
           });
           updatedActs++;
+          if (fields.location && fields.location.trim()) activityLocations.add(fields.location.trim());
         } catch {
           /* ignora atualização individual com erro */
         }
       }
 
+      // Busca e arquiva na biblioteca imagens dos atrativos das atividades
+      // geradas pela IA, com referência ao destino, para uso em roteiros futuros.
+      let savedImgs = 0;
+      const locs = Array.from(activityLocations).slice(0, 8);
+      for (const loc of locs) {
+        try {
+          const term = `${loc}, ${it.destination}`;
+          // Só busca uma nova imagem se ainda não houver na biblioteca.
+          const existing = await searchLibraryImageForDestination(loc);
+          if (existing) continue;
+          const res2 = await downloadImage({ data: { destination: term } });
+          if (res2?.imageUrl) {
+            const saved = await saveActivityImageToLibrary(res2.imageUrl, loc, it.destination || "");
+            if (saved) savedImgs++;
+          }
+        } catch {
+          /* imagem opcional: ignora falhas individuais */
+        }
+      }
+
       if (createdDays > 0 || updatedActs > 0) {
+
         toast.success(
           `Roteiro complementado: ${createdDays} dia(s), ${createdActs} atividade(s)` +
             (updatedActs ? ` e ${updatedActs} atualização(ões)` : "") + ".",
