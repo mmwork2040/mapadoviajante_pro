@@ -38,9 +38,10 @@ import {
   getLibraryAssetUrl,
   updateLibraryItem,
   uploadLibraryAsset,
+  findSimilarLibraryImage,
 } from "@/lib/services";
 import { generateLibraryContent } from "@/lib/ai.functions";
-import { visibleTags } from "@/lib/image-hash";
+import { visibleTags, computeImagePHashFromFile, phashToTag } from "@/lib/image-hash";
 
 import {
   fetchAgencyDocuments,
