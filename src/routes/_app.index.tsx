@@ -324,6 +324,14 @@ function DashboardPage() {
                 </button>
               ))}
             </div>
+            <button
+              onClick={toggleOnlyMineTasks}
+              className={`whitespace-nowrap rounded-full px-3 py-1 text-xs font-medium transition ${
+                onlyMineTasks ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {onlyMineTasks ? "Minhas tarefas" : "Todas"}
+            </button>
             <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary">
               {todayTasks.length}
             </span>
