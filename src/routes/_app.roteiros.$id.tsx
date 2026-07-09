@@ -1338,6 +1338,7 @@ function ActivityRow({
   onAutoEditDone?: () => void;
 }) {
   const qc = useQueryClient();
+  const confirm = useConfirm();
 
   const done = activity.type === "done";
 
