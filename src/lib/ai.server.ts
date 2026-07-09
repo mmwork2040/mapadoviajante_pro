@@ -218,29 +218,34 @@ export async function extractDocumentActivities(
   cfg: ProviderConfig,
   fileBase64: string,
   mime: string,
+  existingContext?: string,
 ): Promise<ExtractedDocData[]> {
   const isImage = mime.startsWith("image/");
   const dataUrl = `data:${mime};base64,${fileBase64}`;
+  const prompt =
+    MULTI_EXTRACTION_PROMPT +
+    (existingContext && existingContext.trim() ? EXISTING_CONTEXT_PROMPT(existingContext.trim()) : "");
   let text = "";
 
   if (cfg.provider === "openai") {
     const filePart = isImage
       ? { type: "image_url", image_url: { url: dataUrl } }
       : { type: "file", file: { filename: "documento.pdf", file_data: dataUrl } };
-    text = await callOpenAI(cfg, [{ type: "text", text: MULTI_EXTRACTION_PROMPT }, filePart]);
+    text = await callOpenAI(cfg, [{ type: "text", text: prompt }, filePart]);
   } else if (cfg.provider === "anthropic") {
     const filePart = isImage
       ? { type: "image", source: { type: "base64", media_type: mime, data: fileBase64 } }
       : { type: "document", source: { type: "base64", media_type: mime, data: fileBase64 } };
-    text = await callAnthropic(cfg, [{ type: "text", text: MULTI_EXTRACTION_PROMPT }, filePart]);
+    text = await callAnthropic(cfg, [{ type: "text", text: prompt }, filePart]);
   } else if (cfg.provider === "google") {
     text = await callGoogle(cfg, [
-      { text: MULTI_EXTRACTION_PROMPT },
+      { text: prompt },
       { inline_data: { mime_type: mime, data: fileBase64 } },
     ]);
   } else {
     throw new Error("Provedor não suportado.");
   }
+
 
   return parseJsonArrayLoose(text).filter((x) => x && (x.title || x.hotel_name || x.flight_number || x.description));
 }
