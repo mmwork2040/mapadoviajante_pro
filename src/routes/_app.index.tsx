@@ -30,6 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { QueryError } from "@/components/QueryError";
+import { useAuth, isAdminUser } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/")({
   component: DashboardPage,
