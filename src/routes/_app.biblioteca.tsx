@@ -915,7 +915,7 @@ function DocumentsPanel() {
       toast.error(
         `Este documento está anexado ${
           attachedIn.length === 1 ? "ao roteiro" : "aos roteiros"
-        } "${attachedIn.join('", "')}". Exclua o anexo pelo roteiro antes de removê-lo da biblioteca.`,
+        } "${attachedIn.map((a) => a.title).join('", "')}". Exclua o anexo pelo roteiro antes de removê-lo da biblioteca.`,
       );
       return;
     }
