@@ -183,6 +183,7 @@ function ItineraryDetailPage() {
   
   const [pendingDayId, setPendingDayId] = useState<string | null>(null);
   const [pendingNewDay, setPendingNewDay] = useState(false);
+  const [autoEditId, setAutoEditId] = useState<string | null>(null);
   const { data: it, isLoading, isError, refetch } = useQuery({
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
