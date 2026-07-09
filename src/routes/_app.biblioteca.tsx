@@ -170,6 +170,16 @@ function LibraryPage() {
     enabled: !isDocuments,
   });
 
+  const isImageTab = tab === "image";
+  const { data: imageAttachmentMap = {} } = useQuery({
+    queryKey: ["library", "image", "attachments"],
+    queryFn: fetchLibraryImageAttachmentMap,
+    enabled: isImageTab,
+    placeholderData: keepPreviousData,
+  });
+  const lockedFor = (item: LibraryItem): ItineraryAttachment[] =>
+    isImageTab ? imageAttachmentMap[libraryImageName(item)] ?? [] : [];
+
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library"] });
   const active = TABS.find((t) => t.key === tab)!;
 
