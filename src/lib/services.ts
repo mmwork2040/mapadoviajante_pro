@@ -1486,6 +1486,43 @@ export async function fetchNotifications(): Promise<import("@/lib/types").AppNot
   return (data as import("@/lib/types").AppNotification[]) || [];
 }
 
+export async function fetchNotificationsPage(opts: {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  filter?: "all" | "unread" | "read";
+  order?: "desc" | "asc";
+}): Promise<{ items: import("@/lib/types").AppNotification[]; total: number }> {
+  if (!_memberId) await loadAgencyContext();
+  if (!_memberId) return { items: [], total: 0 };
+  const page = Math.max(1, opts.page ?? 1);
+  const pageSize = opts.pageSize ?? 15;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("crm_notifications")
+    .select("*, actor:agency_members!crm_notifications_actor_id_fkey(id, name, avatar_color)", {
+      count: "exact",
+    })
+    .eq("recipient_id", _memberId);
+
+  if (opts.filter === "unread") query = query.eq("read", false);
+  else if (opts.filter === "read") query = query.eq("read", true);
+
+  const term = opts.search?.trim();
+  if (term) query = query.or(`title.ilike.%${term}%,body.ilike.%${term}%`);
+
+  query = query.order("created_at", { ascending: opts.order === "asc" }).range(from, to);
+
+  const { data, error, count } = await query;
+  if (error) {
+    console.error("fetchNotificationsPage:", error);
+    return { items: [], total: 0 };
+  }
+  return { items: (data as import("@/lib/types").AppNotification[]) || [], total: count ?? 0 };
+}
+
 export async function markNotificationRead(id: string, read = true): Promise<boolean> {
   const { error } = await supabase.from("crm_notifications").update({ read }).eq("id", id);
   if (error) {

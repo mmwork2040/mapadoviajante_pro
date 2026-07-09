@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useBackButtonClose } from "@/hooks/useBackButtonClose";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -91,6 +92,7 @@ function activityMeta(type?: string | null) {
 }
 
 export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose: () => void }) {
+  useBackButtonClose(true, onClose);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const confirm = useConfirm();

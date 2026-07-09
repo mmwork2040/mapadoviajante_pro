@@ -1007,6 +1007,70 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_notifications: {
+        Row: {
+          actor_id: string | null
+          agency_id: string
+          body: string | null
+          created_at: string
+          id: string
+          lead_id: string | null
+          link: string | null
+          read: boolean
+          recipient_id: string
+          title: string
+          type: string
+        }
+        Insert: {
+          actor_id?: string | null
+          agency_id: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          link?: string | null
+          read?: boolean
+          recipient_id: string
+          title: string
+          type?: string
+        }
+        Update: {
+          actor_id?: string | null
+          agency_id?: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          link?: string | null
+          read?: boolean
+          recipient_id?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_notifications_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "agency_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_notifications_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "agency_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_tasks: {
         Row: {
           agency_id: string
