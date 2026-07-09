@@ -244,6 +244,7 @@ function LeadsPage() {
                       <LeadCard
                         key={l.id}
                         lead={l}
+                        assignee={team.find((m) => m.id === l.assigned_to) || null}
                         itineraryStatus={itineraryStatuses[l.id]}
                         dragging={dragId === l.id}
                         onDragStart={() => setDragId(l.id)}
