@@ -174,6 +174,16 @@ function LeadsPage() {
             className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary sm:w-56"
           />
           <button
+            onClick={toggleOnlyMine}
+            className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+              onlyMine
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-input hover:bg-muted"
+            }`}
+          >
+            <User className="h-4 w-4" /> {onlyMine ? "Meus leads" : "Todos os leads"}
+          </button>
+          <button
             onClick={() => setOpen(true)}
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
           >
