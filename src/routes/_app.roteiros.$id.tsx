@@ -1223,9 +1223,7 @@ function ActivityRow({
   leadId: string | null;
   itineraryId: string;
 }) {
-
-
-
+  const qc = useQueryClient();
 
   const done = activity.type === "done";
 
