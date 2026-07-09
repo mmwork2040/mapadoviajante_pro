@@ -668,6 +668,7 @@ function ItineraryDetailPage() {
             sort_order: targetIndex,
           });
           if (!created) throw new Error("erro");
+          setAutoEditId(created.id);
           list.splice(Math.max(0, targetIndex), 0, created);
           await Promise.all(
             list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
