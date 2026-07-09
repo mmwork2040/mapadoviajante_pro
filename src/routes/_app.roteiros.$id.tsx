@@ -108,6 +108,7 @@ const ACTIVITY_TYPES: {
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
+TYPE_META.image = { label: "Imagem", icon: ImageIcon };
 
 function getNextDayNumber(days?: ItineraryDay[]) {
   return Math.max(0, ...(days || []).map((day) => day.day_number || 0)) + 1;
