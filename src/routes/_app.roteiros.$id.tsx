@@ -1259,7 +1259,16 @@ function ActivityRow({
         <span className="flex gap-1">
           <button
             onClick={async () => {
+              // Deleting an activity also removes any documents attached to it
+              // from the library (they only existed within this roteiro).
+              try {
+                const attached = await fetchActivityDocuments(activity.id);
+                for (const d of attached) await deleteLeadDocument(d);
+              } catch {
+                // Non-fatal: still remove the activity.
+              }
               await deleteItineraryActivity(activity.id);
+              qc.invalidateQueries({ queryKey: ["library", "documents"] });
               onChange();
             }}
             className="text-muted-foreground hover:text-destructive"
