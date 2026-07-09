@@ -680,7 +680,7 @@ function ItineraryDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 
-      <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-card sm:flex-row sm:items-stretch">
+      <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card sm:flex-row sm:items-stretch">
         <div className="relative h-40 w-full shrink-0 overflow-hidden bg-muted/60 sm:h-auto sm:w-56">
           <img
             src={coverUrl || roteiroFallback}
