@@ -211,8 +211,9 @@ export const analyzeImageActivityFn = createServerFn({ method: "POST" })
     );
   });
 
-
+type LibraryContentInput = {
   itemType: string;
+
   title: string;
   location?: string;
   description?: string;
