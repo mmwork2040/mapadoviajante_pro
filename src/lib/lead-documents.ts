@@ -232,7 +232,7 @@ export async function fetchAgencyDocuments(): Promise<AgencyDocument[]> {
   return (data as unknown as AgencyDocument[]) || [];
 }
 
-/** Find an existing general (repository) document with the same name and size. */
+/** Find any existing document in the agency with the same name and size (avoids duplicates). */
 export async function findDuplicateGeneralDocument(
   agencyId: string,
   name: string,
@@ -242,9 +242,6 @@ export async function findDuplicateGeneralDocument(
     .from("crm_lead_documents")
     .select("*")
     .eq("agency_id", agencyId)
-    .is("lead_id", null)
-    .is("itinerary_id", null)
-    .is("activity_id", null)
     .eq("name", name);
   q = size == null ? q.is("size", null) : q.eq("size", size);
   const { data, error } = await q.limit(1);
