@@ -105,6 +105,56 @@ function LibraryPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const [itinFiles, setItinFiles] = useState<File[]>([]);
+  const [itinDest, setItinDest] = useState("");
+  const [uploadingItin, setUploadingItin] = useState(false);
+  const itinInputRef = useRef<HTMLInputElement>(null);
+
+  function handleSelectItinFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    const invalid = files.filter((f) => f.type !== "application/pdf" && !/\.pdf$/i.test(f.name));
+    if (invalid.length > 0) {
+      toast.error("Envie apenas arquivos PDF.");
+      return;
+    }
+    setItinFiles(files);
+  }
+
+  async function confirmItinUpload() {
+    const dest = itinDest.trim();
+    if (!dest) {
+      toast.error("Informe o destino do roteiro modelo.");
+      return;
+    }
+    setUploadingItin(true);
+    try {
+      for (const file of itinFiles) {
+        const up = await uploadLibraryAsset(file);
+        if (!up) continue;
+        const title = file.name.replace(/\.[^.]+$/, "");
+        await createLibraryItem({
+          type: "itinerary",
+          title,
+          location: dest,
+          file_url: up.path,
+          file_name: up.name,
+        });
+      }
+      toast.success(
+        itinFiles.length === 1 ? "Roteiro modelo enviado." : `${itinFiles.length} roteiros modelo enviados.`,
+      );
+      qc.invalidateQueries({ queryKey: ["library"] });
+      setItinFiles([]);
+      setItinDest("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar o arquivo.");
+    } finally {
+      setUploadingItin(false);
+    }
+  }
+
   const isDocuments = tab === "documents";
 
   const { data: items = [], isLoading, isError, refetch } = useQuery({
