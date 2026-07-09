@@ -1,5 +1,7 @@
 import { useEffect, useRef } from "react";
 
+let suppressNextPopstate = 0;
+
 /**
  * Faz o botão "voltar" do dispositivo (ou navegador) fechar o modal aberto
  * em vez de navegar para a página anterior. Enquanto o modal estiver aberto,
@@ -13,15 +15,23 @@ export function useBackButtonClose(open: boolean, onClose: () => void) {
   useEffect(() => {
     if (!open || typeof window === "undefined") return;
 
-    window.history.pushState({ __modal: true }, "");
+    const marker = `modal-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    window.history.pushState({ ...(window.history.state || {}), __modal: marker }, "");
 
-    const handler = () => onCloseRef.current();
+    const handler = () => {
+      if (suppressNextPopstate > 0) {
+        suppressNextPopstate -= 1;
+        return;
+      }
+      onCloseRef.current();
+    };
     window.addEventListener("popstate", handler);
 
     return () => {
       window.removeEventListener("popstate", handler);
       // Fechado programaticamente (não pelo botão voltar): remove a entrada extra.
-      if (window.history.state?.__modal) {
+      if (window.history.state?.__modal === marker) {
+        suppressNextPopstate += 1;
         window.history.back();
       }
     };
