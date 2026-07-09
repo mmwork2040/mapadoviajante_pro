@@ -224,13 +224,30 @@ function ItineraryDetailPage() {
         return;
       }
 
+      // 3. Build a summary of the days/items already in the itinerary so the AI can
+      //    avoid date/time conflicts and duplicate items during its analysis.
+      const existingContext = (it?.days || [])
+        .slice()
+        .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
+        .map((d) => {
+          const header = `Dia ${d.day_number ?? "?"}${d.date ? ` (${d.date})` : ""}${d.title ? ` - ${d.title}` : ""}`;
+          const acts = (d.activities || [])
+            .map((a) => `  • ${a.time ? `${a.time} ` : ""}[${a.type || "item"}] ${a.title}${a.location ? ` @ ${a.location}` : ""}`)
+            .join("\n");
+          return acts ? `${header}\n${acts}` : `${header}\n  (sem itens)`;
+        })
+        .join("\n");
+
       // 3. Let the AI read the document and extract all activities.
       const base64 = await fileToBase64(file);
-      const items: ExtractedDocData[] = await extractActivities({ data: { fileBase64: base64, mime: file.type } });
+      const items: ExtractedDocData[] = await extractActivities({
+        data: { fileBase64: base64, mime: file.type, context: existingContext || undefined },
+      });
       if (!items.length) {
-        toast.error("Nenhuma atividade encontrada no documento.");
+        toast.error("Nenhuma atividade nova encontrada no documento (ou já constava no roteiro).");
         return;
       }
+
 
       // 3.1 Date helpers to fit the extracted items into the right days.
       const isISO = (v?: string | null): v is string => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
@@ -320,11 +337,27 @@ function ItineraryDetailPage() {
       }
 
       // 3.2 Distribute each item to the day that matches its date (fallback: dropped day).
+      // Safety net against duplicates: skip items whose title+time already exist in the target day.
+      const norm = (s?: string | null) => (s || "").trim().toLowerCase();
+      const existingKeys = new Set<string>();
+      for (const d of it?.days || []) {
+        for (const a of d.activities || []) {
+          existingKeys.add(`${d.id}|${norm(a.title)}|${norm(a.time)}`);
+        }
+      }
       const orderByDay = new Map<string, number>();
       const usedDayIds = new Set<string>();
       let firstActivityId: string | null = null;
+      let skipped = 0;
       for (const data of items) {
         const targetId = (isISO(data.date) && dateToDayId.get(data.date)) || dayId;
+        const title = data.title || data.hotel_name || data.flight_number || "Item importado";
+        const dupKey = `${targetId}|${norm(title)}|${norm(data.time)}`;
+        if (existingKeys.has(dupKey)) {
+          skipped++;
+          continue;
+        }
+        existingKeys.add(dupKey);
         if (!orderByDay.has(targetId)) {
           const dd = (it?.days || []).find((d) => d.id === targetId);
           orderByDay.set(targetId, dd?.activities?.length || 0);
@@ -340,7 +373,7 @@ function ItineraryDetailPage() {
         ].filter(Boolean);
         const created = await createItineraryActivity({
           day_id: targetId,
-          title: data.title || data.hotel_name || data.flight_number || "Item importado",
+          title,
           time: data.time || null,
           duration: data.duration || null,
           location: data.location || null,
@@ -353,6 +386,7 @@ function ItineraryDetailPage() {
         usedDayIds.add(targetId);
         if (created && !firstActivityId) firstActivityId = created.id;
       }
+
 
       // 4. Persist the document so it can't be re-imported into this day.
       try {
@@ -371,7 +405,14 @@ function ItineraryDetailPage() {
       for (const usedId of usedDayIds) {
         await reorderDayActivitiesByTime(usedId);
       }
-      toast.success(`${items.length} atividade(s) organizada(s) por data e hora a partir do documento.`);
+      const added = items.length - skipped;
+      if (added > 0) {
+        toast.success(
+          `${added} atividade(s) organizada(s) por data e hora${skipped ? ` (${skipped} já existente(s) ignorada(s))` : ""}.`,
+        );
+      } else {
+        toast.info("Nenhuma novidade: os itens do documento já constavam no roteiro.");
+      }
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");

@@ -4,6 +4,7 @@ import type { ExtractedDocData } from "@/lib/types";
 
 type TestInput = { provider: string; model: string; apiKey: string };
 type ExtractInput = { fileBase64: string; mime: string };
+type ExtractActivitiesInput = { fileBase64: string; mime: string; context?: string };
 
 export const testAiConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -49,7 +50,7 @@ export const extractDocumentData = createServerFn({ method: "POST" })
 
 export const extractDocumentActivitiesData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: ExtractInput) => {
+  .inputValidator((d: ExtractActivitiesInput) => {
     if (!d?.fileBase64 || !d?.mime) throw new Error("Arquivo inválido.");
     return d;
   })
@@ -75,6 +76,7 @@ export const extractDocumentActivitiesData = createServerFn({ method: "POST" })
       },
       data.fileBase64,
       data.mime,
+      data.context,
     );
   });
 

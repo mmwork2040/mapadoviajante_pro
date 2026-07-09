@@ -168,11 +168,16 @@ export async function extractDocument(
   return parseJsonLoose(text);
 }
 
-const MULTI_EXTRACTION_PROMPT = `Você é um assistente que lê documentos de viagem (ingressos, passeios, passagens aéreas, reservas de hotel, transfers e vouchers) que podem conter VÁRIOS itens/atividades.
-Identifique TODAS as atividades presentes no documento. Para cada uma, extraia obrigatoriamente o TIPO, a DATA e o HORÁRIO quando existirem. Se houver horário de início e fim, use o de início em "time".
+const MULTI_EXTRACTION_PROMPT = `Você é um assistente especialista que analisa MINUCIOSAMENTE qualquer documento relacionado a uma viagem: ingressos, passagens aéreas/rodoviárias, tickets, e-tickets, vouchers, reservas de hotel/pousada, transfers, passeios, aluguel de carro, seguros de viagem, comprovantes e confirmações.
+Identifique TODAS as atividades/itens presentes no documento. Para cada um, extraia obrigatoriamente o TIPO, a DATA e o HORÁRIO quando existirem. Se houver horário de início e fim, use o de início em "time".
+Regras importantes de análise:
+- Passagens/voos: crie um item para a IDA e outro para a VOLTA (quando houver), cada um com sua própria data e horário. Inclua escalas relevantes no "description".
+- Hospedagem: use a data de check-in em "date" e registre check-in/check-out no "description".
+- Seguros: use a data de início da cobertura em "date" e o período no "description".
+- Seja minucioso: não invente dados; deixe vazio o que não constar no documento.
 Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento tem o formato:
 {
-  "type": "voo|hotel|transfer|passeio|ingresso|outro",
+  "type": "voo|hotel|transfer|passeio|ingresso|seguro|aluguel|outro",
   "title": "título curto do item",
   "date": "AAAA-MM-DD ou vazio",
   "time": "HH:MM ou vazio",
@@ -188,6 +193,10 @@ Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento 
   "description": "resumo das informações encontradas"
 }
 Se houver apenas um item, retorne um array com um único elemento. Nunca retorne texto fora do array JSON.`;
+
+// Contexto do roteiro já existente para evitar conflitos e duplicidades.
+const EXISTING_CONTEXT_PROMPT = (ctx: string) =>
+  `\n\nCONTEXTO DO ROTEIRO JÁ MONTADO (dias e itens já adicionados). Use-o para evitar conflitos de datas/horários e NÃO repetir itens que já existem. Se um item do documento já estiver presente no roteiro (mesmo voo, mesma reserva, mesmo ingresso, mesma data/horário), NÃO o inclua novamente na resposta:\n${ctx}`;
 
 function parseJsonArrayLoose(text: string): ExtractedDocData[] {
   const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
@@ -209,29 +218,34 @@ export async function extractDocumentActivities(
   cfg: ProviderConfig,
   fileBase64: string,
   mime: string,
+  existingContext?: string,
 ): Promise<ExtractedDocData[]> {
   const isImage = mime.startsWith("image/");
   const dataUrl = `data:${mime};base64,${fileBase64}`;
+  const prompt =
+    MULTI_EXTRACTION_PROMPT +
+    (existingContext && existingContext.trim() ? EXISTING_CONTEXT_PROMPT(existingContext.trim()) : "");
   let text = "";
 
   if (cfg.provider === "openai") {
     const filePart = isImage
       ? { type: "image_url", image_url: { url: dataUrl } }
       : { type: "file", file: { filename: "documento.pdf", file_data: dataUrl } };
-    text = await callOpenAI(cfg, [{ type: "text", text: MULTI_EXTRACTION_PROMPT }, filePart]);
+    text = await callOpenAI(cfg, [{ type: "text", text: prompt }, filePart]);
   } else if (cfg.provider === "anthropic") {
     const filePart = isImage
       ? { type: "image", source: { type: "base64", media_type: mime, data: fileBase64 } }
       : { type: "document", source: { type: "base64", media_type: mime, data: fileBase64 } };
-    text = await callAnthropic(cfg, [{ type: "text", text: MULTI_EXTRACTION_PROMPT }, filePart]);
+    text = await callAnthropic(cfg, [{ type: "text", text: prompt }, filePart]);
   } else if (cfg.provider === "google") {
     text = await callGoogle(cfg, [
-      { text: MULTI_EXTRACTION_PROMPT },
+      { text: prompt },
       { inline_data: { mime_type: mime, data: fileBase64 } },
     ]);
   } else {
     throw new Error("Provedor não suportado.");
   }
+
 
   return parseJsonArrayLoose(text).filter((x) => x && (x.title || x.hotel_name || x.flight_number || x.description));
 }
