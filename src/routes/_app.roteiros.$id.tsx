@@ -1560,21 +1560,25 @@ function ActivityDocuments({
           content: res.content,
         };
         cat = "imagem";
-        // Verifica se já existe uma imagem do mesmo lugar na biblioteca.
-        const dup = await findDuplicateLibraryImage({
+        // Verifica duplicidade por SEMELHANÇA visual (hash perceptual), não só
+        // por nome/local — evita repetir imagens parecidas no roteiro/biblioteca.
+        const dup = await findSimilarLibraryImage({
+          file,
           location: res.location,
           title: res.title,
-          fileSize: file.size,
         });
         if (dup) {
           const msg = dup.identical
-            ? `Já existe uma imagem idêntica na biblioteca ("${dup.item.title}"). Deseja incluir mesmo assim?`
-            : `Já existe uma imagem deste local na biblioteca ("${dup.item.title}"). Deseja incluir mesmo assim?`;
+            ? `Já existe uma imagem praticamente idêntica na biblioteca ("${dup.item.title}"). Deseja incluir mesmo assim?`
+            : dup.similar
+              ? `Já existe uma imagem muito parecida na biblioteca ("${dup.item.title}"). Deseja incluir mesmo assim?`
+              : `Já existe uma imagem deste local na biblioteca ("${dup.item.title}"). Deseja incluir mesmo assim?`;
           if (!window.confirm(msg)) {
             toast.info("Inclusão cancelada. A imagem não foi anexada.");
             return;
           }
         }
+
         // Salva a imagem também na seção "Imagem" da biblioteca.
         try {
           await saveImageFileToLibrary(file, info);
