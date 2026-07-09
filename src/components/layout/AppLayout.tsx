@@ -46,7 +46,7 @@ const MOBILE_NAV = [
   { to: "/leads", label: "Leads", icon: Users },
   { to: "/tarefas", label: "Tarefas", icon: ListChecks },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/biblioteca", label: "Biblioteca", icon: Images },
 ] as const;
 
 export function AppLayout({ children }: { children: ReactNode }) {
@@ -66,7 +66,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isAdmin = isAdminUser(member, session?.user?.email);
   const showAdmin = isAdmin;
   const nav = isAdmin ? NAV : NAV.filter((i) => !ADMIN_ONLY.includes(i.to as (typeof ADMIN_ONLY)[number]));
-  const mobileNav = isAdmin ? MOBILE_NAV : MOBILE_NAV.filter((i) => i.to !== "/financeiro");
+  const mobileNav = MOBILE_NAV;
 
   useEffect(() => {
     const channel = supabase
@@ -259,6 +259,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <UserCog className="h-4 w-4" />
                       Meu Perfil
                     </Link>
+                    {showAdmin && (
+                      <Link
+                        to="/financeiro"
+                        onClick={() => setMobileMenu(false)}
+                        className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
+                      >
+                        <Wallet className="h-4 w-4" />
+                        Financeiro
+                      </Link>
+                    )}
                     {showAdmin && (
                       <Link
                         to="/admin"
