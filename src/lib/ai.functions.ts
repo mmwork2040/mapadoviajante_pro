@@ -601,6 +601,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
     }
 
     let leadKnowledge = "";
+    let leadDestination = "";
     if (data.leadId) {
       const { data: lead } = await context.supabase
         .from("crm_leads")
@@ -608,6 +609,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
         .eq("id", data.leadId)
         .maybeSingle();
       if (lead) {
+        if (typeof lead.destination === "string") leadDestination = lead.destination.trim();
         const lines: string[] = [];
         const profile = (lead.profile && typeof lead.profile === "object" ? lead.profile : {}) as Record<string, unknown>;
         const fmt = (val: unknown) =>
