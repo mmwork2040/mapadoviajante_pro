@@ -400,6 +400,26 @@ function ItineraryDetailPage() {
     dragStartPoint.current = null;
     const days = it?.days || [];
 
+    // Drop the "Documento" palette item onto a day → open a file picker so the AI
+    // can read the document and add the activities it finds. Must stay synchronous
+    // (no await before .click()) to keep the browser's user-gesture for the dialog.
+    if (activeId === "new:document") {
+      let dayId: string | null = null;
+      if (resolvedOverId?.startsWith("day:")) dayId = resolvedOverId.slice(4);
+      else if (resolvedOverId?.startsWith("act:")) {
+        const actId = resolvedOverId.slice(4);
+        dayId = days.find((x) => (x.activities || []).some((a) => a.id === actId))?.id ?? null;
+      }
+      if (!dayId) {
+        toast.error("Solte o documento sobre um dia existente.");
+        return;
+      }
+      docTargetDayRef.current = dayId;
+      docInputRef.current?.click();
+      return;
+    }
+
+
     // Drop a palette block onto an empty board OR onto the "Adicionar dia" card:
     // create a new day and place the item in it.
     const wantsNewDay =
