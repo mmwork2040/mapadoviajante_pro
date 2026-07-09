@@ -232,10 +232,103 @@ function ItineraryDetailPage() {
         return;
       }
 
-      const day = (it?.days || []).find((d) => d.id === dayId);
-      let order = day?.activities?.length || 0;
+      // 3.1 Date helpers to fit the extracted items into the right days.
+      const isISO = (v?: string | null): v is string => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
+      const addDays = (iso: string, n: number) => {
+        const d = new Date(iso + "T00:00:00");
+        d.setDate(d.getDate() + n);
+        return d.toISOString().slice(0, 10);
+      };
+      const daysBetween = (a: string, b: string) =>
+        Math.round(
+          (new Date(b + "T00:00:00").getTime() - new Date(a + "T00:00:00").getTime()) / 86400000,
+        );
+
+      const currentDays = [...(it?.days || [])].sort(
+        (a, b) => (a.day_number ?? 0) - (b.day_number ?? 0),
+      );
+      const anchor = isISO(it?.start_date) ? it!.start_date! : null;
+
+      // Resolve a date for each existing day (explicit date, or computed from the trip start).
+      const dayDateOf = (d: ItineraryDay, index: number): string | null =>
+        isISO(d.date)
+          ? d.date
+          : anchor
+            ? addDays(anchor, (d.day_number ?? index + 1) - 1)
+            : null;
+
+      // Map "date -> existing dayId" so items land on the correct day.
+      const dateToDayId = new Map<string, string>();
+      currentDays.forEach((d, i) => {
+        const dd = dayDateOf(d, i);
+        if (dd) dateToDayId.set(dd, d.id);
+      });
+
+      // Dates found inside the document.
+      const itemDates = items.map((x) => x.date).filter(isISO);
+
+      // Confirm the document dates match the period informed in the trip registration.
+      if (itemDates.length && (anchor || isISO(it?.end_date))) {
+        const hi = isISO(it?.end_date) ? it!.end_date! : null;
+        const outside = itemDates.some((d) => (anchor && d < anchor) || (hi && d > hi));
+        if (outside) {
+          toast.warning(
+            "Datas do documento fora do período informado no cadastro da viagem. Confira as datas.",
+          );
+        }
+      }
+
+      // Ensure enough days exist to cover the whole span (existing days + item dates + trip end).
+      if (itemDates.length) {
+        const candidates = [
+          ...itemDates,
+          ...(anchor ? [anchor] : []),
+          ...(isISO(it?.end_date) ? [it!.end_date!] : []),
+          ...currentDays.map((d, i) => dayDateOf(d, i)).filter(isISO),
+        ].sort();
+        const rangeStart = candidates[0];
+        const rangeEnd = candidates[candidates.length - 1];
+        if (isISO(rangeStart) && isISO(rangeEnd) && daysBetween(rangeStart, rangeEnd) >= 0) {
+          // Backfill dates onto existing dateless days so matching stays consistent.
+          for (let i = 0; i < currentDays.length; i++) {
+            const d = currentDays[i];
+            if (!isISO(d.date)) {
+              const computed = anchor
+                ? addDays(anchor, (d.day_number ?? i + 1) - 1)
+                : addDays(rangeStart, i);
+              await updateItineraryDay(d.id, { date: computed });
+              if (!dateToDayId.has(computed)) dateToDayId.set(computed, d.id);
+            }
+          }
+          // Create the missing days within the range.
+          let dayNum = currentDays.length;
+          for (let off = 0; off <= daysBetween(rangeStart, rangeEnd); off++) {
+            const dateAt = addDays(rangeStart, off);
+            if (!dateToDayId.has(dateAt)) {
+              dayNum++;
+              const created = await createItineraryDay({
+                itinerary_id: id,
+                day_number: dayNum,
+                title: `Dia ${dayNum}`,
+                date: dateAt,
+                sort_order: dayNum,
+              });
+              if (created) dateToDayId.set(dateAt, created.id);
+            }
+          }
+        }
+      }
+
+      // 3.2 Distribute each item to the day that matches its date (fallback: dropped day).
+      const orderByDay = new Map<string, number>();
+      const usedDayIds = new Set<string>();
       let firstActivityId: string | null = null;
       for (const data of items) {
+        const targetId = (isISO(data.date) && dateToDayId.get(data.date)) || dayId;
+        if (!orderByDay.has(targetId)) {
+          const dd = (it?.days || []).find((d) => d.id === targetId);
+          orderByDay.set(targetId, dd?.activities?.length || 0);
+        }
         const descParts = [
           data.flight_number && `Voo ${data.flight_number}`,
           data.hotel_name,
@@ -246,7 +339,7 @@ function ItineraryDetailPage() {
           data.description,
         ].filter(Boolean);
         const created = await createItineraryActivity({
-          day_id: dayId,
+          day_id: targetId,
           title: data.title || data.hotel_name || data.flight_number || "Item importado",
           time: data.time || null,
           duration: data.duration || null,
@@ -254,8 +347,10 @@ function ItineraryDetailPage() {
           cost: parseDocCost(data.cost),
           description: descParts.join(" · ") || null,
           type: mapActivityTypeGlobal(data.type),
-          sort_order: order++,
+          sort_order: orderByDay.get(targetId)!,
         });
+        orderByDay.set(targetId, (orderByDay.get(targetId) || 0) + 1);
+        usedDayIds.add(targetId);
         if (created && !firstActivityId) firstActivityId = created.id;
       }
 
@@ -272,9 +367,11 @@ function ItineraryDetailPage() {
         // Non-fatal: activities were created even if the file failed to store.
       }
 
-      // 5. Always keep the day ordered by time.
-      await reorderDayActivitiesByTime(dayId);
-      toast.success(`${items.length} atividade(s) adicionada(s) a partir do documento.`);
+      // 5. Always keep each affected day ordered by time.
+      for (const usedId of usedDayIds) {
+        await reorderDayActivitiesByTime(usedId);
+      }
+      toast.success(`${items.length} atividade(s) organizada(s) por data e hora a partir do documento.`);
       refresh();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
