@@ -537,7 +537,7 @@ function DashboardPage() {
                 const isToday = d.toDateString() === todayKey;
                 const inMonth = d.getMonth() === new Date().getMonth();
                 const count = data.tasks.filter(
-                  (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed,
+                  (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed && (!onlyMineAgenda || t.assigned_to === myId),
                 ).length;
                 return (
                   <button
