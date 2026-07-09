@@ -65,7 +65,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Itinerary, ItineraryDay, Voucher } from "@/lib/types";
+import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData } from "@/lib/types";
 import roteiroFallback from "@/assets/roteiro-fallback.jpg";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
