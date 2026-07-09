@@ -1355,6 +1355,14 @@ function ActivityRow({
     setEditing(true);
   }
 
+  useEffect(() => {
+    if (autoEdit) {
+      startEdit();
+      onAutoEditDone?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoEdit]);
+
   async function saveEdit() {
     if (!eTitle.trim()) {
       toast.error("Informe um título.");
