@@ -105,6 +105,56 @@ function LibraryPage() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  const [itinFiles, setItinFiles] = useState<File[]>([]);
+  const [itinDest, setItinDest] = useState("");
+  const [uploadingItin, setUploadingItin] = useState(false);
+  const itinInputRef = useRef<HTMLInputElement>(null);
+
+  function handleSelectItinFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    e.target.value = "";
+    if (files.length === 0) return;
+    const invalid = files.filter((f) => f.type !== "application/pdf" && !/\.pdf$/i.test(f.name));
+    if (invalid.length > 0) {
+      toast.error("Envie apenas arquivos PDF.");
+      return;
+    }
+    setItinFiles(files);
+  }
+
+  async function confirmItinUpload() {
+    const dest = itinDest.trim();
+    if (!dest) {
+      toast.error("Informe o destino do roteiro modelo.");
+      return;
+    }
+    setUploadingItin(true);
+    try {
+      for (const file of itinFiles) {
+        const up = await uploadLibraryAsset(file);
+        if (!up) continue;
+        const title = file.name.replace(/\.[^.]+$/, "");
+        await createLibraryItem({
+          type: "itinerary",
+          title,
+          location: dest,
+          file_url: up.path,
+          file_name: up.name,
+        });
+      }
+      toast.success(
+        itinFiles.length === 1 ? "Roteiro modelo enviado." : `${itinFiles.length} roteiros modelo enviados.`,
+      );
+      qc.invalidateQueries({ queryKey: ["library"] });
+      setItinFiles([]);
+      setItinDest("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar o arquivo.");
+    } finally {
+      setUploadingItin(false);
+    }
+  }
+
   const isDocuments = tab === "documents";
 
   const { data: items = [], isLoading, isError, refetch } = useQuery({
@@ -295,6 +345,30 @@ function LibraryPage() {
         </div>
       )}
 
+      {tab === "itinerary" && (
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            ref={itinInputRef}
+            type="file"
+            accept="application/pdf"
+            multiple
+            className="hidden"
+            onChange={handleSelectItinFiles}
+          />
+          <button
+            onClick={() => itinInputRef.current?.click()}
+            disabled={uploadingItin}
+            className="flex items-center gap-2 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+          >
+            {uploadingItin ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+            {uploadingItin ? "Enviando…" : "Enviar arquivos"}
+          </button>
+          <span className="text-xs text-muted-foreground">Envie roteiros em PDF por destino.</span>
+        </div>
+      )}
+
+
+
       {isDocuments ? (
         <DocumentsPanel />
       ) : isError ? (
@@ -333,6 +407,51 @@ function LibraryPage() {
             invalidate();
           }}
         />
+      )}
+
+      {itinFiles.length > 0 && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl">
+            <h2 className="text-lg font-bold">Enviar roteiro modelo</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {itinFiles.length === 1
+                ? `Arquivo: ${itinFiles[0].name}`
+                : `${itinFiles.length} arquivos selecionados`}
+            </p>
+            <label className="mt-4 block">
+              <span className="mb-1 block text-sm font-semibold">
+                Destino <span className="text-primary">*</span>
+              </span>
+              <input
+                autoFocus
+                value={itinDest}
+                onChange={(e) => setItinDest(e.target.value)}
+                placeholder="Ex: Paris, França"
+                className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
+              />
+            </label>
+            <div className="mt-6 flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setItinFiles([]);
+                  setItinDest("");
+                }}
+                disabled={uploadingItin}
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmItinUpload}
+                disabled={uploadingItin || !itinDest.trim()}
+                className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {uploadingItin ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Enviar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -442,9 +561,16 @@ function LibraryCard({
             <span />
           )}
           {item.file_url && !isImagePath(item.file_url) && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <button
+              onClick={async () => {
+                const url = await getLibraryAssetUrl(item.file_url!);
+                if (url) window.open(url, "_blank");
+                else toast.error("Não foi possível abrir o arquivo.");
+              }}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
               <FileText className="h-3.5 w-3.5" /> {item.file_name || "Arquivo"}
-            </span>
+            </button>
           )}
         </div>
       </div>
