@@ -105,16 +105,15 @@ function Page({ children, style }: { children: React.ReactNode; style?: React.CS
     <div
       style={{
         width: "210mm",
-        height: "297mm",
+        height: "296mm",
         position: "relative",
         overflow: "hidden",
         boxSizing: "border-box",
-        pageBreakAfter: "always",
-        breakAfter: "page",
         fontFamily: "Fredoka, sans-serif",
         color: INK,
         ...style,
       }}
+      className="pdf-page"
     >
       {children}
     </div>
@@ -156,7 +155,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
         image: { type: "jpeg", quality: 0.98 },
         html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: "#ffffff" },
         jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-        pagebreak: { mode: ["css", "legacy"] },
+        pagebreak: { mode: ["legacy"] },
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       await html2pdf().set(opts as any).from(containerRef.current).save();
