@@ -243,7 +243,11 @@ function LibraryPage() {
       toast.success(`${n} ${n === 1 ? "imagem excluída" : "imagens excluídas"}.`);
       setSelectMode(false);
       setSelected(new Set());
-      invalidate();
+      const removed = new Set(chosen.map((c) => c.id));
+      qc.setQueryData<LibraryItem[]>(["library", tab], (old) =>
+        (old ?? []).filter((i) => !removed.has(i.id)),
+      );
+      qc.invalidateQueries({ queryKey: ["library", "counts"] });
     } else toast.error("Erro ao excluir imagens.");
   }
 
