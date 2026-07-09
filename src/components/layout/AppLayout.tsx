@@ -261,6 +261,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     </Link>
                     {showAdmin && (
                       <Link
+                        to="/financeiro"
+                        onClick={() => setMobileMenu(false)}
+                        className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
+                      >
+                        <Wallet className="h-4 w-4" />
+                        Financeiro
+                      </Link>
+                    )}
+                    {showAdmin && (
+                      <Link
                         to="/admin"
                         onClick={() => setMobileMenu(false)}
                         className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
