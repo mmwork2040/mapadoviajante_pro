@@ -1228,7 +1228,6 @@ function DayCard({
           {ACTIVITY_TYPES.map((t) => (
             <option key={t.type} value={t.type}>{t.label}</option>
           ))}
-          <option value="image">Imagem</option>
         </select>
         <input
           type="time"
