@@ -561,9 +561,16 @@ function LibraryCard({
             <span />
           )}
           {item.file_url && !isImagePath(item.file_url) && (
-            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <button
+              onClick={async () => {
+                const url = await getLibraryAssetUrl(item.file_url!);
+                if (url) window.open(url, "_blank");
+                else toast.error("Não foi possível abrir o arquivo.");
+              }}
+              className="flex items-center gap-1 text-xs text-primary hover:underline"
+            >
               <FileText className="h-3.5 w-3.5" /> {item.file_name || "Arquivo"}
-            </span>
+            </button>
           )}
         </div>
       </div>
