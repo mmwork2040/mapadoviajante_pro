@@ -66,7 +66,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isAdmin = isAdminUser(member, session?.user?.email);
   const showAdmin = isAdmin;
   const nav = isAdmin ? NAV : NAV.filter((i) => !ADMIN_ONLY.includes(i.to as (typeof ADMIN_ONLY)[number]));
-  const mobileNav = isAdmin ? MOBILE_NAV : MOBILE_NAV.filter((i) => i.to !== "/financeiro");
+  const mobileNav = MOBILE_NAV;
 
   useEffect(() => {
     const channel = supabase
