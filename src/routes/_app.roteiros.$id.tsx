@@ -1805,6 +1805,7 @@ function mapActivityType(t?: string): string {
 function CompleteWithAI({ it, onDone }: { it: Itinerary; onDone: () => void }) {
   const [loading, setLoading] = useState(false);
   const plan = useServerFn(itineraryPlanner);
+  const downloadImage = useServerFn(downloadDestinationImage);
 
   // Só faz sentido em rascunho e com datas + destino definidos.
   if (it.status && it.status !== "draft") return null;
