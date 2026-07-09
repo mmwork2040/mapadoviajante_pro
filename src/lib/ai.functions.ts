@@ -138,7 +138,80 @@ export const parseTravelPeriodFn = createServerFn({ method: "POST" })
     );
   });
 
-type LibraryContentInput = {
+type AnalyzeImageInput = {
+  fileBase64: string;
+  mime: string;
+  itineraryId?: string;
+  activityTitle?: string;
+};
+
+// Interpreta uma imagem anexada a um dia do roteiro e avalia se é coerente
+// com o destino/roteiro, retornando o tipo de atividade identificado.
+export const analyzeImageActivityFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: AnalyzeImageInput) => {
+    if (!d?.fileBase64 || !d?.mime) throw new Error("Imagem inválida.");
+    if (!d.mime.startsWith("image/")) throw new Error("O arquivo enviado não é uma imagem.");
+    return d;
+  })
+  .handler(async ({ data, context }) => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+
+    let destination = "";
+    let itineraryTitle = "";
+    let existingContext = "";
+    if (data.itineraryId) {
+      const { data: it } = await context.supabase
+        .from("crm_itineraries")
+        .select("title, destination")
+        .eq("id", data.itineraryId)
+        .maybeSingle();
+      destination = (it as { destination?: string } | null)?.destination ?? "";
+      itineraryTitle = (it as { title?: string } | null)?.title ?? "";
+      const { data: days } = await context.supabase
+        .from("crm_itinerary_days")
+        .select("day_number, title, crm_itinerary_activities(title, type, location)")
+        .eq("itinerary_id", data.itineraryId)
+        .order("day_number", { ascending: true });
+      const rows = (days as unknown as {
+        day_number: number;
+        title?: string;
+        crm_itinerary_activities?: { title?: string; type?: string; location?: string }[];
+      }[]) || [];
+      existingContext = rows
+        .map((d) => {
+          const acts = (d.crm_itinerary_activities || [])
+            .map((a) => `  • [${a.type || "item"}] ${a.title || ""}${a.location ? ` @ ${a.location}` : ""}`)
+            .join("\n");
+          return `Dia ${d.day_number}${d.title ? ` - ${d.title}` : ""}${acts ? `\n${acts}` : ""}`;
+        })
+        .join("\n");
+    }
+
+    const { analyzeImageForItinerary } = await import("./ai.server");
+    return analyzeImageForItinerary(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: cfg.max_tokens,
+      },
+      data.fileBase64,
+      data.mime,
+      { destination, itineraryTitle, activityTitle: data.activityTitle, existingContext },
+    );
+  });
+
+
   itemType: string;
   title: string;
   location?: string;
