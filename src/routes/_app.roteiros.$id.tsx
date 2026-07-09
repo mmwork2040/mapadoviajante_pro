@@ -1469,6 +1469,12 @@ function ActivityRow({
           </button>
           <button
             onClick={async () => {
+              const ok = await confirm({
+                title: "Excluir este item?",
+                description: "Esta ação removerá o item do dia e seus anexos. Deseja continuar?",
+                confirmLabel: "Excluir",
+              });
+              if (!ok) return;
               // Deleting an activity also removes any documents attached to it
               // from the library (they only existed within this roteiro).
               try {
