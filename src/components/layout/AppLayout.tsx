@@ -46,7 +46,7 @@ const MOBILE_NAV = [
   { to: "/leads", label: "Leads", icon: Users },
   { to: "/tarefas", label: "Tarefas", icon: ListChecks },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet },
+  { to: "/biblioteca", label: "Biblioteca", icon: Images },
 ] as const;
 
 export function AppLayout({ children }: { children: ReactNode }) {
