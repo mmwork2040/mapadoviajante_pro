@@ -496,7 +496,7 @@ function DashboardPage() {
             {week.map((d, i) => {
               const isToday = d.toDateString() === todayKey;
               const count = data.tasks.filter(
-                (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed,
+                (t) => t.due_date && new Date(t.due_date).toDateString() === d.toDateString() && !t.completed && (!onlyMineAgenda || t.assigned_to === myId),
               ).length;
               return (
                 <button
