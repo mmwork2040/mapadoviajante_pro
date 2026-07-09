@@ -643,7 +643,20 @@ function ItineraryDetailPage() {
           {ACTIVITY_TYPES.map((t) => (
             <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} />
           ))}
+          <PaletteItem type="document" label="Documento (IA)" icon={FileUp} />
+          <input
+            ref={docInputRef}
+            type="file"
+            accept="image/*,application/pdf"
+            onChange={handleDocImport}
+            className="hidden"
+          />
         </div>
+        {pendingDayId && (
+          <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" /> Lendo documento com a IA…
+          </p>
+        )}
 
         <div className="flex gap-4 overflow-x-auto pb-4">
           {(it.days || []).map((day) => (
