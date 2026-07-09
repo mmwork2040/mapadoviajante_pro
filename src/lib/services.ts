@@ -1175,6 +1175,35 @@ export async function saveImageFileToLibrary(
   }
 }
 
+// Verifica se já existe uma imagem na biblioteca referente ao mesmo lugar
+// (mesma location/título) e/ou idêntica (mesmo tamanho de arquivo).
+export async function findDuplicateLibraryImage(params: {
+  location?: string;
+  title?: string;
+  fileSize?: number;
+}): Promise<{ item: LibraryItem; identical: boolean } | null> {
+  const { location, title, fileSize } = params;
+  const key = normalizeText(location || title || "");
+  if (!key) return null;
+  let items: LibraryItem[] = [];
+  try {
+    items = await fetchLibraryItems("image");
+  } catch {
+    return null;
+  }
+  const samePlace = items.find(
+    (it) =>
+      normalizeText(it.location || "") === key ||
+      normalizeText(it.title || "") === key,
+  );
+  if (!samePlace) return null;
+  const identical =
+    typeof fileSize === "number" &&
+    typeof (samePlace as { size?: number }).size === "number" &&
+    (samePlace as { size?: number }).size === fileSize;
+  return { item: samePlace, identical };
+}
+
 // Envia uma imagem escolhida pelo usuário para a biblioteca, associada ao
 // destino, e retorna uma URL exibível. Lança erro em caso de falha.
 export async function uploadImageToLibraryForDestination(
