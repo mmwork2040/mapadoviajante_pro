@@ -411,6 +411,9 @@ export type ImageActivityAnalysis = {
   type: string;
   title: string;
   reason: string;
+  location: string;
+  description: string;
+  content: string;
 };
 
 // Interpreta uma imagem anexada a um dia do roteiro: identifica o tipo de
