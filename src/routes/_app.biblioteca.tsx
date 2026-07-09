@@ -197,7 +197,11 @@ function LibraryPage() {
     if (!ok) return;
     if (await deleteLibraryItem(item)) {
       toast.success("Item excluído.");
-      invalidate();
+      // Remove só o item excluído do cache da aba atual (mantém os demais).
+      qc.setQueryData<LibraryItem[]>(["library", tab], (old) =>
+        (old ?? []).filter((i) => i.id !== item.id),
+      );
+      qc.invalidateQueries({ queryKey: ["library", "counts"] });
     } else toast.error("Erro ao excluir item.");
   }
 
@@ -239,7 +243,11 @@ function LibraryPage() {
       toast.success(`${n} ${n === 1 ? "imagem excluída" : "imagens excluídas"}.`);
       setSelectMode(false);
       setSelected(new Set());
-      invalidate();
+      const removed = new Set(chosen.map((c) => c.id));
+      qc.setQueryData<LibraryItem[]>(["library", tab], (old) =>
+        (old ?? []).filter((i) => !removed.has(i.id)),
+      );
+      qc.invalidateQueries({ queryKey: ["library", "counts"] });
     } else toast.error("Erro ao excluir imagens.");
   }
 
@@ -904,7 +912,12 @@ function DocumentsPanel() {
     if (!ok) return;
     if (await deleteLeadDocument(doc)) {
       toast.success("Documento excluído.");
-      invalidate();
+      // Remove apenas o item excluído do cache (mantém os demais visíveis),
+      // em vez de forçar um refetch que pode voltar vazio.
+      qc.setQueryData<AgencyDocument[]>(["library", "documents"], (old) =>
+        (old ?? []).filter((d) => d.id !== doc.id),
+      );
+      qc.invalidateQueries({ queryKey: ["library", "counts"] });
     } else toast.error("Erro ao excluir documento.");
   }
 
