@@ -55,6 +55,7 @@ import {
   type AgencyDocument,
 } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
+import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
 import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { Skeleton } from "@/components/ui/skeleton";
