@@ -552,14 +552,13 @@ function ItineraryDetailPage() {
         const actId = resolvedOverId.slice(4);
         dayId = days.find((x) => (x.activities || []).some((a) => a.id === actId))?.id ?? null;
       }
-      if (!dayId) {
-        toast.error("Solte o documento sobre um dia existente.");
-        return;
-      }
-      docTargetDayRef.current = dayId;
+      // No target day → sinaliza para criar um novo dia automaticamente após a
+      // leitura do documento (mantém o clique síncrono para o seletor de arquivo).
+      docTargetDayRef.current = dayId ?? "__new__";
       docInputRef.current?.click();
       return;
     }
+
 
 
     // Drop a palette block onto an empty board OR onto the "Adicionar dia" card:
