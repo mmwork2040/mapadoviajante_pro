@@ -158,7 +158,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: "#ffffff" },
           jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
           pagebreak: { mode: ["css", "legacy"] },
-        })
+        } as Parameters<ReturnType<typeof html2pdf>["set"]>[0])
         .from(containerRef.current)
         .save();
       toast.success("PDF do roteiro gerado.");
