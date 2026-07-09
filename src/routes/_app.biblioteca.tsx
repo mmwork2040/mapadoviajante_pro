@@ -205,6 +205,15 @@ function LibraryPage() {
   });
 
   async function remove(item: LibraryItem) {
+    const locked = lockedFor(item);
+    if (locked.length > 0) {
+      toast.error(
+        `Esta imagem está anexada ${
+          locked.length === 1 ? "ao roteiro" : "aos roteiros"
+        } "${locked.map((a) => a.title).join('", "')}". Remova o anexo pelo roteiro antes de excluí-la.`,
+      );
+      return;
+    }
     const ok = await confirm({
       title: "Excluir item?",
       description: `"${item.title}" será removido da biblioteca.`,
