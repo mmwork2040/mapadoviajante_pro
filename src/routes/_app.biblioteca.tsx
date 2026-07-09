@@ -727,6 +727,7 @@ function DocumentsPanel() {
   const { data: docs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["library", "documents"],
     queryFn: fetchAgencyDocuments,
+    placeholderData: keepPreviousData,
   });
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ["library", "documents"] });
