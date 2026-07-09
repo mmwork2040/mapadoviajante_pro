@@ -228,6 +228,40 @@ export async function findItineraryAttachments(doc: LeadDocument): Promise<strin
   return Array.from(new Set(titles));
 }
 
+/** Stable key to match a general library doc against its roteiro copies. */
+export function documentKey(doc: { name: string; size?: number | null }): string {
+  return `${doc.name}::${doc.size ?? "null"}`;
+}
+
+/**
+ * Fetch a map of roteiro-attached documents for the agency, keyed by name+size,
+ * with the list of roteiro titles where each is attached. Used to lock deletion
+ * in the library before the user clicks Excluir.
+ */
+export async function fetchItineraryAttachmentMap(): Promise<Record<string, string[]>> {
+  const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
+  if (!agencyId) return {};
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .select("name, size, itinerary:crm_itineraries(title)")
+    .eq("agency_id", agencyId)
+    .not("itinerary_id", "is", null);
+  if (error) {
+    console.error("fetchItineraryAttachmentMap", error);
+    return {};
+  }
+  const rows =
+    (data as unknown as { name: string; size: number | null; itinerary?: { title?: string } | null }[]) || [];
+  const map: Record<string, string[]> = {};
+  for (const r of rows) {
+    const key = documentKey(r);
+    const title = r.itinerary?.title;
+    if (!map[key]) map[key] = [];
+    if (title && !map[key].includes(title)) map[key].push(title);
+  }
+  return map;
+}
+
 export interface AgencyDocument extends LeadDocument {
   lead?: { name: string } | null;
   itinerary?: { title: string } | null;
