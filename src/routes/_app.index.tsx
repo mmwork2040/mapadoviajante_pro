@@ -456,6 +456,7 @@ function DashboardPage() {
           )}
         </div>
       </div>
+      )}
 
 
       {/* Agenda da Semana */}
