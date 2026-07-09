@@ -311,9 +311,10 @@ function LeadCard({
   
 
 
+  const [dragEnabled, setDragEnabled] = useState(true);
   return (
     <div
-      draggable
+      draggable={dragEnabled}
       onDragStart={(e) => {
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", lead.id);
@@ -325,11 +326,17 @@ function LeadCard({
         dragging ? "opacity-50 ring-2 ring-primary" : ""
       }`}
     >
-      <div className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-card/80 p-0.5 shadow-sm backdrop-blur">
+      <div
+        className="absolute right-2 top-2 z-10 flex items-center gap-0.5 rounded-full bg-card/80 p-0.5 shadow-sm backdrop-blur"
+        onMouseEnter={() => setDragEnabled(false)}
+        onMouseLeave={() => setDragEnabled(true)}
+      >
         <button
           type="button"
           aria-label="Ver detalhes do lead"
           title="Ver detalhes"
+          draggable={false}
+          onPointerDown={(e) => e.stopPropagation()}
           onClick={(e) => {
             e.stopPropagation();
             onOpen();
