@@ -24,6 +24,7 @@ import {
   CheckSquare,
   Square,
   Lock,
+  ArrowUpRight,
 } from "lucide-react";
 
 import { toast } from "sonner";
