@@ -38,6 +38,7 @@ import {
   reorderDayActivitiesByTime,
   resolveDisplayImageUrl,
   saveActivityImageToLibrary,
+  saveImageFileToLibrary,
   searchLibraryImageForDestination,
   updateItinerary,
   updateItineraryActivity,
