@@ -680,24 +680,24 @@ function ItineraryDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 
-      <div className="relative flex flex-wrap items-start justify-between gap-4 overflow-hidden rounded-2xl border border-border bg-card p-5">
-        {(() => {
-          const bg = coverUrl || roteiroFallback;
-          return (
-            <>
-              <div
-                className="pointer-events-none absolute inset-0 bg-cover bg-center opacity-40"
-                style={{ backgroundImage: `url(${bg})` }}
-                aria-hidden
-              />
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-card/40 to-card/70" aria-hidden />
-            </>
-          );
-        })()}
-        <div className="relative">
+      <div className="flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-card sm:flex-row sm:items-stretch">
+        <div className="relative h-40 w-full shrink-0 overflow-hidden bg-muted/60 sm:h-auto sm:w-56">
+          <img
+            src={coverUrl || roteiroFallback}
+            alt={it.destination || "Destino"}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-sm font-bold text-white">
+            <MapPin className="h-4 w-4 shrink-0" />
+            <span className="truncate">{it.destination || "—"}</span>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-wrap items-start justify-between gap-4 p-5">
+        <div>
           <h1 className="text-2xl font-bold">{it.title}</h1>
           <p className="text-sm text-muted-foreground">
-            {it.destination} · {it.client_name} · {formatCurrency(it.budget)} · <span>{STATUS_LABELS[it.status || "draft"] || it.status}</span>
+            {it.client_name} · {formatCurrency(it.budget)} · <span>{STATUS_LABELS[it.status || "draft"] || it.status}</span>
           </p>
           {(() => {
             const fmt = (d: string) =>
@@ -721,7 +721,7 @@ function ItineraryDetailPage() {
             return <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-foreground">{parts}</p>;
           })()}
         </div>
-        <div className="relative flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -781,6 +781,7 @@ function ItineraryDetailPage() {
               </button>
             );
           })()}
+        </div>
         </div>
       </div>
 
