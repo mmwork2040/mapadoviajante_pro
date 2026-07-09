@@ -105,7 +105,7 @@ function Page({ children, style }: { children: React.ReactNode; style?: React.CS
     <div
       style={{
         width: "210mm",
-        height: "297mm",
+        height: "296mm",
         position: "relative",
         overflow: "hidden",
         boxSizing: "border-box",
