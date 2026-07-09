@@ -1142,6 +1142,39 @@ export async function saveActivityImageToLibrary(
   }
 }
 
+// Salva um arquivo de imagem (anexado a um roteiro ou baixado) na seção
+// "Imagem" da biblioteca, com os campos preenchidos pela IA.
+export async function saveImageFileToLibrary(
+  file: File,
+  info: {
+    title?: string;
+    location?: string;
+    description?: string;
+    content?: string;
+  },
+): Promise<LibraryItem | null> {
+  try {
+    const up = await uploadLibraryAsset(file);
+    if (!up) return null;
+    const title = (info.title || "").trim() || file.name.replace(/\.[^.]+$/, "");
+    const location = (info.location || "").trim();
+    const tags = Array.from(new Set([normalizeText(location)].filter(Boolean)));
+    return await createLibraryItem({
+      type: "image",
+      title,
+      location: location || null,
+      description: (info.description || "").trim() || null,
+      content: (info.content || "").trim() || null,
+      file_url: up.path,
+      file_name: up.name,
+      tags,
+    });
+  } catch (e) {
+    console.error("saveImageFileToLibrary:", e);
+    return null;
+  }
+}
+
 // Envia uma imagem escolhida pelo usuário para a biblioteca, associada ao
 // destino, e retorna uma URL exibível. Lança erro em caso de falha.
 export async function uploadImageToLibraryForDestination(
