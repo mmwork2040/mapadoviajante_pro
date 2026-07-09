@@ -642,9 +642,9 @@ function LibraryCard({
         {item.description && (
           <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>
         )}
-        {item.tags && item.tags.length > 0 && (
+        {visibleTags(item.tags).length > 0 && (
           <div className="mt-2 flex flex-wrap gap-1">
-            {item.tags.slice(0, 4).map((t) => (
+            {visibleTags(item.tags).slice(0, 4).map((t) => (
               <span key={t} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-primary">
                 {t}
               </span>
