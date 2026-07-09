@@ -291,6 +291,7 @@ const ITINERARY_STATUS_LABELS: Record<string, string> = {
 
 function LeadCard({
   lead,
+  assignee,
   itineraryStatus,
   dragging,
   onDragStart,
@@ -299,6 +300,7 @@ function LeadCard({
   onOpen,
 }: {
   lead: Lead;
+  assignee?: AgencyMember | null;
   itineraryStatus?: string;
   dragging: boolean;
   onDragStart: () => void;
