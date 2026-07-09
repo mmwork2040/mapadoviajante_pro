@@ -229,6 +229,7 @@ function DashboardPage() {
     return data.tasks
       .filter((t) => {
         if (!t.due_date) return false;
+        if (onlyMineTasks && t.assigned_to !== myId) return false;
         if (taskStatus === "pending" && t.completed) return false;
         if (taskStatus === "done" && !t.completed) return false;
         const due = startOfDay(new Date(t.due_date));
