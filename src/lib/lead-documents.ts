@@ -233,17 +233,23 @@ export function documentKey(doc: { name: string; size?: number | null }): string
   return `${doc.name}::${doc.size ?? "null"}`;
 }
 
+/** A roteiro where a library document is attached. */
+export interface ItineraryAttachment {
+  id: string;
+  title: string;
+}
+
 /**
  * Fetch a map of roteiro-attached documents for the agency, keyed by name+size,
- * with the list of roteiro titles where each is attached. Used to lock deletion
+ * with the roteiros (id + title) where each is attached. Used to lock deletion
  * in the library before the user clicks Excluir.
  */
-export async function fetchItineraryAttachmentMap(): Promise<Record<string, string[]>> {
+export async function fetchItineraryAttachmentMap(): Promise<Record<string, ItineraryAttachment[]>> {
   const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
   if (!agencyId) return {};
   const { data, error } = await db()
     .from("crm_lead_documents")
-    .select("name, size, itinerary:crm_itineraries(title)")
+    .select("name, size, itinerary_id, itinerary:crm_itineraries(title)")
     .eq("agency_id", agencyId)
     .not("itinerary_id", "is", null);
   if (error) {
@@ -251,13 +257,19 @@ export async function fetchItineraryAttachmentMap(): Promise<Record<string, stri
     return {};
   }
   const rows =
-    (data as unknown as { name: string; size: number | null; itinerary?: { title?: string } | null }[]) || [];
-  const map: Record<string, string[]> = {};
+    (data as unknown as {
+      name: string;
+      size: number | null;
+      itinerary_id: string;
+      itinerary?: { title?: string } | null;
+    }[]) || [];
+  const map: Record<string, ItineraryAttachment[]> = {};
   for (const r of rows) {
     const key = documentKey(r);
-    const title = r.itinerary?.title;
     if (!map[key]) map[key] = [];
-    if (title && !map[key].includes(title)) map[key].push(title);
+    if (r.itinerary_id && !map[key].some((a) => a.id === r.itinerary_id)) {
+      map[key].push({ id: r.itinerary_id, title: r.itinerary?.title || "Roteiro" });
+    }
   }
   return map;
 }

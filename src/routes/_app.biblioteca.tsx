@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -24,6 +24,7 @@ import {
   CheckSquare,
   Square,
   Lock,
+  ArrowUpRight,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -915,7 +916,7 @@ function DocumentsPanel() {
       toast.error(
         `Este documento está anexado ${
           attachedIn.length === 1 ? "ao roteiro" : "aos roteiros"
-        } "${attachedIn.join('", "')}". Exclua o anexo pelo roteiro antes de removê-lo da biblioteca.`,
+        } "${attachedIn.map((a) => a.title).join('", "')}". Exclua o anexo pelo roteiro antes de removê-lo da biblioteca.`,
       );
       return;
     }
@@ -978,9 +979,10 @@ function DocumentsPanel() {
                         locked
                           ? `Anexado ${
                               attachedIn.length === 1 ? "ao roteiro" : "aos roteiros"
-                            } "${attachedIn.join('", "')}". Exclua pelo roteiro.`
+                            } "${attachedIn.map((a) => a.title).join('", "')}". Exclua pelo roteiro.`
                           : undefined
                       }
+                      itineraryLink={locked ? attachedIn[0].id : undefined}
                     />
                   );
                 })}
@@ -1000,11 +1002,13 @@ function DocumentRow({
   onPreview,
   onRemove,
   lockedHint,
+  itineraryLink,
 }: {
   doc: AgencyDocument;
   onPreview: () => void;
   onRemove?: () => void;
   lockedHint?: string;
+  itineraryLink?: string;
 }) {
   const source = doc.itinerary?.title || doc.lead?.name || null;
   return (
@@ -1042,12 +1046,24 @@ function DocumentRow({
           <Trash2 className="h-4 w-4" />
         </button>
       ) : lockedHint ? (
-        <span
-          className="rounded-lg p-1.5 text-muted-foreground/60"
-          title={lockedHint}
-        >
-          <Lock className="h-4 w-4" />
-        </span>
+        <>
+          <span
+            className="rounded-lg p-1.5 text-muted-foreground/60"
+            title={lockedHint}
+          >
+            <Lock className="h-4 w-4" />
+          </span>
+          {itineraryLink ? (
+            <Link
+              to="/roteiros/$id"
+              params={{ id: itineraryLink }}
+              className="rounded-lg p-1.5 text-primary hover:bg-accent"
+              title="Abrir roteiro"
+            >
+              <ArrowUpRight className="h-4 w-4" />
+            </Link>
+          ) : null}
+        </>
       ) : null}
     </div>
   );
