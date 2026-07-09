@@ -949,25 +949,15 @@ function DocumentsPanel() {
                 {ORIGIN_LABELS[origin]} · {groups[origin].length}
               </h3>
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {groups[origin].map((doc) => {
-                  // Documents attached to an EXISTING roteiro can only be deleted
-                  // from that roteiro (on the day the file is attached). Everything
-                  // else — gerais, de leads e órfãos — pode ser excluído aqui.
-                  const attachedToItinerary = !!(doc.itinerary_id && doc.itinerary);
-                  return (
-                    <DocumentRow
-                      key={doc.id}
-                      doc={doc}
-                      onPreview={() => setPreview(doc)}
-                      onRemove={attachedToItinerary ? undefined : () => remove(doc)}
-                      lockedHint={
-                        attachedToItinerary
-                          ? "Anexado a um roteiro — exclua pelo próprio roteiro, no dia do arquivo."
-                          : undefined
-                      }
-                    />
-                  );
-                })}
+                {groups[origin].map((doc) => (
+                  <DocumentRow
+                    key={doc.id}
+                    doc={doc}
+                    onPreview={() => setPreview(doc)}
+                    onRemove={() => remove(doc)}
+                  />
+                ))}
+
               </div>
             </div>
           ),
