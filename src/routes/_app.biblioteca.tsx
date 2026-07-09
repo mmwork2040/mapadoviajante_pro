@@ -876,7 +876,7 @@ function DocumentRow({
       >
         <Download className="h-4 w-4" />
       </button>
-      {onRemove && (
+      {onRemove ? (
         <button
           onClick={onRemove}
           className="rounded-lg p-1.5 text-destructive hover:bg-accent"
@@ -884,7 +884,14 @@ function DocumentRow({
         >
           <Trash2 className="h-4 w-4" />
         </button>
-      )}
+      ) : lockedHint ? (
+        <span
+          className="rounded-lg p-1.5 text-muted-foreground/60"
+          title={lockedHint}
+        >
+          <Lock className="h-4 w-4" />
+        </span>
+      ) : null}
     </div>
   );
 }
