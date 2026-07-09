@@ -607,7 +607,15 @@ function LibraryCard({
             )}
           </div>
         )}
-        {!selectable && (
+        {locked && (
+          <div
+            className="absolute left-2 top-2 flex items-center gap-1 rounded-lg bg-card/90 px-2 py-1 text-xs font-medium text-destructive"
+            title={lockHint}
+          >
+            <Lock className="h-3.5 w-3.5" /> Em uso
+          </div>
+        )}
+        {!selectable && !locked && (
         <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
           <button onClick={onEdit} className="rounded-lg bg-card/90 p-1.5 text-foreground hover:bg-card">
             <Pencil className="h-4 w-4" />
@@ -617,6 +625,12 @@ function LibraryCard({
           </button>
         </div>
         )}
+        {!selectable && locked && (
+          <div className="absolute right-2 top-2 rounded-lg bg-card/90 p-1.5 text-destructive" title={lockHint}>
+            <Lock className="h-4 w-4" />
+          </div>
+        )}
+
       </div>
       <div className="flex flex-1 flex-col p-4">
         <h3 className="font-semibold">{item.title}</h3>
