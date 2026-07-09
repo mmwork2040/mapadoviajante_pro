@@ -40,6 +40,7 @@ import {
   uploadLibraryAsset,
 } from "@/lib/services";
 import { generateLibraryContent } from "@/lib/ai.functions";
+import { visibleTags } from "@/lib/image-hash";
 
 import {
   fetchAgencyDocuments,
