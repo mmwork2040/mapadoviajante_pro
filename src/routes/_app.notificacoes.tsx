@@ -87,7 +87,7 @@ function NotificationsPage() {
   };
 
   function setSearch(patch: Partial<{ page: number; q: string; filter: string; order: string }>) {
-    navigate({ search: (prev) => ({ ...prev, ...patch }) });
+    navigate({ search: (prev: NotifSearch) => ({ ...prev, ...patch }) });
   }
 
   function submitSearch(e: React.FormEvent) {
