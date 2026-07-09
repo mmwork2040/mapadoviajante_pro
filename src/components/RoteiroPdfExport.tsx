@@ -105,16 +105,16 @@ function Page({ children, style }: { children: React.ReactNode; style?: React.CS
     <div
       style={{
         width: "210mm",
+        width: "210mm",
         height: "297mm",
         position: "relative",
         overflow: "hidden",
         boxSizing: "border-box",
-        pageBreakAfter: "always",
-        breakAfter: "page",
         fontFamily: "Fredoka, sans-serif",
         color: INK,
         ...style,
       }}
+      className="pdf-page"
     >
       {children}
     </div>
