@@ -197,7 +197,11 @@ function LibraryPage() {
     if (!ok) return;
     if (await deleteLibraryItem(item)) {
       toast.success("Item excluído.");
-      invalidate();
+      // Remove só o item excluído do cache da aba atual (mantém os demais).
+      qc.setQueryData<LibraryItem[]>(["library", tab], (old) =>
+        (old ?? []).filter((i) => i.id !== item.id),
+      );
+      qc.invalidateQueries({ queryKey: ["library", "counts"] });
     } else toast.error("Erro ao excluir item.");
   }
 
