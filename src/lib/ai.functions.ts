@@ -198,10 +198,22 @@ export const analyzeImageActivityFn = createServerFn({ method: "POST" })
     }
 
     const { analyzeImageForItinerary } = await import("./ai.server");
+    // Para análise de imagem usamos sempre o modelo de visão mais capaz do
+    // provedor, evitando confundir atrações parecidas (ex.: Notre-Dame de Paris
+    // x Catedral de Amiens), independentemente do modelo configurado.
+    const provider = cfg.provider ?? "openai";
+    const visionModel =
+      provider === "openai"
+        ? "gpt-4o"
+        : provider === "anthropic"
+          ? "claude-3-5-sonnet-latest"
+          : provider === "google"
+            ? "gemini-2.5-pro"
+            : cfg.model ?? "";
     return analyzeImageForItinerary(
       {
-        provider: cfg.provider ?? "openai",
-        model: cfg.model ?? "",
+        provider,
+        model: visionModel,
         apiKey: cfg.api_key_encrypted,
         maxTokens: cfg.max_tokens,
       },
