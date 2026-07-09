@@ -201,7 +201,7 @@ function ItineraryDetailPage() {
   async function handleDocImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
-    const dayId = docTargetDayRef.current;
+    let dayId = docTargetDayRef.current;
     docTargetDayRef.current = null;
     if (!file || !dayId) return;
 
@@ -213,7 +213,25 @@ function ItineraryDetailPage() {
       return;
     }
 
+    // Sem dia de destino → cria um novo dia automaticamente para receber o documento.
+    if (dayId === "__new__") {
+      const nextNumber = (it?.days?.length || 0) + 1;
+      const newDay = await createItineraryDay({
+        itinerary_id: id,
+        day_number: nextNumber,
+        title: `Dia ${nextNumber}`,
+        sort_order: nextNumber,
+      });
+      if (!newDay) {
+        toast.error("Não foi possível criar o dia.");
+        return;
+      }
+      dayId = newDay.id;
+      refresh();
+    }
+
     setPendingDayId(dayId);
+
     try {
       // 2. Block the same document being imported twice into the same day.
       const existingDocs = await fetchItineraryDocuments(id);
