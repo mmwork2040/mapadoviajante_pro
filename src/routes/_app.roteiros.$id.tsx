@@ -1371,7 +1371,9 @@ function ActivityRow({
         agencyId={agencyId}
         leadId={leadId}
         itineraryId={itineraryId}
+        activityTitle={activity.title}
       />
+
     </div>
   );
 }
