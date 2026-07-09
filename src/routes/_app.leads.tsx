@@ -15,7 +15,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
