@@ -97,6 +97,11 @@ function LeadsPage() {
   const myId = getMemberId();
   const leads = onlyMine ? allLeads.filter((l) => l.assigned_to === myId) : allLeads;
 
+  const { data: team = [] } = useQuery({
+    queryKey: ["team-members"],
+    queryFn: fetchTeamMembers,
+  });
+
   const { data: itineraryStatuses = {} } = useQuery({
     queryKey: ["lead-itinerary-statuses"],
     queryFn: fetchLeadItineraryStatuses,
