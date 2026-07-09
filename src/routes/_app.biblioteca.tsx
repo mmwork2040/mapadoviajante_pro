@@ -414,17 +414,21 @@ function LibraryPage() {
         <p className="text-muted-foreground">Nenhum item cadastrado nesta seção.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <LibraryCard
-              key={item.id}
-              item={item}
-              onEdit={() => setEditing(item)}
-              onRemove={() => remove(item)}
-              selectable={selectMode && isImageTab}
-              selected={selected.has(item.id)}
-              onToggleSelect={() => toggleItem(item.id)}
-            />
-          ))}
+          {items.map((item) => {
+            const locked = lockedFor(item);
+            return (
+              <LibraryCard
+                key={item.id}
+                item={item}
+                onEdit={() => setEditing(item)}
+                onRemove={() => remove(item)}
+                selectable={selectMode && isImageTab && locked.length === 0}
+                selected={selected.has(item.id)}
+                onToggleSelect={() => toggleItem(item.id)}
+                lockedIn={locked}
+              />
+            );
+          })}
         </div>
       )}
 
