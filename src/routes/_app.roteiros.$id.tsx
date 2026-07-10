@@ -181,7 +181,6 @@ async function resolveDayForPlan(params: {
   const usedNumbers = new Set(sorted.map((d) => d.day_number).filter((n): n is number => typeof n === "number"));
   let dayNumber = aiDayNumber;
   while (usedNumbers.has(dayNumber)) dayNumber += 1;
-  dayNumber = Math.max(dayNumber, Math.max(0, ...sorted.map((d) => d.day_number || 0)) + 1);
   const created = await createItineraryDay({
     itinerary_id: itineraryId,
     day_number: dayNumber,
@@ -2520,7 +2519,8 @@ ${dias || "(nenhum dia ainda)"}`;
 
       let createdDays = 0;
       let createdActs = 0;
-      const existingDays = [...(it.days || [])];
+      const latestItinerary = await fetchItineraryById(it.id);
+      const existingDays = [...(latestItinerary?.days || it.days || [])];
       for (let i = 0; i < res.days.length; i++) {
         const d = res.days[i];
         const resolved = await resolveDayForPlan({
