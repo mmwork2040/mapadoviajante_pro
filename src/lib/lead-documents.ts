@@ -179,6 +179,35 @@ export async function getDownloadUrl(filePath: string, fileName?: string): Promi
   return data?.signedUrl ?? null;
 }
 
+/**
+ * Remove all documents attached to an itinerary (roteiro), deleting both the
+ * stored files and the rows. Called when clearing a roteiro so library images
+ * stop being locked as "in use".
+ */
+export async function deleteItineraryDocuments(itineraryId: string): Promise<boolean> {
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .select("id, file_path")
+    .eq("itinerary_id", itineraryId);
+  if (error) {
+    console.error("deleteItineraryDocuments select", error);
+    return false;
+  }
+  const rows = (data as unknown as { id: string; file_path: string }[]) || [];
+  if (rows.length === 0) return true;
+  const paths = rows.map((r) => r.file_path).filter(Boolean);
+  if (paths.length) await supabase.storage.from(BUCKET).remove(paths);
+  const { error: delErr } = await db()
+    .from("crm_lead_documents")
+    .delete()
+    .eq("itinerary_id", itineraryId);
+  if (delErr) {
+    console.error("deleteItineraryDocuments delete", delErr);
+    return false;
+  }
+  return true;
+}
+
 export function isImageDoc(doc: { mime_type?: string | null; name?: string }): boolean {
   if (doc.mime_type?.startsWith("image/")) return true;
   return /\.(png|jpe?g|gif|webp|bmp|svg|avif)$/i.test(doc.name || "");
