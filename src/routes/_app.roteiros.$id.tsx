@@ -117,6 +117,51 @@ function getNextDayNumber(days?: ItineraryDay[]) {
   return Math.max(0, ...(days || []).map((day) => day.day_number || 0)) + 1;
 }
 
+/**
+ * Reuse an existing day for the AI-generated day at position `index`, or create
+ * a new one when there aren't enough. Matches by date first, then by position,
+ * so the assistant never duplicates a "Dia 1" that already exists — it renames
+ * the existing card if the AI provides a richer title.
+ */
+async function resolveDayForPlan(params: {
+  itineraryId: string;
+  existing: ItineraryDay[];
+  index: number;
+  aiTitle?: string | null;
+  aiDate?: string | null;
+}): Promise<{ day: ItineraryDay; reused: boolean } | null> {
+  const { itineraryId, existing, index, aiTitle, aiDate } = params;
+  const sorted = [...existing].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
+  let match: ItineraryDay | undefined;
+  if (aiDate) match = sorted.find((d) => d.date === aiDate);
+  if (!match) match = sorted[index];
+
+  if (match) {
+    const nextTitle = aiTitle?.trim();
+    const nextDate = aiDate || match.date || null;
+    const updates: Partial<ItineraryDay> = {};
+    if (nextTitle && nextTitle !== match.title) updates.title = nextTitle;
+    if (nextDate !== match.date) updates.date = nextDate;
+    if (Object.keys(updates).length > 0) {
+      const updated = await updateItineraryDay(match.id, updates);
+      return { day: updated || match, reused: true };
+    }
+    return { day: match, reused: true };
+  }
+
+  const dayNumber = Math.max(0, ...sorted.map((d) => d.day_number || 0), index) + 1;
+  const created = await createItineraryDay({
+    itinerary_id: itineraryId,
+    day_number: dayNumber,
+    title: aiTitle?.trim() || `Dia ${dayNumber}`,
+    date: aiDate || null,
+    sort_order: dayNumber,
+  });
+  return created ? { day: created, reused: false } : null;
+}
+
+
+
 // Shared helpers for AI document import.
 function mapActivityTypeGlobal(t?: string): string {
   const v = (t || "").toLowerCase();
