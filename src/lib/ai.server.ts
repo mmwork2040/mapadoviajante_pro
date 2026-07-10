@@ -12,6 +12,7 @@ type ProviderConfig = {
 
 const EXTRACTION_PROMPT = `Você é um assistente que lê documentos de viagem: ingressos de parques/atrações, passeios, passagens aéreas, reservas de hotel, transfers e vouchers.
 SEMPRE identifique e extraia obrigatoriamente: o TIPO da atividade, o DIA (data) e o HORÁRIO. Se houver horário de início e fim, use o horário de início em "time".
+PRIORIDADE MÁXIMA — DATAS DE UTILIZAÇÃO: em cartões de embarque, passagens, bilhetes, tickets, vouchers e ingressos, SEMPRE extraia a DATA de utilização (não só o horário). Reconheça datas em qualquer formato (DD/MM/AAAA, DD-MMM, "10 JUL", "10 de julho", ao lado de "DATE", "DATA", "EMBARQUE", "BOARDING", "VALID") e converta para AAAA-MM-DD. NUNCA deixe "date" vazio se houver qualquer indício de data no documento.
 Extraia as informações relevantes e responda APENAS com um JSON válido, sem texto extra, no formato:
 {
   "type": "voo|hotel|transfer|passeio|ingresso|outro",
@@ -170,8 +171,10 @@ export async function extractDocument(
 
 const MULTI_EXTRACTION_PROMPT = `Você é um assistente especialista que analisa MINUCIOSAMENTE qualquer documento relacionado a uma viagem: ingressos, passagens aéreas/rodoviárias, tickets, e-tickets, vouchers, reservas de hotel/pousada, transfers, passeios, aluguel de carro, seguros de viagem, comprovantes e confirmações.
 Identifique TODAS as atividades/itens presentes no documento. Para cada um, extraia obrigatoriamente o TIPO, a DATA e o HORÁRIO quando existirem. Se houver horário de início e fim, use o de início em "time".
+PRIORIDADE MÁXIMA — DATAS DE UTILIZAÇÃO: em cartões de embarque, passagens, bilhetes, tickets, vouchers, ingressos ou similares, SEMPRE identifique e extraia as DATAS de utilização, não apenas os horários. Procure a data em qualquer formato (DD/MM/AAAA, DD/MM/AA, DD-MMM, "10 JUL", "10 de julho", datas ao lado de "DATE", "DATA", "EMBARQUE", "BOARDING", "VALID", "VÁLIDO", etc.) e converta para AAAA-MM-DD. Se o ano não constar, assuma o ano da viagem pelo contexto. NUNCA deixe "date" vazio quando houver qualquer indício de data no documento; nunca coloque vários itens com datas diferentes num mesmo dia.
 Regras importantes de análise:
-- Passagens/voos: crie um item para a IDA e outro para a VOLTA (quando houver), cada um com sua própria data e horário. Inclua escalas relevantes no "description".
+- Cartão de embarque / passagens / voos: crie um item para a IDA e outro para a VOLTA (quando houver), CADA UM com sua PRÓPRIA data e horário. Se o cartão cobrir ida e volta, os dois itens devem ter datas diferentes. Inclua escalas relevantes no "description".
+- Ingressos/tickets/vouchers: use a data de utilização/validade em "date".
 - Hospedagem: use a data de check-in em "date" e registre check-in/check-out no "description".
 - Seguros: use a data de início da cobertura em "date" e o período no "description".
 - Seja minucioso: não invente dados; deixe vazio o que não constar no documento.
