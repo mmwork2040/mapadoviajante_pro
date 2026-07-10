@@ -560,6 +560,7 @@ function LibraryCard({
 }) {
   const img = useAssetUrl(item);
   const [zoom, setZoom] = useState(false);
+  const [info, setInfo] = useState(false);
   const locked = lockedIn.length > 0;
   const lockHint = locked
     ? `Anexada ${lockedIn.length === 1 ? "ao roteiro" : "aos roteiros"} "${lockedIn
@@ -647,10 +648,69 @@ function LibraryCard({
         </div>
         )}
         {!selectable && locked && (
-          <div className="absolute right-2 top-2 rounded-lg bg-card/90 p-1.5 text-destructive" title={lockHint}>
-            <Lock className="h-4 w-4" />
+          <div className="absolute right-2 top-2 flex gap-1">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setInfo(true);
+              }}
+              className="rounded-lg bg-card/90 p-1.5 text-foreground hover:bg-card"
+              title="Ver detalhes"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+            <div className="rounded-lg bg-card/90 p-1.5 text-destructive" title={lockHint}>
+              <Lock className="h-4 w-4" />
+            </div>
           </div>
         )}
+        {info && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+            onClick={(e) => {
+              e.stopPropagation();
+              setInfo(false);
+            }}
+          >
+            <div
+              className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl bg-card p-5 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="mb-3 flex items-start justify-between gap-2">
+                <h3 className="text-lg font-semibold">{item.title}</h3>
+                <button
+                  onClick={() => setInfo(false)}
+                  className="rounded-lg p-1 text-muted-foreground hover:bg-accent"
+                  title="Fechar"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              {img && (
+                <img
+                  src={img}
+                  alt={item.title}
+                  className="mb-3 max-h-60 w-full rounded-lg object-contain"
+                />
+              )}
+              {item.location && (
+                <p className="mb-2 flex items-center gap-1 text-sm text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0" /> {item.location}
+                </p>
+              )}
+              {item.description && (
+                <p className="mb-2 text-sm text-muted-foreground">{item.description}</p>
+              )}
+              {item.content && (
+                <p className="whitespace-pre-wrap text-sm text-foreground">{item.content}</p>
+              )}
+              <div className="mt-3 flex items-center gap-1 text-xs text-destructive">
+                <Lock className="h-3.5 w-3.5" /> {lockHint}
+              </div>
+            </div>
+          </div>
+        )}
+
 
       </div>
       <div className="flex flex-1 flex-col p-4">
