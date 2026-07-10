@@ -2433,18 +2433,24 @@ ${dias || "(nenhum dia ainda)"}`;
 
       let createdDays = 0;
       let createdActs = 0;
-      const baseCount = it.days?.length || 0;
+      const existingDays = [...(it.days || [])];
       for (let i = 0; i < res.days.length; i++) {
         const d = res.days[i];
-        const day = await createItineraryDay({
-          itinerary_id: it.id,
-          day_number: baseCount + i + 1,
-          title: d.title || `Dia ${baseCount + i + 1}`,
-          date: d.date || null,
-          sort_order: baseCount + i + 1,
+        const resolved = await resolveDayForPlan({
+          itineraryId: it.id,
+          existing: existingDays,
+          index: i,
+          aiTitle: d.title,
+          aiDate: d.date,
         });
-        if (!day) continue;
-        createdDays++;
+        if (!resolved) continue;
+        const { day, reused } = resolved;
+        if (!reused) {
+          createdDays++;
+          existingDays.push(day);
+        }
+        const baseSort =
+          (existingDays.find((x) => x.id === day.id)?.activities?.length || 0);
         for (let j = 0; j < d.activities.length; j++) {
           const a = d.activities[j];
           try {
@@ -2457,7 +2463,7 @@ ${dias || "(nenhum dia ainda)"}`;
               cost: typeof a.cost === "number" && a.cost > 0 ? a.cost : null,
               description: a.description || null,
               type: mapType(a.type),
-              sort_order: j + 1,
+              sort_order: baseSort + j,
             });
             createdActs++;
           } catch {
