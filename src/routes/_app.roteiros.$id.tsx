@@ -830,7 +830,7 @@ function ItineraryDetailPage() {
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card sm:flex-row sm:items-stretch">
+      <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_2px_4px_rgba(0,0,0,0.06),0_8px_16px_-8px_rgba(0,0,0,0.12)] sm:flex-row sm:items-stretch">
         <div className="relative h-40 w-full shrink-0 overflow-hidden bg-muted/60 sm:h-auto sm:w-56">
           {it.cover_image ? (
             <>
@@ -864,7 +864,7 @@ function ItineraryDetailPage() {
             <span className="truncate">{it.destination || "—"}</span>
           </div>
         </div>
-        <div className="flex flex-1 flex-wrap items-start justify-between gap-4 bg-[var(--accent)] p-5">
+        <div className="flex flex-1 flex-wrap items-start justify-between gap-4 bg-card p-5">
         <div>
           <h1 className="text-2xl font-bold">{it.title}</h1>
           <p className="text-sm text-muted-foreground">
