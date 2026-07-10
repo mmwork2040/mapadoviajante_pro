@@ -53,6 +53,7 @@ import {
   fetchActivityDocuments,
   fetchAgencyDocuments,
   fetchItineraryDocuments,
+  deleteItineraryDocuments,
   attachLibraryDocumentToActivity,
   downloadDocument,
   uploadLeadDocument,
@@ -475,9 +476,12 @@ function ItineraryDetailPage() {
       for (const day of it?.days || []) {
         await deleteItineraryDay(day.id);
       }
+      // Also unlink attached documents/images so they stop being "in use" in the library.
+      await deleteItineraryDocuments(id);
     },
     onSuccess: () => {
       toast.success("Roteiro limpo. Comece novamente!");
+      qc.invalidateQueries({ queryKey: ["library"] });
       refresh();
     },
     onError: () => toast.error("Erro ao limpar o roteiro."),
