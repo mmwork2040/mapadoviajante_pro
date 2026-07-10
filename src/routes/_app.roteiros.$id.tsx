@@ -399,10 +399,12 @@ function ItineraryDetailPage() {
       if (flightItems.length) {
         const canUseTripBounds = isISO(tripStart) && isISO(tripEnd);
         if (canUseTripBounds) {
+          const startDate = tripStart as string;
+          const endDate = tripEnd as string;
           for (const item of flightItems) {
-            if (!isISO(item.date) || (hasRoundTrip && item.date === flightItems[0]?.date && tripStart !== tripEnd)) {
-              if (isOutbound(item)) item.date = tripStart;
-              else if (isReturn(item)) item.date = tripEnd;
+            if (!isISO(item.date) || (hasRoundTrip && item.date === flightItems[0]?.date && startDate !== endDate)) {
+              if (isOutbound(item)) item.date = startDate;
+              else if (isReturn(item)) item.date = endDate;
             }
           }
         }
