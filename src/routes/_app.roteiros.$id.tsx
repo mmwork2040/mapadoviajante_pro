@@ -2581,14 +2581,14 @@ ${dias || "(nenhum dia ainda)"}`;
     <>
       <button
         onClick={() => setOpen((o) => !o)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90"
+        className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 md:bottom-6"
         title="Assistente de roteiro"
       >
         {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
       </button>
 
       {open && (
-        <div className="fixed bottom-24 right-6 z-40 flex h-[32rem] w-[min(24rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl">
+        <div className="fixed bottom-40 right-6 z-50 flex h-[32rem] max-h-[calc(100vh-11rem)] w-[min(24rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl md:bottom-24 md:z-40 md:max-h-none">
           <div className="flex items-center gap-2 border-b border-border px-4 py-3">
             <Bot className="h-5 w-5 text-primary" />
             <div>
