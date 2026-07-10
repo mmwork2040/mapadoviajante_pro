@@ -12,6 +12,7 @@ type ProviderConfig = {
 
 const EXTRACTION_PROMPT = `Você é um assistente que lê documentos de viagem: ingressos de parques/atrações, passeios, passagens aéreas, reservas de hotel, transfers e vouchers.
 SEMPRE identifique e extraia obrigatoriamente: o TIPO da atividade, o DIA (data) e o HORÁRIO. Se houver horário de início e fim, use o horário de início em "time".
+PRIORIDADE MÁXIMA — DATAS DE UTILIZAÇÃO: em cartões de embarque, passagens, bilhetes, tickets, vouchers e ingressos, SEMPRE extraia a DATA de utilização (não só o horário). Reconheça datas em qualquer formato (DD/MM/AAAA, DD-MMM, "10 JUL", "10 de julho", ao lado de "DATE", "DATA", "EMBARQUE", "BOARDING", "VALID") e converta para AAAA-MM-DD. NUNCA deixe "date" vazio se houver qualquer indício de data no documento.
 Extraia as informações relevantes e responda APENAS com um JSON válido, sem texto extra, no formato:
 {
   "type": "voo|hotel|transfer|passeio|ingresso|outro",
