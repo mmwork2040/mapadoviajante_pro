@@ -117,6 +117,10 @@ function getNextDayNumber(days?: ItineraryDay[]) {
   return Math.max(0, ...(days || []).map((day) => day.day_number || 0)) + 1;
 }
 
+function hasActivities(day?: ItineraryDay | null) {
+  return (day?.activities?.length || 0) > 0;
+}
+
 /**
  * Reuse an existing day for the AI-generated day at position `index`, or create
  * a new one when there aren't enough. Matches by date first, then by position,
@@ -271,20 +275,31 @@ function ItineraryDetailPage() {
       return;
     }
 
-    // Sem dia de destino → cria um novo dia automaticamente para receber o documento.
+    // Sem dia de destino → reaproveita um dia vazio existente antes de criar outro.
+    // Isso evita duplicar "Dia 1" quando o roteiro acabou de ser limpo/criado e a
+    // tela ainda não refletiu o último dia salvo no banco.
     if (dayId === "__new__") {
-      const nextNumber = getNextDayNumber(it?.days);
-      const newDay = await createItineraryDay({
-        itinerary_id: id,
-        day_number: nextNumber,
-        title: `Dia ${nextNumber}`,
-        sort_order: nextNumber,
-      });
-      if (!newDay) {
-        toast.error("Não foi possível criar o dia.");
-        return;
+      const latest = await fetchItineraryById(id);
+      const latestDays = [...(latest?.days || it?.days || [])].sort(
+        (a, b) => (a.day_number ?? 0) - (b.day_number ?? 0),
+      );
+      const emptyDay = latestDays.find((d) => !hasActivities(d));
+      if (emptyDay) {
+        dayId = emptyDay.id;
+      } else {
+        const nextNumber = getNextDayNumber(latestDays);
+        const newDay = await createItineraryDay({
+          itinerary_id: id,
+          day_number: nextNumber,
+          title: `Dia ${nextNumber}`,
+          sort_order: nextNumber,
+        });
+        if (!newDay) {
+          toast.error("Não foi possível criar o dia.");
+          return;
+        }
+        dayId = newDay.id;
       }
-      dayId = newDay.id;
       refresh();
     }
 
@@ -364,6 +379,45 @@ function ItineraryDetailPage() {
       // Dates found inside the document.
       const itemDates = items.map((x) => x.date).filter(isISO);
 
+      const isFlightDoc = (x: ExtractedDocData) => {
+        const raw = [x.type, x.title, x.description, x.location, x.flight_number]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        return /\b(voo|voos|flight|passagem|embarque|boarding|avi[aã]o)\b/.test(raw);
+      };
+      const isOutbound = (x: ExtractedDocData) =>
+        /\b(ida|outbound|sa[ií]da|departure)\b/i.test([x.title, x.description].filter(Boolean).join(" "));
+      const isReturn = (x: ExtractedDocData) =>
+        /\b(volta|retorno|return|regresso)\b/i.test([x.title, x.description].filter(Boolean).join(" "));
+      const flightItems = items.filter(isFlightDoc);
+      const hasRoundTrip = flightItems.some(isOutbound) && flightItems.some(isReturn);
+
+      // Se o documento de voo não trouxe datas confiáveis, não jogamos ida/volta
+      // no mesmo Dia 1. Usamos as datas do roteiro quando existem; caso contrário,
+      // bloqueamos a importação para o consultor corrigir/informar o período.
+      if (flightItems.length) {
+        const canUseTripBounds = isISO(it?.start_date) && isISO(it?.end_date);
+        if (canUseTripBounds) {
+          for (const item of flightItems) {
+            if (!isISO(item.date) || (hasRoundTrip && item.date === flightItems[0]?.date && it!.start_date !== it!.end_date)) {
+              if (isOutbound(item)) item.date = it!.start_date!;
+              else if (isReturn(item)) item.date = it!.end_date!;
+            }
+          }
+        }
+        const refreshedDates = flightItems.map((x) => x.date).filter(isISO);
+        const missingDate = flightItems.some((x) => !isISO(x.date));
+        const collapsedRoundTrip =
+          hasRoundTrip && new Set(refreshedDates).size < 2 && !(isISO(it?.start_date) && it?.start_date === it?.end_date);
+        if (missingDate || collapsedRoundTrip) {
+          toast.error(
+            "Não consegui identificar datas confiáveis de ida e volta no cartão. Informe o período da viagem ou envie um documento com as datas visíveis.",
+          );
+          return;
+        }
+      }
+
       // Confirm the document dates match the period informed in the trip registration.
       if (itemDates.length && (anchor || isISO(it?.end_date))) {
         const hi = isISO(it?.end_date) ? it!.end_date! : null;
@@ -398,7 +452,7 @@ function ItineraryDetailPage() {
             }
           }
           // Create the missing days within the range.
-          let dayNum = currentDays.length;
+          let dayNum = Math.max(0, ...currentDays.map((d) => d.day_number || 0));
           for (let off = 0; off <= daysBetween(rangeStart, rangeEnd); off++) {
             const dateAt = addDays(rangeStart, off);
             if (!dateToDayId.has(dateAt)) {
