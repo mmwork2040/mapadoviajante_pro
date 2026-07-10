@@ -121,6 +121,22 @@ function hasActivities(day?: ItineraryDay | null) {
   return (day?.activities?.length || 0) > 0;
 }
 
+function normalizeDayTitle(value?: string | null) {
+  return (value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function extractDayNumber(value?: string | null) {
+  const match = normalizeDayTitle(value).match(/\bdia\s*(\d+)\b|\bday\s*(\d+)\b/);
+  const raw = match?.[1] || match?.[2];
+  const parsed = raw ? Number(raw) : NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+}
+
 /**
  * Reuse an existing day for the AI-generated day at position `index`, or create
  * a new one when there aren't enough. Matches by date first, then by position,
@@ -138,6 +154,15 @@ async function resolveDayForPlan(params: {
   const sorted = [...existing].sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0));
   let match: ItineraryDay | undefined;
   if (aiDate) match = sorted.find((d) => d.date === aiDate);
+  const aiDayNumber = extractDayNumber(aiTitle) ?? index + 1;
+  if (!match) match = sorted.find((d) => d.day_number === aiDayNumber);
+  if (!match) {
+    const aiBaseTitle = normalizeDayTitle(aiTitle).replace(/^dia\s*\d+\s*[-–—:]?\s*/, "");
+    match = sorted.find((d) => {
+      const dayBaseTitle = normalizeDayTitle(d.title).replace(/^dia\s*\d+\s*[-–—:]?\s*/, "");
+      return !!aiBaseTitle && !!dayBaseTitle && aiBaseTitle === dayBaseTitle;
+    });
+  }
   if (!match) match = sorted[index];
 
   if (match) {
@@ -153,7 +178,10 @@ async function resolveDayForPlan(params: {
     return { day: match, reused: true };
   }
 
-  const dayNumber = Math.max(0, ...sorted.map((d) => d.day_number || 0), index) + 1;
+  const usedNumbers = new Set(sorted.map((d) => d.day_number).filter((n): n is number => typeof n === "number"));
+  let dayNumber = aiDayNumber;
+  while (usedNumbers.has(dayNumber)) dayNumber += 1;
+  dayNumber = Math.max(dayNumber, Math.max(0, ...sorted.map((d) => d.day_number || 0)) + 1);
   const created = await createItineraryDay({
     itinerary_id: itineraryId,
     day_number: dayNumber,
