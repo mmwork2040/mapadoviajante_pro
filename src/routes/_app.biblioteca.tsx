@@ -560,6 +560,7 @@ function LibraryCard({
 }) {
   const img = useAssetUrl(item);
   const [zoom, setZoom] = useState(false);
+  const [info, setInfo] = useState(false);
   const locked = lockedIn.length > 0;
   const lockHint = locked
     ? `Anexada ${lockedIn.length === 1 ? "ao roteiro" : "aos roteiros"} "${lockedIn
