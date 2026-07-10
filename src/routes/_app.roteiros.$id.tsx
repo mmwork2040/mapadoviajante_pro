@@ -356,10 +356,13 @@ function ItineraryDetailPage() {
           (new Date(b + "T00:00:00").getTime() - new Date(a + "T00:00:00").getTime()) / 86400000,
         );
 
-      const currentDays = [...(it?.days || [])].sort(
+      const latestItinerary = await fetchItineraryById(id);
+      const currentDays = [...(latestItinerary?.days || it?.days || [])].sort(
         (a, b) => (a.day_number ?? 0) - (b.day_number ?? 0),
       );
-      const anchor = isISO(it?.start_date) ? it!.start_date! : null;
+      const tripStart = latestItinerary?.start_date || it?.start_date || null;
+      const tripEnd = latestItinerary?.end_date || it?.end_date || null;
+      const anchor = isISO(tripStart) ? tripStart : null;
 
       // Resolve a date for each existing day (explicit date, or computed from the trip start).
       const dayDateOf = (d: ItineraryDay, index: number): string | null =>
@@ -375,9 +378,6 @@ function ItineraryDetailPage() {
         const dd = dayDateOf(d, i);
         if (dd) dateToDayId.set(dd, d.id);
       });
-
-      // Dates found inside the document.
-      const itemDates = items.map((x) => x.date).filter(isISO);
 
       const isFlightDoc = (x: ExtractedDocData) => {
         const raw = [x.type, x.title, x.description, x.location, x.flight_number]
@@ -397,19 +397,19 @@ function ItineraryDetailPage() {
       // no mesmo Dia 1. Usamos as datas do roteiro quando existem; caso contrário,
       // bloqueamos a importação para o consultor corrigir/informar o período.
       if (flightItems.length) {
-        const canUseTripBounds = isISO(it?.start_date) && isISO(it?.end_date);
+        const canUseTripBounds = isISO(tripStart) && isISO(tripEnd);
         if (canUseTripBounds) {
           for (const item of flightItems) {
-            if (!isISO(item.date) || (hasRoundTrip && item.date === flightItems[0]?.date && it!.start_date !== it!.end_date)) {
-              if (isOutbound(item)) item.date = it!.start_date!;
-              else if (isReturn(item)) item.date = it!.end_date!;
+            if (!isISO(item.date) || (hasRoundTrip && item.date === flightItems[0]?.date && tripStart !== tripEnd)) {
+              if (isOutbound(item)) item.date = tripStart;
+              else if (isReturn(item)) item.date = tripEnd;
             }
           }
         }
         const refreshedDates = flightItems.map((x) => x.date).filter(isISO);
         const missingDate = flightItems.some((x) => !isISO(x.date));
         const collapsedRoundTrip =
-          hasRoundTrip && new Set(refreshedDates).size < 2 && !(isISO(it?.start_date) && it?.start_date === it?.end_date);
+          hasRoundTrip && new Set(refreshedDates).size < 2 && !(isISO(tripStart) && tripStart === tripEnd);
         if (missingDate || collapsedRoundTrip) {
           toast.error(
             "Não consegui identificar datas confiáveis de ida e volta no cartão. Informe o período da viagem ou envie um documento com as datas visíveis.",
@@ -418,9 +418,12 @@ function ItineraryDetailPage() {
         }
       }
 
+      // Dates found inside the document after any safe fallback to trip bounds.
+      const itemDates = items.map((x) => x.date).filter(isISO);
+
       // Confirm the document dates match the period informed in the trip registration.
-      if (itemDates.length && (anchor || isISO(it?.end_date))) {
-        const hi = isISO(it?.end_date) ? it!.end_date! : null;
+      if (itemDates.length && (anchor || isISO(tripEnd))) {
+        const hi = isISO(tripEnd) ? tripEnd : null;
         const outside = itemDates.some((d) => (anchor && d < anchor) || (hi && d > hi));
         if (outside) {
           toast.warning(
@@ -434,7 +437,7 @@ function ItineraryDetailPage() {
         const candidates = [
           ...itemDates,
           ...(anchor ? [anchor] : []),
-          ...(isISO(it?.end_date) ? [it!.end_date!] : []),
+          ...(isISO(tripEnd) ? [tripEnd] : []),
           ...currentDays.map((d, i) => dayDateOf(d, i)).filter(isISO),
         ].sort();
         const rangeStart = candidates[0];
