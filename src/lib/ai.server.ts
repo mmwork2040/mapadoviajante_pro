@@ -180,7 +180,11 @@ Regras importantes de análise:
 - Passeios/tours/transportes: registre data, horário, ponto de encontro/local e fornecedor quando disponíveis.
 - Hospedagem: use a data de check-in em "date" e registre check-in/check-out no "description".
 - Seguros: use a data de início da cobertura em "date" e o período no "description".
-- Seja minucioso: não invente dados; deixe vazio o que não constar no documento.
+- CIDADES/LOCAIS: sempre identifique a cidade (e país/região quando houver) de cada item e registre em "location". Se um item pertencer a uma cidade citada em outra parte do documento, associe-o a ela.
+- ATIVIDADES: capture TODAS as atividades, passeios, experiências, refeições e visitas mencionadas, mesmo em texto corrido, criando um item para cada uma.
+- MEIOS DE TRANSPORTE: para cada atividade/deslocamento, identifique o meio de transporte (a pé, carro, transfer, ônibus, metrô, trem, avião, barco, etc.) e registre em "transport". Se o documento sugerir ou implicar o transporte, indique-o como sugestão.
+- HORÁRIOS: use os horários existentes no documento em "time". Quando não houver horário mas a sequência lógica do dia permitir estimar, preencha "time" com um horário SUGERIDO coerente e marque "time_suggested": true. Se o horário for explícito no documento, use "time_suggested": false.
+- Seja minucioso: não invente dados factuais (datas, códigos, valores); deixe vazio o que não constar. Apenas horários e transporte podem ser SUGERIDOS quando marcados como tal.
 Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento tem o formato:
 {
   "type": "voo|hotel|transfer|passeio|restaurante|ingresso|seguro|aluguel|outro",
