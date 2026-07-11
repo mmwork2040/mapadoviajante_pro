@@ -412,10 +412,19 @@ function ItineraryDetailPage() {
         .join("\n");
 
       // 3. Let the AI read the document and extract all activities.
-      const base64 = await fileToBase64(file);
-      const items: ExtractedDocData[] = await extractActivities({
-        data: { fileBase64: base64, mime: file.type, context: existingContext || undefined },
-      });
+      const items: ExtractedDocData[] =
+        source.kind === "text"
+          ? await extractActivitiesFromText({
+              data: { text: source.text, context: existingContext || undefined },
+            })
+          : await extractActivities({
+              data: {
+                fileBase64: await fileToBase64(source.file),
+                mime: source.file.type,
+                context: existingContext || undefined,
+              },
+            });
+
       if (!items.length) {
         toast.error("Nenhuma atividade nova encontrada no documento (ou já constava no roteiro).");
         return;
