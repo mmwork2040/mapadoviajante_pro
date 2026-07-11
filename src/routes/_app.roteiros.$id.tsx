@@ -1846,6 +1846,7 @@ function ActivityRow({
   const [eTitle, setETitle] = useState(activity.title || "");
   const [eTime, setETime] = useState(activity.time || "");
   const [eLocation, setELocation] = useState(activity.location || "");
+  const [eDescription, setEDescription] = useState(activity.description || "");
   const [eType, setEType] = useState<string>(activity.type || "activity");
   const [saving, setSaving] = useState(false);
 
@@ -1853,6 +1854,7 @@ function ActivityRow({
     setETitle(activity.title || "");
     setETime(activity.time || "");
     setELocation(activity.location || "");
+    setEDescription(activity.description || "");
     setEType(done ? "activity" : activity.type || "activity");
     setEditing(true);
   }
