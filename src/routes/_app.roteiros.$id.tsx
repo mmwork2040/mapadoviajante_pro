@@ -1062,6 +1062,15 @@ function ItineraryDetailPage() {
           </p>
         )}
 
+        {driveOpen && (
+          <DriveImportModal
+            folderId={gdriveCfg?.folderId || ""}
+            onClose={() => setDriveOpen(false)}
+            onPick={handleDrivePick}
+          />
+        )}
+
+
         <div className="flex gap-4 overflow-x-auto pb-4">
           {(it.days || []).map((day) => (
             <DayCard
