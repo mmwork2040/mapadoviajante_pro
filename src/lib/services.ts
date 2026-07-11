@@ -1091,6 +1091,7 @@ export async function searchLibraryImageForDestination(destination: string): Pro
 export async function saveExternalImageToLibrary(
   imageUrl: string,
   destination: string,
+  description?: string,
 ): Promise<string> {
   try {
     const res = await fetch(imageUrl);
@@ -1105,9 +1106,12 @@ export async function saveExternalImageToLibrary(
       type: "image",
       title: destination,
       location: destination,
+      description:
+        description?.trim() ||
+        `Foto de ${destination} adicionada automaticamente ao acervo da biblioteca para reuso em roteiros.`,
       file_url: up.path,
       file_name: up.name,
-      tags: [normalizeText(destination)].filter(Boolean),
+      tags: ["auto", "destino", normalizeText(destination)].filter(Boolean),
     });
     return (await getLibraryAssetUrl(up.path)) ?? imageUrl;
   } catch (e) {
@@ -1123,6 +1127,7 @@ export async function saveActivityImageToLibrary(
   imageUrl: string,
   activityLocation: string,
   destination: string,
+  description?: string,
 ): Promise<string | null> {
   try {
     const res = await fetch(imageUrl);
@@ -1134,12 +1139,20 @@ export async function saveActivityImageToLibrary(
     const up = await uploadLibraryAsset(file);
     if (!up) return null;
     const tags = Array.from(
-      new Set([normalizeText(activityLocation), normalizeText(destination)].filter(Boolean)),
+      new Set(
+        ["auto", "destino", normalizeText(activityLocation), normalizeText(destination)].filter(
+          Boolean,
+        ),
+      ),
     );
+    const title = activityLocation || destination;
     await createLibraryItem({
       type: "image",
-      title: activityLocation || destination,
+      title,
       location: activityLocation || destination,
+      description:
+        description?.trim() ||
+        `Foto de ${title}${destination && destination !== title ? ` (${destination})` : ""} adicionada automaticamente ao acervo da biblioteca para reuso em roteiros.`,
       file_url: up.path,
       file_name: up.name,
       tags,
