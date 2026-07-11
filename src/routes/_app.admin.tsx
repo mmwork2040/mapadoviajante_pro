@@ -1652,6 +1652,94 @@ function N8nCard() {
   );
 }
 
+function GoogleDriveCard() {
+  const [config, setConfig] = useState<GDriveConfig>(DEFAULT_GDRIVE_CONFIG);
+  const [saving, setSaving] = useState(false);
+  const connQ = useQuery({ queryKey: ["gdrive-conn"], queryFn: () => checkDriveConnection() });
+  const connected = connQ.data?.connected;
+
+  useEffect(() => {
+    getGDriveConfig().then(setConfig);
+  }, []);
+
+  async function save() {
+    setSaving(true);
+    try {
+      await saveGDriveConfig({
+        enabled: config.enabled,
+        folderId: config.folderId.trim(),
+      });
+      toast.success("Configuração do Google Drive salva.");
+    } catch {
+      toast.error("Não foi possível salvar a configuração.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-500" : "bg-muted-foreground"}`}
+          />
+          <span className="text-muted-foreground">
+            {connQ.isLoading
+              ? "Verificando conexão…"
+              : connected
+                ? "Conta do Google Drive conectada."
+                : "Google Drive não conectado."}
+          </span>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Para trocar a conta, conecte/reconecte o conector do Google Drive nas configurações do
+          projeto (Conectores). Os consultores leem documentos desta conta compartilhada.
+        </p>
+      </div>
+
+      <label className="flex items-center gap-3 text-sm font-medium">
+        <button
+          type="button"
+          onClick={() => setConfig((c) => ({ ...c, enabled: !c.enabled }))}
+          className={`relative inline-flex h-6 w-11 items-center rounded-full transition ${config.enabled ? "bg-primary" : "bg-muted-foreground/40"}`}
+        >
+          <span
+            className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${config.enabled ? "translate-x-6" : "translate-x-1"}`}
+          />
+        </button>
+        Habilitar "Importar do Drive" no editor de roteiro
+      </label>
+
+      <label className="block">
+        <span className="mb-1 block text-xs font-medium text-muted-foreground">
+          ID da pasta padrão (opcional)
+        </span>
+        <input
+          value={config.folderId}
+          onChange={(e) => setConfig((c) => ({ ...c, folderId: e.target.value }))}
+          placeholder="Ex.: 1AbCdEfGhIjK... (vazio = todos os arquivos)"
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+        />
+        <span className="mt-1 block text-xs text-muted-foreground">
+          Copie o ID da URL da pasta no Drive: drive.google.com/drive/folders/<b>ID</b>.
+        </span>
+      </label>
+
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+      >
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? "Salvando…" : "Salvar"}
+      </button>
+    </div>
+  );
+}
+
+
 
 
 function PaymentsCard() {
