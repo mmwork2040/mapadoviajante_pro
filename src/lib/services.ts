@@ -1145,9 +1145,23 @@ export async function saveExternalImageToLibrary(
     const ext = (blob.type.split("/")[1] || "jpg").replace(/[^a-z0-9]/gi, "") || "jpg";
     const safeDest = sanitizeFileName(destination) || "destino";
     const file = new File([blob], `${safeDest}.${ext}`, { type: blob.type || "image/jpeg" });
+    // Deduplicação: se já houver imagem igual/parecida no acervo, reutiliza-a.
+    const dup = await findSimilarLibraryImage({ file, location: destination, title: destination });
+    if (dup) {
+      const existing = dup.item.file_url
+        ? await getLibraryAssetUrl(dup.item.file_url)
+        : dup.item.image_url ?? null;
+      if (existing) return existing;
+    }
+    const phash = await computeImagePHashFromFile(file).catch(() => null);
     const up = await uploadLibraryAsset(file);
     if (!up) return imageUrl;
-    const meta = buildLibraryImageMeta({ destination, description, auto: true });
+    const meta = buildLibraryImageMeta({
+      destination,
+      description,
+      auto: true,
+      extraTags: phash ? [phashToTag(phash)] : [],
+    });
     await createLibraryItem({
       type: "image",
       title: meta.title,
