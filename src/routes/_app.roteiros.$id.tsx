@@ -314,6 +314,7 @@ function ItineraryDetailPage() {
   const driveEnabled = !!gdriveCfg?.enabled;
   const fetchDriveContent = useServerFn(fetchDriveFileContent);
   const listSheetNames = useServerFn(listDriveSheetNames);
+  const previewSheets = useServerFn(previewDriveSheets);
 
   function base64ToFile(base64: string, mime: string, name: string): File {
     const bin = atob(base64);
