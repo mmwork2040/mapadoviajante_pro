@@ -291,6 +291,42 @@ function ItineraryDetailPage() {
   const docInputRef = useRef<HTMLInputElement>(null);
   const docTargetDayRef = useRef<string | null>(null);
 
+  // Importação a partir do Google Drive (conta compartilhada da agência).
+  const [driveOpen, setDriveOpen] = useState(false);
+  const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
+  const driveEnabled = !!gdriveCfg?.enabled;
+  const fetchDriveContent = useServerFn(fetchDriveFileContent);
+
+  function base64ToFile(base64: string, mime: string, name: string): File {
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new File([bytes], name, { type: mime });
+  }
+
+  async function handleDrivePick(f: DriveFile) {
+    setDriveOpen(false);
+    const cfg = aiConfig ?? (await fetchAiConfig());
+    const connected = !!cfg?.api_key_encrypted && cfg?.knowledge_sources?.status === "connected";
+    if (!connected) {
+      toast.error("Configure e conecte a IA nas configurações antes de importar documentos.");
+      return;
+    }
+    setPendingDayId("__drive__");
+    try {
+      const res = await fetchDriveContent({
+        data: { fileId: f.id, mimeType: f.mimeType, name: f.name },
+      });
+      const file = base64ToFile(res.base64, res.mime, res.name);
+      setPendingDayId(null);
+      await runDocImport(file, "__new__");
+    } catch (err) {
+      setPendingDayId(null);
+      toast.error(err instanceof Error ? err.message : "Erro ao baixar arquivo do Drive.");
+    }
+  }
+
+
   async function handleDocImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
