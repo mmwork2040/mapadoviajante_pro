@@ -1878,6 +1878,7 @@ function ActivityRow({
         title: eTitle.trim(),
         time: eTime || null,
         location: eLocation || null,
+        description: eDescription.trim() || null,
         type: eType,
       });
       setEditing(false);
