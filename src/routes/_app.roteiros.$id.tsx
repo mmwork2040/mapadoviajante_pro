@@ -378,11 +378,29 @@ function ItineraryDetailPage() {
     }
   }
 
-  function confirmSheetPick(selected: string[]) {
+  async function confirmSheetPick(selected: string[]) {
     const pick = sheetPick;
     setSheetPick(null);
     if (!pick || !selected.length) return;
-    void extractFromDrive(pick.file, selected);
+    // Antes de extrair tudo, mostra uma prévia curta de cada aba selecionada.
+    setPendingDayId("__drive__");
+    try {
+      const { previews } = await previewSheets({
+        data: { fileId: pick.file.id, mimeType: pick.file.mimeType, sheets: selected },
+      });
+      setPendingDayId(null);
+      setSheetPreview({ file: pick.file, sheets: selected, previews });
+    } catch (err) {
+      setPendingDayId(null);
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar prévia das abas.");
+    }
+  }
+
+  function confirmSheetPreview() {
+    const prev = sheetPreview;
+    setSheetPreview(null);
+    if (!prev) return;
+    void extractFromDrive(prev.file, prev.sheets);
   }
 
   async function confirmDrivePreview(selected: ExtractedDocData[]) {
