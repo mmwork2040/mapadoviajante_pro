@@ -1,40 +1,53 @@
-# Roteiro Kanban + Visão do Viajante
+## Objetivo
 
-## 1. Editor do consultor — board Kanban (`src/routes/_app.roteiros.$id.tsx`)
+Ler documentos de uma **conta Google Drive compartilhada da agência** para alimentar a elaboração do roteiro, com a conexão configurada na página de **Administração** e a importação disponível no **editor de roteiro** (ao lado de "Documento (IA)").
 
-Transformar a edição vertical de dias em um **quadro Kanban horizontal**, onde cada dia é uma coluna.
+## Arquitetura
 
-- Cada dia vira uma **coluna de largura fixa** (`w-80`), dispostas lado a lado com **rolagem horizontal** (`overflow-x-auto`).
-- Manter a paleta de blocos arrastáveis fixa no topo (Voo, Hospedagem, Atividade, Transfer, Restaurante).
-- Manter toda a lógica atual de `@dnd-kit`:
-  - arrastar blocos da paleta para dentro de uma coluna/dia;
-  - reordenar itens dentro do dia;
-  - mover itens entre dias (atualizando `sort_order` e `day_id`).
-- Cada coluna mostra: título do dia, data, botão de adicionar item manual, botão de excluir dia, e a lista de atividades (`SortableActivity`).
-- Botão "Adicionar dia" como uma coluna final compacta.
-- Preservar: voucher, chat flutuante de IA, status do roteiro, "Limpar roteiro".
+Usamos o **connector nativo Google Drive da Lovable** (gateway) — uma única conta Google conectada no nível do workspace, sem gerenciar tokens OAuth manualmente.
 
 ```text
-[ Paleta: Voo | Hospedagem | Atividade | Transfer | Restaurante ]
-┌─Dia 1───┐ ┌─Dia 2───┐ ┌─Dia 3───┐ ┌─+ Dia─┐
-│ item    │ │ item    │ │ item    │ │       │
-│ item    │ │ item    │ │         │ │       │
-└─────────┘ └─────────┘ └─────────┘ └───────┘
-   ←——————— rolagem horizontal ———————→
+Admin (ligar/desligar + pasta padrão)
+        │
+        ▼
+Server functions (createServerFn)  ──►  Gateway Google Drive
+  - listar arquivos                      (Bearer LOVABLE_API_KEY +
+  - baixar/extrair texto                  X-Connection-Api-Key)
+        │
+        ▼
+Editor de roteiro → "Importar do Drive" → texto → mesmo pipeline do "Documento (IA)"
 ```
 
-## 2. Visão do viajante (`src/routes/viajante.$id.tsx`)
+## Etapas
 
-Reformular a página pública para uma apresentação rica, seguindo o print de referência:
+### 1. Conectar o connector
+- Vincular o connector `google_drive` ao projeto (fluxo de conexão da Lovable). Você escolhe/autoriza a conta Google da agência.
+- Sem isso, as chamadas ao gateway falham por falta de credencial.
 
-- **Hero** com destino, datas e nº de passageiros.
-- Blocos agrupados de **Voos** e **Hospedagem** (extraídos das atividades por tipo), com ícones, horários, códigos e valores.
-- **Itinerário dia a dia** em timeline refinada.
-- Rodapé da marca.
-- Observação técnica: o schema não tem campos de imagem para hotéis; serão usados ícones/placeholders inicialmente.
+### 2. Configuração na Administração (`_app.admin.tsx`)
+- Nova seção **"Google Drive"** seguindo o padrão das outras (webhook, gmail, n8n).
+- Campos: **ativar/desativar** e **pasta padrão** (ID ou seleção de pasta do Drive).
+- Persistir via `settings.functions.ts` adicionando o scope `"gdrive"` (mesma tabela `system_settings`, chave por agência). É a única mudança de "config"; sem alterar schema.
+
+### 3. Server functions novas (`src/lib/gdrive.functions.ts`)
+- `listDriveFiles({ folderId?, query? })` → lista arquivos (PDF, DOCX, Google Docs) da pasta configurada, via `GET /files` no gateway.
+- `fetchDriveFileText({ fileId, mimeType })` → extrai texto:
+  - Google Docs nativo → export como texto simples.
+  - PDF/DOCX → baixa o conteúdo (`alt=media`) e reaproveita o parser de documentos já existente no fluxo "Documento (IA)".
+- Todas com `requireSupabaseAuth` (só membros logados) e lendo `LOVABLE_API_KEY`/`GOOGLE_DRIVE_API_KEY` do runtime do servidor.
+
+### 4. UI no editor de roteiro (`_app.roteiros.$id.tsx`)
+- Novo botão **"Importar do Drive"** junto ao "Documento (IA)".
+- Modal simples: lista arquivos da pasta padrão (com busca), você seleciona um, o sistema extrai o texto e o injeta no **mesmo pipeline** que hoje trata o documento importado pela IA.
+- Só aparece se a seção Google Drive estiver ativada na Administração.
 
 ## Detalhes técnicos
 
-- Sem mudanças de schema nem de lógica de negócio; apenas UI + reorganização de DnD.
-- Reaproveitar `DayCard`/`SortableActivity` adaptando o layout para coluna.
-- Tokens semânticos do design system (sem cores hardcoded).
+- Escopo do connector = conta compartilhada (não é o Drive pessoal de cada consultor); condiz com a opção escolhida.
+- Gateway: `https://connector-gateway.lovable.dev/google_drive/drive/v3/...` — nunca chamamos a API do Google direto.
+- Sem mudança de schema no banco; apenas novo scope de settings + novas server functions + UI.
+- Reaproveita o parser/pipeline atual de documentos para manter consistência com "Documento (IA)".
+
+## Fora de escopo (por agora)
+- OAuth por usuário (Drive pessoal de cada consultor).
+- Importar do Drive na Biblioteca ou no chat de IA (só o editor de roteiro nesta entrega).
