@@ -114,8 +114,9 @@ export const extractActivitiesFromTextData = createServerFn({ method: "POST" })
     );
   });
 
-
+type ExtractKnowledgeInput = {
   provider: string;
+
   model: string;
   apiKey: string;
   fileBase64: string;
