@@ -436,6 +436,19 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         </CollapsibleSection>
       )}
 
+      {isAdmin && (
+        <CollapsibleSection
+          icon={HardDrive}
+          color="#0f9d58"
+          title="Google Drive"
+          subtitle="Leia documentos do Drive da agência para elaborar roteiros"
+        >
+          <GoogleDriveCard />
+        </CollapsibleSection>
+      )}
+
+
+
 
 
 
