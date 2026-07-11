@@ -47,7 +47,7 @@ import {
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
-import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, type DriveFile } from "@/lib/gdrive.functions";
+import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
 
 // Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
 // extraído (ex.: planilhas do Drive varridas por completo).
