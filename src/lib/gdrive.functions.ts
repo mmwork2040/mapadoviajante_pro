@@ -36,6 +36,39 @@ function isSpreadsheet(mime: string): boolean {
   return SPREADSHEET_MIMES.has(mime);
 }
 
+// Planilhas com múltiplas abas (Google Sheets, xlsx, xls). CSV tem uma só aba.
+export function isMultiSheet(mime: string): boolean {
+  return isSpreadsheet(mime) && mime !== "text/csv";
+}
+
+// Baixa o binário de uma planilha do Drive (Google Sheets vira xlsx).
+async function downloadSpreadsheetBuffer(fileId: string, mime: string): Promise<Buffer> {
+  const isGoogleSheet = mime === "application/vnd.google-apps.spreadsheet";
+  const url = isGoogleSheet
+    ? `${GATEWAY}/files/${fileId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+    : `${GATEWAY}/files/${fileId}?alt=media`;
+  const res = await fetch(url, { headers: gatewayHeaders() });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Falha ao baixar planilha do Drive [${res.status}]: ${body}`);
+  }
+  return Buffer.from(await res.arrayBuffer());
+}
+
+/** Lista os nomes das abas de uma planilha do Drive, para o usuário escolher. */
+export const listDriveSheetNames = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ fileId: z.string().min(1), mimeType: z.string().min(1) }).parse(data),
+  )
+  .handler(async ({ data }): Promise<{ sheets: string[] }> => {
+    if (!isMultiSheet(data.mimeType)) return { sheets: [] };
+    const buf = await downloadSpreadsheetBuffer(data.fileId, data.mimeType);
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(buf, { type: "buffer", bookSheets: true });
+    return { sheets: wb.SheetNames };
+  });
+
 // Documentos do Word enviados ao Drive (.docx) — lidos como texto.
 const WORD_MIMES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
