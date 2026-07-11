@@ -1921,6 +1921,12 @@ function ActivityRow({
           placeholder="Título…"
           className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
         />
+        <input
+          value={eLocation}
+          onChange={(e) => setELocation(e.target.value)}
+          placeholder="Cidade / local (opcional)…"
+          className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+        />
         <div className="flex justify-end gap-1.5">
           <button
             onClick={() => setEditing(false)}
