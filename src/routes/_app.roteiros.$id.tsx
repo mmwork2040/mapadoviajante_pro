@@ -1250,6 +1250,17 @@ function ItineraryDetailPage() {
           />
         )}
 
+        {sheetPreview && (
+          <SheetPreviewModal
+            name={sheetPreview.file.name}
+            previews={sheetPreview.previews}
+            onCancel={() => setSheetPreview(null)}
+            onConfirm={confirmSheetPreview}
+          />
+        )}
+
+
+
 
 
         <div className="flex gap-4 overflow-x-auto pb-4">
