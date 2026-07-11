@@ -209,6 +209,9 @@ export interface ExtractedDocData {
   time?: string;
   duration?: string;
   location?: string;
+  city?: string;
+  transport?: string;
+  time_suggested?: boolean;
   description?: string;
   flight_number?: string;
   hotel_name?: string;
