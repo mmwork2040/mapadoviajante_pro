@@ -199,6 +199,7 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
         fileId: z.string().min(1),
         mimeType: z.string().min(1),
         name: z.string().optional(),
+        sheets: z.array(z.string()).optional(),
       })
       .parse(data),
   )
@@ -208,23 +209,21 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
     }
     const baseName = data.name || "documento";
 
-    // Planilhas → texto completo (todas as abas/colunas/linhas).
+    // Planilhas → texto (todas as abas, ou apenas as selecionadas pelo usuário).
     if (isSpreadsheet(data.mimeType)) {
-      const isGoogleSheet = data.mimeType === "application/vnd.google-apps.spreadsheet";
-      const url = isGoogleSheet
-        ? `${GATEWAY}/files/${data.fileId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
-        : `${GATEWAY}/files/${data.fileId}?alt=media`;
-      const res = await fetch(url, { headers: gatewayHeaders() });
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`Falha ao baixar planilha do Drive [${res.status}]: ${body}`);
-      }
       if (data.mimeType === "text/csv") {
+        const res = await fetch(`${GATEWAY}/files/${data.fileId}?alt=media`, {
+          headers: gatewayHeaders(),
+        });
+        if (!res.ok) {
+          const body = await res.text();
+          throw new Error(`Falha ao baixar planilha do Drive [${res.status}]: ${body}`);
+        }
         const text = await res.text();
         return { kind: "text", text: `Arquivo: ${baseName}\n${text}`, name: baseName };
       }
-      const buf = Buffer.from(await res.arrayBuffer());
-      const text = await workbookToText(buf, baseName);
+      const buf = await downloadSpreadsheetBuffer(data.fileId, data.mimeType);
+      const text = await workbookToText(buf, baseName, data.sheets);
       return { kind: "text", text, name: baseName };
     }
 
