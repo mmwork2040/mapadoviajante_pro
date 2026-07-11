@@ -36,6 +36,39 @@ function isSpreadsheet(mime: string): boolean {
   return SPREADSHEET_MIMES.has(mime);
 }
 
+// Planilhas com múltiplas abas (Google Sheets, xlsx, xls). CSV tem uma só aba.
+export function isMultiSheet(mime: string): boolean {
+  return isSpreadsheet(mime) && mime !== "text/csv";
+}
+
+// Baixa o binário de uma planilha do Drive (Google Sheets vira xlsx).
+async function downloadSpreadsheetBuffer(fileId: string, mime: string): Promise<Buffer> {
+  const isGoogleSheet = mime === "application/vnd.google-apps.spreadsheet";
+  const url = isGoogleSheet
+    ? `${GATEWAY}/files/${fileId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+    : `${GATEWAY}/files/${fileId}?alt=media`;
+  const res = await fetch(url, { headers: gatewayHeaders() });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Falha ao baixar planilha do Drive [${res.status}]: ${body}`);
+  }
+  return Buffer.from(await res.arrayBuffer());
+}
+
+/** Lista os nomes das abas de uma planilha do Drive, para o usuário escolher. */
+export const listDriveSheetNames = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ fileId: z.string().min(1), mimeType: z.string().min(1) }).parse(data),
+  )
+  .handler(async ({ data }): Promise<{ sheets: string[] }> => {
+    if (!isMultiSheet(data.mimeType)) return { sheets: [] };
+    const buf = await downloadSpreadsheetBuffer(data.fileId, data.mimeType);
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(buf, { type: "buffer", bookSheets: true });
+    return { sheets: wb.SheetNames };
+  });
+
 // Documentos do Word enviados ao Drive (.docx) — lidos como texto.
 const WORD_MIMES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -115,11 +148,13 @@ export type DriveContent =
 
 // Converte um workbook (xlsx/xls) em texto varrendo TODAS as abas, colunas e
 // linhas — para a IA garimpar qualquer informação útil ao roteiro.
-async function workbookToText(buf: Buffer, name: string): Promise<string> {
+async function workbookToText(buf: Buffer, name: string, sheets?: string[]): Promise<string> {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(buf, { type: "buffer" });
+  const wanted = sheets?.length ? new Set(sheets) : null;
   const parts: string[] = [`Arquivo: ${name}`];
   for (const sheetName of wb.SheetNames) {
+    if (wanted && !wanted.has(sheetName)) continue;
     const ws = wb.Sheets[sheetName];
     if (!ws) continue;
     const csv = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
@@ -164,6 +199,7 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
         fileId: z.string().min(1),
         mimeType: z.string().min(1),
         name: z.string().optional(),
+        sheets: z.array(z.string()).optional(),
       })
       .parse(data),
   )
@@ -173,23 +209,21 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
     }
     const baseName = data.name || "documento";
 
-    // Planilhas → texto completo (todas as abas/colunas/linhas).
+    // Planilhas → texto (todas as abas, ou apenas as selecionadas pelo usuário).
     if (isSpreadsheet(data.mimeType)) {
-      const isGoogleSheet = data.mimeType === "application/vnd.google-apps.spreadsheet";
-      const url = isGoogleSheet
-        ? `${GATEWAY}/files/${data.fileId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
-        : `${GATEWAY}/files/${data.fileId}?alt=media`;
-      const res = await fetch(url, { headers: gatewayHeaders() });
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`Falha ao baixar planilha do Drive [${res.status}]: ${body}`);
-      }
       if (data.mimeType === "text/csv") {
+        const res = await fetch(`${GATEWAY}/files/${data.fileId}?alt=media`, {
+          headers: gatewayHeaders(),
+        });
+        if (!res.ok) {
+          const body = await res.text();
+          throw new Error(`Falha ao baixar planilha do Drive [${res.status}]: ${body}`);
+        }
         const text = await res.text();
         return { kind: "text", text: `Arquivo: ${baseName}\n${text}`, name: baseName };
       }
-      const buf = Buffer.from(await res.arrayBuffer());
-      const text = await workbookToText(buf, baseName);
+      const buf = await downloadSpreadsheetBuffer(data.fileId, data.mimeType);
+      const text = await workbookToText(buf, baseName, data.sheets);
       return { kind: "text", text, name: baseName };
     }
 

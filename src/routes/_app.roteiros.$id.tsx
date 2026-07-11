@@ -47,7 +47,7 @@ import {
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
-import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, type DriveFile } from "@/lib/gdrive.functions";
+import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
 
 // Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
 // extraído (ex.: planilhas do Drive varridas por completo).
@@ -307,10 +307,13 @@ function ItineraryDetailPage() {
     source: DocSource;
     name: string;
   } | null>(null);
+  // Seleção de abas quando o arquivo do Drive é uma planilha com várias abas.
+  const [sheetPick, setSheetPick] = useState<{ file: DriveFile; sheets: string[] } | null>(null);
 
   const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
   const driveEnabled = !!gdriveCfg?.enabled;
   const fetchDriveContent = useServerFn(fetchDriveFileContent);
+  const listSheetNames = useServerFn(listDriveSheetNames);
 
   function base64ToFile(base64: string, mime: string, name: string): File {
     const bin = atob(base64);
@@ -327,10 +330,31 @@ function ItineraryDetailPage() {
       toast.error("Configure e conecte a IA nas configurações antes de importar documentos.");
       return;
     }
+    // Planilhas com várias abas → deixa o usuário escolher quais ler.
+    if (isMultiSheet(f.mimeType)) {
+      setPendingDayId("__drive__");
+      try {
+        const { sheets } = await listSheetNames({ data: { fileId: f.id, mimeType: f.mimeType } });
+        setPendingDayId(null);
+        if (sheets.length > 1) {
+          setSheetPick({ file: f, sheets });
+          return;
+        }
+      } catch (err) {
+        setPendingDayId(null);
+        toast.error(err instanceof Error ? err.message : "Erro ao ler abas da planilha.");
+        return;
+      }
+    }
+    await extractFromDrive(f);
+  }
+
+  // Baixa e extrai o conteúdo de um arquivo do Drive (com abas opcionais).
+  async function extractFromDrive(f: DriveFile, sheets?: string[]) {
     setPendingDayId("__drive__");
     try {
       const res = await fetchDriveContent({
-        data: { fileId: f.id, mimeType: f.mimeType, name: f.name },
+        data: { fileId: f.id, mimeType: f.mimeType, name: f.name, sheets },
       });
       const source: DocSource =
         res.kind === "text"
@@ -345,6 +369,13 @@ function ItineraryDetailPage() {
       setPendingDayId(null);
       toast.error(err instanceof Error ? err.message : "Erro ao baixar arquivo do Drive.");
     }
+  }
+
+  function confirmSheetPick(selected: string[]) {
+    const pick = sheetPick;
+    setSheetPick(null);
+    if (!pick || !selected.length) return;
+    void extractFromDrive(pick.file, selected);
   }
 
   async function confirmDrivePreview(selected: ExtractedDocData[]) {
@@ -1143,6 +1174,15 @@ function ItineraryDetailPage() {
             items={drivePreview.items}
             onCancel={() => setDrivePreview(null)}
             onConfirm={confirmDrivePreview}
+          />
+        )}
+
+        {sheetPick && (
+          <SheetPickModal
+            name={sheetPick.file.name}
+            sheets={sheetPick.sheets}
+            onCancel={() => setSheetPick(null)}
+            onConfirm={confirmSheetPick}
           />
         )}
 
@@ -2933,6 +2973,86 @@ function DriveImportModal({
               );
             })}
           </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SheetPickModal({
+  name,
+  sheets,
+  onCancel,
+  onConfirm,
+}: {
+  name: string;
+  sheets: string[];
+  onCancel: () => void;
+  onConfirm: (selected: string[]) => void;
+}) {
+  const [checked, setChecked] = useState<boolean[]>(() => sheets.map(() => true));
+  const toggle = (i: number) => setChecked((c) => c.map((v, idx) => (idx === i ? !v : v)));
+  const selected = sheets.filter((_, i) => checked[i]);
+  const allOn = checked.every(Boolean);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 className="flex min-w-0 items-center gap-2 font-semibold">
+            <FileText className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">Abas — {name}</span>
+          </h3>
+          <button onClick={onCancel} className="rounded-lg p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between border-b border-border px-4 py-2 text-xs text-muted-foreground">
+          <span>Selecione as abas que a IA deve ler.</span>
+          <button
+            onClick={() => setChecked(sheets.map(() => !allOn))}
+            className="font-medium text-primary hover:underline"
+          >
+            {allOn ? "Desmarcar todas" : "Marcar todas"}
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          <ul className="space-y-1">
+            {sheets.map((s, i) => (
+              <li key={s}>
+                <label className="flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted">
+                  <input
+                    type="checkbox"
+                    checked={checked[i]}
+                    onChange={() => toggle(i)}
+                    className="h-4 w-4 shrink-0"
+                  />
+                  <span className="min-w-0 truncate font-medium">{s}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => onConfirm(selected)}
+            disabled={selected.length === 0}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            Ler {selected.length} aba(s)
+          </button>
         </div>
       </div>
     </div>
