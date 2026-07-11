@@ -564,6 +564,45 @@ function ItineraryDetailPage() {
         }
       }
 
+      // Ordena os itens cronologicamente antes de inserir: primeiro por DATA,
+      // depois por HORÁRIO. Quando não há horário, estima um horário lógico pelo
+      // tipo/nome do item (ex.: transfer/voo cedo, refeições no horário da
+      // refeição, check-in de hotel ao fim do dia) para manter a sequência do dia.
+      const timeToMin = (t?: string | null): number | null => {
+        const m = (t || "").match(/^(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+      };
+      const logicalMinutes = (x: ExtractedDocData): number => {
+        const t = timeToMin(x.time);
+        if (t != null) return t;
+        const raw = [x.type, x.title, x.description]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        const mapped = mapActivityTypeGlobal(x.type);
+        if (/\b(voo|voos|flight|transfer|traslado|embarque|check-?in aeroporto)\b/.test(raw)) return 6 * 60;
+        if (/\b(caf[eé]|breakfast|manh[aã])\b/.test(raw)) return 8 * 60;
+        if (/\b(almo[çc]o|lunch)\b/.test(raw)) return 12 * 60;
+        if (/\b(jantar|dinner|noite)\b/.test(raw)) return 20 * 60;
+        if (mapped === "restaurant") return 13 * 60;
+        if (mapped === "activity" || /\b(passeio|tour|visita|ingresso|city)\b/.test(raw)) return 15 * 60;
+        if (mapped === "hotel") return 22 * 60; // check-in normalmente no fim do dia
+        return 12 * 60; // meio do dia por padrão
+      };
+      items = items
+        .map((x, i) => ({ x, i }))
+        .sort((a, b) => {
+          const da = isISO(a.x.date) ? a.x.date! : "\uffff";
+          const db = isISO(b.x.date) ? b.x.date! : "\uffff";
+          if (da !== db) return da < db ? -1 : 1;
+          const ma = logicalMinutes(a.x);
+          const mb = logicalMinutes(b.x);
+          if (ma !== mb) return ma - mb;
+          return a.i - b.i; // estável
+        })
+        .map((e) => e.x);
+
       const itemDates = items.map((x) => x.date).filter(isISO);
 
       if (itemDates.length && (anchor || isISO(tripEnd))) {
