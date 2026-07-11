@@ -176,6 +176,8 @@ PRIORIDADE MÁXIMA — DATAS DE UTILIZAÇÃO: em cartões de embarque, passagens
 Regras importantes de análise:
 - Cartão de embarque / passagens / voos: crie um item para a IDA e outro para a VOLTA (quando houver), CADA UM com sua PRÓPRIA data e horário. Se o cartão cobrir ida e volta, os dois itens devem ter datas diferentes. Inclua escalas relevantes no "description".
 - Ingressos/tickets/vouchers: use a data de utilização/validade em "date".
+- Restaurantes/refeições: crie um item do tipo "restaurante" com a data/horário da reserva (quando houver) e o nome do local em "location".
+- Passeios/tours/transportes: registre data, horário, ponto de encontro/local e fornecedor quando disponíveis.
 - Hospedagem: use a data de check-in em "date" e registre check-in/check-out no "description".
 - Seguros: use a data de início da cobertura em "date" e o período no "description".
 - Seja minucioso: não invente dados; deixe vazio o que não constar no documento.
