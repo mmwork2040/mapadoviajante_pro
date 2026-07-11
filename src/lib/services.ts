@@ -1040,6 +1040,51 @@ function normalizeText(s: string): string {
     .trim();
 }
 
+// Padrão único de metadados para TODA imagem gravada na biblioteca
+// (thumbnails, atividades, capas, uploads). Garante title, local, descrição,
+// conteúdo (detalhes) e tags consistentes em todo o acervo.
+export function buildLibraryImageMeta(params: {
+  title?: string;
+  location?: string;
+  destination?: string;
+  description?: string;
+  content?: string;
+  extraTags?: string[];
+  auto?: boolean;
+}): {
+  title: string;
+  location: string | null;
+  description: string;
+  content: string | null;
+  tags: string[];
+} {
+  const title = (params.title || params.location || params.destination || "Imagem").trim();
+  const location = (params.location || params.destination || "").trim();
+  const dest = (params.destination || "").trim();
+  const description =
+    params.description?.trim() ||
+    `Foto de ${title}${dest && dest !== title ? ` (${dest})` : ""} arquivada no acervo da biblioteca para reuso em roteiros.`;
+  const tags = Array.from(
+    new Set(
+      [
+        ...(params.auto ? ["auto", "destino"] : []),
+        normalizeText(location),
+        normalizeText(dest),
+        ...(params.extraTags || []).map((t) => t.trim()).filter(Boolean),
+      ].filter(Boolean),
+    ),
+  );
+  return {
+    title,
+    location: location || null,
+    description,
+    content: params.content?.trim() || null,
+    tags,
+  };
+}
+
+
+
 // Encontra, entre destinos e itens já carregados, a imagem da biblioteca
 // relacionada ao destino informado (função pura, sem I/O).
 export function matchLibraryImage(
