@@ -1915,18 +1915,24 @@ function ActivityRow({
             className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
           />
         </div>
-        <input
-          value={eTitle}
-          onChange={(e) => setETitle(e.target.value)}
-          placeholder="Título…"
-          className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
-        />
-        <input
-          value={eLocation}
-          onChange={(e) => setELocation(e.target.value)}
-          placeholder="Cidade / local (opcional)…"
-          className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
-        />
+        <label className="block text-[10px] font-medium text-muted-foreground">
+          Título
+          <input
+            value={eTitle}
+            onChange={(e) => setETitle(e.target.value)}
+            placeholder="Título…"
+            className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+        </label>
+        <label className="block text-[10px] font-medium text-muted-foreground">
+          Cidade / local (opcional)
+          <input
+            value={eLocation}
+            onChange={(e) => setELocation(e.target.value)}
+            placeholder="Cidade / local…"
+            className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+        </label>
         <div className="flex justify-end gap-1.5">
           <button
             onClick={() => setEditing(false)}
