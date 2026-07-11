@@ -193,6 +193,21 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
       return { kind: "text", text, name: baseName };
     }
 
+    // Word (.docx) → texto extraído.
+    if (isWord(data.mimeType)) {
+      const res = await fetch(`${GATEWAY}/files/${data.fileId}?alt=media`, {
+        headers: gatewayHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Falha ao baixar documento do Drive [${res.status}]: ${body}`);
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      const text = await docxToText(buf, baseName);
+      return { kind: "text", text, name: baseName };
+    }
+
+
     // Docs/apresentações nativas → PDF; PDF/imagem → download direto.
     const isGoogleNative = GOOGLE_EXPORTABLE.has(data.mimeType);
     const outMime = isGoogleNative ? "application/pdf" : data.mimeType;
