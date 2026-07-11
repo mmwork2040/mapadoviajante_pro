@@ -1183,24 +1183,22 @@ export async function saveActivityImageToLibrary(
     const file = new File([blob], `${safe}.${ext}`, { type: blob.type || "image/jpeg" });
     const up = await uploadLibraryAsset(file);
     if (!up) return null;
-    const tags = Array.from(
-      new Set(
-        ["auto", "destino", normalizeText(activityLocation), normalizeText(destination)].filter(
-          Boolean,
-        ),
-      ),
-    );
-    const title = activityLocation || destination;
+    const meta = buildLibraryImageMeta({
+      title: activityLocation || destination,
+      location: activityLocation || destination,
+      destination,
+      description,
+      auto: true,
+    });
     await createLibraryItem({
       type: "image",
-      title,
-      location: activityLocation || destination,
-      description:
-        description?.trim() ||
-        `Foto de ${title}${destination && destination !== title ? ` (${destination})` : ""} adicionada automaticamente ao acervo da biblioteca para reuso em roteiros.`,
+      title: meta.title,
+      location: meta.location,
+      description: meta.description,
+      content: meta.content,
       file_url: up.path,
       file_name: up.name,
-      tags,
+      tags: meta.tags,
     });
     return (await getLibraryAssetUrl(up.path)) ?? up.path;
   } catch (e) {
