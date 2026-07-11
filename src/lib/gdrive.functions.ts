@@ -36,13 +36,24 @@ function isSpreadsheet(mime: string): boolean {
   return SPREADSHEET_MIMES.has(mime);
 }
 
+// Documentos do Word enviados ao Drive (.docx) — lidos como texto.
+const WORD_MIMES = new Set([
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+function isWord(mime: string): boolean {
+  return WORD_MIMES.has(mime);
+}
+
 function isSupported(mime: string): boolean {
   return (
     mime === "application/pdf" ||
     mime.startsWith("image/") ||
     GOOGLE_EXPORTABLE.has(mime) ||
-    isSpreadsheet(mime)
+    isSpreadsheet(mime) ||
+    isWord(mime)
   );
+
 }
 
 
