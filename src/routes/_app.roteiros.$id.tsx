@@ -1846,6 +1846,7 @@ function ActivityRow({
   const [eTitle, setETitle] = useState(activity.title || "");
   const [eTime, setETime] = useState(activity.time || "");
   const [eLocation, setELocation] = useState(activity.location || "");
+  const [eDescription, setEDescription] = useState(activity.description || "");
   const [eType, setEType] = useState<string>(activity.type || "activity");
   const [saving, setSaving] = useState(false);
 
@@ -1853,6 +1854,7 @@ function ActivityRow({
     setETitle(activity.title || "");
     setETime(activity.time || "");
     setELocation(activity.location || "");
+    setEDescription(activity.description || "");
     setEType(done ? "activity" : activity.type || "activity");
     setEditing(true);
   }
@@ -1876,6 +1878,7 @@ function ActivityRow({
         title: eTitle.trim(),
         time: eTime || null,
         location: eLocation || null,
+        description: eDescription.trim() || null,
         type: eType,
       });
       setEditing(false);
@@ -1933,6 +1936,16 @@ function ActivityRow({
             className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
           />
         </label>
+        <label className="block text-[10px] font-medium text-muted-foreground">
+          Observação (opcional)
+          <textarea
+            value={eDescription}
+            onChange={(e) => setEDescription(e.target.value)}
+            placeholder="Nota ou observação…"
+            rows={2}
+            className="mt-0.5 w-full resize-y rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+        </label>
         <div className="flex justify-end gap-1.5">
           <button
             onClick={() => setEditing(false)}
@@ -1969,6 +1982,9 @@ function ActivityRow({
             {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
             {activity.title}
             {activity.location && <span className="ml-2 text-[11px] text-muted-foreground">· {activity.location}</span>}
+            {activity.description && (
+              <span className="mt-0.5 block whitespace-pre-wrap text-[11px] text-muted-foreground">{activity.description}</span>
+            )}
           </span>
         </span>
         <span className="flex gap-1">
