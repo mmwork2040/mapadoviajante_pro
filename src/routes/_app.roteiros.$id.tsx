@@ -744,15 +744,19 @@ function ItineraryDetailPage() {
         const title = data.title || data.hotel_name || data.flight_number || "Item importado";
         const mappedType = mapActivityTypeGlobal(data.type);
         const dupKey = `${targetId}|${norm(title)}|${norm(data.time)}`;
-        const semKey = DEDUP_TYPES.has(mappedType)
+        const dedupType = DEDUP_TYPES.has(mappedType);
+        const semKey = dedupType
           ? semanticKey(mappedType, data.title || data.hotel_name, data.location)
           : "";
-        if (existingKeys.has(dupKey) || (semKey && semanticSet.has(semKey))) {
+        const similar =
+          dedupType && isSimilar(mappedType, data.title || data.hotel_name, data.location);
+        if (existingKeys.has(dupKey) || (semKey && semanticSet.has(semKey)) || similar) {
           skipped++;
           continue;
         }
         existingKeys.add(dupKey);
         if (semKey) semanticSet.add(semKey);
+        if (dedupType) rememberTokens(mappedType, data.title || data.hotel_name, data.location);
         if (!orderByDay.has(targetId)) {
           const dd = (it?.days || []).find((d) => d.id === targetId);
           orderByDay.set(targetId, dd?.activities?.length || 0);
