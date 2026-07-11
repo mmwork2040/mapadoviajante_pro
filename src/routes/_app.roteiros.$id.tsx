@@ -100,12 +100,13 @@ const ACTIVITY_TYPES: {
   label: string;
   icon: typeof Plane;
   defaultTitle: string;
+  hint: string;
 }[] = [
-  { type: "flight", label: "Voo", icon: Plane, defaultTitle: "Novo voo" },
-  { type: "hotel", label: "Hospedagem", icon: BedDouble, defaultTitle: "Nova hospedagem" },
-  { type: "activity", label: "Atividade", icon: MapPin, defaultTitle: "Nova atividade" },
-  { type: "transfer", label: "Transfer", icon: Car, defaultTitle: "Novo transfer" },
-  { type: "restaurant", label: "Restaurante", icon: Utensils, defaultTitle: "Refeição" },
+  { type: "flight", label: "Voo", icon: Plane, defaultTitle: "Novo voo", hint: "Adiciona um voo ao dia (horário, número do voo, localizador)." },
+  { type: "hotel", label: "Hospedagem", icon: BedDouble, defaultTitle: "Nova hospedagem", hint: "Adiciona uma hospedagem ao dia (hotel, quarto, check-in/out)." },
+  { type: "activity", label: "Atividade", icon: MapPin, defaultTitle: "Nova atividade", hint: "Adiciona um passeio, tour ou ingresso ao dia." },
+  { type: "transfer", label: "Transfer", icon: Car, defaultTitle: "Novo transfer", hint: "Adiciona um traslado/transporte ao dia." },
+  { type: "restaurant", label: "Restaurante", icon: Utensils, defaultTitle: "Refeição", hint: "Adiciona uma refeição/restaurante ao dia." },
 ];
 
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
