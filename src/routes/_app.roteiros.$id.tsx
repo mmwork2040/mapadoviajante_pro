@@ -302,6 +302,12 @@ function ItineraryDetailPage() {
 
   // Importação a partir do Google Drive (conta compartilhada da agência).
   const [driveOpen, setDriveOpen] = useState(false);
+  const [drivePreview, setDrivePreview] = useState<{
+    items: ExtractedDocData[];
+    source: DocSource;
+    name: string;
+  } | null>(null);
+
   const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
   const driveEnabled = !!gdriveCfg?.enabled;
   const fetchDriveContent = useServerFn(fetchDriveFileContent);
