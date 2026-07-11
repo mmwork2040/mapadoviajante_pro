@@ -1936,6 +1936,16 @@ function ActivityRow({
             className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
           />
         </label>
+        <label className="block text-[10px] font-medium text-muted-foreground">
+          Observação (opcional)
+          <textarea
+            value={eDescription}
+            onChange={(e) => setEDescription(e.target.value)}
+            placeholder="Nota ou observação…"
+            rows={2}
+            className="mt-0.5 w-full resize-y rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+          />
+        </label>
         <div className="flex justify-end gap-1.5">
           <button
             onClick={() => setEditing(false)}
