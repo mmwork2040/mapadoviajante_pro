@@ -135,14 +135,17 @@ export async function ensureDestinationImages(params: {
         .from(LIBRARY_BUCKET)
         .upload(path, buf, { contentType: mime, upsert: false });
       if (upErr) continue;
+      const normTag = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
       const { error: insErr } = await supabase.from("crm_library_items").insert({
         agency_id: agencyId,
         type: "image",
         title,
         location: destination,
-        description: `Foto de ${destination} adicionada automaticamente pelo assistente para o acervo da biblioteca.`,
+        description: `Foto de ${title}${destination && destination !== title ? ` (${destination})` : ""} arquivada no acervo da biblioteca para reuso em roteiros.`,
         file_url: path,
-        tags: ["auto", "destino", destination].filter(Boolean),
+        tags: Array.from(
+          new Set(["auto", "destino", normTag(destination), normTag(title)].filter(Boolean)),
+        ),
         created_by: memberId,
       });
       if (insErr) {

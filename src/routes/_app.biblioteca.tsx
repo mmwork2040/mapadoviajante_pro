@@ -31,6 +31,7 @@ import {
 import { toast } from "sonner";
 import {
   createLibraryItem,
+  buildLibraryImageMeta,
   deleteLibraryItem,
   bulkDeleteLibraryItems,
   fetchAiConfig,
@@ -112,12 +113,19 @@ function LibraryPage() {
         if (!up) continue;
         const title = file.name.replace(/\.[^.]+$/, "");
         const phash = await computeImagePHashFromFile(file).catch(() => null);
+        const meta = buildLibraryImageMeta({
+          title,
+          extraTags: phash ? [phashToTag(phash)] : [],
+        });
         await createLibraryItem({
           type: "image",
-          title,
+          title: meta.title,
+          location: meta.location,
+          description: meta.description,
+          content: meta.content,
           file_url: up.path,
           file_name: up.name,
-          tags: phash ? [phashToTag(phash)] : [],
+          tags: meta.tags,
         });
         added++;
       }

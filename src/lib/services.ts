@@ -1040,6 +1040,51 @@ function normalizeText(s: string): string {
     .trim();
 }
 
+// Padrão único de metadados para TODA imagem gravada na biblioteca
+// (thumbnails, atividades, capas, uploads). Garante title, local, descrição,
+// conteúdo (detalhes) e tags consistentes em todo o acervo.
+export function buildLibraryImageMeta(params: {
+  title?: string;
+  location?: string;
+  destination?: string;
+  description?: string;
+  content?: string;
+  extraTags?: string[];
+  auto?: boolean;
+}): {
+  title: string;
+  location: string | null;
+  description: string;
+  content: string | null;
+  tags: string[];
+} {
+  const title = (params.title || params.location || params.destination || "Imagem").trim();
+  const location = (params.location || params.destination || "").trim();
+  const dest = (params.destination || "").trim();
+  const description =
+    params.description?.trim() ||
+    `Foto de ${title}${dest && dest !== title ? ` (${dest})` : ""} arquivada no acervo da biblioteca para reuso em roteiros.`;
+  const tags = Array.from(
+    new Set(
+      [
+        ...(params.auto ? ["auto", "destino"] : []),
+        normalizeText(location),
+        normalizeText(dest),
+        ...(params.extraTags || []).map((t) => t.trim()).filter(Boolean),
+      ].filter(Boolean),
+    ),
+  );
+  return {
+    title,
+    location: location || null,
+    description,
+    content: params.content?.trim() || null,
+    tags,
+  };
+}
+
+
+
 // Encontra, entre destinos e itens já carregados, a imagem da biblioteca
 // relacionada ao destino informado (função pura, sem I/O).
 export function matchLibraryImage(
@@ -1102,16 +1147,16 @@ export async function saveExternalImageToLibrary(
     const file = new File([blob], `${safeDest}.${ext}`, { type: blob.type || "image/jpeg" });
     const up = await uploadLibraryAsset(file);
     if (!up) return imageUrl;
+    const meta = buildLibraryImageMeta({ destination, description, auto: true });
     await createLibraryItem({
       type: "image",
-      title: destination,
-      location: destination,
-      description:
-        description?.trim() ||
-        `Foto de ${destination} adicionada automaticamente ao acervo da biblioteca para reuso em roteiros.`,
+      title: meta.title,
+      location: meta.location,
+      description: meta.description,
+      content: meta.content,
       file_url: up.path,
       file_name: up.name,
-      tags: ["auto", "destino", normalizeText(destination)].filter(Boolean),
+      tags: meta.tags,
     });
     return (await getLibraryAssetUrl(up.path)) ?? imageUrl;
   } catch (e) {
@@ -1138,24 +1183,22 @@ export async function saveActivityImageToLibrary(
     const file = new File([blob], `${safe}.${ext}`, { type: blob.type || "image/jpeg" });
     const up = await uploadLibraryAsset(file);
     if (!up) return null;
-    const tags = Array.from(
-      new Set(
-        ["auto", "destino", normalizeText(activityLocation), normalizeText(destination)].filter(
-          Boolean,
-        ),
-      ),
-    );
-    const title = activityLocation || destination;
+    const meta = buildLibraryImageMeta({
+      title: activityLocation || destination,
+      location: activityLocation || destination,
+      destination,
+      description,
+      auto: true,
+    });
     await createLibraryItem({
       type: "image",
-      title,
-      location: activityLocation || destination,
-      description:
-        description?.trim() ||
-        `Foto de ${title}${destination && destination !== title ? ` (${destination})` : ""} adicionada automaticamente ao acervo da biblioteca para reuso em roteiros.`,
+      title: meta.title,
+      location: meta.location,
+      description: meta.description,
+      content: meta.content,
       file_url: up.path,
       file_name: up.name,
-      tags,
+      tags: meta.tags,
     });
     return (await getLibraryAssetUrl(up.path)) ?? up.path;
   } catch (e) {
@@ -1178,21 +1221,23 @@ export async function saveImageFileToLibrary(
   try {
     const up = await uploadLibraryAsset(file);
     if (!up) return null;
-    const title = (info.title || "").trim() || file.name.replace(/\.[^.]+$/, "");
-    const location = (info.location || "").trim();
     const phash = await computeImagePHashFromFile(file).catch(() => null);
-    const tags = Array.from(
-      new Set([normalizeText(location), phash ? phashToTag(phash) : ""].filter(Boolean)),
-    );
+    const meta = buildLibraryImageMeta({
+      title: (info.title || "").trim() || file.name.replace(/\.[^.]+$/, ""),
+      location: info.location,
+      description: info.description,
+      content: info.content,
+      extraTags: phash ? [phashToTag(phash)] : [],
+    });
     return await createLibraryItem({
       type: "image",
-      title,
-      location: location || null,
-      description: (info.description || "").trim() || null,
-      content: (info.content || "").trim() || null,
+      title: meta.title,
+      location: meta.location,
+      description: meta.description,
+      content: meta.content,
       file_url: up.path,
       file_name: up.name,
-      tags,
+      tags: meta.tags,
     });
   } catch (e) {
     console.error("saveImageFileToLibrary:", e);
@@ -1294,13 +1339,16 @@ export async function uploadImageToLibraryForDestination(
   });
   const up = await uploadLibraryAsset(file);
   if (!up) throw new Error("Não foi possível enviar a imagem.");
+  const meta = buildLibraryImageMeta({ destination });
   await createLibraryItem({
     type: "image",
-    title: destination,
-    location: destination,
+    title: meta.title,
+    location: meta.location,
+    description: meta.description,
+    content: meta.content,
     file_url: up.path,
     file_name: up.name,
-    tags: [normalizeText(destination)].filter(Boolean),
+    tags: meta.tags,
   });
   return (await getLibraryAssetUrl(up.path)) ?? up.path;
 }
