@@ -2764,3 +2764,102 @@ ${dias || "(nenhum dia ainda)"}`;
   );
 }
 
+function DriveImportModal({
+  folderId,
+  onClose,
+  onPick,
+}: {
+  folderId: string;
+  onClose: () => void;
+  onPick: (f: DriveFile) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [term, setTerm] = useState("");
+  const listFiles = useServerFn(listDriveFiles);
+  const conn = useQuery({ queryKey: ["drive-conn"], queryFn: () => checkDriveConnection() });
+  const filesQ = useQuery({
+    queryKey: ["drive-files", folderId, term],
+    queryFn: () => listFiles({ data: { folderId: folderId || undefined, search: term || undefined } }),
+    enabled: conn.data?.connected === true,
+  });
+
+  const iconFor = (mime: string) => {
+    if (mime.startsWith("image/")) return ImageIcon;
+    return FileText;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 className="flex items-center gap-2 font-semibold">
+            <HardDrive className="h-4 w-4 text-primary" /> Importar do Google Drive
+          </h3>
+          <button onClick={onClose} className="rounded-lg p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="border-b border-border p-3">
+          <form
+            className="flex items-center gap-2 rounded-lg border border-border bg-background px-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setTerm(search.trim());
+            }}
+          >
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar arquivo…"
+              className="h-9 flex-1 bg-transparent text-sm outline-none"
+            />
+          </form>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {conn.isLoading && (
+            <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Conectando ao Drive…
+            </p>
+          )}
+          {conn.data && !conn.data.connected && (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Conector do Google Drive indisponível. Verifique a conexão nas configurações do projeto.
+            </p>
+          )}
+          {conn.data?.connected && filesQ.isLoading && (
+            <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Carregando arquivos…
+            </p>
+          )}
+          {conn.data?.connected && filesQ.data && filesQ.data.files.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted-foreground">Nenhum arquivo encontrado.</p>
+          )}
+          <ul className="space-y-1">
+            {filesQ.data?.files.map((f) => {
+              const Icon = iconFor(f.mimeType);
+              return (
+                <li key={f.id}>
+                  <button
+                    onClick={() => onPick(f)}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-muted"
+                  >
+                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{f.name}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
