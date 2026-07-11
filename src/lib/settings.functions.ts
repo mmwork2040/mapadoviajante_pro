@@ -7,7 +7,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // qualquer dispositivo/ambiente (não apenas no navegador onde foram salvas).
 // O payload trafega como string JSON para manter a serialização simples.
 
-const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n"] as const;
+const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive"] as const;
 type Scope = (typeof SCOPES)[number];
 
 function isScope(v: string): v is Scope {

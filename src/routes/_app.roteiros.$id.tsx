@@ -2,7 +2,7 @@ import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Search } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -47,6 +47,8 @@ import {
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
+import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, type DriveFile } from "@/lib/gdrive.functions";
+import { getGDriveConfig } from "@/lib/gdrive-config";
 import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
@@ -289,12 +291,55 @@ function ItineraryDetailPage() {
   const docInputRef = useRef<HTMLInputElement>(null);
   const docTargetDayRef = useRef<string | null>(null);
 
+  // Importação a partir do Google Drive (conta compartilhada da agência).
+  const [driveOpen, setDriveOpen] = useState(false);
+  const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
+  const driveEnabled = !!gdriveCfg?.enabled;
+  const fetchDriveContent = useServerFn(fetchDriveFileContent);
+
+  function base64ToFile(base64: string, mime: string, name: string): File {
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new File([bytes], name, { type: mime });
+  }
+
+  async function handleDrivePick(f: DriveFile) {
+    setDriveOpen(false);
+    const cfg = aiConfig ?? (await fetchAiConfig());
+    const connected = !!cfg?.api_key_encrypted && cfg?.knowledge_sources?.status === "connected";
+    if (!connected) {
+      toast.error("Configure e conecte a IA nas configurações antes de importar documentos.");
+      return;
+    }
+    setPendingDayId("__drive__");
+    try {
+      const res = await fetchDriveContent({
+        data: { fileId: f.id, mimeType: f.mimeType, name: f.name },
+      });
+      const file = base64ToFile(res.base64, res.mime, res.name);
+      setPendingDayId(null);
+      await runDocImport(file, "__new__");
+    } catch (err) {
+      setPendingDayId(null);
+      toast.error(err instanceof Error ? err.message : "Erro ao baixar arquivo do Drive.");
+    }
+  }
+
+
   async function handleDocImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
-    let dayId = docTargetDayRef.current;
+    const targetDayId = docTargetDayRef.current;
     docTargetDayRef.current = null;
-    if (!file || !dayId) return;
+    if (!file || !targetDayId) return;
+    await runDocImport(file, targetDayId);
+  }
+
+  async function runDocImport(file: File, targetDayId: string) {
+    let dayId: string | null = targetDayId;
+
+
 
     // 1. AI must be configured and connected before we auto-interpret documents.
     const cfg = aiConfig ?? (await fetchAiConfig());
@@ -991,6 +1036,17 @@ function ItineraryDetailPage() {
           ))}
           <PaletteItem type="document" label="Documento (IA)" icon={FileUp} hint="Importa um documento (voucher, itinerário, cartão de embarque) e a IA extrai várias atividades, distribuindo-as nos dias certos." />
 
+          {driveEnabled && (
+            <button
+              type="button"
+              onClick={() => setDriveOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
+              title="Importar um documento direto do Google Drive da agência para a IA interpretar."
+            >
+              <HardDrive className="h-3.5 w-3.5" /> Importar do Drive
+            </button>
+          )}
+
           <input
             ref={docInputRef}
             type="file"
@@ -999,11 +1055,21 @@ function ItineraryDetailPage() {
             className="hidden"
           />
         </div>
+
         {pendingDayId && (
           <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> Lendo documento com a IA…
           </p>
         )}
+
+        {driveOpen && (
+          <DriveImportModal
+            folderId={gdriveCfg?.folderId || ""}
+            onClose={() => setDriveOpen(false)}
+            onPick={handleDrivePick}
+          />
+        )}
+
 
         <div className="flex gap-4 overflow-x-auto pb-4">
           {(it.days || []).map((day) => (
@@ -2697,4 +2763,103 @@ ${dias || "(nenhum dia ainda)"}`;
     </>
   );
 }
+
+function DriveImportModal({
+  folderId,
+  onClose,
+  onPick,
+}: {
+  folderId: string;
+  onClose: () => void;
+  onPick: (f: DriveFile) => void;
+}) {
+  const [search, setSearch] = useState("");
+  const [term, setTerm] = useState("");
+  const listFiles = useServerFn(listDriveFiles);
+  const conn = useQuery({ queryKey: ["drive-conn"], queryFn: () => checkDriveConnection() });
+  const filesQ = useQuery({
+    queryKey: ["drive-files", folderId, term],
+    queryFn: () => listFiles({ data: { folderId: folderId || undefined, search: term || undefined } }),
+    enabled: conn.data?.connected === true,
+  });
+
+  const iconFor = (mime: string) => {
+    if (mime.startsWith("image/")) return ImageIcon;
+    return FileText;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 className="flex items-center gap-2 font-semibold">
+            <HardDrive className="h-4 w-4 text-primary" /> Importar do Google Drive
+          </h3>
+          <button onClick={onClose} className="rounded-lg p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="border-b border-border p-3">
+          <form
+            className="flex items-center gap-2 rounded-lg border border-border bg-background px-3"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setTerm(search.trim());
+            }}
+          >
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar arquivo…"
+              className="h-9 flex-1 bg-transparent text-sm outline-none"
+            />
+          </form>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {conn.isLoading && (
+            <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Conectando ao Drive…
+            </p>
+          )}
+          {conn.data && !conn.data.connected && (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Conector do Google Drive indisponível. Verifique a conexão nas configurações do projeto.
+            </p>
+          )}
+          {conn.data?.connected && filesQ.isLoading && (
+            <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Carregando arquivos…
+            </p>
+          )}
+          {conn.data?.connected && filesQ.data && filesQ.data.files.length === 0 && (
+            <p className="py-8 text-center text-sm text-muted-foreground">Nenhum arquivo encontrado.</p>
+          )}
+          <ul className="space-y-1">
+            {filesQ.data?.files.map((f) => {
+              const Icon = iconFor(f.mimeType);
+              return (
+                <li key={f.id}>
+                  <button
+                    onClick={() => onPick(f)}
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition hover:bg-muted"
+                  >
+                    <Icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <span className="truncate">{f.name}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 
