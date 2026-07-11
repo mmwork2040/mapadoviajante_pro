@@ -46,8 +46,15 @@ import {
   updateItineraryDay,
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
-import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
+import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
 import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, type DriveFile } from "@/lib/gdrive.functions";
+
+// Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
+// extraído (ex.: planilhas do Drive varridas por completo).
+type DocSource =
+  | { kind: "file"; file: File }
+  | { kind: "text"; text: string; name: string };
+
 import { getGDriveConfig } from "@/lib/gdrive-config";
 import {
   DOCUMENT_CATEGORIES,
@@ -288,6 +295,8 @@ function ItineraryDetailPage() {
   // AI document import (drag "Documento" onto a day → AI reads and adds activities).
   const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
   const extractActivities = useServerFn(extractDocumentActivitiesData);
+  const extractActivitiesFromText = useServerFn(extractActivitiesFromTextData);
+
   const docInputRef = useRef<HTMLInputElement>(null);
   const docTargetDayRef = useRef<string | null>(null);
 
@@ -317,9 +326,12 @@ function ItineraryDetailPage() {
       const res = await fetchDriveContent({
         data: { fileId: f.id, mimeType: f.mimeType, name: f.name },
       });
-      const file = base64ToFile(res.base64, res.mime, res.name);
       setPendingDayId(null);
-      await runDocImport(file, "__new__");
+      const source: DocSource =
+        res.kind === "text"
+          ? { kind: "text", text: res.text, name: res.name }
+          : { kind: "file", file: base64ToFile(res.base64, res.mime, res.name) };
+      await runDocImport(source, "__new__");
     } catch (err) {
       setPendingDayId(null);
       toast.error(err instanceof Error ? err.message : "Erro ao baixar arquivo do Drive.");
@@ -333,11 +345,15 @@ function ItineraryDetailPage() {
     const targetDayId = docTargetDayRef.current;
     docTargetDayRef.current = null;
     if (!file || !targetDayId) return;
-    await runDocImport(file, targetDayId);
+    await runDocImport({ kind: "file", file }, targetDayId);
   }
 
-  async function runDocImport(file: File, targetDayId: string) {
+
+  async function runDocImport(source: DocSource, targetDayId: string) {
+    const file = source.kind === "file" ? source.file : null;
+    
     let dayId: string | null = targetDayId;
+
 
 
 
@@ -385,9 +401,10 @@ function ItineraryDetailPage() {
       const dayActIds = new Set(
         ((it?.days || []).find((d) => d.id === dayId)?.activities || []).map((a) => a.id),
       );
-      const isDuplicate = existingDocs.some(
+      const isDuplicate = !!file && existingDocs.some(
         (d) => d.name === file.name && d.size === file.size && d.activity_id && dayActIds.has(d.activity_id),
       );
+
       if (isDuplicate) {
         toast.error("Este documento já foi inserido neste dia.");
         return;
@@ -408,10 +425,19 @@ function ItineraryDetailPage() {
         .join("\n");
 
       // 3. Let the AI read the document and extract all activities.
-      const base64 = await fileToBase64(file);
-      const items: ExtractedDocData[] = await extractActivities({
-        data: { fileBase64: base64, mime: file.type, context: existingContext || undefined },
-      });
+      const items: ExtractedDocData[] =
+        source.kind === "text"
+          ? await extractActivitiesFromText({
+              data: { text: source.text, context: existingContext || undefined },
+            })
+          : await extractActivities({
+              data: {
+                fileBase64: await fileToBase64(source.file),
+                mime: source.file.type,
+                context: existingContext || undefined,
+              },
+            });
+
       if (!items.length) {
         toast.error("Nenhuma atividade nova encontrada no documento (ou já constava no roteiro).");
         return;
@@ -602,17 +628,20 @@ function ItineraryDetailPage() {
 
 
       // 4. Persist the document so it can't be re-imported into this day.
-      try {
-        await uploadLeadDocument({
-          file,
-          agencyId: it!.agency_id,
-          itineraryId: id,
-          activityId: firstActivityId,
-          category: "Importado no roteiro",
-        });
-      } catch {
-        // Non-fatal: activities were created even if the file failed to store.
+      if (file) {
+        try {
+          await uploadLeadDocument({
+            file,
+            agencyId: it!.agency_id,
+            itineraryId: id,
+            activityId: firstActivityId,
+            category: "Importado no roteiro",
+          });
+        } catch {
+          // Non-fatal: activities were created even if the file failed to store.
+        }
       }
+
 
       // 5. Always keep each affected day ordered by time.
       for (const usedId of usedDayIds) {
