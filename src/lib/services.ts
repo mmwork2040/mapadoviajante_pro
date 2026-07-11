@@ -1091,6 +1091,7 @@ export async function searchLibraryImageForDestination(destination: string): Pro
 export async function saveExternalImageToLibrary(
   imageUrl: string,
   destination: string,
+  description?: string,
 ): Promise<string> {
   try {
     const res = await fetch(imageUrl);
@@ -1105,9 +1106,12 @@ export async function saveExternalImageToLibrary(
       type: "image",
       title: destination,
       location: destination,
+      description:
+        description?.trim() ||
+        `Foto de ${destination} adicionada automaticamente ao acervo da biblioteca para reuso em roteiros.`,
       file_url: up.path,
       file_name: up.name,
-      tags: [normalizeText(destination)].filter(Boolean),
+      tags: ["auto", "destino", normalizeText(destination)].filter(Boolean),
     });
     return (await getLibraryAssetUrl(up.path)) ?? imageUrl;
   } catch (e) {
