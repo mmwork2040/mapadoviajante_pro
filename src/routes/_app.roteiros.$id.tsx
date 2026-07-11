@@ -238,12 +238,13 @@ const kanbanCollisionDetection: CollisionDetection = (args) => {
   return closestCenter(args);
 };
 
-function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: typeof Plane }) {
+function PaletteItem({ type, label, icon: Icon, hint }: { type: string; label: string; icon: typeof Plane; hint?: string }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `new:${type}` });
   return (
     <button
       ref={setNodeRef}
       data-palette-item={type}
+      title={hint}
       {...listeners}
       {...attributes}
       style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 50 : undefined }}
