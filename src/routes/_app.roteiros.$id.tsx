@@ -1036,6 +1036,17 @@ function ItineraryDetailPage() {
           ))}
           <PaletteItem type="document" label="Documento (IA)" icon={FileUp} hint="Importa um documento (voucher, itinerário, cartão de embarque) e a IA extrai várias atividades, distribuindo-as nos dias certos." />
 
+          {driveEnabled && (
+            <button
+              type="button"
+              onClick={() => setDriveOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
+              title="Importar um documento direto do Google Drive da agência para a IA interpretar."
+            >
+              <HardDrive className="h-3.5 w-3.5" /> Importar do Drive
+            </button>
+          )}
+
           <input
             ref={docInputRef}
             type="file"
@@ -1044,6 +1055,7 @@ function ItineraryDetailPage() {
             className="hidden"
           />
         </div>
+
         {pendingDayId && (
           <p className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" /> Lendo documento com a IA…
