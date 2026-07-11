@@ -1177,6 +1177,15 @@ function ItineraryDetailPage() {
           />
         )}
 
+        {sheetPick && (
+          <SheetPickModal
+            name={sheetPick.file.name}
+            sheets={sheetPick.sheets}
+            onCancel={() => setSheetPick(null)}
+            onConfirm={confirmSheetPick}
+          />
+        )}
+
 
 
         <div className="flex gap-4 overflow-x-auto pb-4">
