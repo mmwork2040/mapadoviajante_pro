@@ -2939,4 +2939,99 @@ function DriveImportModal({
   );
 }
 
+function DrivePreviewModal({
+  name,
+  items,
+  onCancel,
+  onConfirm,
+}: {
+  name: string;
+  items: ExtractedDocData[];
+  onCancel: () => void;
+  onConfirm: (selected: ExtractedDocData[]) => void;
+}) {
+  const [checked, setChecked] = useState<boolean[]>(() => items.map(() => true));
+  const toggle = (i: number) =>
+    setChecked((c) => c.map((v, idx) => (idx === i ? !v : v)));
+  const selectedCount = checked.filter(Boolean).length;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 className="flex min-w-0 items-center gap-2 font-semibold">
+            <FileText className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">Prévia — {name}</span>
+          </h3>
+          <button onClick={onCancel} className="rounded-lg p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="border-b border-border px-4 py-2 text-xs text-muted-foreground">
+          {items.length} item(ns) encontrado(s). Revise e desmarque o que não quer inserir.
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          <ul className="space-y-1">
+            {items.map((it, i) => {
+              const meta = [it.date, it.time, it.location].filter(Boolean).join(" · ");
+              return (
+                <li key={i}>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted">
+                    <input
+                      type="checkbox"
+                      checked={checked[i]}
+                      onChange={() => toggle(i)}
+                      className="mt-1 h-4 w-4 shrink-0"
+                    />
+                    <span className="min-w-0">
+                      <span className="flex items-center gap-2">
+                        {it.type && (
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-primary">
+                            {it.type}
+                          </span>
+                        )}
+                        <span className="font-medium">
+                          {it.title || it.hotel_name || it.flight_number || "Item"}
+                        </span>
+                      </span>
+                      {meta && <span className="mt-0.5 block text-xs text-muted-foreground">{meta}</span>}
+                      {it.description && (
+                        <span className="mt-0.5 block text-xs text-muted-foreground line-clamp-2">
+                          {it.description}
+                        </span>
+                      )}
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={() => onConfirm(items.filter((_, i) => checked[i]))}
+            disabled={selectedCount === 0}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            Inserir {selectedCount} no roteiro
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
