@@ -388,9 +388,10 @@ function ItineraryDetailPage() {
       const dayActIds = new Set(
         ((it?.days || []).find((d) => d.id === dayId)?.activities || []).map((a) => a.id),
       );
-      const isDuplicate = existingDocs.some(
+      const isDuplicate = !!file && existingDocs.some(
         (d) => d.name === file.name && d.size === file.size && d.activity_id && dayActIds.has(d.activity_id),
       );
+
       if (isDuplicate) {
         toast.error("Este documento já foi inserido neste dia.");
         return;
