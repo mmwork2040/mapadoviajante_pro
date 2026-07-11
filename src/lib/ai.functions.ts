@@ -80,7 +80,41 @@ export const extractDocumentActivitiesData = createServerFn({ method: "POST" })
     );
   });
 
-type ExtractKnowledgeInput = {
+type ExtractActivitiesTextInput = { text: string; context?: string };
+
+// Extrai atividades a partir de texto (ex.: planilhas do Drive já convertidas).
+export const extractActivitiesFromTextData = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: ExtractActivitiesTextInput) => {
+    if (!d?.text?.trim()) throw new Error("Documento sem conteúdo legível.");
+    return d;
+  })
+  .handler(async ({ data, context }): Promise<ExtractedDocData[]> => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+    const { extractActivitiesFromText } = await import("./ai.server");
+    return extractActivitiesFromText(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        systemPrompt: cfg.system_prompt,
+        maxTokens: cfg.max_tokens,
+      },
+      data.text,
+      data.context,
+    );
+  });
+
+
   provider: string;
   model: string;
   apiKey: string;
