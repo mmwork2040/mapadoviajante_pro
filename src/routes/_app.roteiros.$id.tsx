@@ -295,6 +295,8 @@ function ItineraryDetailPage() {
   // AI document import (drag "Documento" onto a day → AI reads and adds activities).
   const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
   const extractActivities = useServerFn(extractDocumentActivitiesData);
+  const extractActivitiesFromText = useServerFn(extractActivitiesFromTextData);
+
   const docInputRef = useRef<HTMLInputElement>(null);
   const docTargetDayRef = useRef<string | null>(null);
 
