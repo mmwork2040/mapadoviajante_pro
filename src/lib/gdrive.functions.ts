@@ -36,13 +36,24 @@ function isSpreadsheet(mime: string): boolean {
   return SPREADSHEET_MIMES.has(mime);
 }
 
+// Documentos do Word enviados ao Drive (.docx) — lidos como texto.
+const WORD_MIMES = new Set([
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+]);
+
+function isWord(mime: string): boolean {
+  return WORD_MIMES.has(mime);
+}
+
 function isSupported(mime: string): boolean {
   return (
     mime === "application/pdf" ||
     mime.startsWith("image/") ||
     GOOGLE_EXPORTABLE.has(mime) ||
-    isSpreadsheet(mime)
+    isSpreadsheet(mime) ||
+    isWord(mime)
   );
+
 }
 
 
@@ -117,6 +128,28 @@ async function workbookToText(buf: Buffer, name: string): Promise<string> {
   return parts.join("\n");
 }
 
+// Extrai o texto de um .docx (Word) descompactando o pacote e limpando o XML.
+async function docxToText(buf: Buffer, name: string): Promise<string> {
+  const { unzipSync } = await import("fflate");
+  const files = unzipSync(new Uint8Array(buf));
+  const xml = files["word/document.xml"];
+  if (!xml) return `Arquivo: ${name}`;
+  const raw = new TextDecoder().decode(xml);
+  const text = raw
+    .replace(/<w:p[ >]/g, "\n")
+    .replace(/<w:tab\b[^>]*\/?>/g, "\t")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return `Arquivo: ${name}\n${text}`;
+}
+
+
 /**
  * Baixa o conteúdo de um arquivo do Drive. Planilhas (Google Sheets, xlsx, xls,
  * csv) são lidas por completo e devolvidas como texto (todas as abas/linhas).
@@ -159,6 +192,21 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
       const text = await workbookToText(buf, baseName);
       return { kind: "text", text, name: baseName };
     }
+
+    // Word (.docx) → texto extraído.
+    if (isWord(data.mimeType)) {
+      const res = await fetch(`${GATEWAY}/files/${data.fileId}?alt=media`, {
+        headers: gatewayHeaders(),
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Falha ao baixar documento do Drive [${res.status}]: ${body}`);
+      }
+      const buf = Buffer.from(await res.arrayBuffer());
+      const text = await docxToText(buf, baseName);
+      return { kind: "text", text, name: baseName };
+    }
+
 
     // Docs/apresentações nativas → PDF; PDF/imagem → download direto.
     const isGoogleNative = GOOGLE_EXPORTABLE.has(data.mimeType);
