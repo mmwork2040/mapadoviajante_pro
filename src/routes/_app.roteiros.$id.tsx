@@ -2251,11 +2251,17 @@ ${dias || "(nenhum dia ainda)"}`;
 
       // Busca e arquiva na biblioteca imagens dos atrativos das atividades
       // geradas pela IA, com referência ao destino, para uso em roteiros futuros.
+      // Sempre verifica primeiro na biblioteca; só busca externamente se faltar.
       let savedImgs = 0;
-      const locs = Array.from(activityLocations).slice(0, 8);
-      for (const loc of locs) {
+      // Garante também uma imagem do destino principal (capa/acervo).
+      const targets = [it.destination || "", ...Array.from(activityLocations)]
+        .map((s) => s.trim())
+        .filter((v, i, a) => !!v && a.indexOf(v) === i)
+        .slice(0, 8);
+      for (const loc of targets) {
         try {
-          const term = `${loc}, ${it.destination}`;
+          const isMain = loc === (it.destination || "").trim();
+          const term = isMain ? loc : `${loc}, ${it.destination}`;
           // Só busca uma nova imagem se ainda não houver na biblioteca.
           const existing = await searchLibraryImageForDestination(loc);
           if (existing) continue;
