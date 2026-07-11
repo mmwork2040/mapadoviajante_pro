@@ -336,8 +336,11 @@ function ItineraryDetailPage() {
     await runDocImport(file, targetDayId);
   }
 
-  async function runDocImport(file: File, targetDayId: string) {
+  async function runDocImport(source: DocSource, targetDayId: string) {
+    const file = source.kind === "file" ? source.file : null;
+    const sourceName = source.kind === "file" ? source.file.name : source.name;
     let dayId: string | null = targetDayId;
+
 
 
 
