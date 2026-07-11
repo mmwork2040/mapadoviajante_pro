@@ -1137,6 +1137,16 @@ function ItineraryDetailPage() {
           />
         )}
 
+        {drivePreview && (
+          <DrivePreviewModal
+            name={drivePreview.name}
+            items={drivePreview.items}
+            onCancel={() => setDrivePreview(null)}
+            onConfirm={confirmDrivePreview}
+          />
+        )}
+
+
 
         <div className="flex gap-4 overflow-x-auto pb-4">
           {(it.days || []).map((day) => (
