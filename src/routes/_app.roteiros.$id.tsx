@@ -974,6 +974,12 @@ function ItineraryDetailPage() {
         }}
         onDragEnd={handleDragEnd}
       >
+        <div className="mb-3">
+          <h2 className="text-base font-semibold">Blocos do roteiro</h2>
+          <p className="text-sm text-muted-foreground">
+            Arraste os blocos abaixo para os dias do roteiro para montar o itinerário.
+          </p>
+        </div>
         <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             Arraste para o dia:
