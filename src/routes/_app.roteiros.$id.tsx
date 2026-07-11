@@ -47,7 +47,7 @@ import {
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
-import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
+import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, previewDriveSheets, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
 
 // Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
 // extraído (ex.: planilhas do Drive varridas por completo).
@@ -309,11 +309,18 @@ function ItineraryDetailPage() {
   } | null>(null);
   // Seleção de abas quando o arquivo do Drive é uma planilha com várias abas.
   const [sheetPick, setSheetPick] = useState<{ file: DriveFile; sheets: string[] } | null>(null);
+  // Prévia curta do conteúdo das abas selecionadas antes da extração completa.
+  const [sheetPreview, setSheetPreview] = useState<{
+    file: DriveFile;
+    sheets: string[];
+    previews: { sheet: string; preview: string }[];
+  } | null>(null);
 
   const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
   const driveEnabled = !!gdriveCfg?.enabled;
   const fetchDriveContent = useServerFn(fetchDriveFileContent);
   const listSheetNames = useServerFn(listDriveSheetNames);
+  const previewSheets = useServerFn(previewDriveSheets);
 
   function base64ToFile(base64: string, mime: string, name: string): File {
     const bin = atob(base64);
@@ -371,11 +378,29 @@ function ItineraryDetailPage() {
     }
   }
 
-  function confirmSheetPick(selected: string[]) {
+  async function confirmSheetPick(selected: string[]) {
     const pick = sheetPick;
     setSheetPick(null);
     if (!pick || !selected.length) return;
-    void extractFromDrive(pick.file, selected);
+    // Antes de extrair tudo, mostra uma prévia curta de cada aba selecionada.
+    setPendingDayId("__drive__");
+    try {
+      const { previews } = await previewSheets({
+        data: { fileId: pick.file.id, mimeType: pick.file.mimeType, sheets: selected },
+      });
+      setPendingDayId(null);
+      setSheetPreview({ file: pick.file, sheets: selected, previews });
+    } catch (err) {
+      setPendingDayId(null);
+      toast.error(err instanceof Error ? err.message : "Erro ao gerar prévia das abas.");
+    }
+  }
+
+  function confirmSheetPreview() {
+    const prev = sheetPreview;
+    setSheetPreview(null);
+    if (!prev) return;
+    void extractFromDrive(prev.file, prev.sheets);
   }
 
   async function confirmDrivePreview(selected: ExtractedDocData[]) {
@@ -563,6 +588,45 @@ function ItineraryDetailPage() {
           return;
         }
       }
+
+      // Ordena os itens cronologicamente antes de inserir: primeiro por DATA,
+      // depois por HORÁRIO. Quando não há horário, estima um horário lógico pelo
+      // tipo/nome do item (ex.: transfer/voo cedo, refeições no horário da
+      // refeição, check-in de hotel ao fim do dia) para manter a sequência do dia.
+      const timeToMin = (t?: string | null): number | null => {
+        const m = (t || "").match(/^(\d{1,2}):(\d{2})/);
+        if (!m) return null;
+        return parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+      };
+      const logicalMinutes = (x: ExtractedDocData): number => {
+        const t = timeToMin(x.time);
+        if (t != null) return t;
+        const raw = [x.type, x.title, x.description]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+        const mapped = mapActivityTypeGlobal(x.type);
+        if (/\b(voo|voos|flight|transfer|traslado|embarque|check-?in aeroporto)\b/.test(raw)) return 6 * 60;
+        if (/\b(caf[eé]|breakfast|manh[aã])\b/.test(raw)) return 8 * 60;
+        if (/\b(almo[çc]o|lunch)\b/.test(raw)) return 12 * 60;
+        if (/\b(jantar|dinner|noite)\b/.test(raw)) return 20 * 60;
+        if (mapped === "restaurant") return 13 * 60;
+        if (mapped === "activity" || /\b(passeio|tour|visita|ingresso|city)\b/.test(raw)) return 15 * 60;
+        if (mapped === "hotel") return 22 * 60; // check-in normalmente no fim do dia
+        return 12 * 60; // meio do dia por padrão
+      };
+      items = items
+        .map((x, i) => ({ x, i }))
+        .sort((a, b) => {
+          const da = isISO(a.x.date) ? a.x.date! : "\uffff";
+          const db = isISO(b.x.date) ? b.x.date! : "\uffff";
+          if (da !== db) return da < db ? -1 : 1;
+          const ma = logicalMinutes(a.x);
+          const mb = logicalMinutes(b.x);
+          if (ma !== mb) return ma - mb;
+          return a.i - b.i; // estável
+        })
+        .map((e) => e.x);
 
       const itemDates = items.map((x) => x.date).filter(isISO);
 
@@ -1185,6 +1249,17 @@ function ItineraryDetailPage() {
             onConfirm={confirmSheetPick}
           />
         )}
+
+        {sheetPreview && (
+          <SheetPreviewModal
+            name={sheetPreview.file.name}
+            previews={sheetPreview.previews}
+            onCancel={() => setSheetPreview(null)}
+            onConfirm={confirmSheetPreview}
+          />
+        )}
+
+
 
 
 
@@ -2978,6 +3053,71 @@ function DriveImportModal({
     </div>
   );
 }
+
+function SheetPreviewModal({
+  name,
+  previews,
+  onCancel,
+  onConfirm,
+}: {
+  name: string;
+  previews: { sheet: string; preview: string }[];
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 className="flex min-w-0 items-center gap-2 font-semibold">
+            <FileText className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">Prévia das abas — {name}</span>
+          </h3>
+          <button onClick={onCancel} className="rounded-lg p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="border-b border-border px-4 py-2 text-xs text-muted-foreground">
+          Confira o começo de cada aba antes de iniciar a extração completa.
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          {previews.map((p) => (
+            <div key={p.sheet} className="rounded-lg border border-border">
+              <div className="border-b border-border bg-muted/40 px-3 py-1.5 text-sm font-medium">
+                {p.sheet}
+              </div>
+              <pre className="overflow-x-auto whitespace-pre-wrap break-words px-3 py-2 text-xs text-muted-foreground">
+                {p.preview}
+              </pre>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Extrair conteúdo
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 
 function SheetPickModal({
   name,

@@ -69,6 +69,47 @@ export const listDriveSheetNames = createServerFn({ method: "GET" })
     return { sheets: wb.SheetNames };
   });
 
+/**
+ * Devolve uma prévia curta do conteúdo de cada aba selecionada de uma planilha
+ * do Drive (primeiras linhas de cada aba), para o usuário conferir antes de
+ * iniciar a extração completa pela IA.
+ */
+export const previewDriveSheets = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        fileId: z.string().min(1),
+        mimeType: z.string().min(1),
+        sheets: z.array(z.string()).optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data }): Promise<{ previews: { sheet: string; preview: string }[] }> => {
+    if (!isMultiSheet(data.mimeType)) return { previews: [] };
+    const buf = await downloadSpreadsheetBuffer(data.fileId, data.mimeType);
+    const XLSX = await import("xlsx");
+    const wb = XLSX.read(buf, { type: "buffer" });
+    const wanted = data.sheets?.length ? new Set(data.sheets) : null;
+    const previews: { sheet: string; preview: string }[] = [];
+    for (const sheetName of wb.SheetNames) {
+      if (wanted && !wanted.has(sheetName)) continue;
+      const ws = wb.Sheets[sheetName];
+      if (!ws) continue;
+      const rows = XLSX.utils.sheet_to_json<unknown[]>(ws, { header: 1, blankrows: false });
+      const snippet = rows
+        .slice(0, 6)
+        .map((r) => (Array.isArray(r) ? r.map((c) => String(c ?? "")).join(" | ") : ""))
+        .filter((line) => line.trim())
+        .join("\n");
+      previews.push({
+        sheet: sheetName,
+        preview: snippet || "(aba vazia)",
+      });
+    }
+    return { previews };
+  });
+
 // Documentos do Word enviados ao Drive (.docx) — lidos como texto.
 const WORD_MIMES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
