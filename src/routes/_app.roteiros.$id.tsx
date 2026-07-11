@@ -1982,6 +1982,9 @@ function ActivityRow({
             {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
             {activity.title}
             {activity.location && <span className="ml-2 text-[11px] text-muted-foreground">· {activity.location}</span>}
+            {activity.description && (
+              <span className="mt-0.5 block whitespace-pre-wrap text-[11px] text-muted-foreground">{activity.description}</span>
+            )}
           </span>
         </span>
         <span className="flex gap-1">
