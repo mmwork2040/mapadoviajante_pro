@@ -100,12 +100,13 @@ const ACTIVITY_TYPES: {
   label: string;
   icon: typeof Plane;
   defaultTitle: string;
+  hint: string;
 }[] = [
-  { type: "flight", label: "Voo", icon: Plane, defaultTitle: "Novo voo" },
-  { type: "hotel", label: "Hospedagem", icon: BedDouble, defaultTitle: "Nova hospedagem" },
-  { type: "activity", label: "Atividade", icon: MapPin, defaultTitle: "Nova atividade" },
-  { type: "transfer", label: "Transfer", icon: Car, defaultTitle: "Novo transfer" },
-  { type: "restaurant", label: "Restaurante", icon: Utensils, defaultTitle: "Refeição" },
+  { type: "flight", label: "Voo", icon: Plane, defaultTitle: "Novo voo", hint: "Adiciona um voo ao dia (horário, número do voo, localizador)." },
+  { type: "hotel", label: "Hospedagem", icon: BedDouble, defaultTitle: "Nova hospedagem", hint: "Adiciona uma hospedagem ao dia (hotel, quarto, check-in/out)." },
+  { type: "activity", label: "Atividade", icon: MapPin, defaultTitle: "Nova atividade", hint: "Adiciona um passeio, tour ou ingresso ao dia." },
+  { type: "transfer", label: "Transfer", icon: Car, defaultTitle: "Novo transfer", hint: "Adiciona um traslado/transporte ao dia." },
+  { type: "restaurant", label: "Restaurante", icon: Utensils, defaultTitle: "Refeição", hint: "Adiciona uma refeição/restaurante ao dia." },
 ];
 
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
@@ -237,12 +238,13 @@ const kanbanCollisionDetection: CollisionDetection = (args) => {
   return closestCenter(args);
 };
 
-function PaletteItem({ type, label, icon: Icon }: { type: string; label: string; icon: typeof Plane }) {
+function PaletteItem({ type, label, icon: Icon, hint }: { type: string; label: string; icon: typeof Plane; hint?: string }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({ id: `new:${type}` });
   return (
     <button
       ref={setNodeRef}
       data-palette-item={type}
+      title={hint}
       {...listeners}
       {...attributes}
       style={{ transform: CSS.Translate.toString(transform), zIndex: isDragging ? 50 : undefined }}
@@ -985,9 +987,10 @@ function ItineraryDetailPage() {
             Arraste para o dia:
           </span>
           {ACTIVITY_TYPES.map((t) => (
-            <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} />
+            <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} hint={t.hint} />
           ))}
-          <PaletteItem type="document" label="Documento (IA)" icon={FileUp} />
+          <PaletteItem type="document" label="Documento (IA)" icon={FileUp} hint="Importa um documento (voucher, itinerário, cartão de embarque) e a IA extrai várias atividades, distribuindo-as nos dias certos." />
+
           <input
             ref={docInputRef}
             type="file"
