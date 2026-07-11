@@ -183,7 +183,7 @@ Regras importantes de análise:
 - Seja minucioso: não invente dados; deixe vazio o que não constar no documento.
 Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento tem o formato:
 {
-  "type": "voo|hotel|transfer|passeio|ingresso|seguro|aluguel|outro",
+  "type": "voo|hotel|transfer|passeio|restaurante|ingresso|seguro|aluguel|outro",
   "title": "título curto do item",
   "date": "AAAA-MM-DD ou vazio",
   "time": "HH:MM ou vazio",
