@@ -23,13 +23,28 @@ const GOOGLE_EXPORTABLE = new Set([
   "application/vnd.google-apps.spreadsheet",
 ]);
 
+// Planilhas (Google Sheets ou arquivos enviados) são lidas por completo —
+// todas as abas, colunas e linhas — e convertidas em texto para a IA.
+const SPREADSHEET_MIMES = new Set([
+  "application/vnd.google-apps.spreadsheet",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+  "text/csv",
+]);
+
+function isSpreadsheet(mime: string): boolean {
+  return SPREADSHEET_MIMES.has(mime);
+}
+
 function isSupported(mime: string): boolean {
   return (
     mime === "application/pdf" ||
     mime.startsWith("image/") ||
-    GOOGLE_EXPORTABLE.has(mime)
+    GOOGLE_EXPORTABLE.has(mime) ||
+    isSpreadsheet(mime)
   );
 }
+
 
 /** Verifica se o conector do Google Drive está conectado e acessível. */
 export const checkDriveConnection = createServerFn({ method: "GET" })
