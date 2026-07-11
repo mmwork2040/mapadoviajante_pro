@@ -955,32 +955,10 @@ function ItineraryDetailPage() {
               <Eraser className="h-4 w-4" /> Limpar roteiro
             </button>
           )}
-          {(() => {
-            const canView =
-              it.status === "completed" ||
-              (it.days || []).some((d) => (d.activities?.length || 0) > 0);
-            return canView ? (
-              <a
-                href={`/viajante/${it.id}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
-              >
-                <ExternalLink className="h-4 w-4" /> Ver como viajante
-              </a>
-            ) : (
-              <button
-                type="button"
-                disabled
-                title="Adicione e preencha pelo menos um dia para visualizar como viajante"
-                className="flex cursor-not-allowed items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium opacity-50"
-              >
-                <ExternalLink className="h-4 w-4" /> Ver como viajante
-              </button>
-            );
-          })()}
           <CompleteWithAI it={it} onDone={refresh} />
-          <RoteiroPdfExport it={it} coverUrl={coverUrl} />
+          {(it.days || []).some((d) => (d.activities?.length || 0) > 0) && (
+            <RoteiroPdfExport it={it} coverUrl={coverUrl} />
+          )}
         </div>
         </div>
       </div>
