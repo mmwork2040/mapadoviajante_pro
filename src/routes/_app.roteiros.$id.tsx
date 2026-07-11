@@ -317,9 +317,12 @@ function ItineraryDetailPage() {
       const res = await fetchDriveContent({
         data: { fileId: f.id, mimeType: f.mimeType, name: f.name },
       });
-      const file = base64ToFile(res.base64, res.mime, res.name);
       setPendingDayId(null);
-      await runDocImport(file, "__new__");
+      const source: DocSource =
+        res.kind === "text"
+          ? { kind: "text", text: res.text, name: res.name }
+          : { kind: "file", file: base64ToFile(res.base64, res.mime, res.name) };
+      await runDocImport(source, "__new__");
     } catch (err) {
       setPendingDayId(null);
       toast.error(err instanceof Error ? err.message : "Erro ao baixar arquivo do Drive.");
@@ -333,8 +336,9 @@ function ItineraryDetailPage() {
     const targetDayId = docTargetDayRef.current;
     docTargetDayRef.current = null;
     if (!file || !targetDayId) return;
-    await runDocImport(file, targetDayId);
+    await runDocImport({ kind: "file", file }, targetDayId);
   }
+
 
   async function runDocImport(source: DocSource, targetDayId: string) {
     const file = source.kind === "file" ? source.file : null;
