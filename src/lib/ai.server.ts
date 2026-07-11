@@ -231,20 +231,23 @@ export async function extractDocumentActivities(
   const prompt =
     MULTI_EXTRACTION_PROMPT +
     (existingContext && existingContext.trim() ? EXISTING_CONTEXT_PROMPT(existingContext.trim()) : "");
+  // Documentos com muitos itens (planilhas exportadas, PDFs longos) precisam de
+  // espaço de saída suficiente para não truncar o array JSON de atividades.
+  const bigCfg = { ...cfg, maxTokens: Math.max(cfg.maxTokens || 0, 8192) };
   let text = "";
 
   if (cfg.provider === "openai") {
     const filePart = isImage
       ? { type: "image_url", image_url: { url: dataUrl } }
       : { type: "file", file: { filename: "documento.pdf", file_data: dataUrl } };
-    text = await callOpenAI(cfg, [{ type: "text", text: prompt }, filePart]);
+    text = await callOpenAI(bigCfg, [{ type: "text", text: prompt }, filePart]);
   } else if (cfg.provider === "anthropic") {
     const filePart = isImage
       ? { type: "image", source: { type: "base64", media_type: mime, data: fileBase64 } }
       : { type: "document", source: { type: "base64", media_type: mime, data: fileBase64 } };
-    text = await callAnthropic(cfg, [{ type: "text", text: prompt }, filePart]);
+    text = await callAnthropic(bigCfg, [{ type: "text", text: prompt }, filePart]);
   } else if (cfg.provider === "google") {
-    text = await callGoogle(cfg, [
+    text = await callGoogle(bigCfg, [
       { text: prompt },
       { inline_data: { mime_type: mime, data: fileBase64 } },
     ]);
