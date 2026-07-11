@@ -1298,8 +1298,9 @@ function ItineraryDetailPage() {
 
 
 
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {(it.days || []).map((day) => (
+        <DaysCarousel
+          days={it.days || []}
+          renderDay={(day) => (
             <DayCard
               key={day.id}
               day={day}
@@ -1312,15 +1313,11 @@ function ItineraryDetailPage() {
               autoEditId={autoEditId}
               onAutoEditDone={() => setAutoEditId(null)}
             />
-          ))}
-          {pendingNewDay && (
-            <div className="flex min-h-[24rem] w-[min(20rem,calc(100vw-2rem))] shrink-0 flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-              <Skeleton className="h-7 w-32" />
-              <Skeleton className="h-14 w-full rounded-xl" />
-            </div>
           )}
-          <AddDayDropzone onClick={() => addDay.mutate()} />
-        </div>
+          pendingNewDay={pendingNewDay}
+          onAddDay={() => addDay.mutate()}
+        />
+
 
 
       </DndContext>
