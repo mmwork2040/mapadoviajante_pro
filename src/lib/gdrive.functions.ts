@@ -98,10 +98,30 @@ export const listDriveFiles = createServerFn({ method: "GET" })
     return { files };
   });
 
+export type DriveContent =
+  | { kind: "file"; base64: string; mime: string; name: string }
+  | { kind: "text"; text: string; name: string };
+
+// Converte um workbook (xlsx/xls) em texto varrendo TODAS as abas, colunas e
+// linhas — para a IA garimpar qualquer informação útil ao roteiro.
+async function workbookToText(buf: Buffer, name: string): Promise<string> {
+  const XLSX = await import("xlsx");
+  const wb = XLSX.read(buf, { type: "buffer" });
+  const parts: string[] = [`Arquivo: ${name}`];
+  for (const sheetName of wb.SheetNames) {
+    const ws = wb.Sheets[sheetName];
+    if (!ws) continue;
+    const csv = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
+    if (csv.trim()) parts.push(`\n### Aba: ${sheetName}\n${csv}`);
+  }
+  return parts.join("\n");
+}
+
 /**
- * Baixa o conteúdo de um arquivo do Drive e devolve como base64 + mime, pronto
- * para o mesmo pipeline de "Documento (IA)". Documentos nativos do Google são
- * exportados como PDF.
+ * Baixa o conteúdo de um arquivo do Drive. Planilhas (Google Sheets, xlsx, xls,
+ * csv) são lidas por completo e devolvidas como texto (todas as abas/linhas).
+ * Documentos/apresentações nativas do Google viram PDF; PDFs e imagens vão como
+ * base64. Tudo alimenta o mesmo pipeline de "Documento (IA)".
  */
 export const fetchDriveFileContent = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -114,24 +134,46 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
       })
       .parse(data),
   )
-  .handler(
-    async ({ data }): Promise<{ base64: string; mime: string; name: string }> => {
-      if (!isSupported(data.mimeType)) {
-        throw new Error("Tipo de arquivo não suportado para leitura pela IA.");
-      }
-      const isGoogleNative = GOOGLE_EXPORTABLE.has(data.mimeType);
-      const outMime = isGoogleNative ? "application/pdf" : data.mimeType;
-      const url = isGoogleNative
-        ? `${GATEWAY}/files/${data.fileId}/export?mimeType=application/pdf`
+  .handler(async ({ data }): Promise<DriveContent> => {
+    if (!isSupported(data.mimeType)) {
+      throw new Error("Tipo de arquivo não suportado para leitura pela IA.");
+    }
+    const baseName = data.name || "documento";
+
+    // Planilhas → texto completo (todas as abas/colunas/linhas).
+    if (isSpreadsheet(data.mimeType)) {
+      const isGoogleSheet = data.mimeType === "application/vnd.google-apps.spreadsheet";
+      const url = isGoogleSheet
+        ? `${GATEWAY}/files/${data.fileId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
         : `${GATEWAY}/files/${data.fileId}?alt=media`;
       const res = await fetch(url, { headers: gatewayHeaders() });
       if (!res.ok) {
         const body = await res.text();
-        throw new Error(`Falha ao baixar arquivo do Drive [${res.status}]: ${body}`);
+        throw new Error(`Falha ao baixar planilha do Drive [${res.status}]: ${body}`);
+      }
+      if (data.mimeType === "text/csv") {
+        const text = await res.text();
+        return { kind: "text", text: `Arquivo: ${baseName}\n${text}`, name: baseName };
       }
       const buf = Buffer.from(await res.arrayBuffer());
-      const base64 = buf.toString("base64");
-      const name = (data.name || "documento") + (isGoogleNative ? ".pdf" : "");
-      return { base64, mime: outMime, name };
-    },
-  );
+      const text = await workbookToText(buf, baseName);
+      return { kind: "text", text, name: baseName };
+    }
+
+    // Docs/apresentações nativas → PDF; PDF/imagem → download direto.
+    const isGoogleNative = GOOGLE_EXPORTABLE.has(data.mimeType);
+    const outMime = isGoogleNative ? "application/pdf" : data.mimeType;
+    const url = isGoogleNative
+      ? `${GATEWAY}/files/${data.fileId}/export?mimeType=application/pdf`
+      : `${GATEWAY}/files/${data.fileId}?alt=media`;
+    const res = await fetch(url, { headers: gatewayHeaders() });
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Falha ao baixar arquivo do Drive [${res.status}]: ${body}`);
+    }
+    const buf = Buffer.from(await res.arrayBuffer());
+    const base64 = buf.toString("base64");
+    const name = baseName + (isGoogleNative ? ".pdf" : "");
+    return { kind: "file", base64, mime: outMime, name };
+  });
+
