@@ -3054,6 +3054,71 @@ function DriveImportModal({
   );
 }
 
+function SheetPreviewModal({
+  name,
+  previews,
+  onCancel,
+  onConfirm,
+}: {
+  name: string;
+  previews: { sheet: string; preview: string }[];
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <div
+        className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h3 className="flex min-w-0 items-center gap-2 font-semibold">
+            <FileText className="h-4 w-4 shrink-0 text-primary" />
+            <span className="truncate">Prévia das abas — {name}</span>
+          </h3>
+          <button onClick={onCancel} className="rounded-lg p-1 hover:bg-muted">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="border-b border-border px-4 py-2 text-xs text-muted-foreground">
+          Confira o começo de cada aba antes de iniciar a extração completa.
+        </div>
+
+        <div className="flex-1 space-y-3 overflow-y-auto p-4">
+          {previews.map((p) => (
+            <div key={p.sheet} className="rounded-lg border border-border">
+              <div className="border-b border-border bg-muted/40 px-3 py-1.5 text-sm font-medium">
+                {p.sheet}
+              </div>
+              <pre className="overflow-x-auto whitespace-pre-wrap break-words px-3 py-2 text-xs text-muted-foreground">
+                {p.preview}
+              </pre>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
+          <button
+            onClick={onCancel}
+            className="rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Extrair conteúdo
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 function SheetPickModal({
   name,
   sheets,
