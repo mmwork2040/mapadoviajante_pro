@@ -47,6 +47,8 @@ import {
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
+import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, type DriveFile } from "@/lib/gdrive.functions";
+import { getGDriveConfig } from "@/lib/gdrive-config";
 import {
   DOCUMENT_CATEGORIES,
   deleteLeadDocument,
