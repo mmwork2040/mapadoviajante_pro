@@ -46,8 +46,15 @@ import {
   updateItineraryDay,
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
-import { extractDocumentData, extractDocumentActivitiesData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
+import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
 import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, type DriveFile } from "@/lib/gdrive.functions";
+
+// Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
+// extraído (ex.: planilhas do Drive varridas por completo).
+type DocSource =
+  | { kind: "file"; file: File }
+  | { kind: "text"; text: string; name: string };
+
 import { getGDriveConfig } from "@/lib/gdrive-config";
 import {
   DOCUMENT_CATEGORIES,
