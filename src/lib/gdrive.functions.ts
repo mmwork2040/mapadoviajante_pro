@@ -148,11 +148,13 @@ export type DriveContent =
 
 // Converte um workbook (xlsx/xls) em texto varrendo TODAS as abas, colunas e
 // linhas — para a IA garimpar qualquer informação útil ao roteiro.
-async function workbookToText(buf: Buffer, name: string): Promise<string> {
+async function workbookToText(buf: Buffer, name: string, sheets?: string[]): Promise<string> {
   const XLSX = await import("xlsx");
   const wb = XLSX.read(buf, { type: "buffer" });
+  const wanted = sheets?.length ? new Set(sheets) : null;
   const parts: string[] = [`Arquivo: ${name}`];
   for (const sheetName of wb.SheetNames) {
+    if (wanted && !wanted.has(sheetName)) continue;
     const ws = wb.Sheets[sheetName];
     if (!ws) continue;
     const csv = XLSX.utils.sheet_to_csv(ws, { blankrows: false });
