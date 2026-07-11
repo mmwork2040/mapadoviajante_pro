@@ -1221,21 +1221,23 @@ export async function saveImageFileToLibrary(
   try {
     const up = await uploadLibraryAsset(file);
     if (!up) return null;
-    const title = (info.title || "").trim() || file.name.replace(/\.[^.]+$/, "");
-    const location = (info.location || "").trim();
     const phash = await computeImagePHashFromFile(file).catch(() => null);
-    const tags = Array.from(
-      new Set([normalizeText(location), phash ? phashToTag(phash) : ""].filter(Boolean)),
-    );
+    const meta = buildLibraryImageMeta({
+      title: (info.title || "").trim() || file.name.replace(/\.[^.]+$/, ""),
+      location: info.location,
+      description: info.description,
+      content: info.content,
+      extraTags: phash ? [phashToTag(phash)] : [],
+    });
     return await createLibraryItem({
       type: "image",
-      title,
-      location: location || null,
-      description: (info.description || "").trim() || null,
-      content: (info.content || "").trim() || null,
+      title: meta.title,
+      location: meta.location,
+      description: meta.description,
+      content: meta.content,
       file_url: up.path,
       file_name: up.name,
-      tags,
+      tags: meta.tags,
     });
   } catch (e) {
     console.error("saveImageFileToLibrary:", e);
