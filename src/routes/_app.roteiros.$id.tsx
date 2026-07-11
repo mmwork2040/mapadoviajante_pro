@@ -313,6 +313,7 @@ function ItineraryDetailPage() {
   const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
   const driveEnabled = !!gdriveCfg?.enabled;
   const fetchDriveContent = useServerFn(fetchDriveFileContent);
+  const listSheetNames = useServerFn(listDriveSheetNames);
 
   function base64ToFile(base64: string, mime: string, name: string): File {
     const bin = atob(base64);
@@ -329,10 +330,31 @@ function ItineraryDetailPage() {
       toast.error("Configure e conecte a IA nas configurações antes de importar documentos.");
       return;
     }
+    // Planilhas com várias abas → deixa o usuário escolher quais ler.
+    if (isMultiSheet(f.mimeType)) {
+      setPendingDayId("__drive__");
+      try {
+        const { sheets } = await listSheetNames({ data: { fileId: f.id, mimeType: f.mimeType } });
+        setPendingDayId(null);
+        if (sheets.length > 1) {
+          setSheetPick({ file: f, sheets });
+          return;
+        }
+      } catch (err) {
+        setPendingDayId(null);
+        toast.error(err instanceof Error ? err.message : "Erro ao ler abas da planilha.");
+        return;
+      }
+    }
+    await extractFromDrive(f);
+  }
+
+  // Baixa e extrai o conteúdo de um arquivo do Drive (com abas opcionais).
+  async function extractFromDrive(f: DriveFile, sheets?: string[]) {
     setPendingDayId("__drive__");
     try {
       const res = await fetchDriveContent({
-        data: { fileId: f.id, mimeType: f.mimeType, name: f.name },
+        data: { fileId: f.id, mimeType: f.mimeType, name: f.name, sheets },
       });
       const source: DocSource =
         res.kind === "text"
@@ -347,6 +369,13 @@ function ItineraryDetailPage() {
       setPendingDayId(null);
       toast.error(err instanceof Error ? err.message : "Erro ao baixar arquivo do Drive.");
     }
+  }
+
+  function confirmSheetPick(selected: string[]) {
+    const pick = sheetPick;
+    setSheetPick(null);
+    if (!pick || !selected.length) return;
+    void extractFromDrive(pick.file, selected);
   }
 
   async function confirmDrivePreview(selected: ExtractedDocData[]) {
