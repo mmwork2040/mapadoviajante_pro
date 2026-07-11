@@ -987,9 +987,10 @@ function ItineraryDetailPage() {
             Arraste para o dia:
           </span>
           {ACTIVITY_TYPES.map((t) => (
-            <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} />
+            <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} hint={t.hint} />
           ))}
-          <PaletteItem type="document" label="Documento (IA)" icon={FileUp} />
+          <PaletteItem type="document" label="Documento (IA)" icon={FileUp} hint="Importa um documento (voucher, itinerário, cartão de embarque) e a IA extrai várias atividades, distribuindo-as nos dias certos." />
+
           <input
             ref={docInputRef}
             type="file"
