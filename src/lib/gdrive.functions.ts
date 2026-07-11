@@ -128,6 +128,28 @@ async function workbookToText(buf: Buffer, name: string): Promise<string> {
   return parts.join("\n");
 }
 
+// Extrai o texto de um .docx (Word) descompactando o pacote e limpando o XML.
+async function docxToText(buf: Buffer, name: string): Promise<string> {
+  const { unzipSync } = await import("fflate");
+  const files = unzipSync(new Uint8Array(buf));
+  const xml = files["word/document.xml"];
+  if (!xml) return `Arquivo: ${name}`;
+  const raw = new TextDecoder().decode(xml);
+  const text = raw
+    .replace(/<w:p[ >]/g, "\n")
+    .replace(/<w:tab\b[^>]*\/?>/g, "\t")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return `Arquivo: ${name}\n${text}`;
+}
+
+
 /**
  * Baixa o conteúdo de um arquivo do Drive. Planilhas (Google Sheets, xlsx, xls,
  * csv) são lidas por completo e devolvidas como texto (todas as abas/linhas).
