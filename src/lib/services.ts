@@ -1195,6 +1195,19 @@ export async function saveActivityImageToLibrary(
     const ext = (blob.type.split("/")[1] || "jpg").replace(/[^a-z0-9]/gi, "") || "jpg";
     const safe = sanitizeFileName(activityLocation || destination) || "atracao";
     const file = new File([blob], `${safe}.${ext}`, { type: blob.type || "image/jpeg" });
+    // Deduplicação: reutiliza imagem igual/parecida já existente no acervo.
+    const dup = await findSimilarLibraryImage({
+      file,
+      location: activityLocation || destination,
+      title: activityLocation || destination,
+    });
+    if (dup) {
+      const existing = dup.item.file_url
+        ? await getLibraryAssetUrl(dup.item.file_url)
+        : dup.item.image_url ?? null;
+      if (existing) return existing;
+    }
+    const phash = await computeImagePHashFromFile(file).catch(() => null);
     const up = await uploadLibraryAsset(file);
     if (!up) return null;
     const meta = buildLibraryImageMeta({
@@ -1203,6 +1216,7 @@ export async function saveActivityImageToLibrary(
       destination,
       description,
       auto: true,
+      extraTags: phash ? [phashToTag(phash)] : [],
     });
     await createLibraryItem({
       type: "image",
