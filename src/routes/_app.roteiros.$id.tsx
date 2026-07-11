@@ -326,17 +326,28 @@ function ItineraryDetailPage() {
       const res = await fetchDriveContent({
         data: { fileId: f.id, mimeType: f.mimeType, name: f.name },
       });
-      setPendingDayId(null);
       const source: DocSource =
         res.kind === "text"
           ? { kind: "text", text: res.text, name: res.name }
           : { kind: "file", file: base64ToFile(res.base64, res.mime, res.name) };
-      await runDocImport(source, "__new__");
+      const items = await extractDocItems(source);
+      setPendingDayId(null);
+      if (!items) return;
+      // Mostra a prévia do que foi extraído antes de inserir no roteiro.
+      setDrivePreview({ items, source, name: f.name });
     } catch (err) {
       setPendingDayId(null);
       toast.error(err instanceof Error ? err.message : "Erro ao baixar arquivo do Drive.");
     }
   }
+
+  async function confirmDrivePreview(selected: ExtractedDocData[]) {
+    const preview = drivePreview;
+    setDrivePreview(null);
+    if (!preview || !selected.length) return;
+    await insertDocItems(selected, preview.source, "__new__");
+  }
+
 
 
   async function handleDocImport(e: React.ChangeEvent<HTMLInputElement>) {
