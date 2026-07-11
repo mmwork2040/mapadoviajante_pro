@@ -307,6 +307,8 @@ function ItineraryDetailPage() {
     source: DocSource;
     name: string;
   } | null>(null);
+  // Seleção de abas quando o arquivo do Drive é uma planilha com várias abas.
+  const [sheetPick, setSheetPick] = useState<{ file: DriveFile; sheets: string[] } | null>(null);
 
   const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
   const driveEnabled = !!gdriveCfg?.enabled;
