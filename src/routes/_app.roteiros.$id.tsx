@@ -695,6 +695,33 @@ function ItineraryDetailPage() {
         const base = canon(name) || canon(loc);
         return base && base.length >= 3 ? `${type}|${base}` : "";
       };
+      // Tokens significativos (≥3 letras) para comparação fuzzy de similaridade.
+      const tokens = (name?: string | null, loc?: string | null) => {
+        const base = `${canon(name)} ${canon(loc)}`.trim();
+        return new Set(base.split(/\s+/).filter((t) => t.length >= 3));
+      };
+      // Similaridade de Jaccard entre dois conjuntos de tokens.
+      const jaccard = (a: Set<string>, b: Set<string>) => {
+        if (!a.size || !b.size) return 0;
+        let inter = 0;
+        for (const t of a) if (b.has(t)) inter++;
+        return inter / (a.size + b.size - inter);
+      };
+      // Duplicado se o mesmo tipo já tem um item bem parecido (≥60% dos tokens).
+      const tokenBank = new Map<string, Set<string>[]>();
+      const isSimilar = (type: string, name?: string | null, loc?: string | null) => {
+        const tk = tokens(name, loc);
+        if (tk.size === 0) return false;
+        const bank = tokenBank.get(type) || [];
+        return bank.some((prev) => jaccard(tk, prev) >= 0.6);
+      };
+      const rememberTokens = (type: string, name?: string | null, loc?: string | null) => {
+        const tk = tokens(name, loc);
+        if (tk.size === 0) return;
+        const bank = tokenBank.get(type) || [];
+        bank.push(tk);
+        tokenBank.set(type, bank);
+      };
 
       const existingKeys = new Set<string>();
       const semanticSet = new Set<string>();
@@ -704,6 +731,7 @@ function ItineraryDetailPage() {
           const t = mapActivityTypeGlobal(a.type || undefined);
           const k = semanticKey(t, a.title, a.location);
           if (k) semanticSet.add(k);
+          if (DEDUP_TYPES.has(t)) rememberTokens(t, a.title, a.location);
         }
       }
 
@@ -716,15 +744,19 @@ function ItineraryDetailPage() {
         const title = data.title || data.hotel_name || data.flight_number || "Item importado";
         const mappedType = mapActivityTypeGlobal(data.type);
         const dupKey = `${targetId}|${norm(title)}|${norm(data.time)}`;
-        const semKey = DEDUP_TYPES.has(mappedType)
+        const dedupType = DEDUP_TYPES.has(mappedType);
+        const semKey = dedupType
           ? semanticKey(mappedType, data.title || data.hotel_name, data.location)
           : "";
-        if (existingKeys.has(dupKey) || (semKey && semanticSet.has(semKey))) {
+        const similar =
+          dedupType && isSimilar(mappedType, data.title || data.hotel_name, data.location);
+        if (existingKeys.has(dupKey) || (semKey && semanticSet.has(semKey)) || similar) {
           skipped++;
           continue;
         }
         existingKeys.add(dupKey);
         if (semKey) semanticSet.add(semKey);
+        if (dedupType) rememberTokens(mappedType, data.title || data.hotel_name, data.location);
         if (!orderByDay.has(targetId)) {
           const dd = (it?.days || []).find((d) => d.id === targetId);
           orderByDay.set(targetId, dd?.activities?.length || 0);
