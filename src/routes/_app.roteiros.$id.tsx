@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Search } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -1298,8 +1298,9 @@ function ItineraryDetailPage() {
 
 
 
-        <div className="flex gap-4 overflow-x-auto pb-4">
-          {(it.days || []).map((day) => (
+        <DaysCarousel
+          days={it.days || []}
+          renderDay={(day) => (
             <DayCard
               key={day.id}
               day={day}
@@ -1312,15 +1313,11 @@ function ItineraryDetailPage() {
               autoEditId={autoEditId}
               onAutoEditDone={() => setAutoEditId(null)}
             />
-          ))}
-          {pendingNewDay && (
-            <div className="flex min-h-[24rem] w-[min(20rem,calc(100vw-2rem))] shrink-0 flex-col gap-3 rounded-2xl border border-border bg-card p-5">
-              <Skeleton className="h-7 w-32" />
-              <Skeleton className="h-14 w-full rounded-xl" />
-            </div>
           )}
-          <AddDayDropzone onClick={() => addDay.mutate()} />
-        </div>
+          pendingNewDay={pendingNewDay}
+          onAddDay={() => addDay.mutate()}
+        />
+
 
 
       </DndContext>
@@ -1329,6 +1326,94 @@ function ItineraryDetailPage() {
       <VouchersCard itineraryId={id} vouchers={it.vouchers || []} onChange={refresh} />
 
       <ItineraryChat it={it} onChange={refresh} />
+    </div>
+  );
+}
+
+function DaysCarousel({
+  days,
+  renderDay,
+  pendingNewDay,
+  onAddDay,
+}: {
+  days: ItineraryDay[];
+  renderDay: (day: ItineraryDay) => React.ReactNode;
+  pendingNewDay: boolean;
+  onAddDay: () => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(false);
+
+  const updateArrows = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 8);
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
+  }, []);
+
+  useEffect(() => {
+    updateArrows();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.addEventListener("scroll", updateArrows, { passive: true });
+    window.addEventListener("resize", updateArrows);
+    return () => {
+      el.removeEventListener("scroll", updateArrows);
+      window.removeEventListener("resize", updateArrows);
+    };
+  }, [updateArrows, days.length]);
+
+  const scrollBy = (dir: 1 | -1) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir * Math.min(el.clientWidth * 0.85, 340), behavior: "smooth" });
+  };
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => scrollBy(-1)}
+        disabled={!canPrev}
+        aria-label="Dia anterior"
+        className={`absolute left-1 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card/90 p-2 shadow-md backdrop-blur transition-opacity hover:bg-card sm:flex ${
+          canPrev ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+      <button
+        type="button"
+        onClick={() => scrollBy(1)}
+        disabled={!canNext}
+        aria-label="Próximo dia"
+        className={`absolute right-1 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-full border border-border bg-card/90 p-2 shadow-md backdrop-blur transition-opacity hover:bg-card sm:flex ${
+          canNext ? "opacity-100" : "pointer-events-none opacity-0"
+        }`}
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+
+      <div
+        ref={scrollRef}
+        className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-4"
+      >
+        {days.map((day) => (
+          <div key={day.id} className="snap-start">
+            {renderDay(day)}
+          </div>
+        ))}
+        {pendingNewDay && (
+          <div className="flex min-h-[24rem] w-[min(20rem,calc(100vw-2rem))] shrink-0 snap-start flex-col gap-3 rounded-2xl border border-border bg-card p-5">
+            <Skeleton className="h-7 w-32" />
+            <Skeleton className="h-14 w-full rounded-xl" />
+          </div>
+        )}
+        <div className="snap-start">
+          <AddDayDropzone onClick={onAddDay} />
+        </div>
+      </div>
     </div>
   );
 }
