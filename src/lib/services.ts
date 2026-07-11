@@ -1147,16 +1147,16 @@ export async function saveExternalImageToLibrary(
     const file = new File([blob], `${safeDest}.${ext}`, { type: blob.type || "image/jpeg" });
     const up = await uploadLibraryAsset(file);
     if (!up) return imageUrl;
+    const meta = buildLibraryImageMeta({ destination, description, auto: true });
     await createLibraryItem({
       type: "image",
-      title: destination,
-      location: destination,
-      description:
-        description?.trim() ||
-        `Foto de ${destination} adicionada automaticamente ao acervo da biblioteca para reuso em roteiros.`,
+      title: meta.title,
+      location: meta.location,
+      description: meta.description,
+      content: meta.content,
       file_url: up.path,
       file_name: up.name,
-      tags: ["auto", "destino", normalizeText(destination)].filter(Boolean),
+      tags: meta.tags,
     });
     return (await getLibraryAssetUrl(up.path)) ?? imageUrl;
   } catch (e) {
