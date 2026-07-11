@@ -349,25 +349,59 @@ function ItineraryDetailPage() {
   }
 
 
-  async function runDocImport(source: DocSource, targetDayId: string) {
-    const file = source.kind === "file" ? source.file : null;
-    
-    let dayId: string | null = targetDayId;
+  // Monta um resumo dos dias/itens já no roteiro para a IA evitar conflitos/duplicidades.
+  function buildExistingContext(): string {
+    return (it?.days || [])
+      .slice()
+      .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
+      .map((d) => {
+        const header = `Dia ${d.day_number ?? "?"}${d.date ? ` (${d.date})` : ""}${d.title ? ` - ${d.title}` : ""}`;
+        const acts = (d.activities || [])
+          .map((a) => `  • ${a.time ? `${a.time} ` : ""}[${a.type || "item"}] ${a.title}${a.location ? ` @ ${a.location}` : ""}`)
+          .join("\n");
+        return acts ? `${header}\n${acts}` : `${header}\n  (sem itens)`;
+      })
+      .join("\n");
+  }
 
-
-
-
-    // 1. AI must be configured and connected before we auto-interpret documents.
+  // Etapa 1: apenas EXTRAI as atividades do documento (não insere no roteiro).
+  async function extractDocItems(source: DocSource): Promise<ExtractedDocData[] | null> {
     const cfg = aiConfig ?? (await fetchAiConfig());
     const connected = !!cfg?.api_key_encrypted && cfg?.knowledge_sources?.status === "connected";
     if (!connected) {
       toast.error("Configure e conecte a IA nas configurações antes de importar documentos.");
-      return;
+      return null;
     }
+    const existingContext = buildExistingContext();
+    const items: ExtractedDocData[] =
+      source.kind === "text"
+        ? await extractActivitiesFromText({
+            data: { text: source.text, context: existingContext || undefined },
+          })
+        : await extractActivities({
+            data: {
+              fileBase64: await fileToBase64(source.file),
+              mime: source.file.type,
+              context: existingContext || undefined,
+            },
+          });
+    if (!items.length) {
+      toast.error("Nenhuma atividade nova encontrada no documento (ou já constava no roteiro).");
+      return null;
+    }
+    return items;
+  }
+
+  // Etapa 2: distribui as atividades extraídas nos dias corretos, com deduplicação.
+  async function insertDocItems(
+    items: ExtractedDocData[],
+    source: DocSource,
+    targetDayId: string,
+  ) {
+    const file = source.kind === "file" ? source.file : null;
+    let dayId: string | null = targetDayId;
 
     // Sem dia de destino → reaproveita um dia vazio existente antes de criar outro.
-    // Isso evita duplicar "Dia 1" quando o roteiro acabou de ser limpo/criado e a
-    // tela ainda não refletiu o último dia salvo no banco.
     if (dayId === "__new__") {
       const latest = await fetchItineraryById(id);
       const latestDays = [...(latest?.days || it?.days || [])].sort(
@@ -396,55 +430,22 @@ function ItineraryDetailPage() {
     setPendingDayId(dayId);
 
     try {
-      // 2. Block the same document being imported twice into the same day.
+      // Block the same document being imported twice into the same day.
       const existingDocs = await fetchItineraryDocuments(id);
       const dayActIds = new Set(
         ((it?.days || []).find((d) => d.id === dayId)?.activities || []).map((a) => a.id),
       );
-      const isDuplicate = !!file && existingDocs.some(
-        (d) => d.name === file.name && d.size === file.size && d.activity_id && dayActIds.has(d.activity_id),
-      );
-
+      const isDuplicate =
+        !!file &&
+        existingDocs.some(
+          (d) => d.name === file.name && d.size === file.size && d.activity_id && dayActIds.has(d.activity_id),
+        );
       if (isDuplicate) {
         toast.error("Este documento já foi inserido neste dia.");
         return;
       }
 
-      // 3. Build a summary of the days/items already in the itinerary so the AI can
-      //    avoid date/time conflicts and duplicate items during its analysis.
-      const existingContext = (it?.days || [])
-        .slice()
-        .sort((a, b) => (a.day_number ?? 0) - (b.day_number ?? 0))
-        .map((d) => {
-          const header = `Dia ${d.day_number ?? "?"}${d.date ? ` (${d.date})` : ""}${d.title ? ` - ${d.title}` : ""}`;
-          const acts = (d.activities || [])
-            .map((a) => `  • ${a.time ? `${a.time} ` : ""}[${a.type || "item"}] ${a.title}${a.location ? ` @ ${a.location}` : ""}`)
-            .join("\n");
-          return acts ? `${header}\n${acts}` : `${header}\n  (sem itens)`;
-        })
-        .join("\n");
-
-      // 3. Let the AI read the document and extract all activities.
-      const items: ExtractedDocData[] =
-        source.kind === "text"
-          ? await extractActivitiesFromText({
-              data: { text: source.text, context: existingContext || undefined },
-            })
-          : await extractActivities({
-              data: {
-                fileBase64: await fileToBase64(source.file),
-                mime: source.file.type,
-                context: existingContext || undefined,
-              },
-            });
-
-      if (!items.length) {
-        toast.error("Nenhuma atividade nova encontrada no documento (ou já constava no roteiro).");
-        return;
-      }
-
-
-      // 3.1 Date helpers to fit the extracted items into the right days.
+      // Date helpers to fit the extracted items into the right days.
       const isISO = (v?: string | null): v is string => !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
       const addDays = (iso: string, n: number) => {
         const d = new Date(iso + "T00:00:00");
@@ -464,7 +465,6 @@ function ItineraryDetailPage() {
       const tripEnd = latestItinerary?.end_date || it?.end_date || null;
       const anchor = isISO(tripStart) ? tripStart : null;
 
-      // Resolve a date for each existing day (explicit date, or computed from the trip start).
       const dayDateOf = (d: ItineraryDay, index: number): string | null =>
         isISO(d.date)
           ? d.date
@@ -472,7 +472,6 @@ function ItineraryDetailPage() {
             ? addDays(anchor, (d.day_number ?? index + 1) - 1)
             : null;
 
-      // Map "date -> existing dayId" so items land on the correct day.
       const dateToDayId = new Map<string, string>();
       currentDays.forEach((d, i) => {
         const dd = dayDateOf(d, i);
@@ -493,9 +492,6 @@ function ItineraryDetailPage() {
       const flightItems = items.filter(isFlightDoc);
       const hasRoundTrip = flightItems.some(isOutbound) && flightItems.some(isReturn);
 
-      // Se o documento de voo não trouxe datas confiáveis, não jogamos ida/volta
-      // no mesmo Dia 1. Usamos as datas do roteiro quando existem; caso contrário,
-      // bloqueamos a importação para o consultor corrigir/informar o período.
       if (flightItems.length) {
         const canUseTripBounds = isISO(tripStart) && isISO(tripEnd);
         if (canUseTripBounds) {
@@ -520,10 +516,8 @@ function ItineraryDetailPage() {
         }
       }
 
-      // Dates found inside the document after any safe fallback to trip bounds.
       const itemDates = items.map((x) => x.date).filter(isISO);
 
-      // Confirm the document dates match the period informed in the trip registration.
       if (itemDates.length && (anchor || isISO(tripEnd))) {
         const hi = isISO(tripEnd) ? tripEnd : null;
         const outside = itemDates.some((d) => (anchor && d < anchor) || (hi && d > hi));
@@ -534,7 +528,6 @@ function ItineraryDetailPage() {
         }
       }
 
-      // Ensure enough days exist to cover the whole span (existing days + item dates + trip end).
       if (itemDates.length) {
         const candidates = [
           ...itemDates,
@@ -545,7 +538,6 @@ function ItineraryDetailPage() {
         const rangeStart = candidates[0];
         const rangeEnd = candidates[candidates.length - 1];
         if (isISO(rangeStart) && isISO(rangeEnd) && daysBetween(rangeStart, rangeEnd) >= 0) {
-          // Backfill dates onto existing dateless days so matching stays consistent.
           for (let i = 0; i < currentDays.length; i++) {
             const d = currentDays[i];
             if (!isISO(d.date)) {
@@ -556,7 +548,6 @@ function ItineraryDetailPage() {
               if (!dateToDayId.has(computed)) dateToDayId.set(computed, d.id);
             }
           }
-          // Create the missing days within the range.
           let dayNum = Math.max(0, ...currentDays.map((d) => d.day_number || 0));
           for (let off = 0; off <= daysBetween(rangeStart, rangeEnd); off++) {
             const dateAt = addDays(rangeStart, off);
@@ -575,15 +566,35 @@ function ItineraryDetailPage() {
         }
       }
 
-      // 3.2 Distribute each item to the day that matches its date (fallback: dropped day).
-      // Safety net against duplicates: skip items whose title+time already exist in the target day.
+      // Deduplicação: chave exata (dia|título|hora) + chave semântica por tipo/nome
+      // para não repetir restaurantes, hospedagens e passeios parecidos.
       const norm = (s?: string | null) => (s || "").trim().toLowerCase();
+      const stripAccents = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const NOISE =
+        /\b(hotel|hoteis|pousada|resort|hostel|restaurante|restaurant|bar|cafe|tour|passeio|visita|city|ingresso|reserva|almoco|jantar|transfer|traslado|transporte|hospedagem|the|de|da|do|das|dos|e|o|a)\b/g;
+      const canon = (s?: string | null) =>
+        stripAccents(norm(s))
+          .replace(/[^a-z0-9\s]/g, " ")
+          .replace(NOISE, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+      const DEDUP_TYPES = new Set(["hotel", "restaurant", "activity", "transfer"]);
+      const semanticKey = (type: string, name?: string | null, loc?: string | null) => {
+        const base = canon(name) || canon(loc);
+        return base && base.length >= 3 ? `${type}|${base}` : "";
+      };
+
       const existingKeys = new Set<string>();
+      const semanticSet = new Set<string>();
       for (const d of it?.days || []) {
         for (const a of d.activities || []) {
           existingKeys.add(`${d.id}|${norm(a.title)}|${norm(a.time)}`);
+          const t = mapActivityTypeGlobal(a.type || undefined);
+          const k = semanticKey(t, a.title, a.location);
+          if (k) semanticSet.add(k);
         }
       }
+
       const orderByDay = new Map<string, number>();
       const usedDayIds = new Set<string>();
       let firstActivityId: string | null = null;
@@ -591,12 +602,17 @@ function ItineraryDetailPage() {
       for (const data of items) {
         const targetId = (isISO(data.date) && dateToDayId.get(data.date)) || dayId;
         const title = data.title || data.hotel_name || data.flight_number || "Item importado";
+        const mappedType = mapActivityTypeGlobal(data.type);
         const dupKey = `${targetId}|${norm(title)}|${norm(data.time)}`;
-        if (existingKeys.has(dupKey)) {
+        const semKey = DEDUP_TYPES.has(mappedType)
+          ? semanticKey(mappedType, data.title || data.hotel_name, data.location)
+          : "";
+        if (existingKeys.has(dupKey) || (semKey && semanticSet.has(semKey))) {
           skipped++;
           continue;
         }
         existingKeys.add(dupKey);
+        if (semKey) semanticSet.add(semKey);
         if (!orderByDay.has(targetId)) {
           const dd = (it?.days || []).find((d) => d.id === targetId);
           orderByDay.set(targetId, dd?.activities?.length || 0);
@@ -618,7 +634,7 @@ function ItineraryDetailPage() {
           location: data.location || null,
           cost: parseDocCost(data.cost),
           description: descParts.join(" · ") || null,
-          type: mapActivityTypeGlobal(data.type),
+          type: mappedType,
           sort_order: orderByDay.get(targetId)!,
         });
         orderByDay.set(targetId, (orderByDay.get(targetId) || 0) + 1);
@@ -626,8 +642,7 @@ function ItineraryDetailPage() {
         if (created && !firstActivityId) firstActivityId = created.id;
       }
 
-
-      // 4. Persist the document so it can't be re-imported into this day.
+      // Persist the document so it can't be re-imported into this day.
       if (file) {
         try {
           await uploadLeadDocument({
@@ -642,8 +657,6 @@ function ItineraryDetailPage() {
         }
       }
 
-
-      // 5. Always keep each affected day ordered by time.
       for (const usedId of usedDayIds) {
         await reorderDayActivitiesByTime(usedId);
       }
@@ -662,6 +675,14 @@ function ItineraryDetailPage() {
       setPendingDayId(null);
     }
   }
+
+  // Fluxo direto (upload local): extrai e insere de imediato.
+  async function runDocImport(source: DocSource, targetDayId: string) {
+    const items = await extractDocItems(source);
+    if (!items) return;
+    await insertDocItems(items, source, targetDayId);
+  }
+
 
 
   const addDay = useMutation({
