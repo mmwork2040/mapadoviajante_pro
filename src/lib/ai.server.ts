@@ -256,6 +256,26 @@ export async function extractDocumentActivities(
   return parseJsonArrayLoose(text).filter((x) => x && (x.title || x.hotel_name || x.flight_number || x.description));
 }
 
+// Variante para conteúdo textual (ex.: planilhas do Drive convertidas em texto,
+// varrendo todas as abas/colunas/linhas). Reaproveita o mesmo prompt de extração.
+export async function extractActivitiesFromText(
+  cfg: ProviderConfig,
+  documentText: string,
+  existingContext?: string,
+): Promise<ExtractedDocData[]> {
+  const prompt =
+    MULTI_EXTRACTION_PROMPT +
+    (existingContext && existingContext.trim() ? EXISTING_CONTEXT_PROMPT(existingContext.trim()) : "") +
+    `\n\nCONTEÚDO DO DOCUMENTO (texto extraído; planilhas incluem todas as abas, colunas e linhas — analise tudo em busca de informações úteis ao roteiro):\n${documentText.slice(0, 120000)}`;
+  let text = "";
+  if (cfg.provider === "openai") text = await callOpenAI(cfg, prompt);
+  else if (cfg.provider === "anthropic") text = await callAnthropic(cfg, prompt);
+  else if (cfg.provider === "google") text = await callGoogle(cfg, [{ text: prompt }]);
+  else throw new Error("Provedor não suportado.");
+  return parseJsonArrayLoose(text).filter((x) => x && (x.title || x.hotel_name || x.flight_number || x.description));
+}
+
+
 
 
 type InputFile = { base64: string; mime: string; name?: string };
