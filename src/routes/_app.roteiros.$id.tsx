@@ -615,17 +615,20 @@ function ItineraryDetailPage() {
 
 
       // 4. Persist the document so it can't be re-imported into this day.
-      try {
-        await uploadLeadDocument({
-          file,
-          agencyId: it!.agency_id,
-          itineraryId: id,
-          activityId: firstActivityId,
-          category: "Importado no roteiro",
-        });
-      } catch {
-        // Non-fatal: activities were created even if the file failed to store.
+      if (file) {
+        try {
+          await uploadLeadDocument({
+            file,
+            agencyId: it!.agency_id,
+            itineraryId: id,
+            activityId: firstActivityId,
+            category: "Importado no roteiro",
+          });
+        } catch {
+          // Non-fatal: activities were created even if the file failed to store.
+        }
       }
+
 
       // 5. Always keep each affected day ordered by time.
       for (const usedId of usedDayIds) {
