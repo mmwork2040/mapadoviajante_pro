@@ -292,9 +292,16 @@ function ItineraryDetailPage() {
   async function handleDocImport(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
-    let dayId = docTargetDayRef.current;
+    const targetDayId = docTargetDayRef.current;
     docTargetDayRef.current = null;
-    if (!file || !dayId) return;
+    if (!file || !targetDayId) return;
+    await runDocImport(file, targetDayId);
+  }
+
+  async function runDocImport(file: File, targetDayId: string) {
+    let dayId: string | null = targetDayId;
+
+
 
     // 1. AI must be configured and connected before we auto-interpret documents.
     const cfg = aiConfig ?? (await fetchAiConfig());
