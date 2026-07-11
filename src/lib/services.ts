@@ -1339,13 +1339,16 @@ export async function uploadImageToLibraryForDestination(
   });
   const up = await uploadLibraryAsset(file);
   if (!up) throw new Error("Não foi possível enviar a imagem.");
+  const meta = buildLibraryImageMeta({ destination });
   await createLibraryItem({
     type: "image",
-    title: destination,
-    location: destination,
+    title: meta.title,
+    location: meta.location,
+    description: meta.description,
+    content: meta.content,
     file_url: up.path,
     file_name: up.name,
-    tags: [normalizeText(destination)].filter(Boolean),
+    tags: meta.tags,
   });
   return (await getLibraryAssetUrl(up.path)) ?? up.path;
 }
