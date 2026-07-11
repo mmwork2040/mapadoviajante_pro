@@ -267,10 +267,13 @@ export async function extractActivitiesFromText(
     MULTI_EXTRACTION_PROMPT +
     (existingContext && existingContext.trim() ? EXISTING_CONTEXT_PROMPT(existingContext.trim()) : "") +
     `\n\nCONTEÚDO DO DOCUMENTO (texto extraído; planilhas incluem todas as abas, colunas e linhas — analise tudo em busca de informações úteis ao roteiro):\n${documentText.slice(0, 120000)}`;
+  // Planilhas grandes geram muitos itens; garanta espaço de saída suficiente
+  // para não truncar o array JSON (senão parece que "não leu tudo").
+  const bigCfg = { ...cfg, maxTokens: Math.max(cfg.maxTokens || 0, 8192) };
   let text = "";
-  if (cfg.provider === "openai") text = await callOpenAI(cfg, prompt);
-  else if (cfg.provider === "anthropic") text = await callAnthropic(cfg, prompt);
-  else if (cfg.provider === "google") text = await callGoogle(cfg, [{ text: prompt }]);
+  if (cfg.provider === "openai") text = await callOpenAI(bigCfg, prompt);
+  else if (cfg.provider === "anthropic") text = await callAnthropic(bigCfg, prompt);
+  else if (cfg.provider === "google") text = await callGoogle(bigCfg, [{ text: prompt }]);
   else throw new Error("Provedor não suportado.");
   return parseJsonArrayLoose(text).filter((x) => x && (x.title || x.hotel_name || x.flight_number || x.description));
 }
