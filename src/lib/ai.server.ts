@@ -192,7 +192,10 @@ Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento 
   "date": "AAAA-MM-DD ou vazio",
   "time": "HH:MM ou vazio",
   "duration": "duração estimada ou vazio",
-  "location": "local/aeroporto/cidade/atração ou vazio",
+  "location": "cidade/local/aeroporto/atração ou vazio",
+  "city": "cidade principal do item ou vazio",
+  "transport": "meio de transporte (existente ou sugerido) ou vazio",
+  "time_suggested": true se o horário foi sugerido pela IA, false se veio do documento,
   "flight_number": "número do voo ou vazio",
   "hotel_name": "nome do hotel ou vazio",
   "room": "tipo/numero do quarto ou vazio",
@@ -200,7 +203,7 @@ Responda APENAS com um ARRAY JSON válido (sem texto extra), onde cada elemento 
   "code": "localizador/código da reserva ou vazio",
   "cost": valor total como número (sem moeda) ou 0,
   "people": quantidade de pessoas como número inteiro ou 0,
-  "description": "resumo das informações encontradas"
+  "description": "resumo das informações encontradas, incluindo cidade, atividade e transporte"
 }
 Se houver apenas um item, retorne um array com um único elemento. Nunca retorne texto fora do array JSON.`;
 
