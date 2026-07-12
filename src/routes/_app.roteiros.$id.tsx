@@ -2208,6 +2208,64 @@ function ActivityRow({
           </div>
         )}
 
+        {/* Valores por passageiro (nome + valor individual) */}
+        <div className="rounded-lg border border-border/60 bg-background/60 p-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-medium text-muted-foreground">Valores por passageiro (opcional)</p>
+            <button
+              type="button"
+              onClick={() => setEPax((p) => [...p, { name: "", currency: eCurrency || "BRL" }])}
+              className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
+            >
+              <Plus className="h-3 w-3" /> Adicionar
+            </button>
+          </div>
+          {ePax.length === 0 && (
+            <p className="mt-1 text-[11px] text-muted-foreground">Cada passageiro pode ter um valor diferente.</p>
+          )}
+          <div className="mt-2 space-y-1.5">
+            {ePax.map((p, i) => (
+              <div key={i} className="flex items-center gap-1.5">
+                <input
+                  value={p.name}
+                  onChange={(e) => setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                  placeholder="Nome do passageiro"
+                  className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                />
+                <select
+                  value={p.currency || "BRL"}
+                  onChange={(e) => setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
+                  className="rounded-lg border border-input bg-background px-1.5 py-1 text-xs outline-none focus:border-primary"
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.code}</option>
+                  ))}
+                </select>
+                <input
+                  value={p.amount != null ? maskAmount(String(Math.round((p.amount || 0) * 100))) : ""}
+                  onChange={(e) => {
+                    const val = parseCurrency(maskAmount(e.target.value));
+                    setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, amount: val || null } : x)));
+                  }}
+                  placeholder="0,00"
+                  inputMode="numeric"
+                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                />
+                <button
+                  type="button"
+                  onClick={() => setEPax((arr) => arr.filter((_, j) => j !== i))}
+                  className="text-muted-foreground hover:text-destructive"
+                  title="Remover passageiro"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+
+
+
         <div className="flex justify-end gap-1.5">
           <button
             onClick={() => setEditing(false)}
