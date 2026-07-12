@@ -1705,12 +1705,15 @@ function decodeActivityMeta(a: ItineraryActivity): void {
   if (!raw || typeof raw !== "string" || !raw.trim().startsWith("{")) return;
   try {
     const m = JSON.parse(raw) as ActivityMeta;
-    if (m && typeof m === "object" && ("cur" in m || "brl" in m || "hotels" in m || "dur" in m)) {
+    if (m && typeof m === "object" && ("cur" in m || "brl" in m || "hotels" in m || "dur" in m || "pax" in m)) {
       a.duration = m.dur ?? null;
       a.currency = m.cur ?? null;
       a.cost_brl = typeof m.brl === "number" ? m.brl : null;
       a.hotel_options = Array.isArray(m.hotels)
         ? (m.hotels as ItineraryActivity["hotel_options"])
+        : null;
+      a.passenger_costs = Array.isArray(m.pax)
+        ? (m.pax as ItineraryActivity["passenger_costs"])
         : null;
     }
   } catch {
