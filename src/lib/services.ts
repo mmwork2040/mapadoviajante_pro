@@ -1696,6 +1696,7 @@ type ActivityMeta = {
   dur?: string | null;
   cur?: string | null;
   brl?: number | null;
+  rate?: number | null;
   hotels?: unknown;
   pax?: unknown;
 };
@@ -1709,6 +1710,7 @@ function decodeActivityMeta(a: ItineraryActivity): void {
       a.duration = m.dur ?? null;
       a.currency = m.cur ?? null;
       a.cost_brl = typeof m.brl === "number" ? m.brl : null;
+      a.cost_brl_rate = typeof m.rate === "number" ? m.rate : null;
       a.hotel_options = Array.isArray(m.hotels)
         ? (m.hotels as ItineraryActivity["hotel_options"])
         : null;
@@ -1724,17 +1726,18 @@ function decodeActivityMeta(a: ItineraryActivity): void {
 // Mapeia o campo de UI `time` para a coluna real `time_start` e empacota os
 // metadados extras dentro de `duration`.
 function mapActivityPayload(data: Partial<ItineraryActivity>): Record<string, unknown> {
-  const { time, currency, cost_brl, hotel_options, passenger_costs, duration, ...rest } = data;
+  const { time, currency, cost_brl, cost_brl_rate, hotel_options, passenger_costs, duration, ...rest } = data;
   const payload: Record<string, unknown> = { ...rest };
   if (time !== undefined) payload.time_start = time;
 
   const hasMeta =
-    currency !== undefined || cost_brl !== undefined || hotel_options !== undefined || passenger_costs !== undefined;
+    currency !== undefined || cost_brl !== undefined || cost_brl_rate !== undefined || hotel_options !== undefined || passenger_costs !== undefined;
   if (hasMeta) {
     payload.duration = JSON.stringify({
       dur: duration ?? null,
       cur: currency ?? null,
       brl: cost_brl ?? null,
+      rate: cost_brl_rate ?? null,
       hotels: hotel_options ?? null,
       pax: passenger_costs ?? null,
     });

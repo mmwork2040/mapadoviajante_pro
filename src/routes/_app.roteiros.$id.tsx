@@ -182,6 +182,22 @@ function formatMoney(value: number | null | undefined, code: string | null | und
   }
 }
 
+// Converte um valor para BRL usando a cotação (rate) informada na atividade,
+// desde que a moeda do item seja a mesma da conversão. Retorna null se não aplicável.
+function brlWithRate(
+  amount: number | null | undefined,
+  itemCurrency: string | null | undefined,
+  baseCurrency: string | null | undefined,
+  rate: number | null | undefined,
+): number | null {
+  if (amount == null) return null;
+  const cur = (itemCurrency || "BRL").toUpperCase();
+  if (cur === "BRL") return null;
+  if (!rate || rate <= 0) return null;
+  if (cur !== (baseCurrency || "").toUpperCase()) return null;
+  return Math.round(amount * rate * 100) / 100;
+}
+
 // Máscara de valor sem símbolo de moeda (milhares + 2 casas): "123456" -> "1.234,56"
 function maskAmount(value: string | number | null | undefined): string {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -1957,6 +1973,7 @@ function ActivityRow({
   const [eCost, setECost] = useState(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
   const [eCurrency, setECurrency] = useState<string>(activity.currency || "BRL");
   const [eCostBrl, setECostBrl] = useState<number | null>(activity.cost_brl ?? null);
+  const [eCostBrlRate, setECostBrlRate] = useState<number | null>(activity.cost_brl_rate ?? null);
   const [eHotels, setEHotels] = useState<HotelOption[]>(activity.hotel_options || []);
   const [ePax, setEPax] = useState<PassengerCost[]>(activity.passenger_costs || []);
   const [converting, setConverting] = useState(false);
@@ -2019,6 +2036,7 @@ function ActivityRow({
     setECost(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
     setECurrency(activity.currency || "BRL");
     setECostBrl(activity.cost_brl ?? null);
+    setECostBrlRate(activity.cost_brl_rate ?? null);
     setEHotels(activity.hotel_options || []);
     setEPax(activity.passenger_costs || []);
     setEditing(true);
@@ -2042,6 +2060,7 @@ function ActivityRow({
     }
     if (eCurrency === "BRL") {
       setECostBrl(amount);
+      setECostBrlRate(1);
       return;
     }
     setConverting(true);
@@ -2049,6 +2068,7 @@ function ActivityRow({
       const res = await convertCurrency({ data: { amount, currency: eCurrency } });
       if (res.ok) {
         setECostBrl(res.brl);
+        setECostBrlRate(res.rate || null);
         toast.success(res.message || "Conversão realizada.");
       } else {
         toast.error(res.message || "Não foi possível obter a cotação.");
@@ -2096,6 +2116,7 @@ function ActivityRow({
         cost: amount || null,
         currency: amount ? eCurrency : null,
         cost_brl: amount ? eCostBrl : null,
+        cost_brl_rate: amount && eCurrency !== "BRL" ? eCostBrlRate : null,
         hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
         passenger_costs: cleanPax.length ? cleanPax : null,
       });
@@ -2171,7 +2192,7 @@ function ActivityRow({
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <select
               value={eCurrency}
-              onChange={(e) => { setECurrency(e.target.value); setECostBrl(null); }}
+              onChange={(e) => { setECurrency(e.target.value); setECostBrl(null); setECostBrlRate(null); }}
               className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
             >
               {CURRENCIES.map((c) => (
@@ -2180,7 +2201,7 @@ function ActivityRow({
             </select>
             <input
               value={eCost}
-              onChange={(e) => { setECost(maskAmount(e.target.value)); setECostBrl(null); }}
+              onChange={(e) => { setECost(maskAmount(e.target.value)); setECostBrl(null); setECostBrlRate(null); }}
               placeholder="0,00"
               inputMode="numeric"
               className="w-28 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
@@ -2199,7 +2220,10 @@ function ActivityRow({
           </div>
           {eCurrency !== "BRL" && eCostBrl != null && (
             <p className="mt-1 text-[11px] text-muted-foreground">
-              ≈ {formatCurrency(eCostBrl)} <span className="opacity-70">(cotação do dia, informativo)</span>
+              ≈ {formatCurrency(eCostBrl)}{" "}
+              <span className="opacity-70">
+                {eCostBrlRate ? `(1 ${eCurrency} ≈ ${formatCurrency(eCostBrlRate)}, informativo)` : "(cotação do dia, informativo)"}
+              </span>
             </p>
           )}
         </div>
@@ -2587,7 +2611,10 @@ function ActivityRow({
               <span className="mt-0.5 block text-[11px] font-medium text-foreground">
                 {formatMoney(activity.cost, activity.currency)}
                 {activity.currency && activity.currency !== "BRL" && activity.cost_brl != null && (
-                  <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(activity.cost_brl)}</span>
+                  <span className="ml-1 font-normal text-muted-foreground">
+                    ≈ {formatCurrency(activity.cost_brl)}
+                    {activity.cost_brl_rate ? ` (1 ${activity.currency} ≈ ${formatCurrency(activity.cost_brl_rate)})` : ""}
+                  </span>
                 )}
               </span>
             )}
@@ -2596,14 +2623,20 @@ function ActivityRow({
                 <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Valores por pessoa
                 </span>
-                {activity.passenger_costs!.map((p, i) => (
+                {activity.passenger_costs!.map((p, i) => {
+                  const pBrl = brlWithRate(p.amount, p.currency, activity.currency, activity.cost_brl_rate);
+                  return (
                   <span key={i} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1">
                     <span className="min-w-0 truncate text-foreground">{p.name}</span>
                     {p.amount != null && (
-                      <span className="shrink-0 font-medium text-foreground">{formatMoney(p.amount, p.currency)}</span>
+                      <span className="shrink-0 font-medium text-foreground">
+                        {formatMoney(p.amount, p.currency)}
+                        {pBrl != null && <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(pBrl)}</span>}
+                      </span>
                     )}
                   </span>
-                ))}
+                  );
+                })}
               </span>
             )}
             {activity.type === "hotel" && (activity.hotel_options?.length ?? 0) > 0 && (
@@ -2651,6 +2684,12 @@ function ActivityRow({
                     {h.daily_rate != null && (
                       <span className="block text-[11px] font-medium text-foreground">
                         {formatMoney(h.daily_rate, h.currency)} / diária
+                        {(() => {
+                          const hBrl = brlWithRate(h.daily_rate, h.currency, activity.currency, activity.cost_brl_rate);
+                          return hBrl != null ? (
+                            <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(hBrl)}</span>
+                          ) : null;
+                        })()}
                       </span>
                     )}
                   </span>

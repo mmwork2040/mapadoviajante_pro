@@ -178,6 +178,8 @@ export interface ItineraryActivity {
   currency?: string | null;
   /** Valor convertido em Real (informativo, calculado pela IA). */
   cost_brl?: number | null;
+  /** Cotação usada na conversão (quantos BRL vale 1 unidade da moeda). */
+  cost_brl_rate?: number | null;
   /** Sugestões de hospedagem (somente para itens do tipo "hotel"). */
   hotel_options?: HotelOption[] | null;
   /** Valores por passageiro (nome + valor), quando o custo varia por pessoa. */
