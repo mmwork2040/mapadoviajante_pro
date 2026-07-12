@@ -141,16 +141,25 @@ const CURRENCIES: { code: string; label: string }[] = [
   { code: "MXN", label: "$ Peso mexicano (MXN)" },
 ];
 
-// Links de busca em sites de reservas/promoções confiáveis (sempre resolvem).
-function bookingLinks(name: string, city?: string | null): { label: string; url: string }[] {
+// Catálogo dos 10 sites de busca de hotéis mais usados (usado no modal e nos links).
+const HOTEL_SITES: { key: string; label: string; url: (name: string, city: string) => string }[] = [
+  { key: "booking", label: "Booking", url: (n, c) => `https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "trivago", label: "Trivago", url: (n, c) => `https://www.trivago.com.br/pt-BR/srl?query=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "airbnb", label: "Airbnb", url: (n, c) => `https://www.airbnb.com.br/s/${encodeURIComponent(c.trim())}/homes?query=${encodeURIComponent(n.trim())}` },
+  { key: "hotels", label: "Hotels.com", url: (n, c) => `https://www.hotels.com/Hotel-Search?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "expedia", label: "Expedia", url: (n, c) => `https://www.expedia.com.br/Hotel-Search?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "decolar", label: "Decolar", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`${n} ${c} site:decolar.com`.trim())}` },
+  { key: "agoda", label: "Agoda", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`${n} ${c} site:agoda.com`.trim())}` },
+  { key: "hostelworld", label: "Hostelworld", url: (n, c) => `https://www.hostelworld.com/search?search_keywords=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "kayak", label: "Kayak", url: (n, c) => `https://www.kayak.com.br/hotels?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+];
+
+// Links de busca em sites de reservas/promoções (sempre resolvem).
+function bookingLinks(name: string, city?: string | null, sites?: string[]): { label: string; url: string }[] {
   const c = (city || "").trim();
-  const q = encodeURIComponent(`${name} ${c}`.trim());
-  const cityQ = encodeURIComponent(c);
-  return [
-    { label: "Booking", url: `https://www.booking.com/searchresults.pt-br.html?ss=${q}` },
-    { label: "Trivago", url: `https://www.trivago.com.br/pt-BR/srl?query=${q}` },
-    { label: "Airbnb", url: `https://www.airbnb.com.br/s/${cityQ}/homes?query=${encodeURIComponent(name.trim())}` },
-  ];
+  const selected = sites && sites.length ? HOTEL_SITES.filter((s) => sites.includes(s.key)) : HOTEL_SITES.slice(0, 3);
+  return selected.map((s) => ({ label: s.label, url: s.url(name, c) }));
 }
 
 function currencySymbol(code: string | null | undefined): string {
