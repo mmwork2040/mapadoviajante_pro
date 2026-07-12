@@ -71,7 +71,7 @@ import {
 } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
-import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
+import { formatCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -1927,7 +1927,7 @@ function ActivityRow({
   const [eLocation, setELocation] = useState(activity.location || "");
   const [eDescription, setEDescription] = useState(activity.description || "");
   const [eType, setEType] = useState<string>(activity.type || "activity");
-  const [eCost, setECost] = useState(activity.cost != null ? maskCurrency(String(Math.round((activity.cost || 0) * 100))) : "");
+  const [eCost, setECost] = useState(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
   const [eCurrency, setECurrency] = useState<string>(activity.currency || "BRL");
   const [eCostBrl, setECostBrl] = useState<number | null>(activity.cost_brl ?? null);
   const [eHotels, setEHotels] = useState<HotelOption[]>(activity.hotel_options || []);
@@ -1941,7 +1941,7 @@ function ActivityRow({
     setELocation(activity.location || "");
     setEDescription(activity.description || "");
     setEType(done ? "activity" : activity.type || "activity");
-    setECost(activity.cost != null ? maskCurrency(String(Math.round((activity.cost || 0) * 100))) : "");
+    setECost(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
     setECurrency(activity.currency || "BRL");
     setECostBrl(activity.cost_brl ?? null);
     setEHotels(activity.hotel_options || []);
@@ -2098,7 +2098,7 @@ function ActivityRow({
             </select>
             <input
               value={eCost}
-              onChange={(e) => setECost(maskCurrency(e.target.value))}
+              onChange={(e) => setECost(maskAmount(e.target.value))}
               placeholder="0,00"
               inputMode="numeric"
               className="w-28 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
@@ -2180,9 +2180,9 @@ function ActivityRow({
                       ))}
                     </select>
                     <input
-                      value={h.daily_rate != null ? maskCurrency(String(Math.round((h.daily_rate || 0) * 100))) : ""}
+                      value={h.daily_rate != null ? maskAmount(String(Math.round((h.daily_rate || 0) * 100))) : ""}
                       onChange={(e) => {
-                        const val = parseCurrency(maskCurrency(e.target.value));
+                        const val = parseCurrency(maskAmount(e.target.value));
                         setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, daily_rate: val || null } : x)));
                       }}
                       placeholder="Valor da diária"
