@@ -1946,6 +1946,7 @@ function ActivityRow({
   const [hfPriceMax, setHfPriceMax] = useState("");
   const [hfCurrency, setHfCurrency] = useState("BRL");
   const [hfNotes, setHfNotes] = useState("");
+  const [hfLimit, setHfLimit] = useState(5);
   const convertCurrency = useServerFn(convertCurrencyFn);
   const searchHotels = useServerFn(searchHotelsFn);
 
@@ -1965,7 +1966,7 @@ function ActivityRow({
         currency: hfCurrency || "BRL",
         notes: hfNotes.trim() || null,
       };
-      const res = await searchHotels({ data: { city, filters } });
+      const res = await searchHotels({ data: { city, filters, limit: hfLimit } });
       if (res.ok && res.hotels.length) {
         setEHotels((prev) => [...prev, ...res.hotels]);
         toast.success(res.message);
@@ -2358,6 +2359,20 @@ function ActivityRow({
                   rows={2}
                   className="mt-1 w-full resize-none rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                 />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Quantidade de resultados</label>
+                <select
+                  value={hfLimit}
+                  onChange={(e) => setHfLimit(Number(e.target.value))}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                >
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
+                    <option key={n} value={n}>
+                      {n} {n === 1 ? "opção" : "opções"}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="flex justify-end gap-2 pt-1">
                 <button

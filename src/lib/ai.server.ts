@@ -485,7 +485,9 @@ export async function searchHotels(
   cfg: ProviderConfig,
   city: string,
   filters?: HotelSearchFilters,
+  limit?: number,
 ): Promise<{ ok: boolean; hotels: HotelOption[]; message: string }> {
+  const max = Math.min(6, Math.max(1, Math.round(Number(limit) || 5)));
   const f = filters || {};
   const criteria: string[] = [];
   if (f.room_type?.trim()) criteria.push(`Tipo de quarto desejado: ${f.room_type.trim()}.`);
@@ -501,7 +503,7 @@ export async function searchHotels(
   const criteriaBlock = criteria.length
     ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n`
     : "";
-  const prompt = `Você é um consultor de viagens. Sugira até 5 opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
+  const prompt = `Você é um consultor de viagens. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
 Para cada opção informe nome, endereço, tipo de quarto, valor aproximado da diária e link do site oficial (ou de reserva) quando conhecer.
 Não invente valores absurdos; use uma estimativa realista da diária. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
 Responda APENAS com um JSON válido, sem texto extra:
@@ -530,7 +532,7 @@ Responda APENAS com um JSON válido, sem texto extra:
     const hotels: HotelOption[] = list
       .map((h) => h as Record<string, unknown>)
       .filter((h) => typeof h.name === "string" && (h.name as string).trim())
-      .slice(0, 5)
+      .slice(0, max)
       .map((h) => ({
         name: String(h.name).trim(),
         address: typeof h.address === "string" ? h.address.trim() || null : null,
