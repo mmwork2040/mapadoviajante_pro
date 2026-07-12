@@ -2737,7 +2737,9 @@ function ActivityRow({
                     </div>
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium text-muted-foreground">Destino (bairro/local exato)</label>
+                    <label className="text-[11px] font-medium text-muted-foreground">
+                      Destino (bairro/local exato) <span className="text-red-500">*</span>
+                    </label>
                     <div className="mt-1 flex items-center gap-1.5">
                       <input
                         value={sfDest}
