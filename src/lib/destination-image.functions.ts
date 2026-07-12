@@ -133,7 +133,7 @@ export const downloadDestinationImage = createServerFn({ method: "POST" })
       : [];
     return { destination: d.destination.trim(), exclude };
   })
-  .handler(async ({ data, context }): Promise<{ imageUrl: string }> => {
+  .handler(async ({ data, context }): Promise<{ imageUrl: string | null }> => {
     const { data: cfg, error } = await context.supabase
       .from("crm_ai_config")
       .select("*")
