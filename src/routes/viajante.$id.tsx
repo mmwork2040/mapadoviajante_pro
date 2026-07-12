@@ -128,7 +128,16 @@ function TravelerView() {
                         <p className="font-medium">{a.title}</p>
                         {a.description && <p className="text-sm text-muted-foreground">{a.description}</p>}
                         {a.location && <p className="text-xs text-muted-foreground">📍 {a.location}</p>}
-                        {a.cost ? <p className="text-xs font-medium text-foreground">{formatCurrency(a.cost)}</p> : null}
+                        {a.cost ? (
+                          <p className="text-xs font-medium text-foreground">
+                            {formatMoney(a.cost, a.currency)}
+                            {a.currency && a.currency !== "BRL" && a.cost_brl != null && (
+                              <span className="ml-1 font-normal text-muted-foreground">
+                                ≈ {formatCurrency(a.cost_brl)}
+                              </span>
+                            )}
+                          </p>
+                        ) : null}
                       </li>
                     );
                   })}
