@@ -2180,12 +2180,12 @@ function ActivityRow({
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={handleSearchHotels}
+                  onClick={() => setHotelModalOpen(true)}
                   disabled={searchingHotels}
                   className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
                 >
                   {searchingHotels ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                  Pesquisar com IA
+                  Assistente
                 </button>
                 <button
                   type="button"
