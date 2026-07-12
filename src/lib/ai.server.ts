@@ -485,7 +485,9 @@ export async function searchHotels(
   cfg: ProviderConfig,
   city: string,
   filters?: HotelSearchFilters,
+  limit?: number,
 ): Promise<{ ok: boolean; hotels: HotelOption[]; message: string }> {
+  const max = Math.min(6, Math.max(1, Math.round(Number(limit) || 5)));
   const f = filters || {};
   const criteria: string[] = [];
   if (f.room_type?.trim()) criteria.push(`Tipo de quarto desejado: ${f.room_type.trim()}.`);
