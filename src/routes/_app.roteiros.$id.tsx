@@ -74,7 +74,7 @@ import {
 } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
-import { formatCurrency, parseCurrency, formatMoney, brlWithRate, currencySymbol } from "@/lib/ui";
+import { formatCurrency, parseCurrency, formatMoney, brlWithRate } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
