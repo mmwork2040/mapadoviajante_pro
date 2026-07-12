@@ -2262,8 +2262,9 @@ function ActivityRow({
                       <option key={s} value={s}>{s} estrela{s > 1 ? "s" : ""}</option>
                     ))}
                   </select>
-
+                  <div className="flex items-center gap-1.5">
                     <select
+
                       value={h.currency || "BRL"}
                       onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
                       className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
