@@ -1946,6 +1946,7 @@ function ActivityRow({
     setECurrency(activity.currency || "BRL");
     setECostBrl(activity.cost_brl ?? null);
     setEHotels(activity.hotel_options || []);
+    setEPax(activity.passenger_costs || []);
     setEditing(true);
   }
 
