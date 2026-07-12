@@ -46,7 +46,7 @@ import {
   updateItineraryDay,
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
-import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn } from "@/lib/ai.functions";
+import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn, convertCurrencyFn } from "@/lib/ai.functions";
 import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, previewDriveSheets, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
 
 // Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
@@ -71,7 +71,7 @@ import {
 } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
-import { formatCurrency, maskCurrency, parseCurrency } from "@/lib/ui";
+import { formatCurrency, parseCurrency } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -81,7 +81,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData } from "@/lib/types";
+import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData, HotelOption } from "@/lib/types";
 import roteiroFallback from "@/assets/roteiro-fallback.jpg";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
@@ -122,6 +122,51 @@ const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
 TYPE_META.image = { label: "Imagem", icon: ImageIcon };
+
+// Moedas disponíveis para informar o valor de uma atividade/hospedagem.
+const CURRENCIES: { code: string; label: string }[] = [
+  { code: "BRL", label: "R$ Real (BRL)" },
+  { code: "USD", label: "US$ Dólar (USD)" },
+  { code: "EUR", label: "€ Euro (EUR)" },
+  { code: "GBP", label: "£ Libra (GBP)" },
+  { code: "ARS", label: "$ Peso argentino (ARS)" },
+  { code: "CLP", label: "$ Peso chileno (CLP)" },
+  { code: "UYU", label: "$ Peso uruguaio (UYU)" },
+  { code: "CAD", label: "C$ Dólar canadense (CAD)" },
+  { code: "AUD", label: "A$ Dólar australiano (AUD)" },
+  { code: "CHF", label: "Fr Franco suíço (CHF)" },
+  { code: "JPY", label: "¥ Iene (JPY)" },
+  { code: "MXN", label: "$ Peso mexicano (MXN)" },
+];
+
+function currencySymbol(code: string | null | undefined): string {
+  const map: Record<string, string> = {
+    BRL: "R$", USD: "US$", EUR: "€", GBP: "£", ARS: "$", CLP: "$",
+    UYU: "$", CAD: "C$", AUD: "A$", CHF: "Fr", JPY: "¥", MXN: "$",
+  };
+  return map[(code || "BRL").toUpperCase()] || (code || "");
+}
+
+// Formata um valor numérico com a moeda informada (símbolo + milhares).
+function formatMoney(value: number | null | undefined, code: string | null | undefined): string {
+  if (value == null) return "";
+  const cur = (code || "BRL").toUpperCase();
+  try {
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: cur }).format(value);
+  } catch {
+    return `${currencySymbol(cur)} ${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(value)}`;
+  }
+}
+
+// Máscara de valor sem símbolo de moeda (milhares + 2 casas): "123456" -> "1.234,56"
+function maskAmount(value: string | number | null | undefined): string {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  if (!digits) return "";
+  return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+    Number(digits) / 100,
+  );
+}
+
 
 function getNextDayNumber(days?: ItineraryDay[]) {
   return Math.max(0, ...(days || []).map((day) => day.day_number || 0)) + 1;
@@ -1091,6 +1136,9 @@ function ItineraryDetailPage() {
               description: moving.description,
               location: moving.location,
               cost: moving.cost,
+              currency: moving.currency,
+              cost_brl: moving.cost_brl,
+              hotel_options: moving.hotel_options,
               duration: moving.duration,
               maps_url: moving.maps_url,
               sort_order: targetIndex,
@@ -1879,7 +1927,13 @@ function ActivityRow({
   const [eLocation, setELocation] = useState(activity.location || "");
   const [eDescription, setEDescription] = useState(activity.description || "");
   const [eType, setEType] = useState<string>(activity.type || "activity");
+  const [eCost, setECost] = useState(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
+  const [eCurrency, setECurrency] = useState<string>(activity.currency || "BRL");
+  const [eCostBrl, setECostBrl] = useState<number | null>(activity.cost_brl ?? null);
+  const [eHotels, setEHotels] = useState<HotelOption[]>(activity.hotel_options || []);
+  const [converting, setConverting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const convertCurrency = useServerFn(convertCurrencyFn);
 
   function startEdit() {
     setETitle(activity.title || "");
@@ -1887,6 +1941,10 @@ function ActivityRow({
     setELocation(activity.location || "");
     setEDescription(activity.description || "");
     setEType(done ? "activity" : activity.type || "activity");
+    setECost(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
+    setECurrency(activity.currency || "BRL");
+    setECostBrl(activity.cost_brl ?? null);
+    setEHotels(activity.hotel_options || []);
     setEditing(true);
   }
 
@@ -1898,6 +1956,34 @@ function ActivityRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoEdit]);
 
+
+
+  async function handleConvert() {
+    const amount = parseCurrency(eCost);
+    if (!amount) {
+      toast.error("Informe um valor para converter.");
+      return;
+    }
+    if (eCurrency === "BRL") {
+      setECostBrl(amount);
+      return;
+    }
+    setConverting(true);
+    try {
+      const res = await convertCurrency({ data: { amount, currency: eCurrency } });
+      if (res.ok) {
+        setECostBrl(res.brl);
+        toast.success(res.message || "Conversão realizada.");
+      } else {
+        toast.error(res.message || "Não foi possível obter a cotação.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao converter.");
+    } finally {
+      setConverting(false);
+    }
+  }
+
   async function saveEdit() {
     if (!eTitle.trim()) {
       toast.error("Informe um título.");
@@ -1905,12 +1991,27 @@ function ActivityRow({
     }
     setSaving(true);
     try {
+      const amount = parseCurrency(eCost);
+      const cleanHotels = eHotels
+        .filter((h) => (h.name || "").trim())
+        .map((h) => ({
+          name: h.name.trim(),
+          address: h.address?.trim() || null,
+          room_type: h.room_type?.trim() || null,
+          daily_rate: h.daily_rate ?? null,
+          currency: h.currency || "BRL",
+          url: h.url?.trim() || null,
+        }));
       await updateItineraryActivity(activity.id, {
         title: eTitle.trim(),
         time: eTime || null,
         location: eLocation || null,
         description: eDescription.trim() || null,
         type: eType,
+        cost: amount || null,
+        currency: amount ? eCurrency : null,
+        cost_brl: amount ? eCostBrl : null,
+        hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
       });
       setEditing(false);
       onChange();
@@ -1977,6 +2078,126 @@ function ActivityRow({
             className="mt-0.5 w-full resize-y rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
           />
         </label>
+
+        {/* Valor da atividade (opcional) com moeda e conversão para BRL via IA */}
+        <div className="rounded-lg border border-border/60 bg-background/60 p-2">
+          <p className="text-[10px] font-medium text-muted-foreground">Valor (opcional)</p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <select
+              value={eCurrency}
+              onChange={(e) => { setECurrency(e.target.value); setECostBrl(null); }}
+              className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.code}</option>
+              ))}
+            </select>
+            <input
+              value={eCost}
+              onChange={(e) => { setECost(maskAmount(e.target.value)); setECostBrl(null); }}
+              placeholder="0,00"
+              inputMode="numeric"
+              className="w-28 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+            />
+            {eCurrency !== "BRL" && parseCurrency(eCost) > 0 && (
+              <button
+                type="button"
+                onClick={handleConvert}
+                disabled={converting}
+                className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+              >
+                {converting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                Converter p/ R$
+              </button>
+            )}
+          </div>
+          {eCurrency !== "BRL" && eCostBrl != null && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              ≈ {formatCurrency(eCostBrl)} <span className="opacity-70">(cotação do dia, informativo)</span>
+            </p>
+          )}
+        </div>
+
+        {/* Sugestões de hospedagem (apenas para itens do tipo Hospedagem) */}
+        {eType === "hotel" && (
+          <div className="rounded-lg border border-border/60 bg-background/60 p-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-medium text-muted-foreground">Sugestões de hospedagem</p>
+              <button
+                type="button"
+                onClick={() => setEHotels((h) => [...h, { name: "", currency: "BRL" }])}
+                className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
+              >
+                <Plus className="h-3 w-3" /> Adicionar
+              </button>
+            </div>
+            {eHotels.length === 0 && (
+              <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma sugestão adicionada.</p>
+            )}
+            <div className="mt-2 space-y-2">
+              {eHotels.map((h, i) => (
+                <div key={i} className="space-y-1.5 rounded-lg border border-border/60 bg-muted/40 p-2">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      value={h.name}
+                      onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                      placeholder="Nome do hotel/pousada"
+                      className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEHotels((arr) => arr.filter((_, j) => j !== i))}
+                      className="text-muted-foreground hover:text-destructive"
+                      title="Remover sugestão"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <input
+                    value={h.address || ""}
+                    onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
+                    placeholder="Endereço"
+                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  />
+                  <input
+                    value={h.room_type || ""}
+                    onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, room_type: e.target.value } : x)))}
+                    placeholder="Tipo de quarto"
+                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={h.currency || "BRL"}
+                      onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
+                      className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    >
+                      {CURRENCIES.map((c) => (
+                        <option key={c.code} value={c.code}>{c.code}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={h.daily_rate != null ? maskAmount(String(Math.round((h.daily_rate || 0) * 100))) : ""}
+                      onChange={(e) => {
+                        const val = parseCurrency(maskAmount(e.target.value));
+                        setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, daily_rate: val || null } : x)));
+                      }}
+                      placeholder="Valor da diária"
+                      inputMode="numeric"
+                      className="w-32 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                  <input
+                    value={h.url || ""}
+                    onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
+                    placeholder="Link do site (https://…)"
+                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-1.5">
           <button
             onClick={() => setEditing(false)}
@@ -2016,6 +2237,47 @@ function ActivityRow({
             {activity.description && (
               <span className="mt-0.5 block whitespace-pre-wrap text-[11px] text-muted-foreground">{activity.description}</span>
             )}
+            {activity.cost != null && (
+              <span className="mt-0.5 block text-[11px] font-medium text-foreground">
+                {formatMoney(activity.cost, activity.currency)}
+                {activity.currency && activity.currency !== "BRL" && activity.cost_brl != null && (
+                  <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(activity.cost_brl)}</span>
+                )}
+              </span>
+            )}
+            {activity.type === "hotel" && (activity.hotel_options?.length ?? 0) > 0 && (
+              <span className="mt-1.5 block space-y-1.5">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Sugestões de hospedagem
+                </span>
+                {activity.hotel_options!.map((h, i) => (
+                  <span key={i} className="block rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-foreground">{h.name}</span>
+                      {h.url && (
+                        <a
+                          href={h.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Site <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </span>
+                    {h.room_type && <span className="block text-[11px] text-muted-foreground">{h.room_type}</span>}
+                    {h.address && <span className="block text-[11px] text-muted-foreground">📍 {h.address}</span>}
+                    {h.daily_rate != null && (
+                      <span className="block text-[11px] font-medium text-foreground">
+                        {formatMoney(h.daily_rate, h.currency)} / diária
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </span>
+            )}
+
           </span>
         </span>
         <span className="flex gap-1">

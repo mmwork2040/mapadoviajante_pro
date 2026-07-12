@@ -173,6 +173,42 @@ export const parseTravelPeriodFn = createServerFn({ method: "POST" })
     );
   });
 
+type ConvertCurrencyInput = { amount: number; currency: string };
+
+// Converte um valor em moeda estrangeira para Real (BRL) usando a IA.
+export const convertCurrencyFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: ConvertCurrencyInput) => {
+    const amount = Number(d?.amount);
+    if (!Number.isFinite(amount) || amount <= 0) throw new Error("Informe um valor válido.");
+    if (!d?.currency?.trim()) throw new Error("Informe a moeda.");
+    return { amount, currency: d.currency.trim() };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+    const { convertCurrencyToBRL } = await import("./ai.server");
+    return convertCurrencyToBRL(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: cfg.max_tokens,
+      },
+      data.amount,
+      data.currency,
+    );
+  });
+
+
 type AnalyzeImageInput = {
   fileBase64: string;
   mime: string;

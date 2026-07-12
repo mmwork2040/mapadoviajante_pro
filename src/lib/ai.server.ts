@@ -410,6 +410,69 @@ Texto do usuário: "${input.replace(/"/g, "'")}"`;
   };
 }
 
+export type CurrencyConversion = {
+  ok: boolean;
+  brl: number;
+  rate: number;
+  message: string;
+};
+
+// Converte um valor de uma moeda estrangeira para Real (BRL) usando a IA,
+// com base na cotação aproximada do dia. Uso informativo.
+export async function convertCurrencyToBRL(
+  cfg: ProviderConfig,
+  amount: number,
+  currency: string,
+): Promise<CurrencyConversion> {
+  const today = new Date().toISOString().slice(0, 10);
+  const cur = currency.toUpperCase().trim();
+  if (cur === "BRL") {
+    return { ok: true, brl: amount, rate: 1, message: "Valor já está em Real." };
+  }
+  const prompt = `Você é um assistente financeiro. A data de hoje é ${today}.
+Converta o valor abaixo para Real brasileiro (BRL) usando a cotação aproximada mais recente que você conhece para a moeda informada.
+Valor: ${amount}
+Moeda de origem: ${cur}
+Responda APENAS com um JSON válido, sem texto extra:
+{
+  "rate": número (quantos BRL vale 1 unidade da moeda de origem),
+  "brl": número (valor convertido em BRL, com 2 casas decimais),
+  "message": "observação curta em português citando a cotação usada"
+}`;
+
+  const raw = await askCopilot(cfg, prompt);
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) {
+    return { ok: false, brl: 0, rate: 0, message: "Não foi possível obter a cotação." };
+  }
+  try {
+    const parsed = JSON.parse(cleaned.slice(start, end + 1)) as {
+      rate?: number;
+      brl?: number;
+      message?: string;
+    };
+    const rate = typeof parsed.rate === "number" ? parsed.rate : 0;
+    let brl = typeof parsed.brl === "number" ? parsed.brl : 0;
+    if (!brl && rate) brl = amount * rate;
+    if (!brl) return { ok: false, brl: 0, rate: 0, message: "Não foi possível obter a cotação." };
+    return {
+      ok: true,
+      brl: Math.round(brl * 100) / 100,
+      rate,
+      message:
+        typeof parsed.message === "string" && parsed.message.trim()
+          ? parsed.message.trim()
+          : `Cotação aproximada: 1 ${cur} ≈ ${rate} BRL.`,
+    };
+  } catch {
+    return { ok: false, brl: 0, rate: 0, message: "Não foi possível obter a cotação." };
+  }
+}
+
+
+
 
 const KNOWLEDGE_PROMPT = `Você recebe um documento (PDF, planilha, imagem ou texto) que servirá como base de conhecimento para uma IA de uma agência de viagens.
 Extraia e organize TODO o conteúdo textual relevante (preços, regras, destinos, descrições, tabelas) em texto corrido limpo, em português.
