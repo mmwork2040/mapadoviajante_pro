@@ -1956,11 +1956,7 @@ function ActivityRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoEdit]);
 
-  // Reseta a conversão sempre que o valor ou a moeda mudam (fica desatualizada).
-  useEffect(() => {
-    setECostBrl(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eCost, eCurrency]);
+
 
   async function handleConvert() {
     const amount = parseCurrency(eCost);
