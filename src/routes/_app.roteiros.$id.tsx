@@ -2015,6 +2015,8 @@ function ActivityRow({
   const [sfNotes, setSfNotes] = useState("");
   const [sfLimit, setSfLimit] = useState(5);
   const [sfSites, setSfSites] = useState<string[]>([]);
+  const [sfOrigin, setSfOrigin] = useState("");
+  const [sfDest, setSfDest] = useState("");
   const searchSuggestions = useServerFn(searchSuggestionsFn);
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
