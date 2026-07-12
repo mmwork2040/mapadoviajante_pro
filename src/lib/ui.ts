@@ -30,9 +30,60 @@ export function useTheme() {
 }
 
 export function formatCurrency(value: number | null | undefined): string {
-  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-    Number(value || 0),
-  );
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(value || 0));
+}
+
+/** Alias explícito para valores em BRL (mesma formatação de formatCurrency). */
+export const formatBRL = formatCurrency;
+
+export function currencySymbol(code: string | null | undefined): string {
+  const map: Record<string, string> = {
+    BRL: "R$", USD: "US$", EUR: "€", GBP: "£", ARS: "$", CLP: "$",
+    UYU: "$", CAD: "C$", AUD: "A$", CHF: "Fr", JPY: "¥", MXN: "$",
+  };
+  return map[(code || "BRL").toUpperCase()] || (code || "");
+}
+
+/** Formata um valor numérico com a moeda informada (símbolo + milhares + 2 casas). */
+export function formatMoney(value: number | null | undefined, code: string | null | undefined): string {
+  if (value == null) return "";
+  const cur = (code || "BRL").toUpperCase();
+  try {
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: cur,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  } catch {
+    return `${currencySymbol(cur)} ${new Intl.NumberFormat("pt-BR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value)}`;
+  }
+}
+
+/**
+ * Converte um valor para BRL usando a cotação (rate) informada, desde que a
+ * moeda do item seja a mesma da conversão. Retorna null se não aplicável.
+ */
+export function brlWithRate(
+  amount: number | null | undefined,
+  itemCurrency: string | null | undefined,
+  baseCurrency: string | null | undefined,
+  rate: number | null | undefined,
+): number | null {
+  if (amount == null) return null;
+  const cur = (itemCurrency || "BRL").toUpperCase();
+  if (cur === "BRL") return null;
+  if (!rate || rate <= 0) return null;
+  if (cur !== (baseCurrency || "").toUpperCase()) return null;
+  return Math.round(amount * rate * 100) / 100;
 }
 
 // ----- Input masks -----
