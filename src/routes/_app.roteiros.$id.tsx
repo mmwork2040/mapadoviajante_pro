@@ -1957,6 +1957,7 @@ function ActivityRow({
   const [eCost, setECost] = useState(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
   const [eCurrency, setECurrency] = useState<string>(activity.currency || "BRL");
   const [eCostBrl, setECostBrl] = useState<number | null>(activity.cost_brl ?? null);
+  const [eCostBrlRate, setECostBrlRate] = useState<number | null>(activity.cost_brl_rate ?? null);
   const [eHotels, setEHotels] = useState<HotelOption[]>(activity.hotel_options || []);
   const [ePax, setEPax] = useState<PassengerCost[]>(activity.passenger_costs || []);
   const [converting, setConverting] = useState(false);
