@@ -472,6 +472,18 @@ Responda APENAS com um JSON válido, sem texto extra:
 }
 
 // Pesquisa até 5 sugestões de hospedagem reais na cidade informada.
+// Gera links de busca em sites de reservas/promoções confiáveis. Estas URLs de
+// busca sempre resolvem, servindo como alternativas caso o link da IA falhe.
+export function bookingSearchLinks(name: string, city: string): { label: string; url: string }[] {
+  const q = encodeURIComponent(`${name} ${city}`.trim());
+  const cityQ = encodeURIComponent(city.trim());
+  return [
+    { label: "Booking", url: `https://www.booking.com/searchresults.pt-br.html?ss=${q}` },
+    { label: "Trivago", url: `https://www.trivago.com.br/pt-BR/srl?query=${q}` },
+    { label: "Airbnb", url: `https://www.airbnb.com.br/s/${cityQ}/homes?query=${encodeURIComponent(name.trim())}` },
+  ];
+}
+
 export interface HotelSearchFilters {
   room_type?: string | null;
   stars?: number | null;
