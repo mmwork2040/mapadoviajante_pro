@@ -2238,6 +2238,7 @@ function ActivityRow({
         cost_brl: amount ? eCostBrl : null,
         cost_brl_rate: amount && eCurrency !== "BRL" ? eCostBrlRate : null,
         hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
+        suggestion_options: suggKind && cleanSugg.length ? cleanSugg : null,
         passenger_costs: cleanPax.length ? cleanPax : null,
       });
       setEditing(false);
