@@ -2028,6 +2028,12 @@ function ActivityRow({
       toast.error("Informe a cidade / local antes de pesquisar.");
       return;
     }
+    const origin = sfOrigin.trim();
+    const dest = sfDest.trim();
+    if (suggKind === "transfer" && (!origin || !dest)) {
+      toast.error("Informe origem e destino (bairro/local) para o transfer.");
+      return;
+    }
     const sites = sfSites.length ? sfSites : SUGGESTION_CONFIG[suggKind].sites.map((s) => s.key);
     setSearchingSugg(true);
     try {
@@ -2035,6 +2041,8 @@ function ActivityRow({
         data: {
           kind: suggKind,
           city,
+          origin: suggKind === "transfer" ? origin : null,
+          destination: suggKind === "transfer" ? dest : null,
           price_min: sfPriceMin ? parseCurrency(maskAmount(sfPriceMin)) : null,
           price_max: sfPriceMax ? parseCurrency(maskAmount(sfPriceMax)) : null,
           currency: sfCurrency || "BRL",
