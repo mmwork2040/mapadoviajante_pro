@@ -2384,7 +2384,7 @@ function ActivityRow({
                   onClick={() => setEHotels((h) => [...h, { name: "", currency: "BRL", source: "user" }])}
                   className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
                 >
-                  <Plus className="h-3 w-3" /> Adicionar
+                  <Plus className="h-3 w-3" /> Manual
                 </button>
               </div>
             </div>
