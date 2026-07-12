@@ -1688,11 +1688,54 @@ export async function deleteItineraryDay(id: string): Promise<boolean> {
   return !error;
 }
 
-// Mapeia o campo de UI `time` para a coluna real `time_start`.
+// A coluna `duration` guarda, além da duração textual, um envelope JSON com
+// metadados extras da atividade (moeda, valor convertido e sugestões de
+// hospedagem), já que o schema não possui colunas dedicadas. Estas funções
+// codificam/decodificam esse envelope de forma retrocompatível.
+type ActivityMeta = {
+  dur?: string | null;
+  cur?: string | null;
+  brl?: number | null;
+  hotels?: unknown;
+};
+
+function decodeActivityMeta(a: ItineraryActivity): void {
+  const raw = a.duration;
+  if (!raw || typeof raw !== "string" || !raw.trim().startsWith("{")) return;
+  try {
+    const m = JSON.parse(raw) as ActivityMeta;
+    if (m && typeof m === "object" && ("cur" in m || "brl" in m || "hotels" in m || "dur" in m)) {
+      a.duration = m.dur ?? null;
+      a.currency = m.cur ?? null;
+      a.cost_brl = typeof m.brl === "number" ? m.brl : null;
+      a.hotel_options = Array.isArray(m.hotels)
+        ? (m.hotels as ItineraryActivity["hotel_options"])
+        : null;
+    }
+  } catch {
+    /* mantém como duração textual legada */
+  }
+}
+
+// Mapeia o campo de UI `time` para a coluna real `time_start` e empacota os
+// metadados extras dentro de `duration`.
 function mapActivityPayload(data: Partial<ItineraryActivity>): Record<string, unknown> {
-  const { time, ...rest } = data;
+  const { time, currency, cost_brl, hotel_options, duration, ...rest } = data;
   const payload: Record<string, unknown> = { ...rest };
   if (time !== undefined) payload.time_start = time;
+
+  const hasMeta =
+    currency !== undefined || cost_brl !== undefined || hotel_options !== undefined;
+  if (hasMeta) {
+    payload.duration = JSON.stringify({
+      dur: duration ?? null,
+      cur: currency ?? null,
+      brl: cost_brl ?? null,
+      hotels: hotel_options ?? null,
+    });
+  } else if (duration !== undefined) {
+    payload.duration = duration;
+  }
   return payload;
 }
 
