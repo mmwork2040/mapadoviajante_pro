@@ -2031,10 +2031,13 @@ function ActivityRow({
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
 
-  // Busca de imagem do atrativo (somente para atividades) para enriquecer a
-  // biblioteca da agência e a capa do roteiro do lead.
+  // Busca de imagens do atrativo (somente para atividades): mostra várias
+  // opções num modal para o usuário escolher a capa do roteiro.
   const [findingImg, setFindingImg] = useState(false);
   const [imgPreview, setImgPreview] = useState<string | null>(null);
+  const [imgModalOpen, setImgModalOpen] = useState(false);
+  const [imgOptions, setImgOptions] = useState<string[]>([]);
+  const [savingCover, setSavingCover] = useState(false);
   const downloadImage = useServerFn(downloadDestinationImage);
 
   async function handleFindImage() {
@@ -2045,31 +2048,52 @@ function ActivityRow({
       return;
     }
     const term = [title, city].filter(Boolean).join(", ");
-    const tag = city || title;
     setFindingImg(true);
+    setImgOptions([]);
+    setImgModalOpen(true);
     try {
-      const res = await downloadImage({ data: { destination: term } });
-      if (!res?.imageUrl) {
+      const found: string[] = [];
+      // Busca várias candidatas usando "exclude" para trazer imagens diferentes.
+      for (let i = 0; i < 6; i++) {
+        try {
+          const res = await downloadImage({ data: { destination: term, exclude: found } });
+          if (!res?.imageUrl || found.includes(res.imageUrl)) break;
+          found.push(res.imageUrl);
+          setImgOptions([...found]);
+        } catch {
+          break;
+        }
+      }
+      if (found.length === 0) {
         toast.info("Nenhuma imagem encontrada para esta atividade.");
-        return;
+        setImgModalOpen(false);
       }
-      const saved = await saveActivityImageToLibrary(res.imageUrl, tag, city || title);
-      const display = saved || res.imageUrl;
-      setImgPreview(display);
-      qc.invalidateQueries({ queryKey: ["library"] });
-      try {
-        await updateItinerary(itineraryId, { cover_image: display });
-        onChange();
-      } catch {
-        /* capa é opcional */
-      }
-      toast.success("Imagem encontrada e salva na biblioteca.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível buscar a imagem.");
     } finally {
       setFindingImg(false);
     }
   }
+
+  async function handleChooseCover(url: string) {
+    const title = eTitle.trim();
+    const city = eLocation.trim();
+    const tag = city || title;
+    setSavingCover(true);
+    try {
+      const saved = await saveActivityImageToLibrary(url, tag, city || title);
+      const display = saved || url;
+      setImgPreview(display);
+      qc.invalidateQueries({ queryKey: ["library"] });
+      await updateItinerary(itineraryId, { cover_image: display });
+      onChange();
+      toast.success("Imagem definida como capa e salva na biblioteca.");
+      setImgModalOpen(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível salvar a imagem.");
+    } finally {
+      setSavingCover(false);
+    }
+  }
+
 
 
 
