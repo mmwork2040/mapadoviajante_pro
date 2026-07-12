@@ -2121,9 +2121,10 @@ function ActivityRow({
         title: "Excluir imagem da biblioteca?",
         description:
           "Esta imagem está salva na biblioteca. Deseja removê-la da capa do roteiro e excluí-la da biblioteca?",
-        confirmText: "Excluir",
-        variant: "danger",
+        confirmLabel: "Excluir",
+        destructive: true,
       });
+
       if (!ok) return;
     }
 
