@@ -216,7 +216,7 @@ type HotelSearchFilters = {
   currency?: string | null;
   notes?: string | null;
 };
-type SearchHotelsInput = { city: string; filters?: HotelSearchFilters; limit?: number };
+type SearchHotelsInput = { city: string; filters?: HotelSearchFilters; limit?: number; sites?: string[] };
 
 // Pesquisa sugestões de hospedagem na cidade informada usando a IA.
 export const searchHotelsFn = createServerFn({ method: "POST" })
