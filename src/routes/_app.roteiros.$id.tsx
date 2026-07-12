@@ -2539,7 +2539,10 @@ function ActivityRow({
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setSuggModalOpen(true)}
+                  onClick={() => {
+                    setSfSites(SUGGESTION_CONFIG[suggKind].sites.map((s) => s.key));
+                    setSuggModalOpen(true);
+                  }}
                   disabled={searchingSugg}
                   className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
                 >
@@ -2820,17 +2823,16 @@ function ActivityRow({
                 <label className="text-[11px] font-medium text-muted-foreground">Sites para pesquisar</label>
                 <div className="mt-1 grid grid-cols-2 gap-1.5">
                   {SUGGESTION_CONFIG[suggKind].sites.map((s) => {
-                    const active = sfSites.length ? sfSites.includes(s.key) : true;
-                    return (
-                      <button
-                        key={s.key}
-                        type="button"
-                        onClick={() =>
-                          setSfSites((prev) => {
-                            const base = prev.length ? prev : SUGGESTION_CONFIG[suggKind].sites.map((x) => x.key);
-                            return base.includes(s.key) ? base.filter((k) => k !== s.key) : [...base, s.key];
-                          })
-                        }
+                     const active = sfSites.includes(s.key);
+                     return (
+                       <button
+                         key={s.key}
+                         type="button"
+                         onClick={() =>
+                           setSfSites((prev) =>
+                             prev.includes(s.key) ? prev.filter((k) => k !== s.key) : [...prev, s.key],
+                           )
+                         }
                         className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
                           active
                             ? "border-primary bg-primary/10 text-primary"
@@ -2867,7 +2869,7 @@ function ActivityRow({
                 <button
                   type="button"
                   onClick={handleSearchSuggestions}
-                  disabled={searchingSugg || (suggKind === "transfer" && (!sfOrigin.trim() || !sfDest.trim()))}
+                  disabled={searchingSugg || sfSites.length === 0 || (suggKind === "transfer" && (!sfOrigin.trim() || !sfDest.trim()))}
                   className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                 >
                   {searchingSugg ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
@@ -3034,7 +3036,7 @@ function ActivityRow({
                 <button
                   type="button"
                   onClick={handleSearchHotels}
-                  disabled={searchingHotels}
+                  disabled={searchingHotels || !hfRoomType.trim() || hfSites.length === 0}
                   className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                 >
                   {searchingHotels ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
