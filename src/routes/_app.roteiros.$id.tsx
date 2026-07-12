@@ -1968,6 +1968,7 @@ function ActivityRow({
   const [hfCurrency, setHfCurrency] = useState("BRL");
   const [hfNotes, setHfNotes] = useState("");
   const [hfLimit, setHfLimit] = useState(5);
+  const [hfSites, setHfSites] = useState<string[]>(["booking", "trivago", "airbnb"]);
   const convertCurrency = useServerFn(convertCurrencyFn);
   const searchHotels = useServerFn(searchHotelsFn);
 
