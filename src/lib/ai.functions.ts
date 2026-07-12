@@ -259,6 +259,8 @@ type SuggestionKind = "transfer" | "restaurant" | "activity";
 type SearchSuggestionsInput = {
   kind: SuggestionKind;
   city: string;
+  origin?: string | null;
+  destination?: string | null;
   price_min?: number | null;
   price_max?: number | null;
   currency?: string | null;
