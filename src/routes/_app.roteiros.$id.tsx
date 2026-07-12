@@ -2139,6 +2139,7 @@ function ActivityRow({
     setECostBrl(activity.cost_brl ?? null);
     setECostBrlRate(activity.cost_brl_rate ?? null);
     setEHotels(activity.hotel_options || []);
+    setESugg(activity.suggestion_options || []);
     setEPax(activity.passenger_costs || []);
     setEditing(true);
   }
