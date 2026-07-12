@@ -8,12 +8,15 @@ export function PlaceAutocomplete({
   onChange,
   placeholder,
   bias,
+  categories,
 }: {
   value: string;
   onChange: (v: string) => void;
   placeholder?: string;
   /** Cidade/estado para enviesar os resultados (ex: eLocation) */
   bias?: string;
+  /** Variações de categoria para ampliar a busca (ex: restaurante, lanchonete, pizzaria) */
+  categories?: string[];
 }) {
   const [items, setItems] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
