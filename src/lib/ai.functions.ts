@@ -259,6 +259,8 @@ type SuggestionKind = "transfer" | "restaurant" | "activity";
 type SearchSuggestionsInput = {
   kind: SuggestionKind;
   city: string;
+  origin?: string | null;
+  destination?: string | null;
   price_min?: number | null;
   price_max?: number | null;
   currency?: string | null;
@@ -279,6 +281,8 @@ export const searchSuggestionsFn = createServerFn({ method: "POST" })
     return {
       kind: d.kind,
       city: d.city.trim(),
+      origin: typeof d.origin === "string" ? d.origin.trim() || null : null,
+      destination: typeof d.destination === "string" ? d.destination.trim() || null : null,
       price_min: d.price_min ?? null,
       price_max: d.price_max ?? null,
       currency: d.currency ?? null,
@@ -309,6 +313,8 @@ export const searchSuggestionsFn = createServerFn({ method: "POST" })
       data.kind,
       data.city,
       {
+        origin: data.origin,
+        destination: data.destination,
         price_min: data.price_min,
         price_max: data.price_max,
         currency: data.currency,

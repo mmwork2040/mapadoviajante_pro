@@ -670,7 +670,7 @@ export async function searchSuggestions(
   cfg: ProviderConfig,
   kind: SuggestionKind,
   city: string,
-  opts?: { price_min?: number | null; price_max?: number | null; currency?: string | null; notes?: string | null; limit?: number; sites?: string[] },
+  opts?: { origin?: string | null; destination?: string | null; price_min?: number | null; price_max?: number | null; currency?: string | null; notes?: string | null; limit?: number; sites?: string[] },
 ): Promise<{ ok: boolean; items: HotelOption[]; message: string }> {
   const meta = SUGGESTION_META[kind];
   const max = Math.min(6, Math.max(1, Math.round(Number(opts?.limit) || 5)));
@@ -679,6 +679,11 @@ export async function searchSuggestions(
   const siteKeys = selectedSites.map((s) => s.key);
   const siteLabels = selectedSites.map((s) => s.label).join(", ") || "sites de viagem confiáveis";
   const criteria: string[] = [];
+  if (kind === "transfer" && (opts?.origin?.trim() || opts?.destination?.trim())) {
+    if (opts?.origin?.trim()) criteria.push(`Origem exata: ${opts.origin.trim()} (${city}).`);
+    if (opts?.destination?.trim()) criteria.push(`Destino exato: ${opts.destination.trim()} (${city}).`);
+    criteria.push("As opções devem cobrir exatamente esse trajeto (origem → destino).");
+  }
   if (opts?.price_min != null || opts?.price_max != null) {
     const cur = opts?.currency?.trim() || "BRL";
     if (opts?.price_min != null && opts?.price_max != null) criteria.push(`Faixa de valor entre ${opts.price_min} e ${opts.price_max} ${cur}.`);

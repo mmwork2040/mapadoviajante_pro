@@ -2015,6 +2015,8 @@ function ActivityRow({
   const [sfNotes, setSfNotes] = useState("");
   const [sfLimit, setSfLimit] = useState(5);
   const [sfSites, setSfSites] = useState<string[]>([]);
+  const [sfOrigin, setSfOrigin] = useState("");
+  const [sfDest, setSfDest] = useState("");
   const searchSuggestions = useServerFn(searchSuggestionsFn);
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
@@ -2026,6 +2028,12 @@ function ActivityRow({
       toast.error("Informe a cidade / local antes de pesquisar.");
       return;
     }
+    const origin = sfOrigin.trim();
+    const dest = sfDest.trim();
+    if (suggKind === "transfer" && (!origin || !dest)) {
+      toast.error("Informe origem e destino (bairro/local) para o transfer.");
+      return;
+    }
     const sites = sfSites.length ? sfSites : SUGGESTION_CONFIG[suggKind].sites.map((s) => s.key);
     setSearchingSugg(true);
     try {
@@ -2033,6 +2041,8 @@ function ActivityRow({
         data: {
           kind: suggKind,
           city,
+          origin: suggKind === "transfer" ? origin : null,
+          destination: suggKind === "transfer" ? dest : null,
           price_min: sfPriceMin ? parseCurrency(maskAmount(sfPriceMin)) : null,
           price_max: sfPriceMax ? parseCurrency(maskAmount(sfPriceMax)) : null,
           currency: sfCurrency || "BRL",
@@ -2699,6 +2709,53 @@ function ActivityRow({
                 A IA busca até 6 {SUGGESTION_CONFIG[suggKind].noun} em{" "}
                 <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
               </p>
+              {suggKind === "transfer" && (
+                <div className="space-y-2 rounded-lg border border-border bg-muted/40 p-2.5">
+                  <p className="text-[11px] font-medium text-muted-foreground">
+                    Trajeto em <span className="text-foreground">{eLocation || "cidade não informada"}</span>
+                  </p>
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground">Origem (bairro/local exato)</label>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <input
+                        value={sfOrigin}
+                        onChange={(e) => setSfOrigin(e.target.value)}
+                        placeholder="Ex: Aeroporto de Guarulhos"
+                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                      />
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${sfOrigin} ${eLocation || ""}`.trim())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 rounded-lg border border-input bg-background p-1.5 text-primary hover:bg-muted"
+                        title="Abrir no mapa"
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-medium text-muted-foreground">Destino (bairro/local exato)</label>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <input
+                        value={sfDest}
+                        onChange={(e) => setSfDest(e.target.value)}
+                        placeholder="Ex: Hotel no Centro"
+                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                      />
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${sfDest} ${eLocation || ""}`.trim())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 rounded-lg border border-input bg-background p-1.5 text-primary hover:bg-muted"
+                        title="Abrir no mapa"
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Faixa de valores</label>
                 <div className="mt-1 flex items-center gap-1.5">
