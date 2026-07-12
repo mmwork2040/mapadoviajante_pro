@@ -472,11 +472,36 @@ Responda APENAS com um JSON válido, sem texto extra:
 }
 
 // Pesquisa até 5 sugestões de hospedagem reais na cidade informada.
+export interface HotelSearchFilters {
+  room_type?: string | null;
+  stars?: number | null;
+  price_min?: number | null;
+  price_max?: number | null;
+  currency?: string | null;
+  notes?: string | null;
+}
+
 export async function searchHotels(
   cfg: ProviderConfig,
   city: string,
+  filters?: HotelSearchFilters,
 ): Promise<{ ok: boolean; hotels: HotelOption[]; message: string }> {
-  const prompt = `Você é um consultor de viagens. Sugira até 5 opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.
+  const f = filters || {};
+  const criteria: string[] = [];
+  if (f.room_type?.trim()) criteria.push(`Tipo de quarto desejado: ${f.room_type.trim()}.`);
+  if (f.stars) criteria.push(`Classificação mínima: ${f.stars} estrela(s).`);
+  if (f.price_min != null || f.price_max != null) {
+    const cur = f.currency?.trim() || "BRL";
+    if (f.price_min != null && f.price_max != null)
+      criteria.push(`Faixa de valor da diária entre ${f.price_min} e ${f.price_max} ${cur}.`);
+    else if (f.price_min != null) criteria.push(`Valor da diária a partir de ${f.price_min} ${cur}.`);
+    else criteria.push(`Valor da diária até ${f.price_max} ${cur}.`);
+  }
+  if (f.notes?.trim()) criteria.push(`Preferências adicionais: ${f.notes.trim()}.`);
+  const criteriaBlock = criteria.length
+    ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n`
+    : "";
+  const prompt = `Você é um consultor de viagens. Sugira até 5 opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
 Para cada opção informe nome, endereço, tipo de quarto, valor aproximado da diária e link do site oficial (ou de reserva) quando conhecer.
 Não invente valores absurdos; use uma estimativa realista da diária. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
 Responda APENAS com um JSON válido, sem texto extra:
