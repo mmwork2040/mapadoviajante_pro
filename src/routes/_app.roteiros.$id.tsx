@@ -1981,7 +1981,26 @@ function ActivityRow({
       };
       const res = await searchHotels({ data: { city, neighborhood: hfNeighborhood.trim() || undefined, filters, limit: hfLimit, sites: hfSites } });
       if (res.ok && res.hotels.length) {
-        setEHotels((prev) => [...prev, ...res.hotels.map((h) => ({ ...h, source: "ai" as const }))]);
+        // Converte a diária de cada hotel (moeda local) para BRL na cotação atual.
+        const withBrl = await Promise.all(
+          res.hotels.map(async (h) => {
+            const base: HotelOption = { ...h, source: "ai" as const };
+            const cur = (h.currency || "BRL").toUpperCase();
+            if (h.daily_rate != null && cur !== "BRL") {
+              try {
+                const conv = await convertCurrency({ data: { amount: h.daily_rate, currency: cur } });
+                if (conv.ok) {
+                  base.daily_rate_brl = conv.brl;
+                  base.daily_rate_brl_rate = conv.rate || null;
+                }
+              } catch {
+                /* mantém sem conversão se falhar */
+              }
+            }
+            return base;
+          }),
+        );
+        setEHotels((prev) => [...prev, ...withBrl]);
         toast.success(res.message);
         setHotelModalOpen(false);
       } else {
