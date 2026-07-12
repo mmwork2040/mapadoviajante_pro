@@ -19,6 +19,7 @@ export function PlaceAutocomplete({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(-1);
+  const [focused, setFocused] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const skipNext = useRef(false);
 
@@ -31,6 +32,7 @@ export function PlaceAutocomplete({
   }, []);
 
   useEffect(() => {
+    if (!focused) return;
     if (skipNext.current) {
       skipNext.current = false;
       return;
@@ -64,7 +66,7 @@ export function PlaceAutocomplete({
       controller.abort();
       clearTimeout(t);
     };
-  }, [value, bias]);
+  }, [value, bias, focused]);
 
   function pick(s: Suggestion) {
     skipNext.current = true;
@@ -79,7 +81,11 @@ export function PlaceAutocomplete({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => items.length > 0 && setOpen(true)}
+          onFocus={() => {
+            setFocused(true);
+            if (items.length > 0) setOpen(true);
+          }}
+          onBlur={() => setFocused(false)}
           onKeyDown={(e) => {
             if (!open) return;
             if (e.key === "ArrowDown") {
