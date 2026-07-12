@@ -122,6 +122,13 @@ const ACTIVITY_TYPES: {
   { type: "restaurant", label: "Restaurante", icon: Utensils, defaultTitle: "Refeição", hint: "Adiciona uma refeição/restaurante ao dia." },
 ];
 
+const PLACE_TYPE_HINT: Record<string, string> = {
+  hotel: "hotel",
+  restaurant: "restaurante",
+  transfer: "aeroporto rodoviária estação",
+  activity: "ponto turístico atração",
+};
+
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
   ACTIVITY_TYPES.map((t) => [t.type, { label: t.label, icon: t.icon }]),
 );
