@@ -2530,7 +2530,33 @@ function ActivityDocuments({
     }
   }
 
-  async function download(doc: LeadDocument) {
+  async function handleAddLink() {
+    let url = linkUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+    setUploading(true);
+    try {
+      await addLinkDocument({
+        url,
+        name: linkName.trim() || url,
+        agencyId,
+        leadId,
+        itineraryId,
+        activityId,
+        category,
+      });
+      toast.success("Link anexado.");
+      setLinkOpen(false);
+      setLinkName("");
+      setLinkUrl("");
+      qc.invalidateQueries({ queryKey: ["activity-docs", activityId] });
+      if (leadId) qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao anexar link.");
+    } finally {
+      setUploading(false);
+    }
+  }
     const ok = await downloadDocument(doc);
     if (!ok) toast.error("Não foi possível baixar o documento.");
   }
