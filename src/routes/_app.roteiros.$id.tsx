@@ -2323,6 +2323,15 @@ function ActivityRow({
                 A IA busca até 5 opções em <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
               </p>
               <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Bairro (opcional)</label>
+                <input
+                  value={hfNeighborhood}
+                  onChange={(e) => setHfNeighborhood(e.target.value)}
+                  placeholder="Ex: Copacabana, Centro..."
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Tipo de quarto</label>
                 <input
                   value={hfRoomType}
