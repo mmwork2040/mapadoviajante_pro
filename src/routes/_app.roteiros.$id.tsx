@@ -1606,12 +1606,13 @@ function DayCard({
     <div
       ref={setDroppableRef}
       data-kanban-day={day.id}
-      className={`flex min-h-[24rem] w-[min(20rem,calc(100vw-2rem))] shrink-0 flex-col rounded-2xl border border-border bg-card p-5 transition-colors ${
-        isOver ? "bg-primary/10 ring-2 ring-primary/40" : ""
+      className={`flex min-h-[24rem] w-[min(20rem,calc(100vw-2rem))] shrink-0 flex-col overflow-hidden rounded-2xl border-2 border-border/70 bg-card p-5 shadow-[0_10px_30px_-8px_rgba(0,0,0,0.25),0_2px_6px_rgba(0,0,0,0.08)] transition-all hover:shadow-[0_16px_40px_-10px_rgba(0,0,0,0.3)] ${
+        isOver ? "ring-2 ring-primary/40" : ""
       }`}
     >
 
-      <div className="mb-3 flex flex-col gap-2">
+      <div className="-mx-5 -mt-5 mb-3 flex flex-col gap-2 rounded-t-2xl border-b border-border/60 bg-[var(--accent)] px-5 pb-3 pt-5">
+
         <input
           value={dayTitle}
           onChange={(e) => setDayTitle(e.target.value)}
