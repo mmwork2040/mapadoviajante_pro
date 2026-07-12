@@ -216,14 +216,15 @@ type HotelSearchFilters = {
   currency?: string | null;
   notes?: string | null;
 };
-type SearchHotelsInput = { city: string; filters?: HotelSearchFilters };
+type SearchHotelsInput = { city: string; filters?: HotelSearchFilters; limit?: number };
 
 // Pesquisa sugestões de hospedagem na cidade informada usando a IA.
 export const searchHotelsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: SearchHotelsInput) => {
     if (!d?.city?.trim()) throw new Error("Informe a cidade para pesquisar hospedagens.");
-    return { city: d.city.trim(), filters: d.filters ?? undefined };
+    const limit = Math.min(6, Math.max(1, Math.round(Number(d.limit) || 5)));
+    return { city: d.city.trim(), filters: d.filters ?? undefined, limit };
   })
   .handler(async ({ data, context }) => {
     const { data: cfg, error } = await context.supabase
