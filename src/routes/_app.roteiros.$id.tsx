@@ -2324,12 +2324,25 @@ function ActivityRow({
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
                   </div>
-                  <input
-                    value={h.address || ""}
-                    onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
-                    placeholder="Endereço"
-                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
-                  />
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      value={h.address || ""}
+                      onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
+                      placeholder="Endereço"
+                      className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                    {(h.address || "").trim() && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="shrink-0 text-primary hover:text-primary/80"
+                        title="Abrir no mapa"
+                      >
+                        <MapPin className="h-4 w-4" />
+                      </a>
+                    )}
+                  </div>
                   <input
                     value={h.room_type || ""}
                     onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, room_type: e.target.value } : x)))}
