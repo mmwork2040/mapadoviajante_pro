@@ -2034,30 +2034,35 @@ function ActivityRow({
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
 
-  // Busca de imagens do atrativo (somente para atividades): mostra várias
-  // opções num modal para o usuário escolher a capa do roteiro.
+  // Busca de imagens do atrativo (somente para atividades): encontra o local
+  // na cidade informada (título + cidade) e adiciona imagens sortidas, com
+  // descrição, à página do dia. Também enriquece a biblioteca da agência.
   const [findingImg, setFindingImg] = useState(false);
-  const [imgPreview, setImgPreview] = useState<string | null>(null);
   const [imgModalOpen, setImgModalOpen] = useState(false);
   const [imgOptions, setImgOptions] = useState<string[]>([]);
-  const [savingCover, setSavingCover] = useState(false);
+  const [addingImg, setAddingImg] = useState<string | null>(null);
+  const [eImages, setEImages] = useState<ActivityImage[]>(activity.images || []);
   const downloadImage = useServerFn(downloadDestinationImage);
 
   async function handleFindImage() {
     const title = eTitle.trim();
     const city = eLocation.trim();
-    if (!title && !city) {
-      toast.error("Informe o título ou a cidade / local da atividade.");
+    if (!title) {
+      toast.error("Informe o título da atração/local.");
       return;
     }
-    const term = [title, city].filter(Boolean).join(", ");
+    if (!city) {
+      toast.error("Informe a cidade / local para localizar a atração na cidade.");
+      return;
+    }
+    // Combina título + cidade para achar o local exato na cidade informada.
+    const term = `${title}, ${city}`;
     setFindingImg(true);
     setImgOptions([]);
     setImgModalOpen(true);
     try {
       const found: string[] = [];
-      // Busca várias candidatas usando "exclude" para trazer imagens diferentes.
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         try {
           const res = await downloadImage({ data: { destination: term, exclude: found } });
           if (!res?.imageUrl || found.includes(res.imageUrl)) break;
@@ -2068,7 +2073,7 @@ function ActivityRow({
         }
       }
       if (found.length === 0) {
-        toast.info("Nenhuma imagem encontrada para esta atividade.");
+        toast.info("Nenhuma imagem encontrada para esta atração.");
         setImgModalOpen(false);
       }
     } finally {
@@ -2076,37 +2081,37 @@ function ActivityRow({
     }
   }
 
-  async function handleChooseCover(url: string) {
+  async function handleAddImage(url: string) {
+    if (eImages.some((im) => im.url === url)) {
+      toast.info("Imagem já adicionada.");
+      return;
+    }
     const title = eTitle.trim();
     const city = eLocation.trim();
-    const tag = city || title;
-    setSavingCover(true);
+    const tag = title || city;
+    setAddingImg(url);
     try {
       const saved = await saveActivityImageToLibrary(url, tag, city || title);
       const display = saved || url;
-      setImgPreview(display);
+      setEImages((prev) => [...prev, { url: display, description: title || null }]);
       qc.invalidateQueries({ queryKey: ["library"] });
-      await updateItinerary(itineraryId, { cover_image: display });
-      onChange();
-      toast.success("Imagem definida como capa e salva na biblioteca.");
-      setImgModalOpen(false);
+      toast.success("Imagem adicionada ao dia e salva na biblioteca.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar a imagem.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível adicionar a imagem.");
     } finally {
-      setSavingCover(false);
+      setAddingImg(null);
     }
   }
 
-  async function handleDeleteImage() {
-    const cover = imgPreview;
-    if (!cover) return;
-    // Extrai o caminho do arquivo na biblioteca a partir da URL (assinada/pública).
+  async function handleRemoveImage(index: number) {
+    const img = eImages[index];
+    if (!img) return;
+    // Descobre se a imagem está salva na biblioteca (para confirmar exclusão).
     const m =
-      cover.match(/\/object\/sign\/library-assets\/([^?]+)/) ||
-      cover.match(/\/object\/public\/library-assets\/([^?]+)/);
+      img.url.match(/\/object\/sign\/library-assets\/([^?]+)/) ||
+      img.url.match(/\/object\/public\/library-assets\/([^?]+)/);
     const path = m?.[1] ? decodeURIComponent(m[1]) : null;
-
-    let libItem: import("@/lib/types").LibraryItem | null = null;
+    let libItem: LibraryItem | null = null;
     if (path) {
       try {
         const items = await fetchLibraryItems("image");
@@ -2115,35 +2120,27 @@ function ActivityRow({
         libItem = null;
       }
     }
-
     if (libItem) {
       const ok = await confirm({
         title: "Excluir imagem da biblioteca?",
         description:
-          "Esta imagem está salva na biblioteca. Deseja removê-la da capa do roteiro e excluí-la da biblioteca?",
+          "Esta imagem está salva na biblioteca. Deseja removê-la do dia e também excluí-la da biblioteca?",
         confirmLabel: "Excluir",
+        cancelLabel: "Só remover do dia",
         destructive: true,
       });
-
-      if (!ok) return;
-    }
-
-    setSavingCover(true);
-    try {
-      await updateItinerary(itineraryId, { cover_image: null });
-      if (libItem) {
-        await deleteLibraryItem(libItem);
-        qc.invalidateQueries({ queryKey: ["library"] });
+      if (ok === true && libItem) {
+        try {
+          await deleteLibraryItem(libItem);
+          qc.invalidateQueries({ queryKey: ["library"] });
+        } catch {
+          /* falha na exclusão da biblioteca é tolerada */
+        }
       }
-      setImgPreview(null);
-      onChange();
-      toast.success(libItem ? "Imagem excluída da biblioteca e removida do roteiro." : "Imagem removida do roteiro.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível excluir a imagem.");
-    } finally {
-      setSavingCover(false);
     }
+    setEImages((prev) => prev.filter((_, i) => i !== index));
   }
+
 
 
 
