@@ -2521,6 +2521,285 @@ function ActivityRow({
           </div>
         )}
 
+        {/* Sugestões genéricas (transfer, restaurante, passeio) */}
+        {suggKind && (
+          <div className="rounded-lg border border-border/60 bg-background/60 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground">{SUGGESTION_CONFIG[suggKind].label}</p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setSuggModalOpen(true)}
+                  disabled={searchingSugg}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+                >
+                  {searchingSugg ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Assistente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setESugg((h) => [...h, { name: "", currency: "BRL", source: "user" }])}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
+                >
+                  <Plus className="h-3 w-3" /> Adicionar
+                </button>
+              </div>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              A IA busca até 6 {SUGGESTION_CONFIG[suggKind].noun} na cidade informada no campo acima (nome, endereço, valor e link).
+            </p>
+            {eSugg.length === 0 && <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma sugestão adicionada.</p>}
+            <div className="mt-2 space-y-2">
+              {eSugg.map((h, i) => {
+                if (h.source === "ai") {
+                  return (
+                    <div key={i} className="space-y-1 rounded-lg border border-primary/30 bg-primary/5 p-2">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary">
+                          <Sparkles className="h-3 w-3" /> Sugestão da IA (não editável)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setESugg((arr) => arr.filter((_, j) => j !== i))}
+                          className="text-muted-foreground hover:text-destructive"
+                          title="Remover sugestão"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-xs font-medium text-foreground">{h.name}</p>
+                      {h.address && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-start gap-1 text-[11px] text-blue-600 underline dark:text-blue-400"
+                        >
+                          <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> {h.address}
+                        </a>
+                      )}
+                      {h.room_type && <p className="text-[11px] text-muted-foreground">{h.room_type}</p>}
+                      {h.stars != null && (
+                        <p className="text-[11px] text-amber-500" title={`Nota ${h.stars}`}>{"★".repeat(h.stars)}</p>
+                      )}
+                      {h.daily_rate != null && (
+                        <p className="text-[11px] font-medium text-foreground">
+                          {formatMoney(h.daily_rate, h.currency)}
+                          {h.daily_rate_brl != null && (h.currency || "BRL").toUpperCase() !== "BRL" && (
+                            <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(h.daily_rate_brl)}</span>
+                          )}
+                        </p>
+                      )}
+                      {h.url && (
+                        <a
+                          href={h.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block truncate text-[11px] text-blue-600 underline dark:text-blue-400"
+                        >
+                          {h.url}
+                        </a>
+                      )}
+                    </div>
+                  );
+                }
+                return (
+                  <div key={i} className="space-y-1.5 rounded-lg border border-border/60 bg-muted/40 p-2">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        value={h.name}
+                        onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                        placeholder="Nome"
+                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setESugg((arr) => arr.filter((_, j) => j !== i))}
+                        className="text-muted-foreground hover:text-destructive"
+                        title="Remover sugestão"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        value={h.address || ""}
+                        onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
+                        placeholder="Endereço"
+                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                      />
+                      {(h.address || "").trim() && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                          title="Abrir no mapa"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      value={h.room_type || ""}
+                      onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, room_type: e.target.value } : x)))}
+                      placeholder={SUGGESTION_CONFIG[suggKind].detailPlaceholder}
+                      className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        value={h.currency || "BRL"}
+                        onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
+                        className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                      >
+                        {CURRENCIES.map((c) => (
+                          <option key={c.code} value={c.code}>{c.code}</option>
+                        ))}
+                      </select>
+                      <input
+                        value={h.daily_rate != null ? maskAmount(String(Math.round((h.daily_rate || 0) * 100))) : ""}
+                        onChange={(e) => {
+                          const val = parseCurrency(maskAmount(e.target.value));
+                          setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, daily_rate: val || null } : x)));
+                        }}
+                        placeholder={SUGGESTION_CONFIG[suggKind].pricePlaceholder}
+                        inputMode="numeric"
+                        className="w-32 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                      />
+                    </div>
+                    <input
+                      value={h.url || ""}
+                      onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
+                      placeholder="Link do site (https://…)"
+                      className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Modal: filtros do Assistente de sugestões genéricas */}
+        {suggModalOpen && suggKind && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+            onClick={() => setSuggModalOpen(false)}
+          >
+            <ScrollLock />
+            <div
+              className="w-full max-w-sm max-h-[calc(100vh-2rem)] space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">{SUGGESTION_CONFIG[suggKind].label}</h3>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                A IA busca até 6 {SUGGESTION_CONFIG[suggKind].noun} em{" "}
+                <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
+              </p>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Faixa de valores</label>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <select
+                    value={sfCurrency}
+                    onChange={(e) => setSfCurrency(e.target.value)}
+                    className="rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.code}</option>
+                    ))}
+                  </select>
+                  <input
+                    value={sfPriceMin}
+                    onChange={(e) => setSfPriceMin(maskAmount(e.target.value))}
+                    placeholder="Mín."
+                    inputMode="numeric"
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  />
+                  <input
+                    value={sfPriceMax}
+                    onChange={(e) => setSfPriceMax(maskAmount(e.target.value))}
+                    placeholder="Máx."
+                    inputMode="numeric"
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Outras preferências</label>
+                <textarea
+                  value={sfNotes}
+                  onChange={(e) => setSfNotes(e.target.value)}
+                  placeholder="Ex: próximo ao centro, acessível, com wi-fi..."
+                  rows={2}
+                  className="mt-1 w-full resize-none rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Sites para pesquisar</label>
+                <div className="mt-1 grid grid-cols-2 gap-1.5">
+                  {SUGGESTION_CONFIG[suggKind].sites.map((s) => {
+                    const active = sfSites.length ? sfSites.includes(s.key) : true;
+                    return (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() =>
+                          setSfSites((prev) => {
+                            const base = prev.length ? prev : SUGGESTION_CONFIG[suggKind].sites.map((x) => x.key);
+                            return base.includes(s.key) ? base.filter((k) => k !== s.key) : [...base, s.key];
+                          })
+                        }
+                        className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
+                          active
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-input bg-background text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground">A IA lista apenas o que encontrar nos sites selecionados.</p>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Quantidade de resultados</label>
+                <select
+                  value={sfLimit}
+                  onChange={(e) => setSfLimit(Number(e.target.value))}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                >
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
+                    <option key={n} value={n}>{n} {n === 1 ? "opção" : "opções"}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setSuggModalOpen(false)}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSearchSuggestions}
+                  disabled={searchingSugg}
+                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {searchingSugg ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Pesquisar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
         {/* Modal: filtros do Assistente de hospedagem */}
         {hotelModalOpen && (
           <div
