@@ -1072,15 +1072,45 @@ function ItineraryDetailPage() {
           list.splice(Math.max(0, targetIndex), 0, moving);
           await Promise.all(list.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })));
         } else {
-          const srcList = (sourceDay.activities || []).filter((a) => a.id !== movingId);
-          const dstList = [...(targetDay.activities || [])];
-          dstList.splice(Math.max(0, targetIndex), 0, moving);
-          await updateItineraryActivity(movingId, { day_id: targetDayId });
-          await Promise.all([
-            ...srcList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
-            ...dstList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
-          ]);
+          const choice = await confirm({
+            title: "Mover ou copiar?",
+            description: "Você arrastou o item para outro dia. Deseja movê-lo ou criar uma cópia?",
+            confirmLabel: "Mover",
+            thirdLabel: "Copiar",
+            cancelLabel: "Cancelar",
+          });
+          if (choice === false) return;
+
+          if (choice === "third") {
+            // Copiar: cria um novo item no dia de destino, mantendo o original.
+            const created = await createItineraryActivity({
+              day_id: targetDayId,
+              title: moving.title,
+              type: moving.type,
+              time: moving.time,
+              description: moving.description,
+              location: moving.location,
+              cost: moving.cost,
+              duration: moving.duration,
+              maps_url: moving.maps_url,
+              sort_order: targetIndex,
+            });
+            if (!created) throw new Error("erro");
+            const dstList = [...(targetDay.activities || [])];
+            dstList.splice(Math.max(0, targetIndex), 0, created);
+            await Promise.all(dstList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })));
+          } else {
+            const srcList = (sourceDay.activities || []).filter((a) => a.id !== movingId);
+            const dstList = [...(targetDay.activities || [])];
+            dstList.splice(Math.max(0, targetIndex), 0, moving);
+            await updateItineraryActivity(movingId, { day_id: targetDayId });
+            await Promise.all([
+              ...srcList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+              ...dstList.map((a, i) => updateItineraryActivity(a.id, { sort_order: i })),
+            ]);
+          }
         }
+
         refresh();
       }
     } catch {
