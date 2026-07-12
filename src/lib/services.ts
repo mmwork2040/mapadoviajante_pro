@@ -1467,6 +1467,7 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
       day.activities.forEach((a) => {
         const raw = a as ItineraryActivity & { time_start?: string | null };
         if (raw.time == null && raw.time_start != null) raw.time = raw.time_start;
+        decodeActivityMeta(a);
       });
       day.activities.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     }
