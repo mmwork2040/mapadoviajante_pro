@@ -74,7 +74,7 @@ import {
 } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
-import { formatCurrency, parseCurrency } from "@/lib/ui";
+import { formatCurrency, parseCurrency, formatMoney, brlWithRate } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -163,40 +163,7 @@ function bookingLinks(name: string, city?: string | null, sites?: string[]): { l
   return selected.map((s) => ({ label: s.label, url: s.url(name, c) }));
 }
 
-function currencySymbol(code: string | null | undefined): string {
-  const map: Record<string, string> = {
-    BRL: "R$", USD: "US$", EUR: "€", GBP: "£", ARS: "$", CLP: "$",
-    UYU: "$", CAD: "C$", AUD: "A$", CHF: "Fr", JPY: "¥", MXN: "$",
-  };
-  return map[(code || "BRL").toUpperCase()] || (code || "");
-}
-
-// Formata um valor numérico com a moeda informada (símbolo + milhares).
-function formatMoney(value: number | null | undefined, code: string | null | undefined): string {
-  if (value == null) return "";
-  const cur = (code || "BRL").toUpperCase();
-  try {
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: cur }).format(value);
-  } catch {
-    return `${currencySymbol(cur)} ${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(value)}`;
-  }
-}
-
-// Converte um valor para BRL usando a cotação (rate) informada na atividade,
-// desde que a moeda do item seja a mesma da conversão. Retorna null se não aplicável.
-function brlWithRate(
-  amount: number | null | undefined,
-  itemCurrency: string | null | undefined,
-  baseCurrency: string | null | undefined,
-  rate: number | null | undefined,
-): number | null {
-  if (amount == null) return null;
-  const cur = (itemCurrency || "BRL").toUpperCase();
-  if (cur === "BRL") return null;
-  if (!rate || rate <= 0) return null;
-  if (cur !== (baseCurrency || "").toUpperCase()) return null;
-  return Math.round(amount * rate * 100) / 100;
-}
+// currencySymbol, formatMoney e brlWithRate centralizados em "@/lib/ui".
 
 // Máscara de valor sem símbolo de moeda (milhares + 2 casas): "123456" -> "1.234,56"
 function maskAmount(value: string | number | null | undefined): string {

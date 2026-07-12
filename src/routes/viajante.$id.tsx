@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Calendar, Users, Plane, BedDouble, Car, Utensils, Clock } from "lucide-react";
 import { fetchPublicItinerary } from "@/lib/services";
-import { formatDate, formatCurrency } from "@/lib/ui";
+import { formatDate, formatCurrency, formatMoney } from "@/lib/ui";
 import type { ItineraryActivity } from "@/lib/types";
 
 export const Route = createFileRoute("/viajante/$id")({
@@ -128,7 +128,16 @@ function TravelerView() {
                         <p className="font-medium">{a.title}</p>
                         {a.description && <p className="text-sm text-muted-foreground">{a.description}</p>}
                         {a.location && <p className="text-xs text-muted-foreground">📍 {a.location}</p>}
-                        {a.cost ? <p className="text-xs font-medium text-foreground">{formatCurrency(a.cost)}</p> : null}
+                        {a.cost ? (
+                          <p className="text-xs font-medium text-foreground">
+                            {formatMoney(a.cost, a.currency)}
+                            {a.currency && a.currency !== "BRL" && a.cost_brl != null && (
+                              <span className="ml-1 font-normal text-muted-foreground">
+                                ≈ {formatCurrency(a.cost_brl)}
+                              </span>
+                            )}
+                          </p>
+                        ) : null}
                       </li>
                     );
                   })}
@@ -162,7 +171,16 @@ function HighlightCard({ activity: a }: { activity: ItineraryActivity }) {
         )}
         {a.location && <p className="text-xs text-muted-foreground">📍 {a.location}</p>}
         {a.description && <p className="mt-1 text-sm text-muted-foreground">{a.description}</p>}
-        {a.cost ? <p className="mt-1 text-sm font-medium">{formatCurrency(a.cost)}</p> : null}
+        {a.cost ? (
+          <p className="mt-1 text-sm font-medium">
+            {formatMoney(a.cost, a.currency)}
+            {a.currency && a.currency !== "BRL" && a.cost_brl != null && (
+              <span className="ml-1 font-normal text-muted-foreground">
+                ≈ {formatCurrency(a.cost_brl)}
+              </span>
+            )}
+          </p>
+        ) : null}
       </div>
     </div>
   );
