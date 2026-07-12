@@ -3172,6 +3172,62 @@ function ActivityRow({
 
               </span>
             )}
+            {(activity.suggestion_options?.length ?? 0) > 0 && (
+              <span className="mt-1.5 block space-y-1.5">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Sugestões
+                </span>
+                {activity.suggestion_options!.map((h, i) => (
+                  <span key={i} className="block rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-medium text-foreground">{h.name}</span>
+                        {h.stars != null && (
+                          <span className="text-[10px] text-amber-500" title={`Nota ${h.stars}`}>{"★".repeat(h.stars)}</span>
+                        )}
+                      </span>
+                      {h.url && (
+                        <a
+                          href={h.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-0.5 text-blue-600 hover:underline dark:text-blue-400"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Site <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </span>
+                    {h.room_type && <span className="block text-[11px] text-muted-foreground">{h.room_type}</span>}
+                    {h.address && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="block text-[11px] text-blue-600 hover:underline dark:text-blue-400"
+                        title="Abrir endereço no mapa"
+                      >
+                        📍 {h.address}
+                      </a>
+                    )}
+                    {h.daily_rate != null && (
+                      <span className="block text-[11px] font-medium text-foreground">
+                        {formatMoney(h.daily_rate, h.currency)}
+                        {(() => {
+                          const hBrl =
+                            h.daily_rate_brl ??
+                            brlWithRate(h.daily_rate, h.currency, activity.currency, activity.cost_brl_rate);
+                          return hBrl != null && (h.currency || "BRL").toUpperCase() !== "BRL" ? (
+                            <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(hBrl)}</span>
+                          ) : null;
+                        })()}
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </span>
+            )}
               </>
             )}
           </span>
