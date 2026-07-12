@@ -2360,6 +2360,20 @@ function ActivityRow({
                   className="mt-1 w-full resize-none rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                 />
               </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Quantidade de resultados</label>
+                <select
+                  value={hfLimit}
+                  onChange={(e) => setHfLimit(Number(e.target.value))}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                >
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
+                    <option key={n} value={n}>
+                      {n} {n === 1 ? "opção" : "opções"}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="flex justify-end gap-2 pt-1">
                 <button
                   type="button"
