@@ -2383,7 +2383,7 @@ function ActivityRow({
                 <h3 className="text-sm font-semibold">Assistente de hospedagem</h3>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                A IA busca até 5 opções em <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
+                A IA busca até 6 opções em <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
               </p>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Bairro (opcional)</label>
