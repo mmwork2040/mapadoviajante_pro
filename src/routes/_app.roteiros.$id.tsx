@@ -1139,6 +1139,7 @@ function ItineraryDetailPage() {
               currency: moving.currency,
               cost_brl: moving.cost_brl,
               hotel_options: moving.hotel_options,
+              passenger_costs: moving.passenger_costs,
               duration: moving.duration,
               maps_url: moving.maps_url,
               sort_order: targetIndex,
