@@ -261,6 +261,7 @@ type SearchSuggestionsInput = {
   city: string;
   origin?: string | null;
   destination?: string | null;
+  min_stars?: number | null;
   price_min?: number | null;
   price_max?: number | null;
   currency?: string | null;
@@ -283,6 +284,7 @@ export const searchSuggestionsFn = createServerFn({ method: "POST" })
       city: d.city.trim(),
       origin: typeof d.origin === "string" ? d.origin.trim() || null : null,
       destination: typeof d.destination === "string" ? d.destination.trim() || null : null,
+      min_stars: d.min_stars != null && Number.isFinite(Number(d.min_stars)) ? Math.min(5, Math.max(1, Math.round(Number(d.min_stars)))) : null,
       price_min: d.price_min ?? null,
       price_max: d.price_max ?? null,
       currency: d.currency ?? null,
@@ -315,6 +317,7 @@ export const searchSuggestionsFn = createServerFn({ method: "POST" })
       {
         origin: data.origin,
         destination: data.destination,
+        min_stars: data.min_stars,
         price_min: data.price_min,
         price_max: data.price_max,
         currency: data.currency,

@@ -670,7 +670,7 @@ export async function searchSuggestions(
   cfg: ProviderConfig,
   kind: SuggestionKind,
   city: string,
-  opts?: { origin?: string | null; destination?: string | null; price_min?: number | null; price_max?: number | null; currency?: string | null; notes?: string | null; limit?: number; sites?: string[] },
+  opts?: { origin?: string | null; destination?: string | null; min_stars?: number | null; price_min?: number | null; price_max?: number | null; currency?: string | null; notes?: string | null; limit?: number; sites?: string[] },
 ): Promise<{ ok: boolean; items: HotelOption[]; message: string }> {
   const meta = SUGGESTION_META[kind];
   const max = Math.min(6, Math.max(1, Math.round(Number(opts?.limit) || 5)));
@@ -684,6 +684,7 @@ export async function searchSuggestions(
     if (opts?.destination?.trim()) criteria.push(`Destino exato: ${opts.destination.trim()} (${city}).`);
     criteria.push("As opções devem cobrir exatamente esse trajeto (origem → destino).");
   }
+  if (opts?.min_stars != null) criteria.push(`Avaliação mínima: ${opts.min_stars} estrela(s) (nota de 1 a 5).`);
   if (opts?.price_min != null || opts?.price_max != null) {
     const cur = opts?.currency?.trim() || "BRL";
     if (opts?.price_min != null && opts?.price_max != null) criteria.push(`Faixa de valor entre ${opts.price_min} e ${opts.price_max} ${cur}.`);

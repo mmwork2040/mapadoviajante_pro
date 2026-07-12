@@ -2017,6 +2017,7 @@ function ActivityRow({
   const [sfSites, setSfSites] = useState<string[]>([]);
   const [sfOrigin, setSfOrigin] = useState("");
   const [sfDest, setSfDest] = useState("");
+  const [sfStars, setSfStars] = useState("");
   const searchSuggestions = useServerFn(searchSuggestionsFn);
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
@@ -2043,6 +2044,7 @@ function ActivityRow({
           city,
           origin: suggKind === "transfer" ? origin : null,
           destination: suggKind === "transfer" ? dest : null,
+          min_stars: suggKind === "restaurant" && sfStars ? Number(sfStars) : null,
           price_min: sfPriceMin ? parseCurrency(maskAmount(sfPriceMin)) : null,
           price_max: sfPriceMax ? parseCurrency(maskAmount(sfPriceMax)) : null,
           currency: sfCurrency || "BRL",
@@ -2779,6 +2781,21 @@ function ActivityRow({
                       )}
                     </div>
                   </div>
+                </div>
+              )}
+              {suggKind === "restaurant" && (
+                <div>
+                  <label className="text-[11px] font-medium text-muted-foreground">Estrelas (mínimo)</label>
+                  <select
+                    value={sfStars}
+                    onChange={(e) => setSfStars(e.target.value)}
+                    className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  >
+                    <option value="">Qualquer</option>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <option key={s} value={s}>{s} estrela(s) ou mais</option>
+                    ))}
+                  </select>
                 </div>
               )}
               <div>
