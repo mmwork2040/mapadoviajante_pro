@@ -2380,7 +2380,8 @@ function ActivityRow({
                 ))}
               </span>
             )}
-
+              </>
+            )}
           </span>
         </span>
         <span className="flex gap-1">
