@@ -2418,13 +2418,15 @@ function ActivityRow({
           </button>
         </span>
       </div>
-      <ActivityDocuments
-        activityId={activity.id}
-        agencyId={agencyId}
-        leadId={leadId}
-        itineraryId={itineraryId}
-        activityTitle={activity.title}
-      />
+      {expanded && (
+        <ActivityDocuments
+          activityId={activity.id}
+          agencyId={agencyId}
+          leadId={leadId}
+          itineraryId={itineraryId}
+          activityTitle={activity.title}
+        />
+      )}
 
     </div>
   );
