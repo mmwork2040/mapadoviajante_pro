@@ -1978,6 +1978,10 @@ function ActivityRow({
       toast.error("Informe a cidade / local antes de pesquisar.");
       return;
     }
+    if (!hfSites.length) {
+      toast.error("Selecione ao menos um site para pesquisar.");
+      return;
+    }
     setSearchingHotels(true);
     try {
       const filters = {
@@ -1988,7 +1992,7 @@ function ActivityRow({
         currency: hfCurrency || "BRL",
         notes: hfNotes.trim() || null,
       };
-      const res = await searchHotels({ data: { city, filters, limit: hfLimit } });
+      const res = await searchHotels({ data: { city, filters, limit: hfLimit, sites: hfSites } });
       if (res.ok && res.hotels.length) {
         setEHotels((prev) => [...prev, ...res.hotels]);
         toast.success(res.message);
