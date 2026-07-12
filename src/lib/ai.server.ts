@@ -532,7 +532,7 @@ Responda APENAS com um JSON válido, sem texto extra:
     const hotels: HotelOption[] = list
       .map((h) => h as Record<string, unknown>)
       .filter((h) => typeof h.name === "string" && (h.name as string).trim())
-      .slice(0, 5)
+      .slice(0, max)
       .map((h) => ({
         name: String(h.name).trim(),
         address: typeof h.address === "string" ? h.address.trim() || null : null,
