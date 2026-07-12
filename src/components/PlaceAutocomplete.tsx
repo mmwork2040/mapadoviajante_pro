@@ -32,6 +32,7 @@ export function PlaceAutocomplete({
   }, []);
 
   useEffect(() => {
+    if (!focused) return;
     if (skipNext.current) {
       skipNext.current = false;
       return;
