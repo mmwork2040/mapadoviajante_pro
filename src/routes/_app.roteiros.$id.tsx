@@ -2611,7 +2611,10 @@ function ActivityRow({
               <span className="mt-0.5 block text-[11px] font-medium text-foreground">
                 {formatMoney(activity.cost, activity.currency)}
                 {activity.currency && activity.currency !== "BRL" && activity.cost_brl != null && (
-                  <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(activity.cost_brl)}</span>
+                  <span className="ml-1 font-normal text-muted-foreground">
+                    ≈ {formatCurrency(activity.cost_brl)}
+                    {activity.cost_brl_rate ? ` (1 ${activity.currency} ≈ ${formatCurrency(activity.cost_brl_rate)})` : ""}
+                  </span>
                 )}
               </span>
             )}
@@ -2620,14 +2623,20 @@ function ActivityRow({
                 <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Valores por pessoa
                 </span>
-                {activity.passenger_costs!.map((p, i) => (
+                {activity.passenger_costs!.map((p, i) => {
+                  const pBrl = brlWithRate(p.amount, p.currency, activity.currency, activity.cost_brl_rate);
+                  return (
                   <span key={i} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1">
                     <span className="min-w-0 truncate text-foreground">{p.name}</span>
                     {p.amount != null && (
-                      <span className="shrink-0 font-medium text-foreground">{formatMoney(p.amount, p.currency)}</span>
+                      <span className="shrink-0 font-medium text-foreground">
+                        {formatMoney(p.amount, p.currency)}
+                        {pBrl != null && <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(pBrl)}</span>}
+                      </span>
                     )}
                   </span>
-                ))}
+                  );
+                })}
               </span>
             )}
             {activity.type === "hotel" && (activity.hotel_options?.length ?? 0) > 0 && (
