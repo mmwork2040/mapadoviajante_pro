@@ -186,10 +186,18 @@ export interface ItineraryActivity {
   suggestion_options?: HotelOption[] | null;
   /** Valores por passageiro (nome + valor), quando o custo varia por pessoa. */
   passenger_costs?: PassengerCost[] | null;
+  /** Imagens sortidas do local/atração exibidas na página do dia. */
+  images?: ActivityImage[] | null;
   duration?: string | null;
   maps_url?: string | null;
   sort_order?: number;
 }
+
+export interface ActivityImage {
+  url: string;
+  description?: string | null;
+}
+
 
 export interface PassengerCost {
   name: string;
