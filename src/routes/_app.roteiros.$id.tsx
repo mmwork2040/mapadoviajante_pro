@@ -2072,6 +2072,126 @@ function ActivityRow({
             className="mt-0.5 w-full resize-y rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
           />
         </label>
+
+        {/* Valor da atividade (opcional) com moeda e conversão para BRL via IA */}
+        <div className="rounded-lg border border-border/60 bg-background/60 p-2">
+          <p className="text-[10px] font-medium text-muted-foreground">Valor (opcional)</p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            <select
+              value={eCurrency}
+              onChange={(e) => setECurrency(e.target.value)}
+              className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.code}</option>
+              ))}
+            </select>
+            <input
+              value={eCost}
+              onChange={(e) => setECost(maskCurrency(e.target.value))}
+              placeholder="0,00"
+              inputMode="numeric"
+              className="w-28 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+            />
+            {eCurrency !== "BRL" && parseCurrency(eCost) > 0 && (
+              <button
+                type="button"
+                onClick={handleConvert}
+                disabled={converting}
+                className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+              >
+                {converting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                Converter p/ R$
+              </button>
+            )}
+          </div>
+          {eCurrency !== "BRL" && eCostBrl != null && (
+            <p className="mt-1 text-[11px] text-muted-foreground">
+              ≈ {formatCurrency(eCostBrl)} <span className="opacity-70">(cotação do dia, informativo)</span>
+            </p>
+          )}
+        </div>
+
+        {/* Sugestões de hospedagem (apenas para itens do tipo Hospedagem) */}
+        {eType === "hotel" && (
+          <div className="rounded-lg border border-border/60 bg-background/60 p-2">
+            <div className="flex items-center justify-between">
+              <p className="text-[10px] font-medium text-muted-foreground">Sugestões de hospedagem</p>
+              <button
+                type="button"
+                onClick={() => setEHotels((h) => [...h, { name: "", currency: "BRL" }])}
+                className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
+              >
+                <Plus className="h-3 w-3" /> Adicionar
+              </button>
+            </div>
+            {eHotels.length === 0 && (
+              <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma sugestão adicionada.</p>
+            )}
+            <div className="mt-2 space-y-2">
+              {eHotels.map((h, i) => (
+                <div key={i} className="space-y-1.5 rounded-lg border border-border/60 bg-muted/40 p-2">
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      value={h.name}
+                      onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                      placeholder="Nome do hotel/pousada"
+                      className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setEHotels((arr) => arr.filter((_, j) => j !== i))}
+                      className="text-muted-foreground hover:text-destructive"
+                      title="Remover sugestão"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <input
+                    value={h.address || ""}
+                    onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
+                    placeholder="Endereço"
+                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  />
+                  <input
+                    value={h.room_type || ""}
+                    onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, room_type: e.target.value } : x)))}
+                    placeholder="Tipo de quarto"
+                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  />
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={h.currency || "BRL"}
+                      onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
+                      className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    >
+                      {CURRENCIES.map((c) => (
+                        <option key={c.code} value={c.code}>{c.code}</option>
+                      ))}
+                    </select>
+                    <input
+                      value={h.daily_rate != null ? maskCurrency(String(Math.round((h.daily_rate || 0) * 100))) : ""}
+                      onChange={(e) => {
+                        const val = parseCurrency(maskCurrency(e.target.value));
+                        setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, daily_rate: val || null } : x)));
+                      }}
+                      placeholder="Valor da diária"
+                      inputMode="numeric"
+                      className="w-32 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                  <input
+                    value={h.url || ""}
+                    onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
+                    placeholder="Link do site (https://…)"
+                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-end gap-1.5">
           <button
             onClick={() => setEditing(false)}
