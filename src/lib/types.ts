@@ -174,9 +174,24 @@ export interface ItineraryActivity {
   location?: string | null;
   type?: string | null;
   cost?: number | null;
+  /** Moeda do valor informado (ex.: BRL, USD, EUR). */
+  currency?: string | null;
+  /** Valor convertido em Real (informativo, calculado pela IA). */
+  cost_brl?: number | null;
+  /** Sugestões de hospedagem (somente para itens do tipo "hotel"). */
+  hotel_options?: HotelOption[] | null;
   duration?: string | null;
   maps_url?: string | null;
   sort_order?: number;
+}
+
+export interface HotelOption {
+  name: string;
+  address?: string | null;
+  room_type?: string | null;
+  daily_rate?: number | null;
+  currency?: string | null;
+  url?: string | null;
 }
 
 export interface AiConfig {
