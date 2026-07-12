@@ -141,6 +141,18 @@ const CURRENCIES: { code: string; label: string }[] = [
   { code: "MXN", label: "$ Peso mexicano (MXN)" },
 ];
 
+// Links de busca em sites de reservas/promoções confiáveis (sempre resolvem).
+function bookingLinks(name: string, city?: string | null): { label: string; url: string }[] {
+  const c = (city || "").trim();
+  const q = encodeURIComponent(`${name} ${c}`.trim());
+  const cityQ = encodeURIComponent(c);
+  return [
+    { label: "Booking", url: `https://www.booking.com/searchresults.pt-br.html?ss=${q}` },
+    { label: "Trivago", url: `https://www.trivago.com.br/pt-BR/srl?query=${q}` },
+    { label: "Airbnb", url: `https://www.airbnb.com.br/s/${cityQ}/homes?query=${encodeURIComponent(name.trim())}` },
+  ];
+}
+
 function currencySymbol(code: string | null | undefined): string {
   const map: Record<string, string> = {
     BRL: "R$", USD: "US$", EUR: "€", GBP: "£", ARS: "$", CLP: "$",
