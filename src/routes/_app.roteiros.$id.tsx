@@ -2436,11 +2436,11 @@ function ActivityRow({
           </div>
         </label>
 
-        {/* Buscar imagem do atrativo (somente atividades) */}
+        {/* Imagens da atração (somente atividades) */}
         {eType === "activity" && (
           <div className="rounded-lg border border-border/60 bg-background/60 p-2">
             <div className="flex flex-wrap items-center justify-between gap-1.5">
-              <p className="text-[10px] font-medium text-muted-foreground">Imagem do atrativo</p>
+              <p className="text-[10px] font-medium text-muted-foreground">Imagens da atração</p>
               <button
                 type="button"
                 onClick={handleFindImage}
@@ -2452,61 +2452,78 @@ function ActivityRow({
               </button>
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              Encontra fotos com base no título e na cidade/local para você escolher a capa do roteiro.
+              Localiza a atração pelo título na cidade informada. Adicione imagens sortidas com descrição — elas aparecem na página do dia e vão para a biblioteca.
             </p>
-            {imgPreview && (
-              <div className="mt-2">
-                <div className="relative">
-                  <img
-                    src={imgPreview}
-                    alt={eTitle || "Imagem do atrativo"}
-                    className="h-24 w-full rounded-lg object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleDeleteImage}
-                    disabled={savingCover}
-                    title="Excluir imagem"
-                    className="absolute right-1 top-1 inline-flex items-center justify-center rounded-full bg-black/60 p-1 text-white hover:bg-black/80 disabled:opacity-60"
-                  >
-                    {savingCover ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                  </button>
-                </div>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">Capa atual do roteiro.</p>
+            {eImages.length === 0 ? (
+              <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma imagem adicionada.</p>
+            ) : (
+              <div className="mt-2 space-y-2">
+                {eImages.map((im, i) => (
+                  <div key={im.url} className="flex gap-2 rounded-lg border border-border/60 bg-background p-1.5">
+                    <img src={im.url} alt={im.description || "Imagem"} className="h-16 w-20 flex-none rounded-md object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <textarea
+                        value={im.description || ""}
+                        onChange={(e) =>
+                          setEImages((prev) => prev.map((x, idx) => (idx === i ? { ...x, description: e.target.value } : x)))
+                        }
+                        placeholder="Descrição da atração / local…"
+                        rows={2}
+                        className="w-full resize-y rounded-md border border-input bg-background px-1.5 py-1 text-[11px] outline-none focus:border-primary"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(i)}
+                      title="Remover imagem"
+                      className="flex-none self-start rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-
           </div>
         )}
 
-        {/* Modal de revisão / escolha da capa */}
+        {/* Modal de revisão / seleção das imagens */}
         {imgModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setImgModalOpen(false)}>
             <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-background p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Escolher capa do roteiro</h3>
+                <h3 className="text-sm font-semibold">Imagens de {eTitle || "atração"}</h3>
                 <button type="button" onClick={() => setImgModalOpen(false)} className="rounded-lg p-1 hover:bg-muted">
                   <X className="h-4 w-4" />
                 </button>
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                {findingImg ? "Buscando imagens…" : "Toque em uma imagem para defini-la como capa e salvá-la na biblioteca."}
+                {findingImg ? "Buscando imagens…" : "Toque nas imagens que deseja adicionar ao dia (várias)."}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {imgOptions.map((url) => (
-                  <button
-                    key={url}
-                    type="button"
-                    onClick={() => !savingCover && handleChooseCover(url)}
-                    disabled={savingCover}
-                    className="group relative overflow-hidden rounded-lg border border-border/60 hover:border-primary focus:border-primary disabled:opacity-60"
-                  >
-                    <img src={url} alt="Opção de imagem" className="h-28 w-full object-cover" />
-                    <span className="absolute inset-0 hidden items-center justify-center bg-primary/30 group-hover:flex">
-                      <Check className="h-6 w-6 text-white drop-shadow" />
-                    </span>
-                  </button>
-                ))}
+                {imgOptions.map((url) => {
+                  const added = eImages.some((im) => im.url === url);
+                  return (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => !added && !addingImg && handleAddImage(url)}
+                      disabled={added || addingImg !== null}
+                      className="group relative overflow-hidden rounded-lg border border-border/60 hover:border-primary focus:border-primary disabled:opacity-60"
+                    >
+                      <img src={url} alt="Opção de imagem" className="h-28 w-full object-cover" />
+                      <span className={`absolute inset-0 items-center justify-center ${added ? "flex bg-primary/40" : "hidden bg-primary/30 group-hover:flex"}`}>
+                        {addingImg === url ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-white drop-shadow" />
+                        ) : added ? (
+                          <Check className="h-6 w-6 text-white drop-shadow" />
+                        ) : (
+                          <Plus className="h-6 w-6 text-white drop-shadow" />
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
                 {findingImg &&
                   Array.from({ length: 2 }).map((_, i) => (
                     <div key={`sk-${i}`} className="flex h-28 items-center justify-center rounded-lg border border-dashed border-border/60">
@@ -2517,14 +2534,19 @@ function ActivityRow({
               {!findingImg && imgOptions.length === 0 && (
                 <p className="mt-3 text-[11px] text-muted-foreground">Nenhuma imagem encontrada.</p>
               )}
-              {savingCover && (
-                <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Salvando capa…
-                </p>
-              )}
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setImgModalOpen(false)}
+                  className="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Concluir
+                </button>
+              </div>
             </div>
           </div>
         )}
+
 
 
 
