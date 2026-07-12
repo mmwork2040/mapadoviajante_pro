@@ -2539,7 +2539,10 @@ function ActivityRow({
               <div className="flex items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={() => setSuggModalOpen(true)}
+                  onClick={() => {
+                    setSfSites(SUGGESTION_CONFIG[suggKind].sites.map((s) => s.key));
+                    setSuggModalOpen(true);
+                  }}
                   disabled={searchingSugg}
                   className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
                 >
