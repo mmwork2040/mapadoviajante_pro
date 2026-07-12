@@ -2722,7 +2722,7 @@ function ActivityRow({
                           href={h.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                          className="inline-flex items-center gap-0.5 text-blue-600 hover:underline dark:text-blue-400"
                           onClick={(e) => e.stopPropagation()}
                         >
                           Site <ExternalLink className="h-3 w-3" />
