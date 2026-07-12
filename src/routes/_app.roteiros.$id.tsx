@@ -88,7 +88,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData, HotelOption, PassengerCost } from "@/lib/types";
+import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData, HotelOption, PassengerCost, ActivityImage, LibraryItem } from "@/lib/types";
 import roteiroFallback from "@/assets/roteiro-fallback.jpg";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
@@ -2034,30 +2034,35 @@ function ActivityRow({
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
 
-  // Busca de imagens do atrativo (somente para atividades): mostra várias
-  // opções num modal para o usuário escolher a capa do roteiro.
+  // Busca de imagens do atrativo (somente para atividades): encontra o local
+  // na cidade informada (título + cidade) e adiciona imagens sortidas, com
+  // descrição, à página do dia. Também enriquece a biblioteca da agência.
   const [findingImg, setFindingImg] = useState(false);
-  const [imgPreview, setImgPreview] = useState<string | null>(null);
   const [imgModalOpen, setImgModalOpen] = useState(false);
   const [imgOptions, setImgOptions] = useState<string[]>([]);
-  const [savingCover, setSavingCover] = useState(false);
+  const [addingImg, setAddingImg] = useState<string | null>(null);
+  const [eImages, setEImages] = useState<ActivityImage[]>(activity.images || []);
   const downloadImage = useServerFn(downloadDestinationImage);
 
   async function handleFindImage() {
     const title = eTitle.trim();
     const city = eLocation.trim();
-    if (!title && !city) {
-      toast.error("Informe o título ou a cidade / local da atividade.");
+    if (!title) {
+      toast.error("Informe o título da atração/local.");
       return;
     }
-    const term = [title, city].filter(Boolean).join(", ");
+    if (!city) {
+      toast.error("Informe a cidade / local para localizar a atração na cidade.");
+      return;
+    }
+    // Combina título + cidade para achar o local exato na cidade informada.
+    const term = `${title}, ${city}`;
     setFindingImg(true);
     setImgOptions([]);
     setImgModalOpen(true);
     try {
       const found: string[] = [];
-      // Busca várias candidatas usando "exclude" para trazer imagens diferentes.
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 8; i++) {
         try {
           const res = await downloadImage({ data: { destination: term, exclude: found } });
           if (!res?.imageUrl || found.includes(res.imageUrl)) break;
@@ -2068,7 +2073,7 @@ function ActivityRow({
         }
       }
       if (found.length === 0) {
-        toast.info("Nenhuma imagem encontrada para esta atividade.");
+        toast.info("Nenhuma imagem encontrada para esta atração.");
         setImgModalOpen(false);
       }
     } finally {
@@ -2076,37 +2081,37 @@ function ActivityRow({
     }
   }
 
-  async function handleChooseCover(url: string) {
+  async function handleAddImage(url: string) {
+    if (eImages.some((im) => im.url === url)) {
+      toast.info("Imagem já adicionada.");
+      return;
+    }
     const title = eTitle.trim();
     const city = eLocation.trim();
-    const tag = city || title;
-    setSavingCover(true);
+    const tag = title || city;
+    setAddingImg(url);
     try {
       const saved = await saveActivityImageToLibrary(url, tag, city || title);
       const display = saved || url;
-      setImgPreview(display);
+      setEImages((prev) => [...prev, { url: display, description: title || null }]);
       qc.invalidateQueries({ queryKey: ["library"] });
-      await updateItinerary(itineraryId, { cover_image: display });
-      onChange();
-      toast.success("Imagem definida como capa e salva na biblioteca.");
-      setImgModalOpen(false);
+      toast.success("Imagem adicionada ao dia e salva na biblioteca.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível salvar a imagem.");
+      toast.error(err instanceof Error ? err.message : "Não foi possível adicionar a imagem.");
     } finally {
-      setSavingCover(false);
+      setAddingImg(null);
     }
   }
 
-  async function handleDeleteImage() {
-    const cover = imgPreview;
-    if (!cover) return;
-    // Extrai o caminho do arquivo na biblioteca a partir da URL (assinada/pública).
+  async function handleRemoveImage(index: number) {
+    const img = eImages[index];
+    if (!img) return;
+    // Descobre se a imagem está salva na biblioteca (para confirmar exclusão).
     const m =
-      cover.match(/\/object\/sign\/library-assets\/([^?]+)/) ||
-      cover.match(/\/object\/public\/library-assets\/([^?]+)/);
+      img.url.match(/\/object\/sign\/library-assets\/([^?]+)/) ||
+      img.url.match(/\/object\/public\/library-assets\/([^?]+)/);
     const path = m?.[1] ? decodeURIComponent(m[1]) : null;
-
-    let libItem: import("@/lib/types").LibraryItem | null = null;
+    let libItem: LibraryItem | null = null;
     if (path) {
       try {
         const items = await fetchLibraryItems("image");
@@ -2115,35 +2120,27 @@ function ActivityRow({
         libItem = null;
       }
     }
-
     if (libItem) {
       const ok = await confirm({
         title: "Excluir imagem da biblioteca?",
         description:
-          "Esta imagem está salva na biblioteca. Deseja removê-la da capa do roteiro e excluí-la da biblioteca?",
+          "Esta imagem está salva na biblioteca. Deseja removê-la do dia e também excluí-la da biblioteca?",
         confirmLabel: "Excluir",
+        cancelLabel: "Só remover do dia",
         destructive: true,
       });
-
-      if (!ok) return;
-    }
-
-    setSavingCover(true);
-    try {
-      await updateItinerary(itineraryId, { cover_image: null });
-      if (libItem) {
-        await deleteLibraryItem(libItem);
-        qc.invalidateQueries({ queryKey: ["library"] });
+      if (ok === true && libItem) {
+        try {
+          await deleteLibraryItem(libItem);
+          qc.invalidateQueries({ queryKey: ["library"] });
+        } catch {
+          /* falha na exclusão da biblioteca é tolerada */
+        }
       }
-      setImgPreview(null);
-      onChange();
-      toast.success(libItem ? "Imagem excluída da biblioteca e removida do roteiro." : "Imagem removida do roteiro.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível excluir a imagem.");
-    } finally {
-      setSavingCover(false);
     }
+    setEImages((prev) => prev.filter((_, i) => i !== index));
   }
+
 
 
 
@@ -2281,6 +2278,8 @@ function ActivityRow({
     setEHotels(activity.hotel_options || []);
     setESugg(activity.suggestion_options || []);
     setEPax(activity.passenger_costs || []);
+    setEImages(activity.images || []);
+
     setEditing(true);
   }
 
@@ -2380,6 +2379,12 @@ function ActivityRow({
         hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
         suggestion_options: suggKind && cleanSugg.length ? cleanSugg : null,
         passenger_costs: cleanPax.length ? cleanPax : null,
+        images: eType === "activity" && eImages.length
+          ? eImages
+              .filter((im) => im.url)
+              .map((im) => ({ url: im.url, description: im.description?.trim() || null }))
+          : null,
+
       });
       setEditing(false);
       onChange();
@@ -2439,11 +2444,11 @@ function ActivityRow({
           </div>
         </label>
 
-        {/* Buscar imagem do atrativo (somente atividades) */}
+        {/* Imagens da atração (somente atividades) */}
         {eType === "activity" && (
           <div className="rounded-lg border border-border/60 bg-background/60 p-2">
             <div className="flex flex-wrap items-center justify-between gap-1.5">
-              <p className="text-[10px] font-medium text-muted-foreground">Imagem do atrativo</p>
+              <p className="text-[10px] font-medium text-muted-foreground">Imagens da atração</p>
               <button
                 type="button"
                 onClick={handleFindImage}
@@ -2455,61 +2460,78 @@ function ActivityRow({
               </button>
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              Encontra fotos com base no título e na cidade/local para você escolher a capa do roteiro.
+              Localiza a atração pelo título na cidade informada. Adicione imagens sortidas com descrição — elas aparecem na página do dia e vão para a biblioteca.
             </p>
-            {imgPreview && (
-              <div className="mt-2">
-                <div className="relative">
-                  <img
-                    src={imgPreview}
-                    alt={eTitle || "Imagem do atrativo"}
-                    className="h-24 w-full rounded-lg object-cover"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleDeleteImage}
-                    disabled={savingCover}
-                    title="Excluir imagem"
-                    className="absolute right-1 top-1 inline-flex items-center justify-center rounded-full bg-black/60 p-1 text-white hover:bg-black/80 disabled:opacity-60"
-                  >
-                    {savingCover ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
-                  </button>
-                </div>
-                <p className="mt-0.5 text-[10px] text-muted-foreground">Capa atual do roteiro.</p>
+            {eImages.length === 0 ? (
+              <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma imagem adicionada.</p>
+            ) : (
+              <div className="mt-2 space-y-2">
+                {eImages.map((im, i) => (
+                  <div key={im.url} className="flex gap-2 rounded-lg border border-border/60 bg-background p-1.5">
+                    <img src={im.url} alt={im.description || "Imagem"} className="h-16 w-20 flex-none rounded-md object-cover" />
+                    <div className="min-w-0 flex-1">
+                      <textarea
+                        value={im.description || ""}
+                        onChange={(e) =>
+                          setEImages((prev) => prev.map((x, idx) => (idx === i ? { ...x, description: e.target.value } : x)))
+                        }
+                        placeholder="Descrição da atração / local…"
+                        rows={2}
+                        className="w-full resize-y rounded-md border border-input bg-background px-1.5 py-1 text-[11px] outline-none focus:border-primary"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(i)}
+                      title="Remover imagem"
+                      className="flex-none self-start rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
-
           </div>
         )}
 
-        {/* Modal de revisão / escolha da capa */}
+        {/* Modal de revisão / seleção das imagens */}
         {imgModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setImgModalOpen(false)}>
             <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-background p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Escolher capa do roteiro</h3>
+                <h3 className="text-sm font-semibold">Imagens de {eTitle || "atração"}</h3>
                 <button type="button" onClick={() => setImgModalOpen(false)} className="rounded-lg p-1 hover:bg-muted">
                   <X className="h-4 w-4" />
                 </button>
               </div>
               <p className="mt-1 text-[11px] text-muted-foreground">
-                {findingImg ? "Buscando imagens…" : "Toque em uma imagem para defini-la como capa e salvá-la na biblioteca."}
+                {findingImg ? "Buscando imagens…" : "Toque nas imagens que deseja adicionar ao dia (várias)."}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {imgOptions.map((url) => (
-                  <button
-                    key={url}
-                    type="button"
-                    onClick={() => !savingCover && handleChooseCover(url)}
-                    disabled={savingCover}
-                    className="group relative overflow-hidden rounded-lg border border-border/60 hover:border-primary focus:border-primary disabled:opacity-60"
-                  >
-                    <img src={url} alt="Opção de imagem" className="h-28 w-full object-cover" />
-                    <span className="absolute inset-0 hidden items-center justify-center bg-primary/30 group-hover:flex">
-                      <Check className="h-6 w-6 text-white drop-shadow" />
-                    </span>
-                  </button>
-                ))}
+                {imgOptions.map((url) => {
+                  const added = eImages.some((im) => im.url === url);
+                  return (
+                    <button
+                      key={url}
+                      type="button"
+                      onClick={() => !added && !addingImg && handleAddImage(url)}
+                      disabled={added || addingImg !== null}
+                      className="group relative overflow-hidden rounded-lg border border-border/60 hover:border-primary focus:border-primary disabled:opacity-60"
+                    >
+                      <img src={url} alt="Opção de imagem" className="h-28 w-full object-cover" />
+                      <span className={`absolute inset-0 items-center justify-center ${added ? "flex bg-primary/40" : "hidden bg-primary/30 group-hover:flex"}`}>
+                        {addingImg === url ? (
+                          <Loader2 className="h-6 w-6 animate-spin text-white drop-shadow" />
+                        ) : added ? (
+                          <Check className="h-6 w-6 text-white drop-shadow" />
+                        ) : (
+                          <Plus className="h-6 w-6 text-white drop-shadow" />
+                        )}
+                      </span>
+                    </button>
+                  );
+                })}
                 {findingImg &&
                   Array.from({ length: 2 }).map((_, i) => (
                     <div key={`sk-${i}`} className="flex h-28 items-center justify-center rounded-lg border border-dashed border-border/60">
@@ -2520,14 +2542,19 @@ function ActivityRow({
               {!findingImg && imgOptions.length === 0 && (
                 <p className="mt-3 text-[11px] text-muted-foreground">Nenhuma imagem encontrada.</p>
               )}
-              {savingCover && (
-                <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" /> Salvando capa…
-                </p>
-              )}
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setImgModalOpen(false)}
+                  className="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Concluir
+                </button>
+              </div>
             </div>
           </div>
         )}
+
 
 
 
@@ -3403,6 +3430,19 @@ function ActivityRow({
             {activity.description && (
               <span className="mt-0.5 block whitespace-pre-wrap text-[11px] text-muted-foreground">{activity.description}</span>
             )}
+            {(activity.images?.length ?? 0) > 0 && (
+              <span className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                {activity.images!.map((im, i) => (
+                  <span key={i} className="block overflow-hidden rounded-lg border border-border/60 bg-background/60">
+                    <img src={im.url} alt={im.description || activity.title} className="h-24 w-full object-cover" loading="lazy" />
+                    {im.description && (
+                      <span className="block px-1.5 py-1 text-[10px] leading-snug text-muted-foreground">{im.description}</span>
+                    )}
+                  </span>
+                ))}
+              </span>
+            )}
+
             {activity.cost != null && (
               <span className="mt-0.5 block text-[11px] font-medium text-foreground">
                 {formatMoney(activity.cost, activity.currency)}
