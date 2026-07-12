@@ -1700,7 +1700,9 @@ type ActivityMeta = {
   hotels?: unknown;
   sug?: unknown;
   pax?: unknown;
+  imgs?: unknown;
 };
+
 
 function decodeActivityMeta(a: ItineraryActivity): void {
   const raw = a.duration;
