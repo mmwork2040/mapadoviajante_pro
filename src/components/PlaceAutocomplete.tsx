@@ -81,7 +81,11 @@ export function PlaceAutocomplete({
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          onFocus={() => items.length > 0 && setOpen(true)}
+          onFocus={() => {
+            setFocused(true);
+            if (items.length > 0) setOpen(true);
+          }}
+          onBlur={() => setFocused(false)}
           onKeyDown={(e) => {
             if (!open) return;
             if (e.key === "ArrowDown") {
