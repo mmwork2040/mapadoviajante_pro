@@ -2557,6 +2557,8 @@ function ActivityDocuments({
       setUploading(false);
     }
   }
+
+  async function download(doc: LeadDocument) {
     const ok = await downloadDocument(doc);
     if (!ok) toast.error("Não foi possível baixar o documento.");
   }
