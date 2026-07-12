@@ -255,6 +255,71 @@ export const searchHotelsFn = createServerFn({ method: "POST" })
     );
   });
 
+type SuggestionKind = "transfer" | "restaurant" | "activity";
+type SearchSuggestionsInput = {
+  kind: SuggestionKind;
+  city: string;
+  price_min?: number | null;
+  price_max?: number | null;
+  currency?: string | null;
+  notes?: string | null;
+  limit?: number;
+  sites?: string[];
+};
+
+// Pesquisa sugestões genéricas (transfer, restaurante, passeio) na cidade informada.
+export const searchSuggestionsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: SearchSuggestionsInput) => {
+    const kinds: SuggestionKind[] = ["transfer", "restaurant", "activity"];
+    if (!d?.kind || !kinds.includes(d.kind)) throw new Error("Tipo de sugestão inválido.");
+    if (!d?.city?.trim()) throw new Error("Informe a cidade / local para pesquisar.");
+    const limit = Math.min(6, Math.max(1, Math.round(Number(d.limit) || 5)));
+    const sites = Array.isArray(d.sites) ? d.sites.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim()) : undefined;
+    return {
+      kind: d.kind,
+      city: d.city.trim(),
+      price_min: d.price_min ?? null,
+      price_max: d.price_max ?? null,
+      currency: d.currency ?? null,
+      notes: typeof d.notes === "string" ? d.notes.trim() || null : null,
+      limit,
+      sites,
+    };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+    const { searchSuggestions } = await import("./ai.server");
+    return searchSuggestions(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: cfg.max_tokens,
+      },
+      data.kind,
+      data.city,
+      {
+        price_min: data.price_min,
+        price_max: data.price_max,
+        currency: data.currency,
+        notes: data.notes,
+        limit: data.limit,
+        sites: data.sites,
+      },
+    );
+  });
+
+
 
 
 type AnalyzeImageInput = {
