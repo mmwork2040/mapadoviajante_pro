@@ -2272,7 +2272,7 @@ function ActivityRow({
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-start gap-1 text-[11px] text-primary underline"
+                          className="inline-flex items-start gap-1 text-[11px] text-blue-600 underline dark:text-blue-400"
                         >
                           <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> {h.address}
                         </a>
