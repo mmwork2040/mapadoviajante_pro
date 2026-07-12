@@ -2266,6 +2266,105 @@ function ActivityRow({
           </div>
         )}
 
+        {/* Modal: filtros do Assistente de hospedagem */}
+        {hotelModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => setHotelModalOpen(false)}
+          >
+            <div
+              className="w-full max-w-sm space-y-3 rounded-2xl border border-border bg-card p-4 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">Assistente de hospedagem</h3>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                A IA busca até 5 opções em <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
+              </p>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Tipo de quarto</label>
+                <input
+                  value={hfRoomType}
+                  onChange={(e) => setHfRoomType(e.target.value)}
+                  placeholder="Ex: Duplo standard, Suíte..."
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Estrelas (mínimo)</label>
+                <select
+                  value={hfStars}
+                  onChange={(e) => setHfStars(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                >
+                  <option value="">Qualquer</option>
+                  {[1, 2, 3, 4, 5].map((s) => (
+                    <option key={s} value={s}>{s} estrela(s) ou mais</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Média de valores da diária</label>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <select
+                    value={hfCurrency}
+                    onChange={(e) => setHfCurrency(e.target.value)}
+                    className="rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.code}</option>
+                    ))}
+                  </select>
+                  <input
+                    value={hfPriceMin}
+                    onChange={(e) => setHfPriceMin(maskAmount(e.target.value))}
+                    placeholder="Mín."
+                    inputMode="numeric"
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  />
+                  <input
+                    value={hfPriceMax}
+                    onChange={(e) => setHfPriceMax(maskAmount(e.target.value))}
+                    placeholder="Máx."
+                    inputMode="numeric"
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Outras preferências</label>
+                <textarea
+                  value={hfNotes}
+                  onChange={(e) => setHfNotes(e.target.value)}
+                  placeholder="Ex: próximo à praia, café da manhã incluso, pet friendly..."
+                  rows={2}
+                  className="mt-1 w-full resize-none rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setHotelModalOpen(false)}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSearchHotels}
+                  disabled={searchingHotels}
+                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {searchingHotels ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Pesquisar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Valores por passageiro (nome + valor individual) */}
         <div className="rounded-lg border border-border/60 bg-background/60 p-2">
           <div className="flex items-center justify-between">
