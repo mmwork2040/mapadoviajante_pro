@@ -123,6 +123,41 @@ const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.
 );
 TYPE_META.image = { label: "Imagem", icon: ImageIcon };
 
+// Moedas disponíveis para informar o valor de uma atividade/hospedagem.
+const CURRENCIES: { code: string; label: string }[] = [
+  { code: "BRL", label: "R$ Real (BRL)" },
+  { code: "USD", label: "US$ Dólar (USD)" },
+  { code: "EUR", label: "€ Euro (EUR)" },
+  { code: "GBP", label: "£ Libra (GBP)" },
+  { code: "ARS", label: "$ Peso argentino (ARS)" },
+  { code: "CLP", label: "$ Peso chileno (CLP)" },
+  { code: "UYU", label: "$ Peso uruguaio (UYU)" },
+  { code: "CAD", label: "C$ Dólar canadense (CAD)" },
+  { code: "AUD", label: "A$ Dólar australiano (AUD)" },
+  { code: "CHF", label: "Fr Franco suíço (CHF)" },
+  { code: "JPY", label: "¥ Iene (JPY)" },
+  { code: "MXN", label: "$ Peso mexicano (MXN)" },
+];
+
+function currencySymbol(code: string | null | undefined): string {
+  const map: Record<string, string> = {
+    BRL: "R$", USD: "US$", EUR: "€", GBP: "£", ARS: "$", CLP: "$",
+    UYU: "$", CAD: "C$", AUD: "A$", CHF: "Fr", JPY: "¥", MXN: "$",
+  };
+  return map[(code || "BRL").toUpperCase()] || (code || "");
+}
+
+// Formata um valor numérico com a moeda informada (símbolo + milhares).
+function formatMoney(value: number | null | undefined, code: string | null | undefined): string {
+  if (value == null) return "";
+  const cur = (code || "BRL").toUpperCase();
+  try {
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: cur }).format(value);
+  } catch {
+    return `${currencySymbol(cur)} ${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2 }).format(value)}`;
+  }
+}
+
 function getNextDayNumber(days?: ItineraryDay[]) {
   return Math.max(0, ...(days || []).map((day) => day.day_number || 0)) + 1;
 }
