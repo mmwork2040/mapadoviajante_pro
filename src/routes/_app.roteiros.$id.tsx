@@ -2240,7 +2240,7 @@ function ActivityRow({
               </div>
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              A IA busca até 5 opções na cidade informada no campo acima (nome, endereço, tipo de quarto, valor e link).
+              A IA busca até 6 opções na cidade informada no campo acima (nome, endereço, tipo de quarto, valor e link).
             </p>
             {eHotels.length === 0 && (
               <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma sugestão adicionada.</p>
