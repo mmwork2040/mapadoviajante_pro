@@ -84,7 +84,7 @@ export function PlaceAutocomplete({
       controller.abort();
       clearTimeout(t);
     };
-  }, [value, bias, focused]);
+  }, [value, bias, focused, categories]);
 
   function pick(s: Suggestion) {
     skipNext.current = true;
