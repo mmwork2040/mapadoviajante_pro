@@ -2085,7 +2085,7 @@ function ActivityRow({
           <div className="mt-1 flex flex-wrap items-center gap-1.5">
             <select
               value={eCurrency}
-              onChange={(e) => setECurrency(e.target.value)}
+              onChange={(e) => { setECurrency(e.target.value); setECostBrl(null); }}
               className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
             >
               {CURRENCIES.map((c) => (
