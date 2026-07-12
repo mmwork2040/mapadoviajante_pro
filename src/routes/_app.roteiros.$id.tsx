@@ -2302,13 +2302,15 @@ function ActivityRow({
         </label>
         <label className="block text-[10px] font-medium text-muted-foreground">
           Cidade / local (opcional)
-          <input
-            value={eLocation}
-            onChange={(e) => setELocation(e.target.value)}
-            placeholder="Cidade / local…"
-            className="mt-0.5 w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
-          />
+          <div className="mt-0.5">
+            <PlaceAutocomplete
+              value={eLocation}
+              onChange={setELocation}
+              placeholder="Cidade / local…"
+            />
+          </div>
         </label>
+
         <label className="block text-[10px] font-medium text-muted-foreground">
           Observação (opcional)
           <textarea
