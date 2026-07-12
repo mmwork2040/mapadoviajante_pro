@@ -313,6 +313,8 @@ export const searchSuggestionsFn = createServerFn({ method: "POST" })
       data.kind,
       data.city,
       {
+        origin: data.origin,
+        destination: data.destination,
         price_min: data.price_min,
         price_max: data.price_max,
         currency: data.currency,
