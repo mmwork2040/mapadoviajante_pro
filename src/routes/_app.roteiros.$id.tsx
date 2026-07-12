@@ -182,6 +182,22 @@ function formatMoney(value: number | null | undefined, code: string | null | und
   }
 }
 
+// Converte um valor para BRL usando a cotação (rate) informada na atividade,
+// desde que a moeda do item seja a mesma da conversão. Retorna null se não aplicável.
+function brlWithRate(
+  amount: number | null | undefined,
+  itemCurrency: string | null | undefined,
+  baseCurrency: string | null | undefined,
+  rate: number | null | undefined,
+): number | null {
+  if (amount == null) return null;
+  const cur = (itemCurrency || "BRL").toUpperCase();
+  if (cur === "BRL") return null;
+  if (!rate || rate <= 0) return null;
+  if (cur !== (baseCurrency || "").toUpperCase()) return null;
+  return Math.round(amount * rate * 100) / 100;
+}
+
 // Máscara de valor sem símbolo de moeda (milhares + 2 casas): "123456" -> "1.234,56"
 function maskAmount(value: string | number | null | undefined): string {
   const digits = String(value ?? "").replace(/\D/g, "");
