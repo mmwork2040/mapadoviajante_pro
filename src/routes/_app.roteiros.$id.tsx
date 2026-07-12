@@ -2756,15 +2756,24 @@ function ActivityRow({
                         placeholder="Ex: Hotel no Centro"
                         className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                       />
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${sfDest} ${eLocation || ""}`.trim())}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="shrink-0 rounded-lg border border-input bg-background p-1.5 text-primary hover:bg-muted"
-                        title="Abrir no mapa"
-                      >
-                        <MapPin className="h-4 w-4" />
-                      </a>
+                      {sfDest.trim() ? (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${sfDest} ${eLocation || ""}`.trim())}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 rounded-lg border border-input bg-background p-1.5 text-primary hover:bg-muted"
+                          title="Abrir no mapa"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </a>
+                      ) : (
+                        <span
+                          className="shrink-0 cursor-not-allowed rounded-lg border border-input bg-muted p-1.5 text-muted-foreground opacity-50"
+                          title="Preencha o destino para abrir o mapa"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
