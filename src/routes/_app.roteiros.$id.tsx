@@ -2736,7 +2736,7 @@ function ActivityRow({
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="block text-[11px] text-primary hover:underline"
+                        className="block text-[11px] text-blue-600 hover:underline dark:text-blue-400"
                         title="Abrir endereço no mapa"
                       >
                         📍 {h.address}
