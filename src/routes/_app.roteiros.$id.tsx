@@ -2005,6 +2005,74 @@ function ActivityRow({
   const [hfSites, setHfSites] = useState<string[]>(["booking", "trivago", "hotels", "expedia", "tripadvisor"]);
   const convertCurrency = useServerFn(convertCurrencyFn);
   const searchHotels = useServerFn(searchHotelsFn);
+  // Sugestões genéricas (transfer, restaurante, passeio)
+  const [eSugg, setESugg] = useState<HotelOption[]>(activity.suggestion_options || []);
+  const [searchingSugg, setSearchingSugg] = useState(false);
+  const [suggModalOpen, setSuggModalOpen] = useState(false);
+  const [sfPriceMin, setSfPriceMin] = useState("");
+  const [sfPriceMax, setSfPriceMax] = useState("");
+  const [sfCurrency, setSfCurrency] = useState("BRL");
+  const [sfNotes, setSfNotes] = useState("");
+  const [sfLimit, setSfLimit] = useState(5);
+  const [sfSites, setSfSites] = useState<string[]>([]);
+  const searchSuggestions = useServerFn(searchSuggestionsFn);
+  const suggKind: SuggestionKind | null =
+    eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
+
+  async function handleSearchSuggestions() {
+    if (!suggKind) return;
+    const city = (eLocation || "").trim();
+    if (!city) {
+      toast.error("Informe a cidade / local antes de pesquisar.");
+      return;
+    }
+    const sites = sfSites.length ? sfSites : SUGGESTION_CONFIG[suggKind].sites.map((s) => s.key);
+    setSearchingSugg(true);
+    try {
+      const res = await searchSuggestions({
+        data: {
+          kind: suggKind,
+          city,
+          price_min: sfPriceMin ? parseCurrency(maskAmount(sfPriceMin)) : null,
+          price_max: sfPriceMax ? parseCurrency(maskAmount(sfPriceMax)) : null,
+          currency: sfCurrency || "BRL",
+          notes: sfNotes.trim() || null,
+          limit: sfLimit,
+          sites,
+        },
+      });
+      if (res.ok && res.items.length) {
+        const withBrl = await Promise.all(
+          res.items.map(async (h) => {
+            const base: HotelOption = { ...h, source: "ai" as const };
+            const cur = (h.currency || "BRL").toUpperCase();
+            if (h.daily_rate != null && cur !== "BRL") {
+              try {
+                const conv = await convertCurrency({ data: { amount: h.daily_rate, currency: cur } });
+                if (conv.ok) {
+                  base.daily_rate_brl = conv.brl;
+                  base.daily_rate_brl_rate = conv.rate || null;
+                }
+              } catch {
+                /* mantém sem conversão se falhar */
+              }
+            }
+            return base;
+          }),
+        );
+        setESugg((prev) => [...prev, ...withBrl]);
+        toast.success(res.message);
+        setSuggModalOpen(false);
+      } else {
+        toast.error(res.message || "Nenhuma sugestão encontrada.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao pesquisar sugestões.");
+    } finally {
+      setSearchingSugg(false);
+    }
+  }
+
 
   async function handleSearchHotels() {
     const city = (eLocation || "").trim();
