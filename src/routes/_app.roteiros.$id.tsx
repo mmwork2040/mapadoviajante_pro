@@ -125,8 +125,8 @@ const ACTIVITY_TYPES: {
 const PLACE_TYPE_HINT: Record<string, string> = {
   hotel: "hotel",
   restaurant: "restaurante",
-  transfer: "aeroporto rodoviária estação",
-  activity: "ponto turístico atração",
+  transfer: "aeroporto",
+  activity: "atração turística",
 };
 
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
