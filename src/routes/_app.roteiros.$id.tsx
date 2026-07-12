@@ -2612,7 +2612,6 @@ function ActivityRow({
                   Sugestões de hospedagem
                 </span>
                 {activity.hotel_options!.map((h, i) => {
-                  const links = h.links && h.links.length ? h.links : bookingLinks(h.name, activity.location);
                   return (
                   <span key={i} className="block rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
                     <span className="flex items-center justify-between gap-2">
