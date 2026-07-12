@@ -204,6 +204,8 @@ export interface HotelOption {
   /** Classificação em estrelas (1 a 5). */
   stars?: number | null;
   url?: string | null;
+  /** Origem da sugestão: "ai" (não editável) ou "user" (adicionada manualmente). */
+  source?: "ai" | "user" | null;
   /** Links de reserva/promoções (Booking, Trivago, Airbnb...). */
   links?: { label: string; url: string }[] | null;
 }
