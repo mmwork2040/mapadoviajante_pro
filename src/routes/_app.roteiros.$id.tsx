@@ -1931,6 +1931,7 @@ function ActivityRow({
   const [eCurrency, setECurrency] = useState<string>(activity.currency || "BRL");
   const [eCostBrl, setECostBrl] = useState<number | null>(activity.cost_brl ?? null);
   const [eHotels, setEHotels] = useState<HotelOption[]>(activity.hotel_options || []);
+  const [ePax, setEPax] = useState<PassengerCost[]>(activity.passenger_costs || []);
   const [converting, setConverting] = useState(false);
   const [saving, setSaving] = useState(false);
   const convertCurrency = useServerFn(convertCurrencyFn);
