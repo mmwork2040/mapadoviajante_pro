@@ -2226,40 +2226,44 @@ function ActivityRow({
           )}
           <div className="mt-2 space-y-1.5">
             {ePax.map((p, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <input
-                  value={p.name}
-                  onChange={(e) => setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
-                  placeholder="Nome do passageiro"
-                  className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
-                />
-                <select
-                  value={p.currency || "BRL"}
-                  onChange={(e) => setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
-                  className="rounded-lg border border-input bg-background px-1.5 py-1 text-xs outline-none focus:border-primary"
-                >
-                  {CURRENCIES.map((c) => (
-                    <option key={c.code} value={c.code}>{c.code}</option>
-                  ))}
-                </select>
-                <input
-                  value={p.amount != null ? maskAmount(String(Math.round((p.amount || 0) * 100))) : ""}
-                  onChange={(e) => {
-                    const val = parseCurrency(maskAmount(e.target.value));
-                    setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, amount: val || null } : x)));
-                  }}
-                  placeholder="0,00"
-                  inputMode="numeric"
-                  className="w-24 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
-                />
-                <button
-                  type="button"
-                  onClick={() => setEPax((arr) => arr.filter((_, j) => j !== i))}
-                  className="text-muted-foreground hover:text-destructive"
-                  title="Remover passageiro"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+              <div key={i} className="space-y-1.5 rounded-lg border border-border/60 bg-muted/40 p-2">
+                <div className="flex items-center gap-1.5">
+                  <input
+                    value={p.name}
+                    onChange={(e) => setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                    placeholder="Nome do passageiro"
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setEPax((arr) => arr.filter((_, j) => j !== i))}
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                    title="Remover passageiro"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <select
+                    value={p.currency || "BRL"}
+                    onChange={(e) => setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
+                    className="shrink-0 rounded-lg border border-input bg-background px-1.5 py-1 text-xs outline-none focus:border-primary"
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.code}</option>
+                    ))}
+                  </select>
+                  <input
+                    value={p.amount != null ? maskAmount(String(Math.round((p.amount || 0) * 100))) : ""}
+                    onChange={(e) => {
+                      const val = parseCurrency(maskAmount(e.target.value));
+                      setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, amount: val || null } : x)));
+                    }}
+                    placeholder="0,00"
+                    inputMode="numeric"
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  />
+                </div>
               </div>
             ))}
           </div>
