@@ -2100,6 +2100,7 @@ function ActivityRow({
         cost: amount || null,
         currency: amount ? eCurrency : null,
         cost_brl: amount ? eCostBrl : null,
+        cost_brl_rate: amount && eCurrency !== "BRL" ? eCostBrlRate : null,
         hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
         passenger_costs: cleanPax.length ? cleanPax : null,
       });
