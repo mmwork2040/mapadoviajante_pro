@@ -2004,6 +2004,13 @@ function ActivityRow({
           currency: h.currency || "BRL",
           url: h.url?.trim() || null,
         }));
+      const cleanPax = ePax
+        .filter((p) => (p.name || "").trim())
+        .map((p) => ({
+          name: p.name.trim(),
+          amount: p.amount ?? null,
+          currency: p.currency || eCurrency || "BRL",
+        }));
       await updateItineraryActivity(activity.id, {
         title: eTitle.trim(),
         time: eTime || null,
@@ -2014,6 +2021,7 @@ function ActivityRow({
         currency: amount ? eCurrency : null,
         cost_brl: amount ? eCostBrl : null,
         hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
+        passenger_costs: cleanPax.length ? cleanPax : null,
       });
       setEditing(false);
       onChange();
