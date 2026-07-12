@@ -2684,6 +2684,12 @@ function ActivityRow({
                     {h.daily_rate != null && (
                       <span className="block text-[11px] font-medium text-foreground">
                         {formatMoney(h.daily_rate, h.currency)} / diária
+                        {(() => {
+                          const hBrl = brlWithRate(h.daily_rate, h.currency, activity.currency, activity.cost_brl_rate);
+                          return hBrl != null ? (
+                            <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(hBrl)}</span>
+                          ) : null;
+                        })()}
                       </span>
                     )}
                   </span>
