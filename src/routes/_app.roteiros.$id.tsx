@@ -122,12 +122,12 @@ const ACTIVITY_TYPES: {
   { type: "restaurant", label: "Restaurante", icon: Utensils, defaultTitle: "Refeição", hint: "Adiciona uma refeição/restaurante ao dia." },
 ];
 
-const PLACE_TYPE_HINT: Record<string, string> = {
-  flight: "aeroporto",
-  hotel: "hotel",
-  restaurant: "restaurante",
-  transfer: "aeroporto",
-  activity: "atração turística",
+const PLACE_TYPE_HINTS: Record<string, string[]> = {
+  flight: ["aeroporto"],
+  hotel: ["hotel", "pousada", "resort", "hostel", "apart-hotel"],
+  restaurant: ["restaurante", "lanchonete", "cafeteria", "hamburgueria", "pizzaria", "bar", "padaria"],
+  transfer: ["aeroporto", "rodoviária", "estação", "terminal", "porto"],
+  activity: ["atração turística", "ponto turístico", "museu", "parque", "tour"],
 };
 
 const TYPE_META: Record<string, { label: string; icon: typeof Plane }> = Object.fromEntries(
@@ -2315,7 +2315,7 @@ function ActivityRow({
               value={eLocation}
               onChange={setELocation}
               placeholder="Cidade / local…"
-              bias={PLACE_TYPE_HINT[eType] || undefined}
+              categories={PLACE_TYPE_HINTS[eType] || undefined}
             />
           </div>
         </label>
