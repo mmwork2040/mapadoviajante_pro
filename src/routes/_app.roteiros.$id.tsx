@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ScrollLock } from "@/components/ScrollLock";
+import { PlaceAutocomplete } from "@/components/PlaceAutocomplete";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -2724,12 +2725,13 @@ function ActivityRow({
                       Origem (bairro/local exato) <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1 flex items-center gap-1.5">
-                      <input
+                      <PlaceAutocomplete
                         value={sfOrigin}
-                        onChange={(e) => setSfOrigin(e.target.value)}
+                        onChange={setSfOrigin}
+                        bias={eLocation || undefined}
                         placeholder="Ex: Aeroporto de Guarulhos"
-                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                       />
+
                       {sfOrigin.trim() ? (
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${sfOrigin} ${eLocation || ""}`.trim())}`}
@@ -2755,12 +2757,13 @@ function ActivityRow({
                       Destino (bairro/local exato) <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1 flex items-center gap-1.5">
-                      <input
+                      <PlaceAutocomplete
                         value={sfDest}
-                        onChange={(e) => setSfDest(e.target.value)}
+                        onChange={setSfDest}
+                        bias={eLocation || undefined}
                         placeholder="Ex: Hotel no Centro"
-                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                       />
+
                       {sfDest.trim() ? (
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${sfDest} ${eLocation || ""}`.trim())}`}
