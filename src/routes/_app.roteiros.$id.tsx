@@ -66,6 +66,8 @@ import {
   attachLibraryDocumentToActivity,
   downloadDocument,
   uploadLeadDocument,
+  addLinkDocument,
+  isLinkDoc,
   type LeadDocument,
   type AgencyDocument,
 } from "@/lib/lead-documents";
