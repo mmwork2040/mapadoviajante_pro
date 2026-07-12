@@ -536,14 +536,23 @@ Responda APENAS com um JSON válido, sem texto extra:
       .map((h) => h as Record<string, unknown>)
       .filter((h) => typeof h.name === "string" && (h.name as string).trim())
       .slice(0, max)
-      .map((h) => ({
-        name: String(h.name).trim(),
-        address: typeof h.address === "string" ? h.address.trim() || null : null,
-        room_type: typeof h.room_type === "string" ? h.room_type.trim() || null : null,
-        daily_rate: typeof h.daily_rate === "number" ? h.daily_rate : null,
-        currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
-        url: typeof h.url === "string" ? h.url.trim() || null : null,
-      }));
+      .map((h) => {
+        const name = String(h.name).trim();
+        const starsRaw = typeof h.stars === "number" ? Math.round(h.stars) : Number(h.stars);
+        const stars = Number.isFinite(starsRaw) && starsRaw >= 1 && starsRaw <= 5 ? starsRaw : null;
+        const aiUrl = typeof h.url === "string" ? h.url.trim() || null : null;
+        return {
+          name,
+          address: typeof h.address === "string" ? h.address.trim() || null : null,
+          room_type: typeof h.room_type === "string" ? h.room_type.trim() || null : null,
+          daily_rate: typeof h.daily_rate === "number" ? h.daily_rate : null,
+          currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
+          stars,
+          url: aiUrl,
+          links: bookingSearchLinks(name, city),
+        };
+      });
+
     if (!hotels.length) return { ok: false, hotels: [], message: "Nenhuma sugestão encontrada." };
     return { ok: true, hotels, message: `${hotels.length} sugestão(ões) encontrada(s).` };
   } catch {
