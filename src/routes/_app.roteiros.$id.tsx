@@ -2264,20 +2264,11 @@ function ActivityRow({
                     placeholder="Tipo de quarto"
                     className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
                   />
-                  <select
-                    value={h.stars != null ? String(h.stars) : ""}
-                    onChange={(e) =>
-                      setEHotels((arr) =>
-                        arr.map((x, j) => (j === i ? { ...x, stars: e.target.value ? Number(e.target.value) : null } : x)),
-                      )
-                    }
-                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
-                  >
-                    <option value="">Estrelas (opcional)</option>
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <option key={s} value={s}>{s} estrela{s > 1 ? "s" : ""}</option>
-                    ))}
-                  </select>
+                  {h.stars != null && (
+                    <p className="text-[11px] text-amber-500" title={`${h.stars} estrela(s)`}>
+                      {"★".repeat(h.stars)}
+                    </p>
+                  )}
                   <div className="flex items-center gap-1.5">
                     <select
 
