@@ -3039,7 +3039,7 @@ function ActivityDocuments({
               className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
             >
               {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
-              Anexar
+              Arquivos
             </button>
             <button
               onClick={() => setLinkOpen((v) => !v)}
