@@ -2289,8 +2289,24 @@ function ActivityRow({
                   value={hfRoomType}
                   onChange={(e) => setHfRoomType(e.target.value)}
                   placeholder="Ex: Duplo standard, Suíte..."
+                  list="room-type-options"
                   className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                 />
+                <datalist id="room-type-options">
+                  <option value="Individual (Single)" />
+                  <option value="Duplo (Double)" />
+                  <option value="Duplo standard" />
+                  <option value="Casal" />
+                  <option value="Twin (duas camas)" />
+                  <option value="Triplo" />
+                  <option value="Quádruplo" />
+                  <option value="Família" />
+                  <option value="Suíte" />
+                  <option value="Suíte Master" />
+                  <option value="Suíte Luxo" />
+                  <option value="Studio" />
+                  <option value="Apartamento" />
+                </datalist>
               </div>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Estrelas (mínimo)</label>
