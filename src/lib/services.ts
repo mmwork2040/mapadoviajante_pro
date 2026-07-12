@@ -1696,6 +1696,7 @@ type ActivityMeta = {
   dur?: string | null;
   cur?: string | null;
   brl?: number | null;
+  rate?: number | null;
   hotels?: unknown;
   pax?: unknown;
 };
