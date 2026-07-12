@@ -163,7 +163,54 @@ function bookingLinks(name: string, city?: string | null, sites?: string[]): { l
   return selected.map((s) => ({ label: s.label, url: s.url(name, c) }));
 }
 
-// currencySymbol, formatMoney e brlWithRate centralizados em "@/lib/ui".
+// Tipos de bloco que suportam busca de sugestões pela IA (além de Hospedagem).
+type SuggestionKind = "transfer" | "restaurant" | "activity";
+const SUGGESTION_CONFIG: Record<
+  SuggestionKind,
+  { label: string; noun: string; detailPlaceholder: string; pricePlaceholder: string; sites: { key: string; label: string; url: (n: string, c: string) => string }[] }
+> = {
+  transfer: {
+    label: "Sugestões de transfer",
+    noun: "opções de transfer",
+    detailPlaceholder: "Tipo de veículo/serviço",
+    pricePlaceholder: "Valor do trajeto",
+    sites: [
+      { key: "kiwitaxi", label: "Kiwitaxi", url: (n, c) => `https://kiwitaxi.com.br/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "gettransfer", label: "GetTransfer", url: (n, c) => `https://gettransfer.com/en/search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "welcome", label: "Welcome Pickups", url: (n, c) => `https://www.welcomepickups.com/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "google", label: "Google", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`transfer ${n} ${c}`.trim())}` },
+    ],
+  },
+  restaurant: {
+    label: "Sugestões de restaurantes",
+    noun: "restaurantes",
+    detailPlaceholder: "Tipo de cozinha",
+    pricePlaceholder: "Preço médio por pessoa",
+    sites: [
+      { key: "thefork", label: "TheFork", url: (n, c) => `https://www.thefork.com.br/search?cityName=${encodeURIComponent(c.trim())}&text=${encodeURIComponent(n.trim())}` },
+      { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "maps", label: "Google Maps", url: (n, c) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    ],
+  },
+  activity: {
+    label: "Sugestões de passeios",
+    noun: "passeios/tours/ingressos",
+    detailPlaceholder: "Tipo/duração do passeio",
+    pricePlaceholder: "Valor por pessoa",
+    sites: [
+      { key: "getyourguide", label: "GetYourGuide", url: (n, c) => `https://www.getyourguide.com.br/s/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "civitatis", label: "Civitatis", url: (n, c) => `https://www.civitatis.com/br/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "viator", label: "Viator", url: (n, c) => `https://www.viator.com/searchResults/all?text=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    ],
+  },
+};
+function suggestionLinks(kind: SuggestionKind, name: string, city?: string | null, sites?: string[]): { label: string; url: string }[] {
+  const c = (city || "").trim();
+  const all = SUGGESTION_CONFIG[kind].sites;
+  const selected = sites && sites.length ? all.filter((s) => sites.includes(s.key)) : all.slice(0, 3);
+  return selected.map((s) => ({ label: s.label, url: s.url(name, c) }));
+}
 
 // Máscara de valor sem símbolo de moeda (milhares + 2 casas): "123456" -> "1.234,56"
 function maskAmount(value: string | number | null | undefined): string {
