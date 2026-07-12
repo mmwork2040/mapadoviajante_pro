@@ -46,7 +46,7 @@ import {
   updateItineraryDay,
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
-import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn, convertCurrencyFn } from "@/lib/ai.functions";
+import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn, convertCurrencyFn, searchHotelsFn } from "@/lib/ai.functions";
 import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, previewDriveSheets, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
 
 // Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
@@ -1938,7 +1938,31 @@ function ActivityRow({
   const [ePax, setEPax] = useState<PassengerCost[]>(activity.passenger_costs || []);
   const [converting, setConverting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchingHotels, setSearchingHotels] = useState(false);
   const convertCurrency = useServerFn(convertCurrencyFn);
+  const searchHotels = useServerFn(searchHotelsFn);
+
+  async function handleSearchHotels() {
+    const city = (eLocation || "").trim();
+    if (!city) {
+      toast.error("Informe a cidade / local antes de pesquisar.");
+      return;
+    }
+    setSearchingHotels(true);
+    try {
+      const res = await searchHotels({ data: { city } });
+      if (res.ok && res.hotels.length) {
+        setEHotels((prev) => [...prev, ...res.hotels]);
+        toast.success(res.message);
+      } else {
+        toast.error(res.message || "Nenhuma sugestão encontrada.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao pesquisar hospedagens.");
+    } finally {
+      setSearchingHotels(false);
+    }
+  }
 
   function startEdit() {
     setETitle(activity.title || "");
@@ -2135,16 +2159,30 @@ function ActivityRow({
         {/* Sugestões de hospedagem (apenas para itens do tipo Hospedagem) */}
         {eType === "hotel" && (
           <div className="rounded-lg border border-border/60 bg-background/60 p-2">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-1.5">
               <p className="text-[10px] font-medium text-muted-foreground">Sugestões de hospedagem</p>
-              <button
-                type="button"
-                onClick={() => setEHotels((h) => [...h, { name: "", currency: "BRL" }])}
-                className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
-              >
-                <Plus className="h-3 w-3" /> Adicionar
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={handleSearchHotels}
+                  disabled={searchingHotels}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+                >
+                  {searchingHotels ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Pesquisar com IA
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEHotels((h) => [...h, { name: "", currency: "BRL" }])}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
+                >
+                  <Plus className="h-3 w-3" /> Adicionar
+                </button>
+              </div>
             </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              A IA busca até 5 opções na cidade informada no campo acima (nome, endereço, tipo de quarto, valor e link).
+            </p>
             {eHotels.length === 0 && (
               <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma sugestão adicionada.</p>
             )}

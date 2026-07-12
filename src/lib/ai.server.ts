@@ -1,6 +1,6 @@
 // Server-only helpers that talk to external LLM providers.
 // Supported providers: "openai", "anthropic", "google".
-import type { ExtractedDocData } from "@/lib/types";
+import type { ExtractedDocData, HotelOption } from "@/lib/types";
 
 type ProviderConfig = {
   provider: string;
@@ -468,6 +468,56 @@ Responda APENAS com um JSON válido, sem texto extra:
     };
   } catch {
     return { ok: false, brl: 0, rate: 0, message: "Não foi possível obter a cotação." };
+  }
+}
+
+// Pesquisa até 5 sugestões de hospedagem reais na cidade informada.
+export async function searchHotels(
+  cfg: ProviderConfig,
+  city: string,
+): Promise<{ ok: boolean; hotels: HotelOption[]; message: string }> {
+  const prompt = `Você é um consultor de viagens. Sugira até 5 opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.
+Para cada opção informe nome, endereço, tipo de quarto, valor aproximado da diária e link do site oficial (ou de reserva) quando conhecer.
+Não invente valores absurdos; use uma estimativa realista da diária. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
+Responda APENAS com um JSON válido, sem texto extra:
+{
+  "hotels": [
+    {
+      "name": "nome do hotel/pousada",
+      "address": "endereço ou bairro",
+      "room_type": "tipo de quarto (ex: Duplo standard)",
+      "daily_rate": número (valor da diária, sem moeda) ou null,
+      "currency": "BRL|USD|EUR|...",
+      "url": "https://... ou vazio"
+    }
+  ]
+}`;
+  const raw = await askCopilot(cfg, prompt);
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1) {
+    return { ok: false, hotels: [], message: "Não foi possível obter sugestões." };
+  }
+  try {
+    const parsed = JSON.parse(cleaned.slice(start, end + 1)) as { hotels?: unknown[] };
+    const list = Array.isArray(parsed.hotels) ? parsed.hotels : [];
+    const hotels: HotelOption[] = list
+      .map((h) => h as Record<string, unknown>)
+      .filter((h) => typeof h.name === "string" && (h.name as string).trim())
+      .slice(0, 5)
+      .map((h) => ({
+        name: String(h.name).trim(),
+        address: typeof h.address === "string" ? h.address.trim() || null : null,
+        room_type: typeof h.room_type === "string" ? h.room_type.trim() || null : null,
+        daily_rate: typeof h.daily_rate === "number" ? h.daily_rate : null,
+        currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
+        url: typeof h.url === "string" ? h.url.trim() || null : null,
+      }));
+    if (!hotels.length) return { ok: false, hotels: [], message: "Nenhuma sugestão encontrada." };
+    return { ok: true, hotels, message: `${hotels.length} sugestão(ões) encontrada(s).` };
+  } catch {
+    return { ok: false, hotels: [], message: "Não foi possível obter sugestões." };
   }
 }
 
