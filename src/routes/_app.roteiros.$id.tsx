@@ -1966,7 +1966,7 @@ function ActivityRow({
         currency: hfCurrency || "BRL",
         notes: hfNotes.trim() || null,
       };
-      const res = await searchHotels({ data: { city, filters } });
+      const res = await searchHotels({ data: { city, filters, limit: hfLimit } });
       if (res.ok && res.hotels.length) {
         setEHotels((prev) => [...prev, ...res.hotels]);
         toast.success(res.message);
