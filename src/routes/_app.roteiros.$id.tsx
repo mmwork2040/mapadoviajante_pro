@@ -2436,6 +2436,9 @@ function ActivityDocuments({
   const [open_, setOpen_] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [preview, setPreview] = useState<LeadDocument | null>(null);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkName, setLinkName] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
   const analyzeImage = useServerFn(analyzeImageActivityFn);
   const { data: docs = [] } = useQuery({
     queryKey: ["activity-docs", activityId],
