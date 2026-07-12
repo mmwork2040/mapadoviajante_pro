@@ -2404,6 +2404,33 @@ function ActivityRow({
                 />
               </div>
               <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Sites para pesquisar</label>
+                <div className="mt-1 grid grid-cols-2 gap-1.5">
+                  {HOTEL_SITES.map((s) => {
+                    const active = hfSites.includes(s.key);
+                    return (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() =>
+                          setHfSites((prev) =>
+                            prev.includes(s.key) ? prev.filter((k) => k !== s.key) : [...prev, s.key],
+                          )
+                        }
+                        className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
+                          active
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-input bg-background text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground">A IA lista apenas o que encontrar nos sites selecionados.</p>
+              </div>
+              <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Quantidade de resultados</label>
                 <select
                   value={hfLimit}
