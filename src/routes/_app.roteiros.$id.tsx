@@ -2097,6 +2097,55 @@ function ActivityRow({
     }
   }
 
+  async function handleDeleteImage() {
+    const cover = imgPreview;
+    if (!cover) return;
+    // Extrai o caminho do arquivo na biblioteca a partir da URL (assinada/pública).
+    const m =
+      cover.match(/\/object\/sign\/library-assets\/([^?]+)/) ||
+      cover.match(/\/object\/public\/library-assets\/([^?]+)/);
+    const path = m?.[1] ? decodeURIComponent(m[1]) : null;
+
+    let libItem: import("@/lib/types").LibraryItem | null = null;
+    if (path) {
+      try {
+        const items = await fetchLibraryItems("image");
+        libItem = items.find((i) => i.file_url === path) ?? null;
+      } catch {
+        libItem = null;
+      }
+    }
+
+    if (libItem) {
+      const ok = await confirm({
+        title: "Excluir imagem da biblioteca?",
+        description:
+          "Esta imagem está salva na biblioteca. Deseja removê-la da capa do roteiro e excluí-la da biblioteca?",
+        confirmText: "Excluir",
+        variant: "danger",
+      });
+      if (!ok) return;
+    }
+
+    setSavingCover(true);
+    try {
+      await updateItinerary(itineraryId, { cover_image: null });
+      if (libItem) {
+        await deleteLibraryItem(libItem);
+        qc.invalidateQueries({ queryKey: ["library"] });
+      }
+      setImgPreview(null);
+      onChange();
+      toast.success(libItem ? "Imagem excluída da biblioteca e removida do roteiro." : "Imagem removida do roteiro.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir a imagem.");
+    } finally {
+      setSavingCover(false);
+    }
+  }
+
+
+
 
 
 
