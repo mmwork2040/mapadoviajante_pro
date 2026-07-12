@@ -2379,6 +2379,12 @@ function ActivityRow({
         hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
         suggestion_options: suggKind && cleanSugg.length ? cleanSugg : null,
         passenger_costs: cleanPax.length ? cleanPax : null,
+        images: eType === "activity" && eImages.length
+          ? eImages
+              .filter((im) => im.url)
+              .map((im) => ({ url: im.url, description: im.description?.trim() || null }))
+          : null,
+
       });
       setEditing(false);
       onChange();
