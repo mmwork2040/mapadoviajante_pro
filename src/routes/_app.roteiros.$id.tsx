@@ -2278,6 +2278,8 @@ function ActivityRow({
     setEHotels(activity.hotel_options || []);
     setESugg(activity.suggestion_options || []);
     setEPax(activity.passenger_costs || []);
+    setEImages(activity.images || []);
+
     setEditing(true);
   }
 
