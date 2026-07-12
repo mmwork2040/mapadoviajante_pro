@@ -2313,6 +2313,21 @@ function ActivityRow({
                 )}
               </span>
             )}
+            {(activity.passenger_costs?.length ?? 0) > 0 && (
+              <span className="mt-1.5 block space-y-1">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Valores por passageiro
+                </span>
+                {activity.passenger_costs!.map((p, i) => (
+                  <span key={i} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1">
+                    <span className="min-w-0 truncate text-foreground">{p.name}</span>
+                    {p.amount != null && (
+                      <span className="shrink-0 font-medium text-foreground">{formatMoney(p.amount, p.currency)}</span>
+                    )}
+                  </span>
+                ))}
+              </span>
+            )}
             {activity.type === "hotel" && (activity.hotel_options?.length ?? 0) > 0 && (
               <span className="mt-1.5 block space-y-1.5">
                 <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
