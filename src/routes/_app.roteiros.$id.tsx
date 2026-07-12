@@ -2031,6 +2031,48 @@ function ActivityRow({
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
 
+  // Busca de imagem do atrativo (somente para atividades) para enriquecer a
+  // biblioteca da agência e a capa do roteiro do lead.
+  const [findingImg, setFindingImg] = useState(false);
+  const [imgPreview, setImgPreview] = useState<string | null>(null);
+  const downloadImage = useServerFn(downloadDestinationImage);
+
+  async function handleFindImage() {
+    const title = eTitle.trim();
+    const city = eLocation.trim();
+    if (!title && !city) {
+      toast.error("Informe o título ou a cidade / local da atividade.");
+      return;
+    }
+    const term = [title, city].filter(Boolean).join(", ");
+    const tag = city || title;
+    setFindingImg(true);
+    try {
+      const res = await downloadImage({ data: { destination: term } });
+      if (!res?.imageUrl) {
+        toast.info("Nenhuma imagem encontrada para esta atividade.");
+        return;
+      }
+      const saved = await saveActivityImageToLibrary(res.imageUrl, tag, city || title);
+      const display = saved || res.imageUrl;
+      setImgPreview(display);
+      qc.invalidateQueries({ queryKey: ["library"] });
+      try {
+        await updateItinerary(itineraryId, { cover_image: display });
+        onChange();
+      } catch {
+        /* capa é opcional */
+      }
+      toast.success("Imagem encontrada e salva na biblioteca.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível buscar a imagem.");
+    } finally {
+      setFindingImg(false);
+    }
+  }
+
+
+
   async function handleSearchSuggestions() {
     if (!suggKind) return;
     const city = (eLocation || "").trim();
@@ -2319,6 +2361,36 @@ function ActivityRow({
             />
           </div>
         </label>
+
+        {/* Buscar imagem do atrativo (somente atividades) */}
+        {eType === "activity" && (
+          <div className="rounded-lg border border-border/60 bg-background/60 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground">Imagem do atrativo</p>
+              <button
+                type="button"
+                onClick={handleFindImage}
+                disabled={findingImg}
+                className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+              >
+                {findingImg ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+                Buscar imagem
+              </button>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              Encontra uma foto com base no título e na cidade/local, salva na biblioteca e usa como capa do roteiro.
+            </p>
+            {imgPreview && (
+              <img
+                src={imgPreview}
+                alt={eTitle || "Imagem do atrativo"}
+                className="mt-2 h-24 w-full rounded-lg object-cover"
+              />
+            )}
+          </div>
+        )}
+
+
 
         <label className="block text-[10px] font-medium text-muted-foreground">
           Observação (opcional)
