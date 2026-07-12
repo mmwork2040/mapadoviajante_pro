@@ -2212,7 +2212,7 @@ function ActivityRow({
         {/* Valores por passageiro (nome + valor individual) */}
         <div className="rounded-lg border border-border/60 bg-background/60 p-2">
           <div className="flex items-center justify-between">
-            <p className="text-[10px] font-medium text-muted-foreground">Valores por passageiro (opcional)</p>
+            <p className="text-[10px] font-medium text-muted-foreground">Valores por pessoa (opcional)</p>
             <button
               type="button"
               onClick={() => setEPax((p) => [...p, { name: "", currency: eCurrency || "BRL" }])}
@@ -2317,7 +2317,7 @@ function ActivityRow({
             {(activity.passenger_costs?.length ?? 0) > 0 && (
               <span className="mt-1.5 block space-y-1">
                 <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Valores por passageiro
+                  Valores por pessoa
                 </span>
                 {activity.passenger_costs!.map((p, i) => (
                   <span key={i} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1">
