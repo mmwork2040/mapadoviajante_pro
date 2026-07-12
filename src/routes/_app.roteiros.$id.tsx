@@ -2275,6 +2275,11 @@ function ActivityRow({
                       {h.daily_rate != null && (
                         <p className="text-[11px] font-medium text-foreground">
                           {formatMoney(h.daily_rate, h.currency)}
+                          {h.daily_rate_brl != null && (h.currency || "BRL").toUpperCase() !== "BRL" && (
+                            <span className="ml-1 font-normal text-muted-foreground">
+                              ≈ {formatCurrency(h.daily_rate_brl)}
+                            </span>
+                          )}
                         </p>
                       )}
                       {h.url && (
