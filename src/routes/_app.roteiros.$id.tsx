@@ -2043,6 +2043,7 @@ function ActivityRow({
     }
     if (eCurrency === "BRL") {
       setECostBrl(amount);
+      setECostBrlRate(1);
       return;
     }
     setConverting(true);
@@ -2050,6 +2051,7 @@ function ActivityRow({
       const res = await convertCurrency({ data: { amount, currency: eCurrency } });
       if (res.ok) {
         setECostBrl(res.brl);
+        setECostBrlRate(res.rate || null);
         toast.success(res.message || "Conversão realizada.");
       } else {
         toast.error(res.message || "Não foi possível obter a cotação.");
