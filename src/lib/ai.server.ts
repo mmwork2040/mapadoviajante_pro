@@ -574,7 +574,7 @@ Responda APENAS com um JSON válido, sem texto extra:
           currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
           stars,
           url: aiUrl,
-          links: bookingSearchLinks(name, city),
+          links: bookingSearchLinks(name, city, siteKeys),
         };
       });
 
