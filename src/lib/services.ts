@@ -1697,6 +1697,7 @@ type ActivityMeta = {
   cur?: string | null;
   brl?: number | null;
   hotels?: unknown;
+  pax?: unknown;
 };
 
 function decodeActivityMeta(a: ItineraryActivity): void {
