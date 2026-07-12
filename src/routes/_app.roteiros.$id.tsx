@@ -1963,6 +1963,7 @@ function ActivityRow({
   const [saving, setSaving] = useState(false);
   const [searchingHotels, setSearchingHotels] = useState(false);
   const [hotelModalOpen, setHotelModalOpen] = useState(false);
+  const [hfNeighborhood, setHfNeighborhood] = useState("");
   const [hfRoomType, setHfRoomType] = useState("");
   const [hfStars, setHfStars] = useState("");
   const [hfPriceMin, setHfPriceMin] = useState("");
@@ -1994,7 +1995,7 @@ function ActivityRow({
         currency: hfCurrency || "BRL",
         notes: hfNotes.trim() || null,
       };
-      const res = await searchHotels({ data: { city, filters, limit: hfLimit, sites: hfSites } });
+      const res = await searchHotels({ data: { city, neighborhood: hfNeighborhood.trim() || undefined, filters, limit: hfLimit, sites: hfSites } });
       if (res.ok && res.hotels.length) {
         setEHotels((prev) => [...prev, ...res.hotels]);
         toast.success(res.message);
