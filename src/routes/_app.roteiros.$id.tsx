@@ -2272,7 +2272,7 @@ function ActivityRow({
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-start gap-1 text-[11px] text-primary underline"
+                          className="inline-flex items-start gap-1 text-[11px] text-blue-600 underline dark:text-blue-400"
                         >
                           <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> {h.address}
                         </a>
@@ -2298,7 +2298,7 @@ function ActivityRow({
                           href={h.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block truncate text-[11px] text-primary underline"
+                          className="block truncate text-[11px] text-blue-600 underline dark:text-blue-400"
                         >
                           {h.url}
                         </a>
@@ -2336,7 +2336,7 @@ function ActivityRow({
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 text-primary hover:text-primary/80"
+                        className="shrink-0 text-blue-600 hover:text-blue-500 dark:text-blue-400"
                         title="Abrir no mapa"
                       >
                         <MapPin className="h-4 w-4" />
@@ -2722,7 +2722,7 @@ function ActivityRow({
                           href={h.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                          className="inline-flex items-center gap-0.5 text-blue-600 hover:underline dark:text-blue-400"
                           onClick={(e) => e.stopPropagation()}
                         >
                           Site <ExternalLink className="h-3 w-3" />
@@ -2736,7 +2736,7 @@ function ActivityRow({
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="block text-[11px] text-primary hover:underline"
+                        className="block text-[11px] text-blue-600 hover:underline dark:text-blue-400"
                         title="Abrir endereço no mapa"
                       >
                         📍 {h.address}
