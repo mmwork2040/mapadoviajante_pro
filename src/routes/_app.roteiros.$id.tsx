@@ -2203,7 +2203,10 @@ function ActivityRow({
           </div>
           {eCurrency !== "BRL" && eCostBrl != null && (
             <p className="mt-1 text-[11px] text-muted-foreground">
-              ≈ {formatCurrency(eCostBrl)} <span className="opacity-70">(cotação do dia, informativo)</span>
+              ≈ {formatCurrency(eCostBrl)}{" "}
+              <span className="opacity-70">
+                {eCostBrlRate ? `(1 ${eCurrency} ≈ ${formatCurrency(eCostBrlRate)}, informativo)` : "(cotação do dia, informativo)"}
+              </span>
             </p>
           )}
         </div>
