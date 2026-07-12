@@ -670,7 +670,7 @@ export async function searchSuggestions(
   cfg: ProviderConfig,
   kind: SuggestionKind,
   city: string,
-  opts?: { priceMin?: number | null; priceMax?: number | null; currency?: string | null; notes?: string | null; limit?: number; sites?: string[] },
+  opts?: { price_min?: number | null; price_max?: number | null; currency?: string | null; notes?: string | null; limit?: number; sites?: string[] },
 ): Promise<{ ok: boolean; items: HotelOption[]; message: string }> {
   const meta = SUGGESTION_META[kind];
   const max = Math.min(6, Math.max(1, Math.round(Number(opts?.limit) || 5)));
