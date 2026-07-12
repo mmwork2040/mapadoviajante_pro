@@ -618,6 +618,138 @@ Responda APENAS com um JSON válido, sem texto extra:
   return { ok: true, hotels, message: `${hotels.length} sugestão(ões) encontrada(s).` };
 }
 
+// ===== Sugestões genéricas (transfer, restaurante, passeio) =====
+
+export type SuggestionKind = "transfer" | "restaurant" | "activity";
+
+// Catálogo de sites por tipo de sugestão (usado no modal e nos links).
+export const SUGGESTION_SITES: Record<
+  SuggestionKind,
+  { key: string; label: string; url: (name: string, city: string) => string }[]
+> = {
+  transfer: [
+    { key: "kiwitaxi", label: "Kiwitaxi", url: (n, c) => `https://kiwitaxi.com.br/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    { key: "gettransfer", label: "GetTransfer", url: (n, c) => `https://gettransfer.com/en/search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    { key: "welcome", label: "Welcome Pickups", url: (n, c) => `https://www.welcomepickups.com/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    { key: "google", label: "Google", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`transfer ${n} ${c}`.trim())}` },
+  ],
+  restaurant: [
+    { key: "thefork", label: "TheFork", url: (n, c) => `https://www.thefork.com.br/search?cityName=${encodeURIComponent(c.trim())}&text=${encodeURIComponent(n.trim())}` },
+    { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    { key: "maps", label: "Google Maps", url: (n, c) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  ],
+  activity: [
+    { key: "getyourguide", label: "GetYourGuide", url: (n, c) => `https://www.getyourguide.com.br/s/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    { key: "civitatis", label: "Civitatis", url: (n, c) => `https://www.civitatis.com/br/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    { key: "viator", label: "Viator", url: (n, c) => `https://www.viator.com/searchResults/all?text=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  ],
+};
+
+const SUGGESTION_META: Record<
+  SuggestionKind,
+  { noun: string; detailLabel: string; priceLabel: string }
+> = {
+  transfer: { noun: "opções de transfer/traslado (privativo, compartilhado, táxi)", detailLabel: "tipo de veículo/serviço", priceLabel: "valor do trajeto" },
+  restaurant: { noun: "restaurantes", detailLabel: "tipo de cozinha", priceLabel: "preço médio por pessoa" },
+  activity: { noun: "passeios/tours/ingressos/atividades", detailLabel: "tipo/duração do passeio", priceLabel: "valor por pessoa" },
+};
+
+export function suggestionSearchLinks(
+  kind: SuggestionKind,
+  name: string,
+  city: string,
+  sites?: string[],
+): { label: string; url: string }[] {
+  const all = SUGGESTION_SITES[kind] || [];
+  const selected = sites && sites.length ? all.filter((s) => sites.includes(s.key)) : all.slice(0, 3);
+  return selected.map((s) => ({ label: s.label, url: s.url(name, city) }));
+}
+
+export async function searchSuggestions(
+  cfg: ProviderConfig,
+  kind: SuggestionKind,
+  city: string,
+  opts?: { priceMin?: number | null; priceMax?: number | null; currency?: string | null; notes?: string | null; limit?: number; sites?: string[] },
+): Promise<{ ok: boolean; items: HotelOption[]; message: string }> {
+  const meta = SUGGESTION_META[kind];
+  const max = Math.min(6, Math.max(1, Math.round(Number(opts?.limit) || 5)));
+  const all = SUGGESTION_SITES[kind] || [];
+  const selectedSites = opts?.sites && opts.sites.length ? all.filter((s) => opts.sites!.includes(s.key)) : all.slice(0, 3);
+  const siteKeys = selectedSites.map((s) => s.key);
+  const siteLabels = selectedSites.map((s) => s.label).join(", ") || "sites de viagem confiáveis";
+  const criteria: string[] = [];
+  if (opts?.price_min != null || opts?.price_max != null) {
+    const cur = opts?.currency?.trim() || "BRL";
+    if (opts?.price_min != null && opts?.price_max != null) criteria.push(`Faixa de valor entre ${opts.price_min} e ${opts.price_max} ${cur}.`);
+    else if (opts?.price_min != null) criteria.push(`Valor a partir de ${opts.price_min} ${cur}.`);
+    else criteria.push(`Valor até ${opts?.price_max} ${cur}.`);
+  }
+  if (opts?.notes?.trim()) criteria.push(`Preferências adicionais: ${opts.notes.trim()}.`);
+  const criteriaBlock = criteria.length ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n` : "";
+  const prompt = `Você é um consultor de viagens. Sugira até ${max} ${meta.noun} REAIS em: ${city}.${criteriaBlock}
+Pesquise SOMENTE nos seguintes sites indicados pelo usuário: ${siteLabels}. Liste APENAS opções que você realmente encontrar; se não encontrar nada relevante, retorne a lista vazia.
+Para cada opção informe nome, endereço, ${meta.detailLabel}, avaliação (nota de 1 a 5), ${meta.priceLabel} e um link válido.
+Não invente valores absurdos; use uma estimativa realista. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
+Responda APENAS com um JSON válido, sem texto extra:
+{
+  "items": [
+    {
+      "name": "nome",
+      "address": "endereço ou região",
+      "detail": "${meta.detailLabel}",
+      "rating": número de 1 a 5 ou null,
+      "price": número (${meta.priceLabel}, sem moeda) ou null,
+      "currency": "BRL|USD|EUR|...",
+      "url": "https://... ou vazio"
+    }
+  ]
+}`;
+
+  const bigCfg = { ...cfg, maxTokens: Math.max(cfg.maxTokens || 0, 4096) };
+  let raw: string;
+  try {
+    raw = await askCopilot(bigCfg, prompt);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return { ok: false, items: [], message: `Falha ao consultar a IA: ${detail}` };
+  }
+  const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+  const start = cleaned.indexOf("{");
+  const end = cleaned.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    return { ok: false, items: [], message: "A IA não retornou um JSON válido ou a resposta veio truncada." };
+  }
+  let parsed: { items?: unknown[] };
+  try {
+    parsed = JSON.parse(cleaned.slice(start, end + 1)) as { items?: unknown[] };
+  } catch {
+    return { ok: false, items: [], message: "Não foi possível interpretar o JSON da IA. Tente reduzir a quantidade de resultados." };
+  }
+  const list = Array.isArray(parsed.items) ? parsed.items : [];
+  const items: HotelOption[] = list
+    .map((h) => h as Record<string, unknown>)
+    .filter((h) => typeof h.name === "string" && (h.name as string).trim())
+    .slice(0, max)
+    .map((h) => {
+      const name = String(h.name).trim();
+      const ratingRaw = typeof h.rating === "number" ? Math.round(h.rating) : Number(h.rating);
+      const stars = Number.isFinite(ratingRaw) && ratingRaw >= 1 && ratingRaw <= 5 ? ratingRaw : null;
+      return {
+        name,
+        address: typeof h.address === "string" ? h.address.trim() || null : null,
+        room_type: typeof h.detail === "string" ? h.detail.trim() || null : null,
+        daily_rate: typeof h.price === "number" ? h.price : null,
+        currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
+        stars,
+        url: typeof h.url === "string" ? h.url.trim() || null : null,
+        links: suggestionSearchLinks(kind, name, city, siteKeys),
+      };
+    });
+  if (!items.length) return { ok: false, items: [], message: "Nenhuma sugestão encontrada nos sites selecionados." };
+  return { ok: true, items, message: `${items.length} sugestão(ões) encontrada(s).` };
+}
+
 
 
 
