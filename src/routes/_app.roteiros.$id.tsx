@@ -2566,10 +2566,19 @@ function ActivityRow({
                 <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Sugestões de hospedagem
                 </span>
-                {activity.hotel_options!.map((h, i) => (
+                {activity.hotel_options!.map((h, i) => {
+                  const links = h.links && h.links.length ? h.links : bookingLinks(h.name, activity.location);
+                  return (
                   <span key={i} className="block rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
                     <span className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-foreground">{h.name}</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-medium text-foreground">{h.name}</span>
+                        {h.stars != null && (
+                          <span className="text-[10px] text-amber-500" title={`${h.stars} estrela(s)`}>
+                            {"★".repeat(h.stars)}
+                          </span>
+                        )}
+                      </span>
                       {h.url && (
                         <a
                           href={h.url}
@@ -2589,8 +2598,24 @@ function ActivityRow({
                         {formatMoney(h.daily_rate, h.currency)} / diária
                       </span>
                     )}
+                    <span className="mt-1 flex flex-wrap gap-1">
+                      {links.map((l) => (
+                        <a
+                          key={l.label}
+                          href={l.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary hover:text-primary"
+                        >
+                          {l.label} <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      ))}
+                    </span>
                   </span>
-                ))}
+                  );
+                })}
+
               </span>
             )}
               </>
