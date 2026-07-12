@@ -1981,7 +1981,26 @@ function ActivityRow({
       };
       const res = await searchHotels({ data: { city, neighborhood: hfNeighborhood.trim() || undefined, filters, limit: hfLimit, sites: hfSites } });
       if (res.ok && res.hotels.length) {
-        setEHotels((prev) => [...prev, ...res.hotels.map((h) => ({ ...h, source: "ai" as const }))]);
+        // Converte a diária de cada hotel (moeda local) para BRL na cotação atual.
+        const withBrl = await Promise.all(
+          res.hotels.map(async (h) => {
+            const base: HotelOption = { ...h, source: "ai" as const };
+            const cur = (h.currency || "BRL").toUpperCase();
+            if (h.daily_rate != null && cur !== "BRL") {
+              try {
+                const conv = await convertCurrency({ data: { amount: h.daily_rate, currency: cur } });
+                if (conv.ok) {
+                  base.daily_rate_brl = conv.brl;
+                  base.daily_rate_brl_rate = conv.rate || null;
+                }
+              } catch {
+                /* mantém sem conversão se falhar */
+              }
+            }
+            return base;
+          }),
+        );
+        setEHotels((prev) => [...prev, ...withBrl]);
         toast.success(res.message);
         setHotelModalOpen(false);
       } else {
@@ -2063,6 +2082,8 @@ function ActivityRow({
           room_type: h.room_type?.trim() || null,
           daily_rate: h.daily_rate ?? null,
           currency: h.currency || "BRL",
+          daily_rate_brl: h.daily_rate_brl ?? null,
+          daily_rate_brl_rate: h.daily_rate_brl_rate ?? null,
           stars: h.stars ?? null,
           url: h.url?.trim() || null,
           source: h.source ?? "user",
@@ -2221,7 +2242,7 @@ function ActivityRow({
               </div>
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              A IA busca até 5 opções na cidade informada no campo acima (nome, endereço, tipo de quarto, valor e link).
+              A IA busca até 6 opções na cidade informada no campo acima (nome, endereço, tipo de quarto, valor e link).
             </p>
             {eHotels.length === 0 && (
               <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma sugestão adicionada.</p>
@@ -2256,6 +2277,11 @@ function ActivityRow({
                       {h.daily_rate != null && (
                         <p className="text-[11px] font-medium text-foreground">
                           {formatMoney(h.daily_rate, h.currency)}
+                          {h.daily_rate_brl != null && (h.currency || "BRL").toUpperCase() !== "BRL" && (
+                            <span className="ml-1 font-normal text-muted-foreground">
+                              ≈ {formatCurrency(h.daily_rate_brl)}
+                            </span>
+                          )}
                         </p>
                       )}
                       {h.url && (
@@ -2357,7 +2383,7 @@ function ActivityRow({
                 <h3 className="text-sm font-semibold">Assistente de hospedagem</h3>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                A IA busca até 5 opções em <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
+                A IA busca até 6 opções em <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
               </p>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Bairro (opcional)</label>

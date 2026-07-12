@@ -201,6 +201,10 @@ export interface HotelOption {
   room_type?: string | null;
   daily_rate?: number | null;
   currency?: string | null;
+  /** Valor da diária convertido em Real (informativo, calculado na busca da IA). */
+  daily_rate_brl?: number | null;
+  /** Cotação usada na conversão (quantos BRL vale 1 unidade da moeda). */
+  daily_rate_brl_rate?: number | null;
   /** Classificação em estrelas (1 a 5). */
   stars?: number | null;
   url?: string | null;
