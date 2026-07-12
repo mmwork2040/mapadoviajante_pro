@@ -1925,6 +1925,7 @@ function ActivityRow({
   const done = activity.type === "done";
 
   const [editing, setEditing] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [eTitle, setETitle] = useState(activity.title || "");
   const [eTime, setETime] = useState(activity.time || "");
   const [eLocation, setELocation] = useState(activity.location || "");
