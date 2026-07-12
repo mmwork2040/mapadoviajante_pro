@@ -2227,7 +2227,51 @@ function ActivityRow({
               <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma sugestão adicionada.</p>
             )}
             <div className="mt-2 space-y-2">
-              {eHotels.map((h, i) => (
+              {eHotels.map((h, i) => {
+                const isAi = h.source === "ai";
+                if (isAi) {
+                  return (
+                    <div key={i} className="space-y-1 rounded-lg border border-primary/30 bg-primary/5 p-2">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary">
+                          <Sparkles className="h-3 w-3" /> Sugestão da IA (não editável)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setEHotels((arr) => arr.filter((_, j) => j !== i))}
+                          className="text-muted-foreground hover:text-destructive"
+                          title="Remover sugestão"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-xs font-medium text-foreground">{h.name}</p>
+                      {h.address && <p className="text-[11px] text-muted-foreground">{h.address}</p>}
+                      {h.room_type && <p className="text-[11px] text-muted-foreground">{h.room_type}</p>}
+                      {h.stars != null && (
+                        <p className="text-[11px] text-amber-500" title={`${h.stars} estrela(s)`}>
+                          {"★".repeat(h.stars)}
+                        </p>
+                      )}
+                      {h.daily_rate != null && (
+                        <p className="text-[11px] font-medium text-foreground">
+                          {formatMoney(h.daily_rate, h.currency)}
+                        </p>
+                      )}
+                      {h.url && (
+                        <a
+                          href={h.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block truncate text-[11px] text-primary underline"
+                        >
+                          {h.url}
+                        </a>
+                      )}
+                    </div>
+                  );
+                }
+                return (
                 <div key={i} className="space-y-1.5 rounded-lg border border-border/60 bg-muted/40 p-2">
                   <div className="flex items-center gap-1.5">
                     <input
@@ -2291,7 +2335,8 @@ function ActivityRow({
                     className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
                   />
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
