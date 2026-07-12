@@ -507,11 +507,13 @@ export async function searchHotels(
   filters?: HotelSearchFilters,
   limit?: number,
   sites?: string[],
+  neighborhood?: string,
 ): Promise<{ ok: boolean; hotels: HotelOption[]; message: string }> {
   const max = Math.min(6, Math.max(1, Math.round(Number(limit) || 5)));
   const selectedSites = sites && sites.length ? HOTEL_SITES.filter((s) => sites.includes(s.key)) : HOTEL_SITES.slice(0, 3);
   const siteKeys = selectedSites.map((s) => s.key);
   const siteLabels = selectedSites.map((s) => s.label).join(", ");
+  const area = neighborhood?.trim() ? `${neighborhood.trim()}, ${city}` : city;
   const f = filters || {};
   const criteria: string[] = [];
   if (f.room_type?.trim()) criteria.push(`Tipo de quarto desejado: ${f.room_type.trim()}.`);
@@ -527,7 +529,7 @@ export async function searchHotels(
   const criteriaBlock = criteria.length
     ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n`
     : "";
-  const prompt = `Você é um consultor de viagens especializado em encontrar PROMOÇÕES de hospedagem. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
+  const prompt = `Você é um consultor de viagens especializado em encontrar PROMOÇÕES de hospedagem. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) em: ${area}.${neighborhood?.trim() ? `\nDê PRIORIDADE a opções localizadas no bairro "${neighborhood.trim()}" (ou o mais próximo possível dele).` : ""}${criteriaBlock}
 Pesquise SOMENTE nos seguintes sites indicados pelo usuário: ${siteLabels}. Liste APENAS opções que você realmente encontrar nesses sites; se não encontrar nada relevante, retorne a lista vazia.
 IMPORTANTE sobre o link (campo "url"): priorize o link de UMA PÁGINA DE PROMOÇÃO/OFERTA de um dos sites indicados (${siteLabels}), considerando a opção mais relevante encontrada. O link deve ser válido e funcional.
 Para cada opção informe nome, endereço, classificação em estrelas (1 a 5), tipo de quarto, valor aproximado da diária e o link de reserva/promoção.
@@ -550,42 +552,70 @@ Responda APENAS com um JSON válido, sem texto extra:
   // Até 6 hotéis com endereço/links geram um JSON longo; garanta espaço de saída
   // suficiente para não truncar a resposta (senão o parse falha).
   const bigCfg = { ...cfg, maxTokens: Math.max(cfg.maxTokens || 0, 4096) };
-  const raw = await askCopilot(bigCfg, prompt);
+  let raw: string;
+  try {
+    raw = await askCopilot(bigCfg, prompt);
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    return { ok: false, hotels: [], message: `Falha ao consultar a IA: ${detail}` };
+  }
   const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
-  if (start === -1 || end === -1) {
-    return { ok: false, hotels: [], message: "Não foi possível obter sugestões." };
+  if (start === -1) {
+    return {
+      ok: false,
+      hotels: [],
+      message: `A IA não retornou um JSON válido. Resposta recebida: "${cleaned.slice(0, 200) || "(vazia)"}"`,
+    };
   }
+  // Se abriu chave mas não fechou, a resposta foi cortada (limite de tokens).
+  if (end === -1 || end <= start) {
+    return {
+      ok: false,
+      hotels: [],
+      message: "A resposta da IA veio truncada (incompleta). Tente reduzir a quantidade de resultados ou os filtros.",
+    };
+  }
+  const jsonSlice = cleaned.slice(start, end + 1);
+  let parsed: { hotels?: unknown[] };
   try {
-    const parsed = JSON.parse(cleaned.slice(start, end + 1)) as { hotels?: unknown[] };
-    const list = Array.isArray(parsed.hotels) ? parsed.hotels : [];
-    const hotels: HotelOption[] = list
-      .map((h) => h as Record<string, unknown>)
-      .filter((h) => typeof h.name === "string" && (h.name as string).trim())
-      .slice(0, max)
-      .map((h) => {
-        const name = String(h.name).trim();
-        const starsRaw = typeof h.stars === "number" ? Math.round(h.stars) : Number(h.stars);
-        const stars = Number.isFinite(starsRaw) && starsRaw >= 1 && starsRaw <= 5 ? starsRaw : null;
-        const aiUrl = typeof h.url === "string" ? h.url.trim() || null : null;
-        return {
-          name,
-          address: typeof h.address === "string" ? h.address.trim() || null : null,
-          room_type: typeof h.room_type === "string" ? h.room_type.trim() || null : null,
-          daily_rate: typeof h.daily_rate === "number" ? h.daily_rate : null,
-          currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
-          stars,
-          url: aiUrl,
-          links: bookingSearchLinks(name, city, siteKeys),
-        };
-      });
-
-    if (!hotels.length) return { ok: false, hotels: [], message: "Nenhuma sugestão encontrada." };
-    return { ok: true, hotels, message: `${hotels.length} sugestão(ões) encontrada(s).` };
-  } catch {
-    return { ok: false, hotels: [], message: "Não foi possível obter sugestões." };
+    parsed = JSON.parse(jsonSlice) as { hotels?: unknown[] };
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    const truncated = !/[}\]]\s*$/.test(jsonSlice);
+    return {
+      ok: false,
+      hotels: [],
+      message: truncated
+        ? "A resposta da IA veio truncada (JSON incompleto). Tente reduzir a quantidade de resultados."
+        : `Não foi possível interpretar o JSON da IA: ${detail}`,
+    };
   }
+  const list = Array.isArray(parsed.hotels) ? parsed.hotels : [];
+  const hotels: HotelOption[] = list
+    .map((h) => h as Record<string, unknown>)
+    .filter((h) => typeof h.name === "string" && (h.name as string).trim())
+    .slice(0, max)
+    .map((h) => {
+      const name = String(h.name).trim();
+      const starsRaw = typeof h.stars === "number" ? Math.round(h.stars) : Number(h.stars);
+      const stars = Number.isFinite(starsRaw) && starsRaw >= 1 && starsRaw <= 5 ? starsRaw : null;
+      const aiUrl = typeof h.url === "string" ? h.url.trim() || null : null;
+      return {
+        name,
+        address: typeof h.address === "string" ? h.address.trim() || null : null,
+        room_type: typeof h.room_type === "string" ? h.room_type.trim() || null : null,
+        daily_rate: typeof h.daily_rate === "number" ? h.daily_rate : null,
+        currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
+        stars,
+        url: aiUrl,
+        links: bookingSearchLinks(name, area, siteKeys),
+      };
+    });
+
+  if (!hotels.length) return { ok: false, hotels: [], message: "Nenhuma sugestão encontrada nos sites selecionados." };
+  return { ok: true, hotels, message: `${hotels.length} sugestão(ões) encontrada(s).` };
 }
 
 

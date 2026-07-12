@@ -1963,6 +1963,7 @@ function ActivityRow({
   const [saving, setSaving] = useState(false);
   const [searchingHotels, setSearchingHotels] = useState(false);
   const [hotelModalOpen, setHotelModalOpen] = useState(false);
+  const [hfNeighborhood, setHfNeighborhood] = useState("");
   const [hfRoomType, setHfRoomType] = useState("");
   const [hfStars, setHfStars] = useState("");
   const [hfPriceMin, setHfPriceMin] = useState("");
@@ -1994,7 +1995,7 @@ function ActivityRow({
         currency: hfCurrency || "BRL",
         notes: hfNotes.trim() || null,
       };
-      const res = await searchHotels({ data: { city, filters, limit: hfLimit, sites: hfSites } });
+      const res = await searchHotels({ data: { city, neighborhood: hfNeighborhood.trim() || undefined, filters, limit: hfLimit, sites: hfSites } });
       if (res.ok && res.hotels.length) {
         setEHotels((prev) => [...prev, ...res.hotels]);
         toast.success(res.message);
@@ -2322,6 +2323,15 @@ function ActivityRow({
                 A IA busca até 5 opções em <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
               </p>
               <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Bairro (opcional)</label>
+                <input
+                  value={hfNeighborhood}
+                  onChange={(e) => setHfNeighborhood(e.target.value)}
+                  placeholder="Ex: Copacabana, Centro..."
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Tipo de quarto</label>
                 <input
                   value={hfRoomType}
@@ -2602,7 +2612,6 @@ function ActivityRow({
                   Sugestões de hospedagem
                 </span>
                 {activity.hotel_options!.map((h, i) => {
-                  const links = h.links && h.links.length ? h.links : bookingLinks(h.name, activity.location);
                   return (
                   <span key={i} className="block rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
                     <span className="flex items-center justify-between gap-2">
@@ -2627,26 +2636,23 @@ function ActivityRow({
                       )}
                     </span>
                     {h.room_type && <span className="block text-[11px] text-muted-foreground">{h.room_type}</span>}
-                    {h.address && <span className="block text-[11px] text-muted-foreground">📍 {h.address}</span>}
+                    {h.address && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="block text-[11px] text-primary hover:underline"
+                        title="Abrir endereço no mapa"
+                      >
+                        📍 {h.address}
+                      </a>
+                    )}
                     {h.daily_rate != null && (
                       <span className="block text-[11px] font-medium text-foreground">
                         {formatMoney(h.daily_rate, h.currency)} / diária
                       </span>
                     )}
-                    <span className="mt-1 flex flex-wrap gap-1">
-                      {links.map((l) => (
-                        <a
-                          key={l.label}
-                          href={l.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary hover:text-primary"
-                        >
-                          {l.label} <ExternalLink className="h-2.5 w-2.5" />
-                        </a>
-                      ))}
-                    </span>
                   </span>
                   );
                 })}
