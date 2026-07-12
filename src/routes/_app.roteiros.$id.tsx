@@ -2313,11 +2313,11 @@ function ActivityRow({
         {/* Modal: filtros do Assistente de hospedagem */}
         {hotelModalOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
             onClick={() => setHotelModalOpen(false)}
           >
             <div
-              className="w-full max-w-sm space-y-3 rounded-2xl border border-border bg-card p-4 shadow-xl"
+              className="w-full max-w-sm max-h-[calc(100vh-2rem)] space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-2">
