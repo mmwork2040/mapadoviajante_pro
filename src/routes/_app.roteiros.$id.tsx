@@ -2459,14 +2459,26 @@ function ActivityRow({
             </p>
             {imgPreview && (
               <div className="mt-2">
-                <img
-                  src={imgPreview}
-                  alt={eTitle || "Imagem do atrativo"}
-                  className="h-24 w-full rounded-lg object-cover"
-                />
+                <div className="relative">
+                  <img
+                    src={imgPreview}
+                    alt={eTitle || "Imagem do atrativo"}
+                    className="h-24 w-full rounded-lg object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleDeleteImage}
+                    disabled={savingCover}
+                    title="Excluir imagem"
+                    className="absolute right-1 top-1 inline-flex items-center justify-center rounded-full bg-black/60 p-1 text-white hover:bg-black/80 disabled:opacity-60"
+                  >
+                    {savingCover ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                  </button>
+                </div>
                 <p className="mt-0.5 text-[10px] text-muted-foreground">Capa atual do roteiro.</p>
               </div>
             )}
+
           </div>
         )}
 
