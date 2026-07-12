@@ -2746,8 +2746,10 @@ function ActivityRow({
                       <span className="block text-[11px] font-medium text-foreground">
                         {formatMoney(h.daily_rate, h.currency)} / diária
                         {(() => {
-                          const hBrl = brlWithRate(h.daily_rate, h.currency, activity.currency, activity.cost_brl_rate);
-                          return hBrl != null ? (
+                          const hBrl =
+                            h.daily_rate_brl ??
+                            brlWithRate(h.daily_rate, h.currency, activity.currency, activity.cost_brl_rate);
+                          return hBrl != null && (h.currency || "BRL").toUpperCase() !== "BRL" ? (
                             <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(hBrl)}</span>
                           ) : null;
                         })()}
