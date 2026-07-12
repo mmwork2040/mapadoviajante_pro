@@ -503,8 +503,9 @@ export async function searchHotels(
   const criteriaBlock = criteria.length
     ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n`
     : "";
-  const prompt = `Você é um consultor de viagens. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
-Para cada opção informe nome, endereço, tipo de quarto, valor aproximado da diária e link do site oficial (ou de reserva) quando conhecer.
+  const prompt = `Você é um consultor de viagens especializado em encontrar PROMOÇÕES de hospedagem. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
+IMPORTANTE sobre o link (campo "url"): pesquise ANTES em sites de reservas/promoções confiáveis (Booking.com, Trivago, Airbnb, Hotels.com, Expedia, Decolar) e priorize o link de UMA PÁGINA DE PROMOÇÃO/OFERTA desses sites em vez do site oficial do hotel. Só use o site oficial se não houver oferta em sites de reservas. O link deve ser válido e funcional.
+Para cada opção informe nome, endereço, classificação em estrelas (1 a 5), tipo de quarto, valor aproximado da diária e o link de reserva/promoção.
 Não invente valores absurdos; use uma estimativa realista da diária. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
 Responda APENAS com um JSON válido, sem texto extra:
 {
@@ -512,13 +513,15 @@ Responda APENAS com um JSON válido, sem texto extra:
     {
       "name": "nome do hotel/pousada",
       "address": "endereço ou bairro",
+      "stars": número de 1 a 5 ou null,
       "room_type": "tipo de quarto (ex: Duplo standard)",
       "daily_rate": número (valor da diária, sem moeda) ou null,
       "currency": "BRL|USD|EUR|...",
-      "url": "https://... ou vazio"
+      "url": "https://... (link de reserva/promoção) ou vazio"
     }
   ]
 }`;
+
   const raw = await askCopilot(cfg, prompt);
   const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");
