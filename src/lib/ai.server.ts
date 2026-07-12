@@ -547,7 +547,10 @@ Responda APENAS com um JSON válido, sem texto extra:
   ]
 }`;
 
-  const raw = await askCopilot(cfg, prompt);
+  // Até 6 hotéis com endereço/links geram um JSON longo; garanta espaço de saída
+  // suficiente para não truncar a resposta (senão o parse falha).
+  const bigCfg = { ...cfg, maxTokens: Math.max(cfg.maxTokens || 0, 4096) };
+  const raw = await askCopilot(bigCfg, prompt);
   const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
