@@ -2307,9 +2307,21 @@ function ActivityRow({
           </button>
           {TypeIcon && <TypeIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" />}
           <span className={`min-w-0 break-words ${done ? "text-muted-foreground line-through" : ""}`}>
-            {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
-            {activity.title}
-            {activity.location && <span className="ml-2 text-[11px] text-muted-foreground">· {activity.location}</span>}
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="flex w-full items-start gap-1 text-left"
+              title={expanded ? "Recolher detalhes" : "Expandir detalhes"}
+            >
+              <span className="min-w-0 flex-1">
+                {activity.time && <strong className="mr-2 text-primary">{activity.time}</strong>}
+                {activity.title}
+                {activity.location && <span className="ml-2 text-[11px] text-muted-foreground">· {activity.location}</span>}
+              </span>
+              <ChevronDown className={`mt-0.5 h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`} />
+            </button>
+            {expanded && (
+              <>
             {activity.description && (
               <span className="mt-0.5 block whitespace-pre-wrap text-[11px] text-muted-foreground">{activity.description}</span>
             )}
