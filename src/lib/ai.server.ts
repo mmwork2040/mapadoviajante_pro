@@ -1,6 +1,6 @@
 // Server-only helpers that talk to external LLM providers.
 // Supported providers: "openai", "anthropic", "google".
-import type { ExtractedDocData } from "@/lib/types";
+import type { ExtractedDocData, HotelOption } from "@/lib/types";
 
 type ProviderConfig = {
   provider: string;
