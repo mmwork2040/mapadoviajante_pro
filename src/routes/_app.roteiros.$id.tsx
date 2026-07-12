@@ -2298,7 +2298,7 @@ function ActivityRow({
                           href={h.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="block truncate text-[11px] text-primary underline"
+                          className="block truncate text-[11px] text-blue-600 underline dark:text-blue-400"
                         >
                           {h.url}
                         </a>
