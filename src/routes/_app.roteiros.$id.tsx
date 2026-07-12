@@ -2017,6 +2017,7 @@ function ActivityRow({
   const [sfSites, setSfSites] = useState<string[]>([]);
   const [sfOrigin, setSfOrigin] = useState("");
   const [sfDest, setSfDest] = useState("");
+  const [sfStars, setSfStars] = useState("");
   const searchSuggestions = useServerFn(searchSuggestionsFn);
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
@@ -2043,6 +2044,7 @@ function ActivityRow({
           city,
           origin: suggKind === "transfer" ? origin : null,
           destination: suggKind === "transfer" ? dest : null,
+          min_stars: suggKind === "restaurant" && sfStars ? Number(sfStars) : null,
           price_min: sfPriceMin ? parseCurrency(maskAmount(sfPriceMin)) : null,
           price_max: sfPriceMax ? parseCurrency(maskAmount(sfPriceMax)) : null,
           currency: sfCurrency || "BRL",
