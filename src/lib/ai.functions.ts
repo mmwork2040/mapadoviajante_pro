@@ -247,6 +247,7 @@ export const searchHotelsFn = createServerFn({ method: "POST" })
       },
       data.city,
       data.filters,
+      data.limit,
     );
   });
 
