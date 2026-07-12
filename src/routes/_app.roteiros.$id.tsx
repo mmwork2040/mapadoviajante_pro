@@ -2031,6 +2031,48 @@ function ActivityRow({
   const suggKind: SuggestionKind | null =
     eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
 
+  // Busca de imagem do atrativo (somente para atividades) para enriquecer a
+  // biblioteca da agência e a capa do roteiro do lead.
+  const [findingImg, setFindingImg] = useState(false);
+  const [imgPreview, setImgPreview] = useState<string | null>(null);
+  const downloadImage = useServerFn(downloadDestinationImage);
+
+  async function handleFindImage() {
+    const title = eTitle.trim();
+    const city = eLocation.trim();
+    if (!title && !city) {
+      toast.error("Informe o título ou a cidade / local da atividade.");
+      return;
+    }
+    const term = [title, city].filter(Boolean).join(", ");
+    const tag = city || title;
+    setFindingImg(true);
+    try {
+      const res = await downloadImage({ data: { destination: term } });
+      if (!res?.imageUrl) {
+        toast.info("Nenhuma imagem encontrada para esta atividade.");
+        return;
+      }
+      const saved = await saveActivityImageToLibrary(res.imageUrl, tag, city || title);
+      const display = saved || res.imageUrl;
+      setImgPreview(display);
+      qc.invalidateQueries({ queryKey: ["library"] });
+      try {
+        await updateItinerary(itineraryId, { cover_image: display });
+        onChange();
+      } catch {
+        /* capa é opcional */
+      }
+      toast.success("Imagem encontrada e salva na biblioteca.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível buscar a imagem.");
+    } finally {
+      setFindingImg(false);
+    }
+  }
+
+
+
   async function handleSearchSuggestions() {
     if (!suggKind) return;
     const city = (eLocation || "").trim();
