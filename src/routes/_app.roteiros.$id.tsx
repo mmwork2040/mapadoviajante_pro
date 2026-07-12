@@ -2094,7 +2094,7 @@ function ActivityRow({
             </select>
             <input
               value={eCost}
-              onChange={(e) => setECost(maskAmount(e.target.value))}
+              onChange={(e) => { setECost(maskAmount(e.target.value)); setECostBrl(null); }}
               placeholder="0,00"
               inputMode="numeric"
               className="w-28 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
