@@ -1917,7 +1917,13 @@ function ActivityRow({
   const [eLocation, setELocation] = useState(activity.location || "");
   const [eDescription, setEDescription] = useState(activity.description || "");
   const [eType, setEType] = useState<string>(activity.type || "activity");
+  const [eCost, setECost] = useState(activity.cost != null ? maskCurrency(String(Math.round((activity.cost || 0) * 100))) : "");
+  const [eCurrency, setECurrency] = useState<string>(activity.currency || "BRL");
+  const [eCostBrl, setECostBrl] = useState<number | null>(activity.cost_brl ?? null);
+  const [eHotels, setEHotels] = useState<HotelOption[]>(activity.hotel_options || []);
+  const [converting, setConverting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const convertCurrency = useServerFn(convertCurrencyFn);
 
   function startEdit() {
     setETitle(activity.title || "");
@@ -1925,6 +1931,10 @@ function ActivityRow({
     setELocation(activity.location || "");
     setEDescription(activity.description || "");
     setEType(done ? "activity" : activity.type || "activity");
+    setECost(activity.cost != null ? maskCurrency(String(Math.round((activity.cost || 0) * 100))) : "");
+    setECurrency(activity.currency || "BRL");
+    setECostBrl(activity.cost_brl ?? null);
+    setEHotels(activity.hotel_options || []);
     setEditing(true);
   }
 
@@ -1936,6 +1946,38 @@ function ActivityRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoEdit]);
 
+  // Reseta a conversão sempre que o valor ou a moeda mudam (fica desatualizada).
+  useEffect(() => {
+    setECostBrl(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eCost, eCurrency]);
+
+  async function handleConvert() {
+    const amount = parseCurrency(eCost);
+    if (!amount) {
+      toast.error("Informe um valor para converter.");
+      return;
+    }
+    if (eCurrency === "BRL") {
+      setECostBrl(amount);
+      return;
+    }
+    setConverting(true);
+    try {
+      const res = await convertCurrency({ data: { amount, currency: eCurrency } });
+      if (res.ok) {
+        setECostBrl(res.brl);
+        toast.success(res.message || "Conversão realizada.");
+      } else {
+        toast.error(res.message || "Não foi possível obter a cotação.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao converter.");
+    } finally {
+      setConverting(false);
+    }
+  }
+
   async function saveEdit() {
     if (!eTitle.trim()) {
       toast.error("Informe um título.");
@@ -1943,12 +1985,27 @@ function ActivityRow({
     }
     setSaving(true);
     try {
+      const amount = parseCurrency(eCost);
+      const cleanHotels = eHotels
+        .filter((h) => (h.name || "").trim())
+        .map((h) => ({
+          name: h.name.trim(),
+          address: h.address?.trim() || null,
+          room_type: h.room_type?.trim() || null,
+          daily_rate: h.daily_rate ?? null,
+          currency: h.currency || "BRL",
+          url: h.url?.trim() || null,
+        }));
       await updateItineraryActivity(activity.id, {
         title: eTitle.trim(),
         time: eTime || null,
         location: eLocation || null,
         description: eDescription.trim() || null,
         type: eType,
+        cost: amount || null,
+        currency: amount ? eCurrency : null,
+        cost_brl: amount ? eCostBrl : null,
+        hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
       });
       setEditing(false);
       onChange();
