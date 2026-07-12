@@ -281,6 +281,8 @@ export const searchSuggestionsFn = createServerFn({ method: "POST" })
     return {
       kind: d.kind,
       city: d.city.trim(),
+      origin: typeof d.origin === "string" ? d.origin.trim() || null : null,
+      destination: typeof d.destination === "string" ? d.destination.trim() || null : null,
       price_min: d.price_min ?? null,
       price_max: d.price_max ?? null,
       currency: d.currency ?? null,
