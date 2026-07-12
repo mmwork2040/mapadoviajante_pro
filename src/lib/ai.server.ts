@@ -506,8 +506,12 @@ export async function searchHotels(
   city: string,
   filters?: HotelSearchFilters,
   limit?: number,
+  sites?: string[],
 ): Promise<{ ok: boolean; hotels: HotelOption[]; message: string }> {
   const max = Math.min(6, Math.max(1, Math.round(Number(limit) || 5)));
+  const selectedSites = sites && sites.length ? HOTEL_SITES.filter((s) => sites.includes(s.key)) : HOTEL_SITES.slice(0, 3);
+  const siteKeys = selectedSites.map((s) => s.key);
+  const siteLabels = selectedSites.map((s) => s.label).join(", ");
   const f = filters || {};
   const criteria: string[] = [];
   if (f.room_type?.trim()) criteria.push(`Tipo de quarto desejado: ${f.room_type.trim()}.`);
@@ -524,7 +528,8 @@ export async function searchHotels(
     ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n`
     : "";
   const prompt = `Você é um consultor de viagens especializado em encontrar PROMOÇÕES de hospedagem. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
-IMPORTANTE sobre o link (campo "url"): pesquise ANTES em sites de reservas/promoções confiáveis (Booking.com, Trivago, Airbnb, Hotels.com, Expedia, Decolar) e priorize o link de UMA PÁGINA DE PROMOÇÃO/OFERTA desses sites em vez do site oficial do hotel. Só use o site oficial se não houver oferta em sites de reservas. O link deve ser válido e funcional.
+Pesquise SOMENTE nos seguintes sites indicados pelo usuário: ${siteLabels}. Liste APENAS opções que você realmente encontrar nesses sites; se não encontrar nada relevante, retorne a lista vazia.
+IMPORTANTE sobre o link (campo "url"): priorize o link de UMA PÁGINA DE PROMOÇÃO/OFERTA de um dos sites indicados (${siteLabels}), considerando a opção mais relevante encontrada. O link deve ser válido e funcional.
 Para cada opção informe nome, endereço, classificação em estrelas (1 a 5), tipo de quarto, valor aproximado da diária e o link de reserva/promoção.
 Não invente valores absurdos; use uma estimativa realista da diária. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
 Responda APENAS com um JSON válido, sem texto extra:
