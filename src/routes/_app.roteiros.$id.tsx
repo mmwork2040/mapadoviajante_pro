@@ -2336,7 +2336,7 @@ function ActivityRow({
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="shrink-0 text-primary hover:text-primary/80"
+                        className="shrink-0 text-blue-600 hover:text-blue-500 dark:text-blue-400"
                         title="Abrir no mapa"
                       >
                         <MapPin className="h-4 w-4" />
