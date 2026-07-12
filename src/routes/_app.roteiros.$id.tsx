@@ -141,6 +141,18 @@ const CURRENCIES: { code: string; label: string }[] = [
   { code: "MXN", label: "$ Peso mexicano (MXN)" },
 ];
 
+// Links de busca em sites de reservas/promoções confiáveis (sempre resolvem).
+function bookingLinks(name: string, city?: string | null): { label: string; url: string }[] {
+  const c = (city || "").trim();
+  const q = encodeURIComponent(`${name} ${c}`.trim());
+  const cityQ = encodeURIComponent(c);
+  return [
+    { label: "Booking", url: `https://www.booking.com/searchresults.pt-br.html?ss=${q}` },
+    { label: "Trivago", url: `https://www.trivago.com.br/pt-BR/srl?query=${q}` },
+    { label: "Airbnb", url: `https://www.airbnb.com.br/s/${cityQ}/homes?query=${encodeURIComponent(name.trim())}` },
+  ];
+}
+
 function currencySymbol(code: string | null | undefined): string {
   const map: Record<string, string> = {
     BRL: "R$", USD: "US$", EUR: "€", GBP: "£", ARS: "$", CLP: "$",
@@ -2047,7 +2059,9 @@ function ActivityRow({
           room_type: h.room_type?.trim() || null,
           daily_rate: h.daily_rate ?? null,
           currency: h.currency || "BRL",
+          stars: h.stars ?? null,
           url: h.url?.trim() || null,
+          links: h.links && h.links.length ? h.links : bookingLinks(h.name, eLocation),
         }));
       const cleanPax = ePax
         .filter((p) => (p.name || "").trim())
@@ -2234,8 +2248,23 @@ function ActivityRow({
                     placeholder="Tipo de quarto"
                     className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
                   />
+                  <select
+                    value={h.stars != null ? String(h.stars) : ""}
+                    onChange={(e) =>
+                      setEHotels((arr) =>
+                        arr.map((x, j) => (j === i ? { ...x, stars: e.target.value ? Number(e.target.value) : null } : x)),
+                      )
+                    }
+                    className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                  >
+                    <option value="">Estrelas (opcional)</option>
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <option key={s} value={s}>{s} estrela{s > 1 ? "s" : ""}</option>
+                    ))}
+                  </select>
                   <div className="flex items-center gap-1.5">
                     <select
+
                       value={h.currency || "BRL"}
                       onChange={(e) => setEHotels((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
                       className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
@@ -2537,10 +2566,19 @@ function ActivityRow({
                 <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Sugestões de hospedagem
                 </span>
-                {activity.hotel_options!.map((h, i) => (
+                {activity.hotel_options!.map((h, i) => {
+                  const links = h.links && h.links.length ? h.links : bookingLinks(h.name, activity.location);
+                  return (
                   <span key={i} className="block rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
                     <span className="flex items-center justify-between gap-2">
-                      <span className="font-medium text-foreground">{h.name}</span>
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-medium text-foreground">{h.name}</span>
+                        {h.stars != null && (
+                          <span className="text-[10px] text-amber-500" title={`${h.stars} estrela(s)`}>
+                            {"★".repeat(h.stars)}
+                          </span>
+                        )}
+                      </span>
                       {h.url && (
                         <a
                           href={h.url}
@@ -2560,8 +2598,24 @@ function ActivityRow({
                         {formatMoney(h.daily_rate, h.currency)} / diária
                       </span>
                     )}
+                    <span className="mt-1 flex flex-wrap gap-1">
+                      {links.map((l) => (
+                        <a
+                          key={l.label}
+                          href={l.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-0.5 rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground hover:border-primary hover:text-primary"
+                        >
+                          {l.label} <ExternalLink className="h-2.5 w-2.5" />
+                        </a>
+                      ))}
+                    </span>
                   </span>
-                ))}
+                  );
+                })}
+
               </span>
             )}
               </>

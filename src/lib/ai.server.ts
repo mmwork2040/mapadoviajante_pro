@@ -472,6 +472,18 @@ Responda APENAS com um JSON válido, sem texto extra:
 }
 
 // Pesquisa até 5 sugestões de hospedagem reais na cidade informada.
+// Gera links de busca em sites de reservas/promoções confiáveis. Estas URLs de
+// busca sempre resolvem, servindo como alternativas caso o link da IA falhe.
+export function bookingSearchLinks(name: string, city: string): { label: string; url: string }[] {
+  const q = encodeURIComponent(`${name} ${city}`.trim());
+  const cityQ = encodeURIComponent(city.trim());
+  return [
+    { label: "Booking", url: `https://www.booking.com/searchresults.pt-br.html?ss=${q}` },
+    { label: "Trivago", url: `https://www.trivago.com.br/pt-BR/srl?query=${q}` },
+    { label: "Airbnb", url: `https://www.airbnb.com.br/s/${cityQ}/homes?query=${encodeURIComponent(name.trim())}` },
+  ];
+}
+
 export interface HotelSearchFilters {
   room_type?: string | null;
   stars?: number | null;
@@ -503,8 +515,9 @@ export async function searchHotels(
   const criteriaBlock = criteria.length
     ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n`
     : "";
-  const prompt = `Você é um consultor de viagens. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
-Para cada opção informe nome, endereço, tipo de quarto, valor aproximado da diária e link do site oficial (ou de reserva) quando conhecer.
+  const prompt = `Você é um consultor de viagens especializado em encontrar PROMOÇÕES de hospedagem. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
+IMPORTANTE sobre o link (campo "url"): pesquise ANTES em sites de reservas/promoções confiáveis (Booking.com, Trivago, Airbnb, Hotels.com, Expedia, Decolar) e priorize o link de UMA PÁGINA DE PROMOÇÃO/OFERTA desses sites em vez do site oficial do hotel. Só use o site oficial se não houver oferta em sites de reservas. O link deve ser válido e funcional.
+Para cada opção informe nome, endereço, classificação em estrelas (1 a 5), tipo de quarto, valor aproximado da diária e o link de reserva/promoção.
 Não invente valores absurdos; use uma estimativa realista da diária. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
 Responda APENAS com um JSON válido, sem texto extra:
 {
@@ -512,13 +525,15 @@ Responda APENAS com um JSON válido, sem texto extra:
     {
       "name": "nome do hotel/pousada",
       "address": "endereço ou bairro",
+      "stars": número de 1 a 5 ou null,
       "room_type": "tipo de quarto (ex: Duplo standard)",
       "daily_rate": número (valor da diária, sem moeda) ou null,
       "currency": "BRL|USD|EUR|...",
-      "url": "https://... ou vazio"
+      "url": "https://... (link de reserva/promoção) ou vazio"
     }
   ]
 }`;
+
   const raw = await askCopilot(cfg, prompt);
   const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
   const start = cleaned.indexOf("{");
@@ -533,14 +548,23 @@ Responda APENAS com um JSON válido, sem texto extra:
       .map((h) => h as Record<string, unknown>)
       .filter((h) => typeof h.name === "string" && (h.name as string).trim())
       .slice(0, max)
-      .map((h) => ({
-        name: String(h.name).trim(),
-        address: typeof h.address === "string" ? h.address.trim() || null : null,
-        room_type: typeof h.room_type === "string" ? h.room_type.trim() || null : null,
-        daily_rate: typeof h.daily_rate === "number" ? h.daily_rate : null,
-        currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
-        url: typeof h.url === "string" ? h.url.trim() || null : null,
-      }));
+      .map((h) => {
+        const name = String(h.name).trim();
+        const starsRaw = typeof h.stars === "number" ? Math.round(h.stars) : Number(h.stars);
+        const stars = Number.isFinite(starsRaw) && starsRaw >= 1 && starsRaw <= 5 ? starsRaw : null;
+        const aiUrl = typeof h.url === "string" ? h.url.trim() || null : null;
+        return {
+          name,
+          address: typeof h.address === "string" ? h.address.trim() || null : null,
+          room_type: typeof h.room_type === "string" ? h.room_type.trim() || null : null,
+          daily_rate: typeof h.daily_rate === "number" ? h.daily_rate : null,
+          currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
+          stars,
+          url: aiUrl,
+          links: bookingSearchLinks(name, city),
+        };
+      });
+
     if (!hotels.length) return { ok: false, hotels: [], message: "Nenhuma sugestão encontrada." };
     return { ok: true, hotels, message: `${hotels.length} sugestão(ões) encontrada(s).` };
   } catch {

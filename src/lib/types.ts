@@ -199,8 +199,13 @@ export interface HotelOption {
   room_type?: string | null;
   daily_rate?: number | null;
   currency?: string | null;
+  /** Classificação em estrelas (1 a 5). */
+  stars?: number | null;
   url?: string | null;
+  /** Links de reserva/promoções (Booking, Trivago, Airbnb...). */
+  links?: { label: string; url: string }[] | null;
 }
+
 
 export interface AiConfig {
   id?: string;
