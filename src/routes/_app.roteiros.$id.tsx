@@ -2020,6 +2020,7 @@ function ActivityRow({
     setECost(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
     setECurrency(activity.currency || "BRL");
     setECostBrl(activity.cost_brl ?? null);
+    setECostBrlRate(activity.cost_brl_rate ?? null);
     setEHotels(activity.hotel_options || []);
     setEPax(activity.passenger_costs || []);
     setEditing(true);
