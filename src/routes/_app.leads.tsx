@@ -1,4 +1,5 @@
 import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
+import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useMemo } from "react";
@@ -979,6 +980,7 @@ export function NewLeadModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <ScrollLock />
       <div className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-card shadow-xl">
         <div className="bg-[var(--accent)] px-6 pb-5 pt-6">
           <div className="flex items-start justify-between">

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ScrollLock } from "@/components/ScrollLock";
 import { Download, Loader2, X, FileText } from "lucide-react";
 import {
   type LeadDocument,
@@ -68,6 +69,7 @@ export function DocumentPreviewModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
       onClick={onClose}
     >
+        <ScrollLock />
       <div
         className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
@@ -692,6 +693,7 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <ScrollLock />
       <div className="w-full max-w-md rounded-2xl bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">

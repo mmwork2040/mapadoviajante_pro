@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
+import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -1828,6 +1829,7 @@ function DayCard({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           onClick={() => setShowDupModal(false)}
         >
+            <ScrollLock />
           <div
             className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
@@ -2316,6 +2318,7 @@ function ActivityRow({
             className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
             onClick={() => setHotelModalOpen(false)}
           >
+              <ScrollLock />
             <div
               className="w-full max-w-sm max-h-[calc(100vh-2rem)] space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-xl"
               onClick={(e) => e.stopPropagation()}
@@ -3038,6 +3041,7 @@ function AttachSourceModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <ScrollLock />
       <div
         className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -3898,6 +3902,7 @@ function DriveImportModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <ScrollLock />
       <div
         className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -3983,6 +3988,7 @@ function SheetPreviewModal({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <ScrollLock />
       <div
         className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -4053,6 +4059,7 @@ function SheetPickModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <ScrollLock />
       <div
         className="flex max-h-[80vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -4133,6 +4140,7 @@ function DrivePreviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onCancel}>
+      <ScrollLock />
       <div
         className="flex max-h-[80vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}

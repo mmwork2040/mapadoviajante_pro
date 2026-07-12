@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
@@ -406,6 +407,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <ScrollLock />
       <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-card shadow-xl">
         <div className="flex items-start justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
           <div className="flex items-center gap-3">
