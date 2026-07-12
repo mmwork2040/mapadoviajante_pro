@@ -471,17 +471,25 @@ Responda APENAS com um JSON válido, sem texto extra:
   }
 }
 
-// Pesquisa até 5 sugestões de hospedagem reais na cidade informada.
-// Gera links de busca em sites de reservas/promoções confiáveis. Estas URLs de
-// busca sempre resolvem, servindo como alternativas caso o link da IA falhe.
-export function bookingSearchLinks(name: string, city: string): { label: string; url: string }[] {
-  const q = encodeURIComponent(`${name} ${city}`.trim());
-  const cityQ = encodeURIComponent(city.trim());
-  return [
-    { label: "Booking", url: `https://www.booking.com/searchresults.pt-br.html?ss=${q}` },
-    { label: "Trivago", url: `https://www.trivago.com.br/pt-BR/srl?query=${q}` },
-    { label: "Airbnb", url: `https://www.airbnb.com.br/s/${cityQ}/homes?query=${encodeURIComponent(name.trim())}` },
-  ];
+// Catálogo dos 10 sites de busca de hotéis mais usados. Cada um gera uma URL
+// de busca que sempre resolve, servindo de alternativa caso o link da IA falhe.
+export const HOTEL_SITES: { key: string; label: string; url: (name: string, city: string) => string }[] = [
+  { key: "booking", label: "Booking", url: (n, c) => `https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "trivago", label: "Trivago", url: (n, c) => `https://www.trivago.com.br/pt-BR/srl?query=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "airbnb", label: "Airbnb", url: (n, c) => `https://www.airbnb.com.br/s/${encodeURIComponent(c.trim())}/homes?query=${encodeURIComponent(n.trim())}` },
+  { key: "hotels", label: "Hotels.com", url: (n, c) => `https://www.hotels.com/Hotel-Search?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "expedia", label: "Expedia", url: (n, c) => `https://www.expedia.com.br/Hotel-Search?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "decolar", label: "Decolar", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`${n} ${c} site:decolar.com`.trim())}` },
+  { key: "agoda", label: "Agoda", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`${n} ${c} site:agoda.com`.trim())}` },
+  { key: "hostelworld", label: "Hostelworld", url: (n, c) => `https://www.hostelworld.com/search?search_keywords=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "kayak", label: "Kayak", url: (n, c) => `https://www.kayak.com.br/hotels?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+];
+
+// Gera links de busca apenas para os sites selecionados (todos, por padrão).
+export function bookingSearchLinks(name: string, city: string, sites?: string[]): { label: string; url: string }[] {
+  const selected = sites && sites.length ? HOTEL_SITES.filter((s) => sites.includes(s.key)) : HOTEL_SITES.slice(0, 3);
+  return selected.map((s) => ({ label: s.label, url: s.url(name, city) }));
 }
 
 export interface HotelSearchFilters {
@@ -498,8 +506,12 @@ export async function searchHotels(
   city: string,
   filters?: HotelSearchFilters,
   limit?: number,
+  sites?: string[],
 ): Promise<{ ok: boolean; hotels: HotelOption[]; message: string }> {
   const max = Math.min(6, Math.max(1, Math.round(Number(limit) || 5)));
+  const selectedSites = sites && sites.length ? HOTEL_SITES.filter((s) => sites.includes(s.key)) : HOTEL_SITES.slice(0, 3);
+  const siteKeys = selectedSites.map((s) => s.key);
+  const siteLabels = selectedSites.map((s) => s.label).join(", ");
   const f = filters || {};
   const criteria: string[] = [];
   if (f.room_type?.trim()) criteria.push(`Tipo de quarto desejado: ${f.room_type.trim()}.`);
@@ -516,7 +528,8 @@ export async function searchHotels(
     ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n`
     : "";
   const prompt = `Você é um consultor de viagens especializado em encontrar PROMOÇÕES de hospedagem. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
-IMPORTANTE sobre o link (campo "url"): pesquise ANTES em sites de reservas/promoções confiáveis (Booking.com, Trivago, Airbnb, Hotels.com, Expedia, Decolar) e priorize o link de UMA PÁGINA DE PROMOÇÃO/OFERTA desses sites em vez do site oficial do hotel. Só use o site oficial se não houver oferta em sites de reservas. O link deve ser válido e funcional.
+Pesquise SOMENTE nos seguintes sites indicados pelo usuário: ${siteLabels}. Liste APENAS opções que você realmente encontrar nesses sites; se não encontrar nada relevante, retorne a lista vazia.
+IMPORTANTE sobre o link (campo "url"): priorize o link de UMA PÁGINA DE PROMOÇÃO/OFERTA de um dos sites indicados (${siteLabels}), considerando a opção mais relevante encontrada. O link deve ser válido e funcional.
 Para cada opção informe nome, endereço, classificação em estrelas (1 a 5), tipo de quarto, valor aproximado da diária e o link de reserva/promoção.
 Não invente valores absurdos; use uma estimativa realista da diária. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
 Responda APENAS com um JSON válido, sem texto extra:
@@ -561,7 +574,7 @@ Responda APENAS com um JSON válido, sem texto extra:
           currency: typeof h.currency === "string" && h.currency.trim() ? h.currency.trim().toUpperCase() : "BRL",
           stars,
           url: aiUrl,
-          links: bookingSearchLinks(name, city),
+          links: bookingSearchLinks(name, city, siteKeys),
         };
       });
 

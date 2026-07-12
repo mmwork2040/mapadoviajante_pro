@@ -141,16 +141,25 @@ const CURRENCIES: { code: string; label: string }[] = [
   { code: "MXN", label: "$ Peso mexicano (MXN)" },
 ];
 
-// Links de busca em sites de reservas/promoções confiáveis (sempre resolvem).
-function bookingLinks(name: string, city?: string | null): { label: string; url: string }[] {
+// Catálogo dos 10 sites de busca de hotéis mais usados (usado no modal e nos links).
+const HOTEL_SITES: { key: string; label: string; url: (name: string, city: string) => string }[] = [
+  { key: "booking", label: "Booking", url: (n, c) => `https://www.booking.com/searchresults.pt-br.html?ss=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "trivago", label: "Trivago", url: (n, c) => `https://www.trivago.com.br/pt-BR/srl?query=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "airbnb", label: "Airbnb", url: (n, c) => `https://www.airbnb.com.br/s/${encodeURIComponent(c.trim())}/homes?query=${encodeURIComponent(n.trim())}` },
+  { key: "hotels", label: "Hotels.com", url: (n, c) => `https://www.hotels.com/Hotel-Search?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "expedia", label: "Expedia", url: (n, c) => `https://www.expedia.com.br/Hotel-Search?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "decolar", label: "Decolar", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`${n} ${c} site:decolar.com`.trim())}` },
+  { key: "agoda", label: "Agoda", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`${n} ${c} site:agoda.com`.trim())}` },
+  { key: "hostelworld", label: "Hostelworld", url: (n, c) => `https://www.hostelworld.com/search?search_keywords=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "kayak", label: "Kayak", url: (n, c) => `https://www.kayak.com.br/hotels?destination=${encodeURIComponent(`${n} ${c}`.trim())}` },
+  { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+];
+
+// Links de busca em sites de reservas/promoções (sempre resolvem).
+function bookingLinks(name: string, city?: string | null, sites?: string[]): { label: string; url: string }[] {
   const c = (city || "").trim();
-  const q = encodeURIComponent(`${name} ${c}`.trim());
-  const cityQ = encodeURIComponent(c);
-  return [
-    { label: "Booking", url: `https://www.booking.com/searchresults.pt-br.html?ss=${q}` },
-    { label: "Trivago", url: `https://www.trivago.com.br/pt-BR/srl?query=${q}` },
-    { label: "Airbnb", url: `https://www.airbnb.com.br/s/${cityQ}/homes?query=${encodeURIComponent(name.trim())}` },
-  ];
+  const selected = sites && sites.length ? HOTEL_SITES.filter((s) => sites.includes(s.key)) : HOTEL_SITES.slice(0, 3);
+  return selected.map((s) => ({ label: s.label, url: s.url(name, c) }));
 }
 
 function currencySymbol(code: string | null | undefined): string {
@@ -1959,6 +1968,7 @@ function ActivityRow({
   const [hfCurrency, setHfCurrency] = useState("BRL");
   const [hfNotes, setHfNotes] = useState("");
   const [hfLimit, setHfLimit] = useState(5);
+  const [hfSites, setHfSites] = useState<string[]>(["booking", "trivago", "airbnb"]);
   const convertCurrency = useServerFn(convertCurrencyFn);
   const searchHotels = useServerFn(searchHotelsFn);
 
@@ -1966,6 +1976,10 @@ function ActivityRow({
     const city = (eLocation || "").trim();
     if (!city) {
       toast.error("Informe a cidade / local antes de pesquisar.");
+      return;
+    }
+    if (!hfSites.length) {
+      toast.error("Selecione ao menos um site para pesquisar.");
       return;
     }
     setSearchingHotels(true);
@@ -1978,7 +1992,7 @@ function ActivityRow({
         currency: hfCurrency || "BRL",
         notes: hfNotes.trim() || null,
       };
-      const res = await searchHotels({ data: { city, filters, limit: hfLimit } });
+      const res = await searchHotels({ data: { city, filters, limit: hfLimit, sites: hfSites } });
       if (res.ok && res.hotels.length) {
         setEHotels((prev) => [...prev, ...res.hotels]);
         toast.success(res.message);
@@ -2388,6 +2402,33 @@ function ActivityRow({
                   rows={2}
                   className="mt-1 w-full resize-none rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                 />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Sites para pesquisar</label>
+                <div className="mt-1 grid grid-cols-2 gap-1.5">
+                  {HOTEL_SITES.map((s) => {
+                    const active = hfSites.includes(s.key);
+                    return (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() =>
+                          setHfSites((prev) =>
+                            prev.includes(s.key) ? prev.filter((k) => k !== s.key) : [...prev, s.key],
+                          )
+                        }
+                        className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
+                          active
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-input bg-background text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground">A IA lista apenas o que encontrar nos sites selecionados.</p>
               </div>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Quantidade de resultados</label>
