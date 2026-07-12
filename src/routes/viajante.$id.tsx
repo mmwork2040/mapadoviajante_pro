@@ -2,7 +2,7 @@ import { createFileRoute, useParams } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { MapPin, Calendar, Users, Plane, BedDouble, Car, Utensils, Clock } from "lucide-react";
 import { fetchPublicItinerary } from "@/lib/services";
-import { formatDate, formatCurrency } from "@/lib/ui";
+import { formatDate, formatCurrency, formatMoney } from "@/lib/ui";
 import type { ItineraryActivity } from "@/lib/types";
 
 export const Route = createFileRoute("/viajante/$id")({
