@@ -224,7 +224,8 @@ export const searchHotelsFn = createServerFn({ method: "POST" })
   .inputValidator((d: SearchHotelsInput) => {
     if (!d?.city?.trim()) throw new Error("Informe a cidade para pesquisar hospedagens.");
     const limit = Math.min(6, Math.max(1, Math.round(Number(d.limit) || 5)));
-    return { city: d.city.trim(), filters: d.filters ?? undefined, limit };
+    const sites = Array.isArray(d.sites) ? d.sites.filter((s) => typeof s === "string" && s.trim()).map((s) => s.trim()) : undefined;
+    return { city: d.city.trim(), filters: d.filters ?? undefined, limit, sites };
   })
   .handler(async ({ data, context }) => {
     const { data: cfg, error } = await context.supabase
