@@ -35,8 +35,11 @@ import {
   deleteItineraryDay,
   duplicateItineraryDay,
   deleteVoucher,
+  deleteLibraryItem,
+  fetchLibraryItems,
   fetchItineraryById,
   fetchAiConfig,
+
   reorderDayActivitiesByTime,
   resolveDisplayImageUrl,
   saveActivityImageToLibrary,
@@ -2094,6 +2097,56 @@ function ActivityRow({
     }
   }
 
+  async function handleDeleteImage() {
+    const cover = imgPreview;
+    if (!cover) return;
+    // Extrai o caminho do arquivo na biblioteca a partir da URL (assinada/pública).
+    const m =
+      cover.match(/\/object\/sign\/library-assets\/([^?]+)/) ||
+      cover.match(/\/object\/public\/library-assets\/([^?]+)/);
+    const path = m?.[1] ? decodeURIComponent(m[1]) : null;
+
+    let libItem: import("@/lib/types").LibraryItem | null = null;
+    if (path) {
+      try {
+        const items = await fetchLibraryItems("image");
+        libItem = items.find((i) => i.file_url === path) ?? null;
+      } catch {
+        libItem = null;
+      }
+    }
+
+    if (libItem) {
+      const ok = await confirm({
+        title: "Excluir imagem da biblioteca?",
+        description:
+          "Esta imagem está salva na biblioteca. Deseja removê-la da capa do roteiro e excluí-la da biblioteca?",
+        confirmLabel: "Excluir",
+        destructive: true,
+      });
+
+      if (!ok) return;
+    }
+
+    setSavingCover(true);
+    try {
+      await updateItinerary(itineraryId, { cover_image: null });
+      if (libItem) {
+        await deleteLibraryItem(libItem);
+        qc.invalidateQueries({ queryKey: ["library"] });
+      }
+      setImgPreview(null);
+      onChange();
+      toast.success(libItem ? "Imagem excluída da biblioteca e removida do roteiro." : "Imagem removida do roteiro.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível excluir a imagem.");
+    } finally {
+      setSavingCover(false);
+    }
+  }
+
+
+
 
 
 
@@ -2406,14 +2459,26 @@ function ActivityRow({
             </p>
             {imgPreview && (
               <div className="mt-2">
-                <img
-                  src={imgPreview}
-                  alt={eTitle || "Imagem do atrativo"}
-                  className="h-24 w-full rounded-lg object-cover"
-                />
+                <div className="relative">
+                  <img
+                    src={imgPreview}
+                    alt={eTitle || "Imagem do atrativo"}
+                    className="h-24 w-full rounded-lg object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleDeleteImage}
+                    disabled={savingCover}
+                    title="Excluir imagem"
+                    className="absolute right-1 top-1 inline-flex items-center justify-center rounded-full bg-black/60 p-1 text-white hover:bg-black/80 disabled:opacity-60"
+                  >
+                    {savingCover ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+                  </button>
+                </div>
                 <p className="mt-0.5 text-[10px] text-muted-foreground">Capa atual do roteiro.</p>
               </div>
             )}
+
           </div>
         )}
 
