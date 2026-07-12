@@ -2823,17 +2823,16 @@ function ActivityRow({
                 <label className="text-[11px] font-medium text-muted-foreground">Sites para pesquisar</label>
                 <div className="mt-1 grid grid-cols-2 gap-1.5">
                   {SUGGESTION_CONFIG[suggKind].sites.map((s) => {
-                    const active = sfSites.length ? sfSites.includes(s.key) : true;
-                    return (
-                      <button
-                        key={s.key}
-                        type="button"
-                        onClick={() =>
-                          setSfSites((prev) => {
-                            const base = prev.length ? prev : SUGGESTION_CONFIG[suggKind].sites.map((x) => x.key);
-                            return base.includes(s.key) ? base.filter((k) => k !== s.key) : [...base, s.key];
-                          })
-                        }
+                     const active = sfSites.includes(s.key);
+                     return (
+                       <button
+                         key={s.key}
+                         type="button"
+                         onClick={() =>
+                           setSfSites((prev) =>
+                             prev.includes(s.key) ? prev.filter((k) => k !== s.key) : [...prev, s.key],
+                           )
+                         }
                         className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
                           active
                             ? "border-primary bg-primary/10 text-primary"
