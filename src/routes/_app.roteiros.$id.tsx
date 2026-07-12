@@ -1938,7 +1938,31 @@ function ActivityRow({
   const [ePax, setEPax] = useState<PassengerCost[]>(activity.passenger_costs || []);
   const [converting, setConverting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [searchingHotels, setSearchingHotels] = useState(false);
   const convertCurrency = useServerFn(convertCurrencyFn);
+  const searchHotels = useServerFn(searchHotelsFn);
+
+  async function handleSearchHotels() {
+    const city = (eLocation || "").trim();
+    if (!city) {
+      toast.error("Informe a cidade / local antes de pesquisar.");
+      return;
+    }
+    setSearchingHotels(true);
+    try {
+      const res = await searchHotels({ data: { city } });
+      if (res.ok && res.hotels.length) {
+        setEHotels((prev) => [...prev, ...res.hotels]);
+        toast.success(res.message);
+      } else {
+        toast.error(res.message || "Nenhuma sugestão encontrada.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao pesquisar hospedagens.");
+    } finally {
+      setSearchingHotels(false);
+    }
+  }
 
   function startEdit() {
     setETitle(activity.title || "");
