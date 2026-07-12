@@ -2267,7 +2267,16 @@ function ActivityRow({
                         </button>
                       </div>
                       <p className="text-xs font-medium text-foreground">{h.name}</p>
-                      {h.address && <p className="text-[11px] text-muted-foreground">{h.address}</p>}
+                      {h.address && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-start gap-1 text-[11px] text-primary underline"
+                        >
+                          <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> {h.address}
+                        </a>
+                      )}
                       {h.room_type && <p className="text-[11px] text-muted-foreground">{h.room_type}</p>}
                       {h.stars != null && (
                         <p className="text-[11px] text-amber-500" title={`${h.stars} estrela(s)`}>
