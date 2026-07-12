@@ -503,7 +503,7 @@ export async function searchHotels(
   const criteriaBlock = criteria.length
     ? `\nLeve em conta os seguintes critérios do cliente:\n- ${criteria.join("\n- ")}\n`
     : "";
-  const prompt = `Você é um consultor de viagens. Sugira até 5 opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
+  const prompt = `Você é um consultor de viagens. Sugira até ${max} opções REAIS de hospedagem (hotéis/pousadas) na cidade: ${city}.${criteriaBlock}
 Para cada opção informe nome, endereço, tipo de quarto, valor aproximado da diária e link do site oficial (ou de reserva) quando conhecer.
 Não invente valores absurdos; use uma estimativa realista da diária. Use a moeda local mais comum do destino (ex.: BRL, USD, EUR).
 Responda APENAS com um JSON válido, sem texto extra:
