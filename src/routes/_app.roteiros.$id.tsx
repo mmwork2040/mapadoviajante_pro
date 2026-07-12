@@ -2724,12 +2724,13 @@ function ActivityRow({
                       Origem (bairro/local exato) <span className="text-red-500">*</span>
                     </label>
                     <div className="mt-1 flex items-center gap-1.5">
-                      <input
+                      <PlaceAutocomplete
                         value={sfOrigin}
-                        onChange={(e) => setSfOrigin(e.target.value)}
+                        onChange={setSfOrigin}
+                        bias={eLocation || undefined}
                         placeholder="Ex: Aeroporto de Guarulhos"
-                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
                       />
+
                       {sfOrigin.trim() ? (
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${sfOrigin} ${eLocation || ""}`.trim())}`}
