@@ -1939,6 +1939,13 @@ function ActivityRow({
   const [converting, setConverting] = useState(false);
   const [saving, setSaving] = useState(false);
   const [searchingHotels, setSearchingHotels] = useState(false);
+  const [hotelModalOpen, setHotelModalOpen] = useState(false);
+  const [hfRoomType, setHfRoomType] = useState("");
+  const [hfStars, setHfStars] = useState("");
+  const [hfPriceMin, setHfPriceMin] = useState("");
+  const [hfPriceMax, setHfPriceMax] = useState("");
+  const [hfCurrency, setHfCurrency] = useState("BRL");
+  const [hfNotes, setHfNotes] = useState("");
   const convertCurrency = useServerFn(convertCurrencyFn);
   const searchHotels = useServerFn(searchHotelsFn);
 
@@ -1950,10 +1957,19 @@ function ActivityRow({
     }
     setSearchingHotels(true);
     try {
-      const res = await searchHotels({ data: { city } });
+      const filters = {
+        room_type: hfRoomType.trim() || null,
+        stars: hfStars ? Number(hfStars) : null,
+        price_min: hfPriceMin ? parseCurrency(maskAmount(hfPriceMin)) : null,
+        price_max: hfPriceMax ? parseCurrency(maskAmount(hfPriceMax)) : null,
+        currency: hfCurrency || "BRL",
+        notes: hfNotes.trim() || null,
+      };
+      const res = await searchHotels({ data: { city, filters } });
       if (res.ok && res.hotels.length) {
         setEHotels((prev) => [...prev, ...res.hotels]);
         toast.success(res.message);
+        setHotelModalOpen(false);
       } else {
         toast.error(res.message || "Nenhuma sugestão encontrada.");
       }
