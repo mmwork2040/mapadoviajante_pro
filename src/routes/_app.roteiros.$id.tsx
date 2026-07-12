@@ -2715,7 +2715,9 @@ function ActivityRow({
                     Trajeto em <span className="text-foreground">{eLocation || "cidade não informada"}</span>
                   </p>
                   <div>
-                    <label className="text-[11px] font-medium text-muted-foreground">Origem (bairro/local exato)</label>
+                    <label className="text-[11px] font-medium text-muted-foreground">
+                      Origem (bairro/local exato) <span className="text-red-500">*</span>
+                    </label>
                     <div className="mt-1 flex items-center gap-1.5">
                       <input
                         value={sfOrigin}
