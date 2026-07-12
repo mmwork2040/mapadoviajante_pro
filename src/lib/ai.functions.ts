@@ -208,14 +208,22 @@ export const convertCurrencyFn = createServerFn({ method: "POST" })
     );
   });
 
-type SearchHotelsInput = { city: string };
+type HotelSearchFilters = {
+  room_type?: string | null;
+  stars?: number | null;
+  price_min?: number | null;
+  price_max?: number | null;
+  currency?: string | null;
+  notes?: string | null;
+};
+type SearchHotelsInput = { city: string; filters?: HotelSearchFilters };
 
 // Pesquisa sugestões de hospedagem na cidade informada usando a IA.
 export const searchHotelsFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: SearchHotelsInput) => {
     if (!d?.city?.trim()) throw new Error("Informe a cidade para pesquisar hospedagens.");
-    return { city: d.city.trim() };
+    return { city: d.city.trim(), filters: d.filters ?? undefined };
   })
   .handler(async ({ data, context }) => {
     const { data: cfg, error } = await context.supabase
@@ -237,6 +245,7 @@ export const searchHotelsFn = createServerFn({ method: "POST" })
         maxTokens: cfg.max_tokens,
       },
       data.city,
+      data.filters,
     );
   });
 
