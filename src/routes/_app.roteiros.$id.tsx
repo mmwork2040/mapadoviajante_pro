@@ -123,6 +123,7 @@ const ACTIVITY_TYPES: {
 ];
 
 const PLACE_TYPE_HINT: Record<string, string> = {
+  flight: "aeroporto",
   hotel: "hotel",
   restaurant: "restaurante",
   transfer: "aeroporto",
