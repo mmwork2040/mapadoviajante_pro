@@ -1710,6 +1710,7 @@ function decodeActivityMeta(a: ItineraryActivity): void {
       a.duration = m.dur ?? null;
       a.currency = m.cur ?? null;
       a.cost_brl = typeof m.brl === "number" ? m.brl : null;
+      a.cost_brl_rate = typeof m.rate === "number" ? m.rate : null;
       a.hotel_options = Array.isArray(m.hotels)
         ? (m.hotels as ItineraryActivity["hotel_options"])
         : null;
