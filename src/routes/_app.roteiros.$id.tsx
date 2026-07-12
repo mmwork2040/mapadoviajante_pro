@@ -2047,7 +2047,9 @@ function ActivityRow({
           room_type: h.room_type?.trim() || null,
           daily_rate: h.daily_rate ?? null,
           currency: h.currency || "BRL",
+          stars: h.stars ?? null,
           url: h.url?.trim() || null,
+          links: h.links && h.links.length ? h.links : bookingLinks(h.name, eLocation),
         }));
       const cleanPax = ePax
         .filter((p) => (p.name || "").trim())
