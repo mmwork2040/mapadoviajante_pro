@@ -2065,6 +2065,7 @@ function ActivityRow({
           currency: h.currency || "BRL",
           stars: h.stars ?? null,
           url: h.url?.trim() || null,
+          source: h.source ?? "user",
           links: h.links && h.links.length ? h.links : bookingLinks(h.name, eLocation),
         }));
       const cleanPax = ePax
