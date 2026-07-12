@@ -35,8 +35,11 @@ import {
   deleteItineraryDay,
   duplicateItineraryDay,
   deleteVoucher,
+  deleteLibraryItem,
+  fetchLibraryItems,
   fetchItineraryById,
   fetchAiConfig,
+
   reorderDayActivitiesByTime,
   resolveDisplayImageUrl,
   saveActivityImageToLibrary,
