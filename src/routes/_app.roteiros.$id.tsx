@@ -2315,7 +2315,7 @@ function ActivityRow({
               value={eLocation}
               onChange={setELocation}
               placeholder="Cidade / local…"
-              bias={PLACE_TYPE_HINT[eType] || undefined}
+              categories={PLACE_TYPE_HINTS[eType] || undefined}
             />
           </div>
         </label>
