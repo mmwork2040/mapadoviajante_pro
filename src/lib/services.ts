@@ -1698,6 +1698,7 @@ type ActivityMeta = {
   brl?: number | null;
   rate?: number | null;
   hotels?: unknown;
+  sug?: unknown;
   pax?: unknown;
 };
 
