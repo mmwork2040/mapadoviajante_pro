@@ -1981,7 +1981,7 @@ function ActivityRow({
       };
       const res = await searchHotels({ data: { city, neighborhood: hfNeighborhood.trim() || undefined, filters, limit: hfLimit, sites: hfSites } });
       if (res.ok && res.hotels.length) {
-        setEHotels((prev) => [...prev, ...res.hotels]);
+        setEHotels((prev) => [...prev, ...res.hotels.map((h) => ({ ...h, source: "ai" as const }))]);
         toast.success(res.message);
         setHotelModalOpen(false);
       } else {
