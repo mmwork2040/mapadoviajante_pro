@@ -158,6 +158,16 @@ function formatMoney(value: number | null | undefined, code: string | null | und
   }
 }
 
+// Máscara de valor sem símbolo de moeda (milhares + 2 casas): "123456" -> "1.234,56"
+function maskAmount(value: string | number | null | undefined): string {
+  const digits = String(value ?? "").replace(/\D/g, "");
+  if (!digits) return "";
+  return new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+    Number(digits) / 100,
+  );
+}
+
+
 function getNextDayNumber(days?: ItineraryDay[]) {
   return Math.max(0, ...(days || []).map((day) => day.day_number || 0)) + 1;
 }
