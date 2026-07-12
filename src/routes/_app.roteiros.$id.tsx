@@ -2483,7 +2483,7 @@ function ActivityRow({
             </button>
           </div>
           {ePax.length === 0 && (
-            <p className="mt-1 text-[11px] text-muted-foreground">Cada passageiro pode ter um valor diferente.</p>
+            <p className="mt-1 text-[11px] text-muted-foreground">Cada pessoa pode ter um valor diferente.</p>
           )}
           <div className="mt-2 space-y-1.5">
             {ePax.map((p, i) => (
