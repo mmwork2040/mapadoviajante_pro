@@ -208,6 +208,39 @@ export const convertCurrencyFn = createServerFn({ method: "POST" })
     );
   });
 
+type SearchHotelsInput = { city: string };
+
+// Pesquisa sugestões de hospedagem na cidade informada usando a IA.
+export const searchHotelsFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: SearchHotelsInput) => {
+    if (!d?.city?.trim()) throw new Error("Informe a cidade para pesquisar hospedagens.");
+    return { city: d.city.trim() };
+  })
+  .handler(async ({ data, context }) => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+    const { searchHotels } = await import("./ai.server");
+    return searchHotels(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: cfg.max_tokens,
+      },
+      data.city,
+    );
+  });
+
+
 
 type AnalyzeImageInput = {
   fileBase64: string;
