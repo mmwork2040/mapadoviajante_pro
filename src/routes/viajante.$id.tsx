@@ -171,7 +171,16 @@ function HighlightCard({ activity: a }: { activity: ItineraryActivity }) {
         )}
         {a.location && <p className="text-xs text-muted-foreground">📍 {a.location}</p>}
         {a.description && <p className="mt-1 text-sm text-muted-foreground">{a.description}</p>}
-        {a.cost ? <p className="mt-1 text-sm font-medium">{formatCurrency(a.cost)}</p> : null}
+        {a.cost ? (
+          <p className="mt-1 text-sm font-medium">
+            {formatMoney(a.cost, a.currency)}
+            {a.currency && a.currency !== "BRL" && a.cost_brl != null && (
+              <span className="ml-1 font-normal text-muted-foreground">
+                ≈ {formatCurrency(a.cost_brl)}
+              </span>
+            )}
+          </p>
+        ) : null}
       </div>
     </div>
   );
