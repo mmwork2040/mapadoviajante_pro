@@ -2082,6 +2082,8 @@ function ActivityRow({
           room_type: h.room_type?.trim() || null,
           daily_rate: h.daily_rate ?? null,
           currency: h.currency || "BRL",
+          daily_rate_brl: h.daily_rate_brl ?? null,
+          daily_rate_brl_rate: h.daily_rate_brl_rate ?? null,
           stars: h.stars ?? null,
           url: h.url?.trim() || null,
           source: h.source ?? "user",
