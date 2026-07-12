@@ -158,8 +158,54 @@ export async function fetchItineraryDocuments(itineraryId: string): Promise<Lead
 
 
 
+/** MIME marker used to store an external link instead of an uploaded file. */
+export const LINK_MIME = "text/uri-list";
+
+export function isLinkDoc(doc: { mime_type?: string | null }): boolean {
+  return doc.mime_type === LINK_MIME;
+}
+
+export function getLinkUrl(doc: LeadDocument): string | null {
+  return isLinkDoc(doc) ? doc.file_path : null;
+}
+
+/** Save an external link (URL) as a document attached to a lead/itinerary/activity. */
+export async function addLinkDocument(params: {
+  url: string;
+  name: string;
+  agencyId: string;
+  leadId?: string | null;
+  itineraryId?: string | null;
+  activityId?: string | null;
+  category?: string | null;
+}): Promise<LeadDocument | null> {
+  const { url, name, agencyId, leadId, itineraryId, activityId, category } = params;
+  const id = crypto.randomUUID();
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .insert({
+      id,
+      agency_id: agencyId,
+      lead_id: leadId ?? null,
+      itinerary_id: itineraryId ?? null,
+      activity_id: activityId ?? null,
+      name: name || url,
+      category: category ?? null,
+      file_path: url,
+      mime_type: LINK_MIME,
+      size: null,
+    })
+    .select("*")
+    .single();
+  if (error) {
+    console.error("insert link doc", error);
+    throw new Error("Não foi possível salvar o link.");
+  }
+  return data as unknown as LeadDocument;
+}
+
 export async function deleteLeadDocument(doc: LeadDocument): Promise<boolean> {
-  await supabase.storage.from(BUCKET).remove([doc.file_path]);
+  if (!isLinkDoc(doc)) await supabase.storage.from(BUCKET).remove([doc.file_path]);
   const { error } = await db().from("crm_lead_documents").delete().eq("id", doc.id);
   return !error;
 }

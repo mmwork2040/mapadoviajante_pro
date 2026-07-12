@@ -66,6 +66,8 @@ import {
   attachLibraryDocumentToActivity,
   downloadDocument,
   uploadLeadDocument,
+  addLinkDocument,
+  isLinkDoc,
   type LeadDocument,
   type AgencyDocument,
 } from "@/lib/lead-documents";
@@ -2434,6 +2436,9 @@ function ActivityDocuments({
   const [open_, setOpen_] = useState(false);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [preview, setPreview] = useState<LeadDocument | null>(null);
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkName, setLinkName] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
   const analyzeImage = useServerFn(analyzeImageActivityFn);
   const { data: docs = [] } = useQuery({
     queryKey: ["activity-docs", activityId],
@@ -2525,6 +2530,34 @@ function ActivityDocuments({
     }
   }
 
+  async function handleAddLink() {
+    let url = linkUrl.trim();
+    if (!url) return;
+    if (!/^https?:\/\//i.test(url)) url = `https://${url}`;
+    setUploading(true);
+    try {
+      await addLinkDocument({
+        url,
+        name: linkName.trim() || url,
+        agencyId,
+        leadId,
+        itineraryId,
+        activityId,
+        category,
+      });
+      toast.success("Link anexado.");
+      setLinkOpen(false);
+      setLinkName("");
+      setLinkUrl("");
+      qc.invalidateQueries({ queryKey: ["activity-docs", activityId] });
+      if (leadId) qc.invalidateQueries({ queryKey: ["lead-docs", leadId] });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao anexar link.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function download(doc: LeadDocument) {
     const ok = await downloadDocument(doc);
     if (!ok) toast.error("Não foi possível baixar o documento.");
@@ -2565,10 +2598,20 @@ function ActivityDocuments({
       </button>
       {open_ && (
         <div className="mt-1 space-y-1">
-          {docs.map((doc) => (
+          {docs.map((doc) => {
+            const link = isLinkDoc(doc);
+            return (
             <div key={doc.id} className="flex w-full min-w-0 items-center gap-2 rounded-md bg-muted/30 px-2 py-1 text-[11px]">
-              <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
-              <button onClick={() => setPreview(doc)} className="flex min-w-0 flex-1 items-center gap-1 text-left" title={`Pré-visualizar ${doc.name}`}>
+              {link ? (
+                <ExternalLink className="h-3.5 w-3.5 shrink-0 text-primary" />
+              ) : (
+                <FileText className="h-3.5 w-3.5 shrink-0 text-primary" />
+              )}
+              <button
+                onClick={() => (link ? window.open(doc.file_path, "_blank", "noopener,noreferrer") : setPreview(doc))}
+                className="flex min-w-0 flex-1 items-center gap-1 text-left"
+                title={link ? `Abrir ${doc.name}` : `Pré-visualizar ${doc.name}`}
+              >
                 <span className="line-clamp-2 break-words text-[10px] leading-tight">{doc.name}</span>
               </button>
               <DropdownMenu>
@@ -2578,20 +2621,61 @@ function ActivityDocuments({
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setPreview(doc)}>
-                    <Eye className="mr-2 h-4 w-4" /> Visualizar
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => download(doc)}>
-                    <Download className="mr-2 h-4 w-4" /> Baixar
-                  </DropdownMenuItem>
+                  {link ? (
+                    <DropdownMenuItem onClick={() => window.open(doc.file_path, "_blank", "noopener,noreferrer")}>
+                      <ExternalLink className="mr-2 h-4 w-4" /> Abrir link
+                    </DropdownMenuItem>
+                  ) : (
+                    <>
+                      <DropdownMenuItem onClick={() => setPreview(doc)}>
+                        <Eye className="mr-2 h-4 w-4" /> Visualizar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => download(doc)}>
+                        <Download className="mr-2 h-4 w-4" /> Baixar
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuItem onClick={() => remove(doc)} className="text-destructive focus:text-destructive">
                     <Trash2 className="text-destructive mr-2 h-4 w-4" /> Excluir
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          ))}
-          <div className="flex items-center gap-1">
+            );
+          })}
+          {linkOpen && (
+            <div className="space-y-1.5 rounded-lg border border-border/60 bg-muted/40 p-2">
+              <input
+                value={linkName}
+                onChange={(e) => setLinkName(e.target.value)}
+                placeholder="Nome do link (opcional)"
+                className="w-full rounded border border-input bg-background px-2 py-1 text-[11px] outline-none focus:border-primary"
+              />
+              <input
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                placeholder="https://…"
+                className="w-full rounded border border-input bg-background px-2 py-1 text-[11px] outline-none focus:border-primary"
+              />
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={handleAddLink}
+                  disabled={uploading || !linkUrl.trim()}
+                  className="flex items-center gap-1 rounded bg-primary px-2 py-0.5 text-[11px] font-medium text-primary-foreground disabled:opacity-60"
+                >
+                  {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Check className="h-3 w-3" />}
+                  Salvar link
+                </button>
+                <button
+                  onClick={() => { setLinkOpen(false); setLinkName(""); setLinkUrl(""); }}
+                  className="rounded border border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+          <div className="flex flex-wrap items-center gap-1">
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
@@ -2609,6 +2693,14 @@ function ActivityDocuments({
             >
               {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Paperclip className="h-3 w-3" />}
               Anexar
+            </button>
+            <button
+              onClick={() => setLinkOpen((v) => !v)}
+              disabled={uploading}
+              className="flex items-center gap-1 rounded border border-border px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-60"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Adicionar link
             </button>
           </div>
         </div>
