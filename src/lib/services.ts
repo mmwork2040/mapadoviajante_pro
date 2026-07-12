@@ -1709,7 +1709,7 @@ function decodeActivityMeta(a: ItineraryActivity): void {
   if (!raw || typeof raw !== "string" || !raw.trim().startsWith("{")) return;
   try {
     const m = JSON.parse(raw) as ActivityMeta;
-    if (m && typeof m === "object" && ("cur" in m || "brl" in m || "hotels" in m || "dur" in m || "pax" in m || "sug" in m)) {
+    if (m && typeof m === "object" && ("cur" in m || "brl" in m || "hotels" in m || "dur" in m || "pax" in m || "sug" in m || "imgs" in m)) {
       a.duration = m.dur ?? null;
       a.currency = m.cur ?? null;
       a.cost_brl = typeof m.brl === "number" ? m.brl : null;
@@ -1723,7 +1723,11 @@ function decodeActivityMeta(a: ItineraryActivity): void {
       a.passenger_costs = Array.isArray(m.pax)
         ? (m.pax as ItineraryActivity["passenger_costs"])
         : null;
+      a.images = Array.isArray(m.imgs)
+        ? (m.imgs as ItineraryActivity["images"])
+        : null;
     }
+
   } catch {
     /* mantém como duração textual legada */
   }
