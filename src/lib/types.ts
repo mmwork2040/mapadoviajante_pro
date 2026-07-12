@@ -182,6 +182,8 @@ export interface ItineraryActivity {
   cost_brl_rate?: number | null;
   /** Sugestões de hospedagem (somente para itens do tipo "hotel"). */
   hotel_options?: HotelOption[] | null;
+  /** Sugestões genéricas (transfer, restaurante, passeio) buscadas pela IA. */
+  suggestion_options?: HotelOption[] | null;
   /** Valores por passageiro (nome + valor), quando o custo varia por pessoa. */
   passenger_costs?: PassengerCost[] | null;
   duration?: string | null;

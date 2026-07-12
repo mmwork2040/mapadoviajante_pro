@@ -47,7 +47,7 @@ import {
   updateItineraryDay,
 } from "@/lib/services";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
-import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn, convertCurrencyFn, searchHotelsFn } from "@/lib/ai.functions";
+import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn, convertCurrencyFn, searchHotelsFn, searchSuggestionsFn } from "@/lib/ai.functions";
 import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, previewDriveSheets, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
 
 // Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
@@ -163,7 +163,54 @@ function bookingLinks(name: string, city?: string | null, sites?: string[]): { l
   return selected.map((s) => ({ label: s.label, url: s.url(name, c) }));
 }
 
-// currencySymbol, formatMoney e brlWithRate centralizados em "@/lib/ui".
+// Tipos de bloco que suportam busca de sugestões pela IA (além de Hospedagem).
+type SuggestionKind = "transfer" | "restaurant" | "activity";
+const SUGGESTION_CONFIG: Record<
+  SuggestionKind,
+  { label: string; noun: string; detailPlaceholder: string; pricePlaceholder: string; sites: { key: string; label: string; url: (n: string, c: string) => string }[] }
+> = {
+  transfer: {
+    label: "Sugestões de transfer",
+    noun: "opções de transfer",
+    detailPlaceholder: "Tipo de veículo/serviço",
+    pricePlaceholder: "Valor do trajeto",
+    sites: [
+      { key: "kiwitaxi", label: "Kiwitaxi", url: (n, c) => `https://kiwitaxi.com.br/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "gettransfer", label: "GetTransfer", url: (n, c) => `https://gettransfer.com/en/search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "welcome", label: "Welcome Pickups", url: (n, c) => `https://www.welcomepickups.com/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "google", label: "Google", url: (n, c) => `https://www.google.com/search?q=${encodeURIComponent(`transfer ${n} ${c}`.trim())}` },
+    ],
+  },
+  restaurant: {
+    label: "Sugestões de restaurantes",
+    noun: "restaurantes",
+    detailPlaceholder: "Tipo de cozinha",
+    pricePlaceholder: "Preço médio por pessoa",
+    sites: [
+      { key: "thefork", label: "TheFork", url: (n, c) => `https://www.thefork.com.br/search?cityName=${encodeURIComponent(c.trim())}&text=${encodeURIComponent(n.trim())}` },
+      { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "maps", label: "Google Maps", url: (n, c) => `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    ],
+  },
+  activity: {
+    label: "Sugestões de passeios",
+    noun: "passeios/tours/ingressos",
+    detailPlaceholder: "Tipo/duração do passeio",
+    pricePlaceholder: "Valor por pessoa",
+    sites: [
+      { key: "getyourguide", label: "GetYourGuide", url: (n, c) => `https://www.getyourguide.com.br/s/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "civitatis", label: "Civitatis", url: (n, c) => `https://www.civitatis.com/br/?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "viator", label: "Viator", url: (n, c) => `https://www.viator.com/searchResults/all?text=${encodeURIComponent(`${n} ${c}`.trim())}` },
+      { key: "tripadvisor", label: "TripAdvisor", url: (n, c) => `https://www.tripadvisor.com.br/Search?q=${encodeURIComponent(`${n} ${c}`.trim())}` },
+    ],
+  },
+};
+function suggestionLinks(kind: SuggestionKind, name: string, city?: string | null, sites?: string[]): { label: string; url: string }[] {
+  const c = (city || "").trim();
+  const all = SUGGESTION_CONFIG[kind].sites;
+  const selected = sites && sites.length ? all.filter((s) => sites.includes(s.key)) : all.slice(0, 3);
+  return selected.map((s) => ({ label: s.label, url: s.url(name, c) }));
+}
 
 // Máscara de valor sem símbolo de moeda (milhares + 2 casas): "123456" -> "1.234,56"
 function maskAmount(value: string | number | null | undefined): string {
@@ -1958,6 +2005,74 @@ function ActivityRow({
   const [hfSites, setHfSites] = useState<string[]>(["booking", "trivago", "hotels", "expedia", "tripadvisor"]);
   const convertCurrency = useServerFn(convertCurrencyFn);
   const searchHotels = useServerFn(searchHotelsFn);
+  // Sugestões genéricas (transfer, restaurante, passeio)
+  const [eSugg, setESugg] = useState<HotelOption[]>(activity.suggestion_options || []);
+  const [searchingSugg, setSearchingSugg] = useState(false);
+  const [suggModalOpen, setSuggModalOpen] = useState(false);
+  const [sfPriceMin, setSfPriceMin] = useState("");
+  const [sfPriceMax, setSfPriceMax] = useState("");
+  const [sfCurrency, setSfCurrency] = useState("BRL");
+  const [sfNotes, setSfNotes] = useState("");
+  const [sfLimit, setSfLimit] = useState(5);
+  const [sfSites, setSfSites] = useState<string[]>([]);
+  const searchSuggestions = useServerFn(searchSuggestionsFn);
+  const suggKind: SuggestionKind | null =
+    eType === "transfer" || eType === "restaurant" || eType === "activity" ? eType : null;
+
+  async function handleSearchSuggestions() {
+    if (!suggKind) return;
+    const city = (eLocation || "").trim();
+    if (!city) {
+      toast.error("Informe a cidade / local antes de pesquisar.");
+      return;
+    }
+    const sites = sfSites.length ? sfSites : SUGGESTION_CONFIG[suggKind].sites.map((s) => s.key);
+    setSearchingSugg(true);
+    try {
+      const res = await searchSuggestions({
+        data: {
+          kind: suggKind,
+          city,
+          price_min: sfPriceMin ? parseCurrency(maskAmount(sfPriceMin)) : null,
+          price_max: sfPriceMax ? parseCurrency(maskAmount(sfPriceMax)) : null,
+          currency: sfCurrency || "BRL",
+          notes: sfNotes.trim() || null,
+          limit: sfLimit,
+          sites,
+        },
+      });
+      if (res.ok && res.items.length) {
+        const withBrl = await Promise.all(
+          res.items.map(async (h) => {
+            const base: HotelOption = { ...h, source: "ai" as const };
+            const cur = (h.currency || "BRL").toUpperCase();
+            if (h.daily_rate != null && cur !== "BRL") {
+              try {
+                const conv = await convertCurrency({ data: { amount: h.daily_rate, currency: cur } });
+                if (conv.ok) {
+                  base.daily_rate_brl = conv.brl;
+                  base.daily_rate_brl_rate = conv.rate || null;
+                }
+              } catch {
+                /* mantém sem conversão se falhar */
+              }
+            }
+            return base;
+          }),
+        );
+        setESugg((prev) => [...prev, ...withBrl]);
+        toast.success(res.message);
+        setSuggModalOpen(false);
+      } else {
+        toast.error(res.message || "Nenhuma sugestão encontrada.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao pesquisar sugestões.");
+    } finally {
+      setSearchingSugg(false);
+    }
+  }
+
 
   async function handleSearchHotels() {
     const city = (eLocation || "").trim();
@@ -2024,6 +2139,7 @@ function ActivityRow({
     setECostBrl(activity.cost_brl ?? null);
     setECostBrlRate(activity.cost_brl_rate ?? null);
     setEHotels(activity.hotel_options || []);
+    setESugg(activity.suggestion_options || []);
     setEPax(activity.passenger_costs || []);
     setEditing(true);
   }
@@ -2089,6 +2205,21 @@ function ActivityRow({
           source: h.source ?? "user",
           links: h.links && h.links.length ? h.links : bookingLinks(h.name, eLocation),
         }));
+      const cleanSugg = eSugg
+        .filter((h) => (h.name || "").trim())
+        .map((h) => ({
+          name: h.name.trim(),
+          address: h.address?.trim() || null,
+          room_type: h.room_type?.trim() || null,
+          daily_rate: h.daily_rate ?? null,
+          currency: h.currency || "BRL",
+          daily_rate_brl: h.daily_rate_brl ?? null,
+          daily_rate_brl_rate: h.daily_rate_brl_rate ?? null,
+          stars: h.stars ?? null,
+          url: h.url?.trim() || null,
+          source: h.source ?? "user",
+          links: h.links && h.links.length ? h.links : (suggKind ? suggestionLinks(suggKind, h.name, eLocation) : []),
+        }));
       const cleanPax = ePax
         .filter((p) => (p.name || "").trim())
         .map((p) => ({
@@ -2107,6 +2238,7 @@ function ActivityRow({
         cost_brl: amount ? eCostBrl : null,
         cost_brl_rate: amount && eCurrency !== "BRL" ? eCostBrlRate : null,
         hotel_options: eType === "hotel" && cleanHotels.length ? cleanHotels : null,
+        suggestion_options: suggKind && cleanSugg.length ? cleanSugg : null,
         passenger_costs: cleanPax.length ? cleanPax : null,
       });
       setEditing(false);
@@ -2388,6 +2520,285 @@ function ActivityRow({
             </div>
           </div>
         )}
+
+        {/* Sugestões genéricas (transfer, restaurante, passeio) */}
+        {suggKind && (
+          <div className="rounded-lg border border-border/60 bg-background/60 p-2">
+            <div className="flex flex-wrap items-center justify-between gap-1.5">
+              <p className="text-[10px] font-medium text-muted-foreground">{SUGGESTION_CONFIG[suggKind].label}</p>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setSuggModalOpen(true)}
+                  disabled={searchingSugg}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+                >
+                  {searchingSugg ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                  Assistente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setESugg((h) => [...h, { name: "", currency: "BRL", source: "user" }])}
+                  className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10"
+                >
+                  <Plus className="h-3 w-3" /> Adicionar
+                </button>
+              </div>
+            </div>
+            <p className="mt-1 text-[10px] text-muted-foreground">
+              A IA busca até 6 {SUGGESTION_CONFIG[suggKind].noun} na cidade informada no campo acima (nome, endereço, valor e link).
+            </p>
+            {eSugg.length === 0 && <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma sugestão adicionada.</p>}
+            <div className="mt-2 space-y-2">
+              {eSugg.map((h, i) => {
+                if (h.source === "ai") {
+                  return (
+                    <div key={i} className="space-y-1 rounded-lg border border-primary/30 bg-primary/5 p-2">
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium text-primary">
+                          <Sparkles className="h-3 w-3" /> Sugestão da IA (não editável)
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setESugg((arr) => arr.filter((_, j) => j !== i))}
+                          className="text-muted-foreground hover:text-destructive"
+                          title="Remover sugestão"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                      <p className="text-xs font-medium text-foreground">{h.name}</p>
+                      {h.address && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-start gap-1 text-[11px] text-blue-600 underline dark:text-blue-400"
+                        >
+                          <MapPin className="mt-0.5 h-3 w-3 shrink-0" /> {h.address}
+                        </a>
+                      )}
+                      {h.room_type && <p className="text-[11px] text-muted-foreground">{h.room_type}</p>}
+                      {h.stars != null && (
+                        <p className="text-[11px] text-amber-500" title={`Nota ${h.stars}`}>{"★".repeat(h.stars)}</p>
+                      )}
+                      {h.daily_rate != null && (
+                        <p className="text-[11px] font-medium text-foreground">
+                          {formatMoney(h.daily_rate, h.currency)}
+                          {h.daily_rate_brl != null && (h.currency || "BRL").toUpperCase() !== "BRL" && (
+                            <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(h.daily_rate_brl)}</span>
+                          )}
+                        </p>
+                      )}
+                      {h.url && (
+                        <a
+                          href={h.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block truncate text-[11px] text-blue-600 underline dark:text-blue-400"
+                        >
+                          {h.url}
+                        </a>
+                      )}
+                    </div>
+                  );
+                }
+                return (
+                  <div key={i} className="space-y-1.5 rounded-lg border border-border/60 bg-muted/40 p-2">
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        value={h.name}
+                        onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                        placeholder="Nome"
+                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setESugg((arr) => arr.filter((_, j) => j !== i))}
+                        className="text-muted-foreground hover:text-destructive"
+                        title="Remover sugestão"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        value={h.address || ""}
+                        onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, address: e.target.value } : x)))}
+                        placeholder="Endereço"
+                        className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                      />
+                      {(h.address || "").trim() && (
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`.trim())}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                          title="Abrir no mapa"
+                        >
+                          <MapPin className="h-4 w-4" />
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      value={h.room_type || ""}
+                      onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, room_type: e.target.value } : x)))}
+                      placeholder={SUGGESTION_CONFIG[suggKind].detailPlaceholder}
+                      className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                    <div className="flex items-center gap-1.5">
+                      <select
+                        value={h.currency || "BRL"}
+                        onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
+                        className="rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                      >
+                        {CURRENCIES.map((c) => (
+                          <option key={c.code} value={c.code}>{c.code}</option>
+                        ))}
+                      </select>
+                      <input
+                        value={h.daily_rate != null ? maskAmount(String(Math.round((h.daily_rate || 0) * 100))) : ""}
+                        onChange={(e) => {
+                          const val = parseCurrency(maskAmount(e.target.value));
+                          setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, daily_rate: val || null } : x)));
+                        }}
+                        placeholder={SUGGESTION_CONFIG[suggKind].pricePlaceholder}
+                        inputMode="numeric"
+                        className="w-32 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                      />
+                    </div>
+                    <input
+                      value={h.url || ""}
+                      onChange={(e) => setESugg((arr) => arr.map((x, j) => (j === i ? { ...x, url: e.target.value } : x)))}
+                      placeholder="Link do site (https://…)"
+                      className="w-full rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Modal: filtros do Assistente de sugestões genéricas */}
+        {suggModalOpen && suggKind && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/50 p-4"
+            onClick={() => setSuggModalOpen(false)}
+          >
+            <ScrollLock />
+            <div
+              className="w-full max-w-sm max-h-[calc(100vh-2rem)] space-y-3 overflow-y-auto rounded-2xl border border-border bg-card p-4 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                <h3 className="text-sm font-semibold">{SUGGESTION_CONFIG[suggKind].label}</h3>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                A IA busca até 6 {SUGGESTION_CONFIG[suggKind].noun} em{" "}
+                <span className="font-medium">{eLocation || "cidade não informada"}</span> com base nos filtros abaixo (todos opcionais).
+              </p>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Faixa de valores</label>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <select
+                    value={sfCurrency}
+                    onChange={(e) => setSfCurrency(e.target.value)}
+                    className="rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  >
+                    {CURRENCIES.map((c) => (
+                      <option key={c.code} value={c.code}>{c.code}</option>
+                    ))}
+                  </select>
+                  <input
+                    value={sfPriceMin}
+                    onChange={(e) => setSfPriceMin(maskAmount(e.target.value))}
+                    placeholder="Mín."
+                    inputMode="numeric"
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  />
+                  <input
+                    value={sfPriceMax}
+                    onChange={(e) => setSfPriceMax(maskAmount(e.target.value))}
+                    placeholder="Máx."
+                    inputMode="numeric"
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Outras preferências</label>
+                <textarea
+                  value={sfNotes}
+                  onChange={(e) => setSfNotes(e.target.value)}
+                  placeholder="Ex: próximo ao centro, acessível, com wi-fi..."
+                  rows={2}
+                  className="mt-1 w-full resize-none rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Sites para pesquisar</label>
+                <div className="mt-1 grid grid-cols-2 gap-1.5">
+                  {SUGGESTION_CONFIG[suggKind].sites.map((s) => {
+                    const active = sfSites.length ? sfSites.includes(s.key) : true;
+                    return (
+                      <button
+                        key={s.key}
+                        type="button"
+                        onClick={() =>
+                          setSfSites((prev) => {
+                            const base = prev.length ? prev : SUGGESTION_CONFIG[suggKind].sites.map((x) => x.key);
+                            return base.includes(s.key) ? base.filter((k) => k !== s.key) : [...base, s.key];
+                          })
+                        }
+                        className={`rounded-lg border px-2 py-1.5 text-xs font-medium transition ${
+                          active
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-input bg-background text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {s.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-1 text-[10px] text-muted-foreground">A IA lista apenas o que encontrar nos sites selecionados.</p>
+              </div>
+              <div>
+                <label className="text-[11px] font-medium text-muted-foreground">Quantidade de resultados</label>
+                <select
+                  value={sfLimit}
+                  onChange={(e) => setSfLimit(Number(e.target.value))}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
+                >
+                  {[1, 2, 3, 4, 5, 6].map((n) => (
+                    <option key={n} value={n}>{n} {n === 1 ? "opção" : "opções"}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => setSuggModalOpen(false)}
+                  className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSearchSuggestions}
+                  disabled={searchingSugg}
+                  className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
+                >
+                  {searchingSugg ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  Pesquisar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
 
         {/* Modal: filtros do Assistente de hospedagem */}
         {hotelModalOpen && (
@@ -2759,6 +3170,62 @@ function ActivityRow({
                   );
                 })}
 
+              </span>
+            )}
+            {(activity.suggestion_options?.length ?? 0) > 0 && (
+              <span className="mt-1.5 block space-y-1.5">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Sugestões
+                </span>
+                {activity.suggestion_options!.map((h, i) => (
+                  <span key={i} className="block rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-1.5">
+                        <span className="font-medium text-foreground">{h.name}</span>
+                        {h.stars != null && (
+                          <span className="text-[10px] text-amber-500" title={`Nota ${h.stars}`}>{"★".repeat(h.stars)}</span>
+                        )}
+                      </span>
+                      {h.url && (
+                        <a
+                          href={h.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-0.5 text-blue-600 hover:underline dark:text-blue-400"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Site <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </span>
+                    {h.room_type && <span className="block text-[11px] text-muted-foreground">{h.room_type}</span>}
+                    {h.address && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${h.name} ${h.address}`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="block text-[11px] text-blue-600 hover:underline dark:text-blue-400"
+                        title="Abrir endereço no mapa"
+                      >
+                        📍 {h.address}
+                      </a>
+                    )}
+                    {h.daily_rate != null && (
+                      <span className="block text-[11px] font-medium text-foreground">
+                        {formatMoney(h.daily_rate, h.currency)}
+                        {(() => {
+                          const hBrl =
+                            h.daily_rate_brl ??
+                            brlWithRate(h.daily_rate, h.currency, activity.currency, activity.cost_brl_rate);
+                          return hBrl != null && (h.currency || "BRL").toUpperCase() !== "BRL" ? (
+                            <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(hBrl)}</span>
+                          ) : null;
+                        })()}
+                      </span>
+                    )}
+                  </span>
+                ))}
               </span>
             )}
               </>
