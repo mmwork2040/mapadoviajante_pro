@@ -337,8 +337,9 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
       }
       const res = await downloadImage({ data: { destination: dest, exclude: triedImages } });
       if (res?.imageUrl) {
-        setPendingImage(res.imageUrl);
-        setTriedImages((prev) => [...prev, res.imageUrl]);
+        const imageUrl = res.imageUrl;
+        setPendingImage(imageUrl);
+        setTriedImages((prev) => [...prev, imageUrl]);
         toast.info("Confirme se deseja usar esta imagem.");
       } else {
         const msg = "Nenhuma imagem encontrada para este destino.";

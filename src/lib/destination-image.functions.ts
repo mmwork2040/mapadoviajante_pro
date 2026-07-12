@@ -133,7 +133,7 @@ export const downloadDestinationImage = createServerFn({ method: "POST" })
       : [];
     return { destination: d.destination.trim(), exclude };
   })
-  .handler(async ({ data, context }): Promise<{ imageUrl: string }> => {
+  .handler(async ({ data, context }): Promise<{ imageUrl: string | null }> => {
     const { data: cfg, error } = await context.supabase
       .from("crm_ai_config")
       .select("*")
@@ -242,11 +242,10 @@ Texto: "${dest.replace(/"/g, "'")}"`,
     const fresh = pool.find((u) => !excluded.has(u));
     if (fresh) return { imageUrl: fresh };
 
-    throw new Error(
-      excluded.size
-        ? "Não há outras fotos disponíveis para este destino."
-        : "Nenhuma foto real do destino foi encontrada.",
-    );
+    // Sem foto disponível: retorna null em vez de lançar erro, evitando
+    // que o servidor derrube a tela do cliente (blank screen).
+    return { imageUrl: null };
+
   });
 
 
