@@ -507,11 +507,13 @@ export async function searchHotels(
   filters?: HotelSearchFilters,
   limit?: number,
   sites?: string[],
+  neighborhood?: string,
 ): Promise<{ ok: boolean; hotels: HotelOption[]; message: string }> {
   const max = Math.min(6, Math.max(1, Math.round(Number(limit) || 5)));
   const selectedSites = sites && sites.length ? HOTEL_SITES.filter((s) => sites.includes(s.key)) : HOTEL_SITES.slice(0, 3);
   const siteKeys = selectedSites.map((s) => s.key);
   const siteLabels = selectedSites.map((s) => s.label).join(", ");
+  const area = neighborhood?.trim() ? `${neighborhood.trim()}, ${city}` : city;
   const f = filters || {};
   const criteria: string[] = [];
   if (f.room_type?.trim()) criteria.push(`Tipo de quarto desejado: ${f.room_type.trim()}.`);
