@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { ScrollLock } from "@/components/ScrollLock";
 import { useBackButtonClose } from "@/hooks/useBackButtonClose";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -337,6 +338,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+      <ScrollLock />
       <aside
         className="flex h-full w-full max-w-md flex-col bg-card shadow-2xl animate-in slide-in-from-right duration-200"
         onClick={(e) => e.stopPropagation()}

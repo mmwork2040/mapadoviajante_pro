@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { Plus, X, ArrowUpRight, ArrowDownRight } from "lucide-react";
@@ -283,6 +284,7 @@ function NewTxModal({ onClose, onCreated }: { onClose: () => void; onCreated: ()
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <ScrollLock />
       <div className="w-full max-w-md rounded-2xl bg-card p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold">Nova Transação</h2>

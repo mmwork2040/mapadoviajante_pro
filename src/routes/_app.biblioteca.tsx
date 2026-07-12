@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient, keepPreviousData } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -479,6 +480,7 @@ function LibraryPage() {
 
       {itinFiles.length > 0 && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <ScrollLock />
           <div className="w-full max-w-md rounded-2xl bg-card p-6 shadow-xl">
             <h2 className="text-lg font-bold">Enviar roteiro modelo</h2>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -610,6 +612,7 @@ function LibraryCard({
               setZoom(false);
             }}
           >
+              <ScrollLock />
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -680,6 +683,7 @@ function LibraryCard({
               setInfo(false);
             }}
           >
+              <ScrollLock />
             <div
               className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-2xl bg-card p-5 shadow-xl"
               onClick={(e) => e.stopPropagation()}
@@ -865,6 +869,7 @@ function LibraryModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <ScrollLock />
       <div className="flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-3xl bg-card shadow-xl">
         <div className="flex items-start justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
           <div className="flex items-center gap-3">
