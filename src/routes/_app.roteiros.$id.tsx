@@ -2231,6 +2231,47 @@ function ActivityRow({
             {activity.description && (
               <span className="mt-0.5 block whitespace-pre-wrap text-[11px] text-muted-foreground">{activity.description}</span>
             )}
+            {activity.cost != null && (
+              <span className="mt-0.5 block text-[11px] font-medium text-foreground">
+                {formatMoney(activity.cost, activity.currency)}
+                {activity.currency && activity.currency !== "BRL" && activity.cost_brl != null && (
+                  <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(activity.cost_brl)}</span>
+                )}
+              </span>
+            )}
+            {activity.type === "hotel" && (activity.hotel_options?.length ?? 0) > 0 && (
+              <span className="mt-1.5 block space-y-1.5">
+                <span className="block text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  Sugestões de hospedagem
+                </span>
+                {activity.hotel_options!.map((h, i) => (
+                  <span key={i} className="block rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="font-medium text-foreground">{h.name}</span>
+                      {h.url && (
+                        <a
+                          href={h.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center gap-0.5 text-primary hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Site <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </span>
+                    {h.room_type && <span className="block text-[11px] text-muted-foreground">{h.room_type}</span>}
+                    {h.address && <span className="block text-[11px] text-muted-foreground">📍 {h.address}</span>}
+                    {h.daily_rate != null && (
+                      <span className="block text-[11px] font-medium text-foreground">
+                        {formatMoney(h.daily_rate, h.currency)} / diária
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </span>
+            )}
+
           </span>
         </span>
         <span className="flex gap-1">
