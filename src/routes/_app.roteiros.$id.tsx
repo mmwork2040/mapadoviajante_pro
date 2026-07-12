@@ -2398,21 +2398,72 @@ function ActivityRow({
                 className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
               >
                 {findingImg ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
-                Buscar imagem
+                Buscar imagens
               </button>
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              Encontra uma foto com base no título e na cidade/local, salva na biblioteca e usa como capa do roteiro.
+              Encontra fotos com base no título e na cidade/local para você escolher a capa do roteiro.
             </p>
             {imgPreview && (
-              <img
-                src={imgPreview}
-                alt={eTitle || "Imagem do atrativo"}
-                className="mt-2 h-24 w-full rounded-lg object-cover"
-              />
+              <div className="mt-2">
+                <img
+                  src={imgPreview}
+                  alt={eTitle || "Imagem do atrativo"}
+                  className="h-24 w-full rounded-lg object-cover"
+                />
+                <p className="mt-0.5 text-[10px] text-muted-foreground">Capa atual do roteiro.</p>
+              </div>
             )}
           </div>
         )}
+
+        {/* Modal de revisão / escolha da capa */}
+        {imgModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setImgModalOpen(false)}>
+            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-background p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">Escolher capa do roteiro</h3>
+                <button type="button" onClick={() => setImgModalOpen(false)} className="rounded-lg p-1 hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {findingImg ? "Buscando imagens…" : "Toque em uma imagem para defini-la como capa e salvá-la na biblioteca."}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {imgOptions.map((url) => (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => !savingCover && handleChooseCover(url)}
+                    disabled={savingCover}
+                    className="group relative overflow-hidden rounded-lg border border-border/60 hover:border-primary focus:border-primary disabled:opacity-60"
+                  >
+                    <img src={url} alt="Opção de imagem" className="h-28 w-full object-cover" />
+                    <span className="absolute inset-0 hidden items-center justify-center bg-primary/30 group-hover:flex">
+                      <Check className="h-6 w-6 text-white drop-shadow" />
+                    </span>
+                  </button>
+                ))}
+                {findingImg &&
+                  Array.from({ length: 2 }).map((_, i) => (
+                    <div key={`sk-${i}`} className="flex h-28 items-center justify-center rounded-lg border border-dashed border-border/60">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ))}
+              </div>
+              {!findingImg && imgOptions.length === 0 && (
+                <p className="mt-3 text-[11px] text-muted-foreground">Nenhuma imagem encontrada.</p>
+              )}
+              {savingCover && (
+                <p className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" /> Salvando capa…
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
 
 
 
