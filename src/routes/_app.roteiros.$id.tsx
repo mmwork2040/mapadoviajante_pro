@@ -2715,7 +2715,9 @@ function ActivityRow({
                     Trajeto em <span className="text-foreground">{eLocation || "cidade não informada"}</span>
                   </p>
                   <div>
-                    <label className="text-[11px] font-medium text-muted-foreground">Origem (bairro/local exato)</label>
+                    <label className="text-[11px] font-medium text-muted-foreground">
+                      Origem (bairro/local exato) <span className="text-red-500">*</span>
+                    </label>
                     <div className="mt-1 flex items-center gap-1.5">
                       <input
                         value={sfOrigin}
@@ -2735,7 +2737,9 @@ function ActivityRow({
                     </div>
                   </div>
                   <div>
-                    <label className="text-[11px] font-medium text-muted-foreground">Destino (bairro/local exato)</label>
+                    <label className="text-[11px] font-medium text-muted-foreground">
+                      Destino (bairro/local exato) <span className="text-red-500">*</span>
+                    </label>
                     <div className="mt-1 flex items-center gap-1.5">
                       <input
                         value={sfDest}
@@ -2845,7 +2849,7 @@ function ActivityRow({
                 <button
                   type="button"
                   onClick={handleSearchSuggestions}
-                  disabled={searchingSugg}
+                  disabled={searchingSugg || (suggKind === "transfer" && (!sfOrigin.trim() || !sfDest.trim()))}
                   className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-60"
                 >
                   {searchingSugg ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
