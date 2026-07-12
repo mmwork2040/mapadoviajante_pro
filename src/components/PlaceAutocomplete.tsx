@@ -50,14 +50,29 @@ export function PlaceAutocomplete({
     const t = setTimeout(async () => {
       setLoading(true);
       try {
-        const query = bias ? `${q}, ${bias}` : q;
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=6&accept-language=pt-BR&q=${encodeURIComponent(query)}`,
-          { signal: controller.signal, headers: { "Accept": "application/json" } },
+        const cats = categories && categories.length ? categories : [null];
+        const results = await Promise.all(
+          cats.map(async (cat) => {
+            const query = [q, cat, bias].filter(Boolean).join(", ");
+            const res = await fetch(
+              `https://nominatim.openstreetmap.org/search?format=json&addressdetails=0&limit=4&accept-language=pt-BR&q=${encodeURIComponent(query)}`,
+              { signal: controller.signal, headers: { "Accept": "application/json" } },
+            );
+            return (await res.json()) as Suggestion[];
+          }),
         );
-        const data: Suggestion[] = await res.json();
-        setItems(data || []);
-        setOpen((data || []).length > 0);
+        const seen = new Set<string>();
+        const merged: Suggestion[] = [];
+        for (const list of results) {
+          for (const s of list || []) {
+            const key = `${s.lat}-${s.lon}`;
+            if (seen.has(key)) continue;
+            seen.add(key);
+            merged.push(s);
+          }
+        }
+        setItems(merged);
+        setOpen(merged.length > 0);
         setActive(-1);
       } catch {
         /* aborted or network error */
