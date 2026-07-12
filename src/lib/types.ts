@@ -180,9 +180,17 @@ export interface ItineraryActivity {
   cost_brl?: number | null;
   /** Sugestões de hospedagem (somente para itens do tipo "hotel"). */
   hotel_options?: HotelOption[] | null;
+  /** Valores por passageiro (nome + valor), quando o custo varia por pessoa. */
+  passenger_costs?: PassengerCost[] | null;
   duration?: string | null;
   maps_url?: string | null;
   sort_order?: number;
+}
+
+export interface PassengerCost {
+  name: string;
+  amount?: number | null;
+  currency?: string | null;
 }
 
 export interface HotelOption {
