@@ -19,6 +19,7 @@ export function PlaceAutocomplete({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [active, setActive] = useState(-1);
+  const [focused, setFocused] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
   const skipNext = useRef(false);
 
