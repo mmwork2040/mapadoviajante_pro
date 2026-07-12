@@ -250,6 +250,7 @@ export const searchHotelsFn = createServerFn({ method: "POST" })
       data.filters,
       data.limit,
       data.sites,
+      data.neighborhood,
     );
   });
 
