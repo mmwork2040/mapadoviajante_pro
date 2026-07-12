@@ -1724,18 +1724,19 @@ function decodeActivityMeta(a: ItineraryActivity): void {
 // Mapeia o campo de UI `time` para a coluna real `time_start` e empacota os
 // metadados extras dentro de `duration`.
 function mapActivityPayload(data: Partial<ItineraryActivity>): Record<string, unknown> {
-  const { time, currency, cost_brl, hotel_options, duration, ...rest } = data;
+  const { time, currency, cost_brl, hotel_options, passenger_costs, duration, ...rest } = data;
   const payload: Record<string, unknown> = { ...rest };
   if (time !== undefined) payload.time_start = time;
 
   const hasMeta =
-    currency !== undefined || cost_brl !== undefined || hotel_options !== undefined;
+    currency !== undefined || cost_brl !== undefined || hotel_options !== undefined || passenger_costs !== undefined;
   if (hasMeta) {
     payload.duration = JSON.stringify({
       dur: duration ?? null,
       cur: currency ?? null,
       brl: cost_brl ?? null,
       hotels: hotel_options ?? null,
+      pax: passenger_costs ?? null,
     });
   } else if (duration !== undefined) {
     payload.duration = duration;
