@@ -2581,13 +2581,22 @@ function ActivityRow({
               <p className="text-[10px] font-medium text-muted-foreground">Imagens da atração</p>
               <button
                 type="button"
-                onClick={handleFindImage}
-                disabled={findingImg}
+                onClick={openImageSource}
+                disabled={findingImg || uploadingImg}
                 className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
               >
-                {findingImg ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
-                Buscar imagens
+                {findingImg || uploadingImg ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+                Adicionar imagem
               </button>
+              <input
+                ref={imgFileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => handleUploadImages(e.target.files)}
+              />
+
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
               Localiza a atração pelo título na cidade informada. Adicione imagens sortidas com descrição — elas aparecem na página do dia e vão para a biblioteca.
