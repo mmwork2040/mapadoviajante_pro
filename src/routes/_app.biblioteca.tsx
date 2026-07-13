@@ -62,6 +62,7 @@ import {
 import { formatCurrency } from "@/lib/ui";
 import type { LibraryItem, LibraryItemType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { PlaceAutocomplete } from "@/components/PlaceAutocomplete";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { useConfirm } from "@/components/ConfirmDialog";
 
@@ -907,7 +908,18 @@ function LibraryModal({
         <form onSubmit={submit} className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
 
           <Fld label="Título" required value={form.title || ""} onChange={(v) => setForm({ ...form, title: v })} />
-          <Fld label="Local / Destino" value={form.location || ""} onChange={(v) => setForm({ ...form, location: v })} />
+          {isImage ? (
+            <label className="block">
+              <span className="mb-1 block text-sm font-medium">Local / Destino</span>
+              <PlaceAutocomplete
+                value={form.location || ""}
+                onChange={(v) => setForm({ ...form, location: v })}
+                placeholder="Digite o local para buscar…"
+              />
+            </label>
+          ) : (
+            <Fld label="Local / Destino" value={form.location || ""} onChange={(v) => setForm({ ...form, location: v })} />
+          )}
           <label className="block">
             <div className="mb-1 flex items-center justify-between gap-2">
               <span className="text-sm font-medium">Descrição curta</span>
