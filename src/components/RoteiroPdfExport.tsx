@@ -144,38 +144,46 @@ function tokens(s?: string | null): string[] {
   return Array.from(new Set(norm(s).split(/[^a-z0-9]+/).filter((t) => t.length >= 3)));
 }
 
-// Escolhe, entre as imagens da biblioteca, a mais relacionada à atividade
-// (por local, tags ou descrição). Evita repetir a mesma imagem quando possível.
+// Escolhe, entre as imagens da biblioteca, a mais relacionada à atividade.
+// Validação rígida: só aceita a imagem quando há CERTEZA de compatibilidade,
+// confirmando a CIDADE/LOCAL e ao menos um sinal do conteúdo base (título,
+// descrição) ou das tags. Em caso de dúvida, retorna null (não adiciona).
 function pickLibraryImage(
   a: ItineraryActivity,
   images: LibraryItem[],
   used: Set<string>,
 ): LibraryItem | null {
-  const wantLoc = norm(a.location);
-  const need = new Set([...tokens(a.location), ...tokens(a.title), ...tokens(a.description)]);
-  if (need.size === 0) return null;
+  const locTokens = tokens(a.location);
+  // Sem local/cidade definidos não há como garantir compatibilidade.
+  if (locTokens.length === 0) return null;
+  const contentTokens = new Set([...tokens(a.title), ...tokens(a.description)]);
+
   let best: { item: LibraryItem; score: number } | null = null;
   for (const img of images) {
     const src = img.image_url || img.file_url;
     if (!src) continue;
-    const hay = new Set([
-      ...tokens(img.title),
-      ...tokens(img.location),
-      ...tokens((img.tags || []).join(" ")),
-      ...tokens(img.description),
-      ...tokens(img.content),
-    ]);
-    let score = 0;
-    for (const t of need) if (hay.has(t)) score += 1;
-    // Bônus forte quando o local da atividade bate com o local/titulo da imagem.
-    if (wantLoc && (norm(img.location).includes(wantLoc) || norm(img.title).includes(wantLoc))) {
-      score += 3;
+    const imgLoc = new Set([...tokens(img.location), ...tokens(img.title)]);
+    const imgTags = new Set(tokens((img.tags || []).join(" ")));
+    const imgContent = new Set([...tokens(img.title), ...tokens(img.description), ...tokens(img.content)]);
+
+    // 1) A CIDADE precisa bater: algum token do local da atividade tem que
+    // aparecer no local/título da imagem OU nas tags dela.
+    const cityMatch = locTokens.some((t) => imgLoc.has(t) || imgTags.has(t));
+    if (!cityMatch) continue;
+
+    // 2) Além da cidade, precisa de confirmação pelo conteúdo base ou tags.
+    let score = locTokens.filter((t) => imgLoc.has(t)).length * 2;
+    for (const t of contentTokens) {
+      if (imgContent.has(t)) score += 2;
+      if (imgTags.has(t)) score += 1;
     }
-    if (score <= 0) continue;
+    // Exige confirmação além da simples coincidência de cidade.
+    if (score < 3) continue;
+
     if (used.has(src)) score -= 2; // penaliza reuso, mas não descarta
     if (!best || score > best.score) best = { item: img, score };
   }
-  return best && best.score > 0 ? best.item : null;
+  return best && best.score >= 3 ? best.item : null;
 }
 
 // Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
