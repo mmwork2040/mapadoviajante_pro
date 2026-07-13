@@ -211,110 +211,56 @@ function mergeDescriptions(items: LibraryItem[]): string {
 }
 
 // Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
-function estimateActivityHeight(a: ItineraryActivity, hasImage: boolean): number {
+function estimateActivityHeight(a: ItineraryActivity, imgCount: number, note?: string): number {
   const descLines = a.description ? Math.ceil(a.description.length / 52) : 0;
-  const textH = 9 + descLines * 5 + (a.location ? 6 : 0);
-  const imageH = hasImage ? 42 : 0;
+  const noteLines = note ? Math.ceil(note.length / 58) : 0;
+  const textH = 9 + descLines * 5 + noteLines * 4.5 + (a.location ? 6 : 0);
+  const imageH = imgCount >= 2 ? 62 : 42; // álbum ocupa mais que uma foto única
   return Math.max(textH, imageH) + 8;
 }
 
-// Caixa de imagem da atividade. Na pré-visualização (preview) com mais de uma
-// imagem, funciona como carrossel; na exportação do PDF mostra a 1ª imagem.
-function ActivityImageBox({ images, preview }: { images: string[]; preview: boolean }) {
-  const [idx, setIdx] = useState(0);
-  if (images.length === 0) return null;
-  const i = Math.min(idx, images.length - 1);
-  const multi = preview && images.length > 1;
-  const go = (delta: number) =>
-    setIdx((v) => (v + delta + images.length) % images.length);
+// Uma foto no estilo "polaroid" (fundo branco + sombra + leve rotação).
+function Polaroid({ src, w, h, rotate }: { src: string; w: string; h: string; rotate: number }) {
   return (
     <div
       style={{
         flexShrink: 0,
-        position: "relative",
         background: "#fff",
-        padding: "1.5mm 1.5mm 4mm",
-        boxShadow: "0 4px 12px rgba(0,0,0,.15)",
-        transform: "rotate(1.5deg)",
+        padding: "1mm 1mm 2.5mm",
+        boxShadow: "0 3px 9px rgba(0,0,0,.18)",
+        transform: `rotate(${rotate}deg)`,
       }}
     >
       <img
-        src={images[i]}
+        src={src}
         crossOrigin="anonymous"
         alt=""
-        style={{ width: "52mm", height: "36mm", objectFit: "cover", display: "block" }}
+        style={{ width: w, height: h, objectFit: "cover", display: "block" }}
       />
-      {multi && (
-        <>
-          <button
-            type="button"
-            onClick={() => go(-1)}
-            style={{
-              position: "absolute",
-              left: "3px",
-              top: "42%",
-              transform: "translateY(-50%)",
-              background: "rgba(0,0,0,.5)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "9999px",
-              width: "22px",
-              height: "22px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => go(1)}
-            style={{
-              position: "absolute",
-              right: "3px",
-              top: "42%",
-              transform: "translateY(-50%)",
-              background: "rgba(0,0,0,.5)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "9999px",
-              width: "22px",
-              height: "22px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            <ChevronRight size={14} />
-          </button>
-          <div
-            style={{
-              position: "absolute",
-              bottom: "1mm",
-              left: 0,
-              right: 0,
-              display: "flex",
-              justifyContent: "center",
-              gap: "4px",
-            }}
-          >
-            {images.map((_, di) => (
-              <span
-                key={di}
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "9999px",
-                  background: di === i ? GOLD_DARK : "rgba(0,0,0,.25)",
-                }}
-              />
-            ))}
-          </div>
-        </>
-      )}
+    </div>
+  );
+}
+
+// Álbum de fotos da atividade: uma única foto quando há apenas uma; um pequeno
+// mosaico (até 3 fotos) quando a atividade reúne vários pontos turísticos.
+function ActivityImageBox({ images }: { images: string[] }) {
+  const imgs = images.slice(0, 3);
+  if (imgs.length === 0) return null;
+  if (imgs.length === 1) {
+    return (
+      <div style={{ flexShrink: 0, transform: "rotate(1.5deg)" }}>
+        <Polaroid src={imgs[0]} w="52mm" h="36mm" rotate={0} />
+      </div>
+    );
+  }
+  return (
+    <div style={{ flexShrink: 0, width: "56mm", display: "flex", flexDirection: "column", gap: "2mm", alignItems: "center" }}>
+      <Polaroid src={imgs[0]} w="52mm" h="30mm" rotate={-1.5} />
+      <div style={{ display: "flex", gap: "2mm", justifyContent: "center" }}>
+        {imgs.slice(1).map((u, i) => (
+          <Polaroid key={i} src={u} w="24mm" h="20mm" rotate={i % 2 === 0 ? 2 : -2} />
+        ))}
+      </div>
     </div>
   );
 }
