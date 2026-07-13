@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import type { Itinerary, ItineraryActivity, ItineraryDay } from "@/lib/types";
+import type { Itinerary, ItineraryActivity, ItineraryDay, LibraryItem } from "@/lib/types";
+import { fetchLibraryItems, resolveDisplayImageUrl } from "@/lib/services";
+
 
 // ============================================================================
 // Paleta / tokens visuais do PDF (fixos — o layout do PDF é independente do tema)
@@ -131,9 +133,66 @@ function findHotel(day: ItineraryDay): string | null {
   return hotel?.title || null;
 }
 
+function norm(s?: string | null): string {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function tokens(s?: string | null): string[] {
+  return Array.from(new Set(norm(s).split(/[^a-z0-9]+/).filter((t) => t.length >= 3)));
+}
+
+// Escolhe, entre as imagens da biblioteca, a mais relacionada à atividade
+// (por local, tags ou descrição). Evita repetir a mesma imagem quando possível.
+function pickLibraryImage(
+  a: ItineraryActivity,
+  images: LibraryItem[],
+  used: Set<string>,
+): LibraryItem | null {
+  const wantLoc = norm(a.location);
+  const need = new Set([...tokens(a.location), ...tokens(a.title), ...tokens(a.description)]);
+  if (need.size === 0) return null;
+  let best: { item: LibraryItem; score: number } | null = null;
+  for (const img of images) {
+    const src = img.image_url || img.file_url;
+    if (!src) continue;
+    const hay = new Set([
+      ...tokens(img.title),
+      ...tokens(img.location),
+      ...tokens((img.tags || []).join(" ")),
+      ...tokens(img.description),
+      ...tokens(img.content),
+    ]);
+    let score = 0;
+    for (const t of need) if (hay.has(t)) score += 1;
+    // Bônus forte quando o local da atividade bate com o local/titulo da imagem.
+    if (wantLoc && (norm(img.location).includes(wantLoc) || norm(img.title).includes(wantLoc))) {
+      score += 3;
+    }
+    if (score <= 0) continue;
+    if (used.has(src)) score -= 2; // penaliza reuso, mas não descarta
+    if (!best || score > best.score) best = { item: img, score };
+  }
+  return best && best.score > 0 ? best.item : null;
+}
+
+// Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
+function estimateActivityHeight(a: ItineraryActivity, hasImage: boolean): number {
+  const descLines = a.description ? Math.ceil(a.description.length / 52) : 0;
+  const textH = 9 + descLines * 5 + (a.location ? 6 : 0);
+  const imageH = hasImage ? 42 : 0;
+  return Math.max(textH, imageH) + 8;
+}
+
+
 export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  // Imagens resolvidas da biblioteca por atividade (id -> URL exibível).
+  const [actImages, setActImages] = useState<Record<string, string>>({});
+
 
   const destino = it.destination || it.title || "Sua Viagem";
   const cliente = it.client_name || it.lead?.name || "Viajante";
@@ -167,13 +226,48 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     );
   }
 
+  // Para atividades sem imagem própria, busca na biblioteca uma foto que
+  // combine com o local/tags/descrição e resolve a URL exibível.
+  async function resolveActivityImages(): Promise<Record<string, string>> {
+    let images: LibraryItem[] = [];
+    try {
+      images = await fetchLibraryItems("image");
+    } catch {
+      return {};
+    }
+    if (images.length === 0) return {};
+    const used = new Set<string>();
+    const map: Record<string, string> = {};
+    for (const day of days) {
+      for (const a of activityLines(day.activities)) {
+        if (a.type === "hotel") continue;
+        if (a.images && a.images.length && a.images[0]?.url) continue; // já tem imagem
+        const hit = pickLibraryImage(a, images, used);
+        const src = hit?.image_url || hit?.file_url;
+        if (!src) continue;
+        const url = await resolveDisplayImageUrl(src);
+        if (url) {
+          map[a.id] = url;
+          used.add(src);
+        }
+      }
+    }
+    return map;
+  }
+
   async function handleExport() {
     if (!containerRef.current) return;
     setBusy(true);
     try {
+      // 1) Enriquecer atividades sem imagem com fotos da biblioteca.
+      const map = await resolveActivityImages();
+      setActImages(map);
+      // Aguarda o React renderizar as novas imagens no container oculto.
+      await new Promise((r) => setTimeout(r, 60));
       // Garante que capa e polaroids estejam totalmente carregadas antes
       // do html2canvas capturar o container (evita áreas em branco no PDF).
       await waitForImages(containerRef.current);
+
       const html2pdf = (await import("html2pdf.js")).default;
       const opts = {
         margin: 0,
@@ -315,68 +409,130 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           {/* ------------------------- ROTEIRO DIÁRIO ---------------------- */}
           {days.map((day) => {
             const hotel = findHotel(day);
-            const lines = activityLines(day.activities);
+            const lines = activityLines(day.activities).filter((a) => a.type !== "hotel");
+            const imgFor = (a: ItineraryActivity): string | null =>
+              a.images?.[0]?.url || actImages[a.id] || null;
+
+            // Pagina as atividades para nunca quebrar imagem/texto entre páginas.
+            const pages: ItineraryActivity[][] = [];
+            let cur: ItineraryActivity[] = [];
+            let budget = 190; // primeira página (após cabeçalho do dia)
+            let usedH = 0;
+            for (const a of lines) {
+              const h = estimateActivityHeight(a, !!imgFor(a));
+              if (usedH + h > budget && cur.length) {
+                pages.push(cur);
+                cur = [];
+                usedH = 0;
+                budget = 238; // páginas de continuação
+              }
+              cur.push(a);
+              usedH += h;
+            }
+            if (cur.length || pages.length === 0) pages.push(cur);
+
             return (
-              <Page key={day.id} style={{ background: BEIGE, padding: "24mm 20mm 20mm" }}>
-                <CornerBlobs />
-                <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
-
-                <div style={{ position: "relative", fontFamily: "'Dancing Script', cursive", fontSize: "40pt", color: GOLD_DARK, lineHeight: 1 }}>
-                  Dia {day.day_number}
-                </div>
-                <div style={{ position: "relative", display: "inline-block", marginTop: "5mm", background: GOLD, color: "#fff", padding: "3mm 8mm", borderRadius: "30px", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "17pt" }}>
-                  {formatDayDate(day.date) || day.title || `Dia ${day.day_number}`}
-                </div>
-
-                {day.title && (
-                  <div style={{ position: "relative", marginTop: "6mm", display: "inline-block", background: "#fff", color: SLATE, padding: "2.5mm 6mm", borderRadius: "30px", fontWeight: 600, fontSize: "13pt", boxShadow: "0 2px 8px rgba(0,0,0,.08)" }}>
-                    {day.title}
-                  </div>
-                )}
-
-                <div style={{ position: "relative", marginTop: "8mm", display: "flex", flexDirection: "column", gap: "5mm", maxWidth: "115mm" }}>
-                  {lines.length === 0 && (
-                    <p style={{ fontSize: "13pt", color: SLATE }}>Programação livre.</p>
-                  )}
-                  {lines.map((a) => (
-                    <div key={a.id}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "3mm", fontWeight: 600, fontSize: "13.5pt", color: INK }}>
-                        {a.time && (
-                          <span style={{ display: "inline-flex", alignItems: "center", gap: "1.5mm", color: GOLD_DARK }}>
-                            <Clock size={15} /> {a.time}
-                          </span>
-                        )}
-                        <span>{a.title}</span>
+              <div key={day.id}>
+                {pages.map((chunk, pi) => {
+                  const isFirst = pi === 0;
+                  const isLast = pi === pages.length - 1;
+                  return (
+                    <Page
+                      key={`${day.id}-${pi}`}
+                      style={{ background: BEIGE, padding: "24mm 20mm 20mm" }}
+                    >
+                      <CornerBlobs />
+                      <div style={{ position: "absolute", top: "10mm", right: "14mm" }}>
+                        <Wordmark />
                       </div>
-                      {a.description && (
-                        <p style={{ fontSize: "12pt", lineHeight: 1.6, color: "#4a4744", marginTop: "1.5mm" }}>{a.description}</p>
-                      )}
-                      {a.location && (
-                        <p style={{ fontSize: "11pt", color: SLATE, marginTop: "1mm", display: "flex", alignItems: "center", gap: "1.5mm" }}>
-                          <MapPin size={13} /> {a.location}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
 
-                {/* Polaroid inferior direita */}
-                {heroImg && (
-                  <div style={{ position: "absolute", right: "16mm", bottom: "26mm", background: "#fff", padding: "3mm 3mm 8mm", boxShadow: "0 10px 22px rgba(0,0,0,.2)", transform: "rotate(2deg)" }}>
-                    <img src={heroImg} crossOrigin="anonymous" alt=""
-                      style={{ width: "70mm", height: "50mm", objectFit: "cover", display: "block" }} />
-                  </div>
-                )}
+                      {isFirst ? (
+                        <>
+                          <div style={{ position: "relative", fontFamily: "'Dancing Script', cursive", fontSize: "40pt", color: GOLD_DARK, lineHeight: 1 }}>
+                            Dia {day.day_number}
+                          </div>
+                          <div style={{ position: "relative", display: "inline-block", marginTop: "5mm", background: GOLD, color: "#fff", padding: "3mm 8mm", borderRadius: "30px", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "17pt" }}>
+                            {formatDayDate(day.date) || day.title || `Dia ${day.day_number}`}
+                          </div>
+                          {day.title && (
+                            <div style={{ position: "relative", marginTop: "6mm", display: "inline-block", background: "#fff", color: SLATE, padding: "2.5mm 6mm", borderRadius: "30px", fontWeight: 600, fontSize: "13pt", boxShadow: "0 2px 8px rgba(0,0,0,.08)" }}>
+                              {day.title}
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div style={{ position: "relative", fontFamily: "'Dancing Script', cursive", fontSize: "26pt", color: GOLD_DARK, lineHeight: 1 }}>
+                          Dia {day.day_number} <span style={{ fontSize: "15pt" }}>(continuação)</span>
+                        </div>
+                      )}
 
-                {/* Botão de hotel inferior esquerdo */}
-                {hotel && (
-                  <div style={{ position: "absolute", left: "20mm", bottom: "18mm", display: "inline-flex", alignItems: "center", gap: "3mm", background: GOLD, color: "#fff", padding: "3.5mm 8mm", borderRadius: "30px", fontWeight: 600, fontSize: "13pt", maxWidth: "90mm" }}>
-                    <Hotel size={18} /> {hotel}
-                  </div>
-                )}
-              </Page>
+                      <div style={{ position: "relative", marginTop: isFirst ? "8mm" : "6mm", display: "flex", flexDirection: "column", gap: "5mm" }}>
+                        {isFirst && lines.length === 0 && (
+                          <p style={{ fontSize: "13pt", color: SLATE }}>Programação livre.</p>
+                        )}
+                        {chunk.map((a) => {
+                          const img = imgFor(a);
+                          return (
+                            <div
+                              key={a.id}
+                              style={{
+                                display: "flex",
+                                gap: "5mm",
+                                alignItems: "flex-start",
+                                background: "#fff",
+                                borderRadius: "10px",
+                                padding: "4mm",
+                                boxShadow: "0 2px 8px rgba(0,0,0,.06)",
+                                pageBreakInside: "avoid",
+                                breakInside: "avoid",
+                              }}
+                            >
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: "3mm", fontWeight: 600, fontSize: "12.5pt", color: INK }}>
+                                  {a.time && (
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "1.5mm", color: GOLD_DARK }}>
+                                      <Clock size={14} /> {a.time}
+                                    </span>
+                                  )}
+                                  <span>{a.title}</span>
+                                </div>
+                                {a.description && (
+                                  <p style={{ fontSize: "10.5pt", lineHeight: 1.5, color: "#4a4744", marginTop: "1.5mm" }}>{a.description}</p>
+                                )}
+                                {a.location && (
+                                  <p style={{ fontSize: "10pt", color: SLATE, marginTop: "1mm", display: "flex", alignItems: "center", gap: "1.5mm" }}>
+                                    <MapPin size={12} /> {a.location}
+                                  </p>
+                                )}
+                              </div>
+                              {img && (
+                                <div style={{ flexShrink: 0, background: "#fff", padding: "1.5mm 1.5mm 4mm", boxShadow: "0 4px 12px rgba(0,0,0,.15)", transform: "rotate(1.5deg)" }}>
+                                  <img
+                                    src={img}
+                                    crossOrigin="anonymous"
+                                    alt=""
+                                    style={{ width: "52mm", height: "36mm", objectFit: "cover", display: "block" }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Hotel do dia (apenas na última página do dia) */}
+                      {isLast && hotel && (
+                        <div style={{ position: "relative", marginTop: "8mm", display: "inline-flex", alignItems: "center", gap: "3mm", background: GOLD, color: "#fff", padding: "3.5mm 8mm", borderRadius: "30px", fontWeight: 600, fontSize: "13pt", maxWidth: "120mm" }}>
+                          <Hotel size={18} /> {hotel}
+                        </div>
+                      )}
+                    </Page>
+                  );
+                })}
+              </div>
             );
           })}
+
 
           {/* ----------------------- SERVIÇOS INCLUSOS --------------------- */}
           <Page style={{ background: BEIGE, padding: "26mm 20mm" }}>
