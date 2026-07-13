@@ -821,7 +821,21 @@ function LibraryModal({
         return;
       }
       setForm((f) => ({ ...f, [field]: text }));
-      toast.success(field === "description" ? "Descrição gerada!" : "Conteúdo gerado!");
+      if (field === "content" && res.tags?.length) {
+        setTagsText((prev) => {
+          const existing = prev.split(",").map((t) => t.trim()).filter(Boolean);
+          const seen = new Set(existing.map((t) => t.toLowerCase()));
+          const merged = [...existing];
+          for (const t of res.tags!) {
+            if (t && !seen.has(t.toLowerCase())) {
+              seen.add(t.toLowerCase());
+              merged.push(t);
+            }
+          }
+          return merged.join(", ");
+        });
+      }
+      toast.success(field === "description" ? "Descrição gerada!" : "Conteúdo e tags gerados!");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erro ao gerar com IA.");
     } finally {

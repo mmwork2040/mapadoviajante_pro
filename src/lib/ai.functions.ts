@@ -446,7 +446,7 @@ export const generateLibraryContent = createServerFn({ method: "POST" })
       field: d.field,
     };
   })
-  .handler(async ({ data, context }): Promise<{ text: string }> => {
+  .handler(async ({ data, context }): Promise<{ text: string; tags?: string[] }> => {
     const { data: cfg, error } = await context.supabase
       .from("crm_ai_config")
       .select("*")
@@ -476,25 +476,62 @@ export const generateLibraryContent = createServerFn({ method: "POST" })
       .filter(Boolean)
       .join("\n");
 
-    const instruction =
-      data.field === "description"
-        ? `Escreva uma DESCRIÇÃO CURTA (1 a 2 frases, no máximo ~240 caracteres) e atraente para este item da biblioteca de uma agência de viagens. Português do Brasil, tom profissional e vendedor, sem títulos nem aspas.`
-        : `Escreva um CONTEÚDO detalhado para servir de base de conhecimento da IA sobre este item. Inclua informações úteis como visão geral, principais atrações/atividades, dicas práticas, melhor época, duração sugerida e observações operacionais relevantes. Português do Brasil, texto corrido e/ou listas objetivas. Não repita o título como cabeçalho.`;
+    if (data.field === "description") {
+      const prompt = `Você é um redator especialista de uma agência de viagens.\nEscreva uma DESCRIÇÃO CURTA (1 a 2 frases, no máximo ~240 caracteres) e atraente para este item da biblioteca de uma agência de viagens. Português do Brasil, tom profissional e vendedor, sem títulos nem aspas.\n\nDados do item:\n${details}\n\nResponda APENAS com o texto final, sem comentários extras.`;
+      const { askCopilot } = await import("./ai.server");
+      const text = await askCopilot(
+        {
+          provider: cfg.provider ?? "openai",
+          model: cfg.model ?? "",
+          apiKey: cfg.api_key_encrypted,
+          maxTokens: 400,
+        },
+        prompt,
+      );
+      return { text: text.trim() };
+    }
 
-    const prompt = `Você é um redator especialista de uma agência de viagens.\n${instruction}\n\nDados do item:\n${details}\n\nResponda APENAS com o texto final, sem comentários extras.`;
+    // Conteúdo (base de conhecimento): também sugere TAGS para busca futura.
+    const prompt = `Você é um redator especialista de uma agência de viagens.\nEscreva um CONTEÚDO detalhado para servir de base de conhecimento da IA sobre este item. Inclua informações úteis como visão geral, principais atrações/atividades, dicas práticas, melhor época, duração sugerida e observações operacionais relevantes. Português do Brasil, texto corrido e/ou listas objetivas. Não repita o título como cabeçalho.\nAlém disso, gere de 4 a 8 TAGS curtas (1 a 2 palavras, minúsculas, sem #) que facilitem a busca futura deste item (destino, tipo de experiência, tema, público).\n\nDados do item:\n${details}\n\nResponda APENAS com JSON válido, sem texto extra:\n{ "content": "o conteúdo detalhado", "tags": ["tag1", "tag2", ...] }`;
 
     const { askCopilot } = await import("./ai.server");
-    const text = await askCopilot(
+    const raw = await askCopilot(
       {
         provider: cfg.provider ?? "openai",
         model: cfg.model ?? "",
         apiKey: cfg.api_key_encrypted,
-        maxTokens: data.field === "content" ? 2048 : 400,
+        maxTokens: 2048,
       },
       prompt,
     );
-    return { text: text.trim() };
+
+    let text = raw.trim();
+    let tags: string[] = [];
+    try {
+      const cleaned = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
+      const s = cleaned.indexOf("{");
+      const e = cleaned.lastIndexOf("}");
+      if (s !== -1 && e !== -1) {
+        const parsed = JSON.parse(cleaned.slice(s, e + 1)) as {
+          content?: string;
+          tags?: unknown;
+        };
+        if (typeof parsed.content === "string" && parsed.content.trim()) {
+          text = parsed.content.trim();
+        }
+        if (Array.isArray(parsed.tags)) {
+          tags = parsed.tags
+            .filter((t): t is string => typeof t === "string")
+            .map((t) => t.trim().toLowerCase().replace(/^#/, ""))
+            .filter(Boolean);
+        }
+      }
+    } catch {
+      /* mantém o texto bruto se não for JSON válido */
+    }
+    return { text, tags };
   });
+
 
 
 type CopilotInput = { prompt: string };
