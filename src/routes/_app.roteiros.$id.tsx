@@ -1476,6 +1476,48 @@ function ItineraryDetailPage() {
   );
 }
 
+function ActivityImagesCarousel({ images, alt }: { images: ActivityImage[]; alt: string }) {
+  const [idx, setIdx] = useState(0);
+  if (images.length === 0) return null;
+  const i = Math.min(idx, images.length - 1);
+  const multi = images.length > 1;
+  const go = (delta: number) => setIdx((v) => (v + delta + images.length) % images.length);
+  return (
+    <span className="relative mt-1.5 block overflow-hidden rounded-lg border border-border/60 bg-background/60">
+      <img src={images[i].url} alt={alt} className="h-40 w-full object-cover" loading="lazy" />
+      {multi && (
+        <>
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            className="absolute left-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+            aria-label="Imagem anterior"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => go(1)}
+            className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+            aria-label="Próxima imagem"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <span className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
+            {images.map((_, di) => (
+              <span
+                key={di}
+                className={`h-1.5 w-1.5 rounded-full ${di === i ? "bg-white" : "bg-white/40"}`}
+              />
+            ))}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
+
 function DaysCarousel({
   days,
   renderDay,
@@ -2600,31 +2642,20 @@ function ActivityRow({
 
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              Localiza a atração pelo título na cidade informada. Adicione imagens sortidas com descrição — elas aparecem na página do dia e vão para a biblioteca.
+              Localiza a atração pelo título na cidade informada. Adicione imagens sortidas — elas aparecem como carrossel na página do dia e vão para a biblioteca.
             </p>
             {eImages.length === 0 ? (
               <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma imagem adicionada.</p>
             ) : (
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {eImages.map((im, i) => (
-                  <div key={im.url} className="flex gap-2 rounded-lg border border-border/60 bg-background p-1.5">
-                    <img src={im.url} alt={im.description || "Imagem"} className="h-16 w-20 flex-none rounded-md object-cover" />
-                    <div className="min-w-0 flex-1">
-                      <textarea
-                        value={im.description || ""}
-                        onChange={(e) =>
-                          setEImages((prev) => prev.map((x, idx) => (idx === i ? { ...x, description: e.target.value } : x)))
-                        }
-                        placeholder="Descrição da atração / local…"
-                        rows={2}
-                        className="w-full resize-y rounded-md border border-input bg-background px-1.5 py-1 text-[11px] outline-none focus:border-primary"
-                      />
-                    </div>
+                  <div key={im.url} className="group relative overflow-hidden rounded-lg border border-border/60 bg-background">
+                    <img src={im.url} alt="Imagem" className="h-20 w-full object-cover" />
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(i)}
                       title="Remover imagem"
-                      className="flex-none self-start rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
+                      className="absolute right-1 top-1 rounded-md bg-black/50 p-1 text-white opacity-0 transition-opacity hover:bg-destructive group-hover:opacity-100"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
@@ -3684,16 +3715,7 @@ function ActivityRow({
               <span className="mt-0.5 block whitespace-pre-wrap text-[11px] text-muted-foreground">{activity.description}</span>
             )}
             {(activity.images?.length ?? 0) > 0 && (
-              <span className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                {activity.images!.map((im, i) => (
-                  <span key={i} className="block overflow-hidden rounded-lg border border-border/60 bg-background/60">
-                    <img src={im.url} alt={im.description || activity.title} className="h-24 w-full object-cover" loading="lazy" />
-                    {im.description && (
-                      <span className="block px-1.5 py-1 text-[10px] leading-snug text-muted-foreground">{im.description}</span>
-                    )}
-                  </span>
-                ))}
-              </span>
+              <ActivityImagesCarousel images={activity.images!} alt={activity.title} />
             )}
 
             {activity.cost != null && (
