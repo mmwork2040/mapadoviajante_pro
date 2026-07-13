@@ -57,40 +57,42 @@ const SERVICOS_NAO_INCLUSOS = [
   "Todas as despesas não descritas neste guia",
 ];
 
-// Ornamento decorativo dourado nos cantos das páginas de conteúdo.
-function CornerBlobs({ gold = GOLD }: { gold?: string }) {
+// Arco decorativo removido: os cantos agora usam apenas a logo "presa" (Brandmark).
+function CornerBlobs(_props: { gold?: string }) {
+  return null;
+}
+
+// Clipe metálico que "prende" a logo no canto.
+function PaperClip() {
   return (
-    <>
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          width: "42mm",
-          height: "34mm",
-          background: gold,
-          borderBottomLeftRadius: "100%",
-          opacity: 0.9,
-        }}
+    <svg
+      width="22"
+      height="34"
+      viewBox="0 0 22 34"
+      fill="none"
+      style={{ display: "block", filter: "drop-shadow(0 1px 1.5px rgba(0,0,0,.35))" }}
+    >
+      <path
+        d="M11 3 C6 3 3 6 3 11 L3 24 C3 28 6 31 10 31 C14 31 17 28 17 24 L17 9 C17 6.5 15 5 13 5 C11 5 9 6.5 9 9 L9 23"
+        stroke="url(#clipGrad)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
       />
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          width: "36mm",
-          height: "28mm",
-          background: gold,
-          borderTopRightRadius: "100%",
-          opacity: 0.9,
-        }}
-      />
-    </>
+      <defs>
+        <linearGradient id="clipGrad" x1="0" y1="0" x2="22" y2="0">
+          <stop offset="0" stopColor="#c9ccd1" />
+          <stop offset="0.45" stopColor="#8b8f96" />
+          <stop offset="0.55" stopColor="#f0f2f5" />
+          <stop offset="1" stopColor="#9aa0a8" />
+        </linearGradient>
+      </defs>
+    </svg>
   );
 }
 
-// Selo nos cantos: usa a logo da agência (quando definida na Administração) ou,
-// como padrão, o wordmark "O segredo Viajante".
+// Selo nos cantos: um cartãozinho branco levemente girado em 3D, "preso" por um
+// clipe metálico. Mostra a logo da agência ou, como padrão, o wordmark.
 function Brandmark({
   light,
   logoUrl,
@@ -100,24 +102,40 @@ function Brandmark({
   logoUrl?: string | null;
   goldDark?: string;
 }) {
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        crossOrigin="anonymous"
-        alt=""
-        style={{ maxHeight: "18mm", maxWidth: "46mm", objectFit: "contain", display: "block" }}
-      />
-    );
-  }
-  return (
+  const inner = logoUrl ? (
+    <img
+      src={logoUrl}
+      crossOrigin="anonymous"
+      alt=""
+      style={{ maxHeight: "15mm", maxWidth: "40mm", objectFit: "contain", display: "block" }}
+    />
+  ) : (
     <div style={{ lineHeight: 1, textAlign: "right" }}>
-      <span style={{ display: "block", fontFamily: "Fredoka, sans-serif", fontWeight: 600, fontSize: "10pt", color: light ? "#fff" : goldDark }}>
+      <span style={{ display: "block", fontFamily: "Fredoka, sans-serif", fontWeight: 600, fontSize: "10pt", color: goldDark }}>
         O segredo
       </span>
-      <span style={{ display: "block", fontFamily: "'Dancing Script', cursive", fontWeight: 700, fontSize: "14pt", color: light ? "#fff" : goldDark, marginTop: "-2px" }}>
+      <span style={{ display: "block", fontFamily: "'Dancing Script', cursive", fontWeight: 700, fontSize: "14pt", color: goldDark, marginTop: "-2px" }}>
         Viajante
       </span>
+    </div>
+  );
+  return (
+    <div style={{ position: "relative", perspective: "300px" }}>
+      <div
+        style={{
+          background: "#fff",
+          padding: "5mm 6mm",
+          borderRadius: "3px",
+          boxShadow: "0 6px 14px rgba(0,0,0,.22), 0 1px 2px rgba(0,0,0,.15)",
+          transform: "rotateX(6deg) rotateY(-14deg) rotate(3deg)",
+          transformOrigin: "top right",
+        }}
+      >
+        {inner}
+      </div>
+      <div style={{ position: "absolute", top: "-6mm", right: "6mm", transform: "rotate(10deg)" }}>
+        <PaperClip />
+      </div>
     </div>
   );
 }
