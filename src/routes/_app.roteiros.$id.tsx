@@ -46,6 +46,7 @@ import {
   saveImageFileToLibrary,
   findSimilarLibraryImage,
   searchLibraryImageForDestination,
+  uploadLibraryAsset,
   updateItinerary,
   updateItineraryActivity,
   updateItineraryDay,
