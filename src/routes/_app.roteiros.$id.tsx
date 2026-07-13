@@ -2017,6 +2017,7 @@ function ActivityRow({
   const [hfLimit, setHfLimit] = useState(5);
   const [hfSites, setHfSites] = useState<string[]>(["booking", "trivago", "hotels", "expedia", "tripadvisor"]);
   const convertCurrency = useServerFn(convertCurrencyFn);
+  const [convertingPax, setConvertingPax] = useState<number | null>(null);
   const searchHotels = useServerFn(searchHotelsFn);
   // Sugestões genéricas (transfer, restaurante, passeio)
   const [eSugg, setESugg] = useState<HotelOption[]>(activity.suggestion_options || []);
