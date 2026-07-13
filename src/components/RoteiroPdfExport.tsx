@@ -343,7 +343,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
   const [busy, setBusy] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   // Imagens resolvidas da biblioteca por atividade (id -> URL exibível).
-  const [actImages, setActImages] = useState<Record<string, string>>({});
+  const [actImages, setActImages] = useState<Record<string, string[]>>({});
 
 
   const destino = it.destination || it.title || "Sua Viagem";
@@ -378,28 +378,43 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     );
   }
 
-  // Para atividades sem imagem própria, busca na biblioteca uma foto que
-  // combine com o local/tags/descrição e resolve a URL exibível.
-  async function resolveActivityImages(): Promise<Record<string, string>> {
+  // Para cada atividade: se já tiver imagem própria, usa-a (resolvendo a URL
+  // exibível); caso contrário, busca na biblioteca uma foto compatível.
+  async function resolveActivityImages(): Promise<Record<string, string[]>> {
     let images: LibraryItem[] = [];
     try {
       images = await fetchLibraryItems("image");
     } catch {
-      return {};
+      images = [];
     }
-    if (images.length === 0) return {};
     const used = new Set<string>();
-    const map: Record<string, string> = {};
+    const map: Record<string, string[]> = {};
     for (const day of days) {
       for (const a of activityLines(day.activities)) {
         if (a.type === "hotel") continue;
-        if (a.images && a.images.length && a.images[0]?.url) continue; // já tem imagem
+
+        // 1) Imagem já adicionada na atividade tem prioridade.
+        const own = (a.images || []).map((i) => i.url).filter(Boolean) as string[];
+        if (own.length) {
+          const resolved: string[] = [];
+          for (const u of own) {
+            const url = await resolveDisplayImageUrl(u);
+            if (url) resolved.push(url);
+          }
+          if (resolved.length) {
+            map[a.id] = resolved;
+            continue;
+          }
+        }
+
+        // 2) Sem imagem própria: busca na biblioteca.
+        if (images.length === 0) continue;
         const hit = pickLibraryImage(a, images, used);
         const src = hit?.image_url || hit?.file_url;
         if (!src) continue;
         const url = await resolveDisplayImageUrl(src);
         if (url) {
-          map[a.id] = url;
+          map[a.id] = [url];
           used.add(src);
         }
       }
@@ -569,9 +584,9 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           {/* ------------------------- ROTEIRO DIÁRIO ---------------------- */}
           {(() => {
             const imagesFor = (a: ItineraryActivity): string[] => {
-              const own = (a.images || []).map((i) => i.url).filter(Boolean) as string[];
-              if (own.length) return own;
-              return actImages[a.id] ? [actImages[a.id]] : [];
+              // O mapa já contém a imagem própria resolvida ou a da biblioteca.
+              if (actImages[a.id]?.length) return actImages[a.id];
+              return (a.images || []).map((i) => i.url).filter(Boolean) as string[];
             };
 
             type Block = {
