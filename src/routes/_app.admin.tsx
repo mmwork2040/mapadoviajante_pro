@@ -2336,6 +2336,249 @@ function AiConfigCard() {
   );
 }
 
+// Personalização da marca usada no PDF do roteiro: logo (escolhida da
+// biblioteca), textos da página de abertura e cores da paleta.
+function BrandingCard() {
+  const [branding, setBranding] = useState<AgencyBranding>({ ...DEFAULT_BRANDING });
+  const [images, setImages] = useState<LibraryItem[]>([]);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const [b, imgs] = await Promise.all([
+        getAgencyBranding(),
+        fetchLibraryItems("image").catch(() => [] as LibraryItem[]),
+      ]);
+      if (!active) return;
+      setBranding(b);
+      setImages(imgs);
+      setLoading(false);
+      // Resolve miniaturas exibíveis.
+      const map: Record<string, string> = {};
+      await Promise.all(
+        imgs.map(async (im) => {
+          const src = im.image_url || im.file_url;
+          if (!src) return;
+          const u = await resolveDisplayImageUrl(src);
+          if (u) map[im.id] = u;
+        }),
+      );
+      if (active) setThumbs(map);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const logoThumb = useMemo(
+    () => images.find((im) => (im.image_url || im.file_url) === branding.logoPath),
+    [images, branding.logoPath],
+  );
+
+  function set<K extends keyof AgencyBranding>(key: K, value: AgencyBranding[K]) {
+    setBranding((b) => ({ ...b, [key]: value }));
+  }
+
+  async function save() {
+    setSaving(true);
+    const res = await saveAgencyBranding(branding);
+    setSaving(false);
+    if (res.ok) toast.success("Personalização salva.");
+    else toast.error(res.error || "Não foi possível salvar.");
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Logo */}
+      <div>
+        <SectionHeader
+          icon={<Palette className="h-5 w-5" />}
+          color="#b8965a"
+          title="Logo da empresa"
+          subtitle="Escolha uma imagem da biblioteca; ela substitui o selo nos cantos do PDF"
+        />
+        <div className="flex items-center gap-4">
+          <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-muted/40">
+            {branding.logoPath && logoThumb && thumbs[logoThumb.id] ? (
+              <img src={thumbs[logoThumb.id]} alt="Logo" className="h-full w-full object-contain" />
+            ) : (
+              <span className="px-1 text-center text-[10px] text-muted-foreground">Sem logo</span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              Escolher da biblioteca
+            </button>
+            {branding.logoPath && (
+              <button
+                type="button"
+                onClick={() => set("logoPath", null)}
+                className="rounded-lg border border-input px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10"
+              >
+                Remover
+              </button>
+            )}
+          </div>
+        </div>
+        {images.length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            Nenhuma imagem na biblioteca ainda. Adicione imagens em Biblioteca para usar como logo.
+          </p>
+        )}
+      </div>
+
+      {/* Textos da página de abertura */}
+      <div className="border-t border-border pt-6">
+        <SectionHeader
+          icon={<FileText className="h-5 w-5" />}
+          color="#2563eb"
+          title="Página de abertura"
+          subtitle="Textos exibidos na capa/abertura do PDF (deixe vazio para usar o padrão)"
+        />
+        <div className="space-y-3">
+          <input
+            value={branding.openingTitle || ""}
+            onChange={(e) => set("openingTitle", e.target.value.slice(0, 80))}
+            placeholder="Título de abertura (ex.: O Segredo do Viajante)"
+            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-2.5 text-sm outline-none focus:border-primary"
+          />
+          <input
+            value={branding.openingSubtitle || ""}
+            onChange={(e) => set("openingSubtitle", e.target.value.slice(0, 120))}
+            placeholder="Subtítulo (ex.: Sua viagem dos sonhos começa aqui)"
+            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-2.5 text-sm outline-none focus:border-primary"
+          />
+          <input
+            value={branding.openingFooter || ""}
+            onChange={(e) => set("openingFooter", e.target.value.slice(0, 160))}
+            placeholder="Rodapé (ex.: contato, site, redes sociais)"
+            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-2.5 text-sm outline-none focus:border-primary"
+          />
+        </div>
+      </div>
+
+      {/* Cores */}
+      <div className="border-t border-border pt-6">
+        <SectionHeader
+          icon={<Palette className="h-5 w-5" />}
+          color="#a07b3b"
+          title="Cores do PDF"
+          subtitle="Ajuste as cores da paleta usada nos detalhes do roteiro"
+        />
+        <div className="flex flex-wrap gap-6">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="color"
+              value={branding.colorGold || DEFAULT_BRANDING.colorGold}
+              onChange={(e) => set("colorGold", e.target.value)}
+              className="h-9 w-12 cursor-pointer rounded border border-input bg-transparent"
+            />
+            Cor principal
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="color"
+              value={branding.colorGoldDark || DEFAULT_BRANDING.colorGoldDark}
+              onChange={(e) => set("colorGoldDark", e.target.value)}
+              className="h-9 w-12 cursor-pointer rounded border border-input bg-transparent"
+            />
+            Cor escura
+          </label>
+          <button
+            type="button"
+            onClick={() => {
+              set("colorGold", DEFAULT_BRANDING.colorGold);
+              set("colorGoldDark", DEFAULT_BRANDING.colorGoldDark);
+            }}
+            className="rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Restaurar padrão
+          </button>
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={save}
+          disabled={saving}
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Salvar personalização
+        </button>
+      </div>
+
+      {pickerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => setPickerOpen(false)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-2xl overflow-auto rounded-2xl border border-border bg-card p-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="font-bold">Escolher logo da biblioteca</h3>
+              <button type="button" onClick={() => setPickerOpen(false)} aria-label="Fechar">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            {images.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma imagem disponível na biblioteca.</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+                {images.map((im) => {
+                  const src = im.image_url || im.file_url || "";
+                  const selected = src === branding.logoPath;
+                  return (
+                    <button
+                      key={im.id}
+                      type="button"
+                      onClick={() => {
+                        set("logoPath", src);
+                        setPickerOpen(false);
+                      }}
+                      className={`overflow-hidden rounded-lg border-2 ${selected ? "border-primary" : "border-border"} hover:border-primary`}
+                    >
+                      <span className="flex h-24 items-center justify-center bg-muted/40">
+                        {thumbs[im.id] ? (
+                          <img src={thumbs[im.id]} alt={im.title} className="h-full w-full object-contain" />
+                        ) : (
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                        )}
+                      </span>
+                      <span className="block truncate px-1 py-1 text-[10px] text-muted-foreground">{im.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
 function SectionHeader({
   icon,
   color,
