@@ -57,7 +57,7 @@ const SERVICOS_NAO_INCLUSOS = [
 ];
 
 // Ornamento decorativo dourado nos cantos das páginas de conteúdo.
-function CornerBlobs() {
+function CornerBlobs({ gold = GOLD }: { gold?: string }) {
   return (
     <>
       <div
@@ -67,7 +67,7 @@ function CornerBlobs() {
           right: 0,
           width: "42mm",
           height: "34mm",
-          background: GOLD,
+          background: gold,
           borderBottomLeftRadius: "100%",
           opacity: 0.9,
         }}
@@ -79,7 +79,7 @@ function CornerBlobs() {
           left: 0,
           width: "36mm",
           height: "28mm",
-          background: GOLD,
+          background: gold,
           borderTopRightRadius: "100%",
           opacity: 0.9,
         }}
@@ -88,13 +88,33 @@ function CornerBlobs() {
   );
 }
 
-function Wordmark({ light }: { light?: boolean }) {
+// Selo nos cantos: usa a logo da agência (quando definida na Administração) ou,
+// como padrão, o wordmark "O segredo Viajante".
+function Brandmark({
+  light,
+  logoUrl,
+  goldDark = GOLD_DARK,
+}: {
+  light?: boolean;
+  logoUrl?: string | null;
+  goldDark?: string;
+}) {
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        crossOrigin="anonymous"
+        alt=""
+        style={{ maxHeight: "18mm", maxWidth: "46mm", objectFit: "contain", display: "block" }}
+      />
+    );
+  }
   return (
     <div style={{ lineHeight: 1, textAlign: "right" }}>
-      <span style={{ display: "block", fontFamily: "Fredoka, sans-serif", fontWeight: 600, fontSize: "10pt", color: light ? "#fff" : GOLD_DARK }}>
+      <span style={{ display: "block", fontFamily: "Fredoka, sans-serif", fontWeight: 600, fontSize: "10pt", color: light ? "#fff" : goldDark }}>
         O segredo
       </span>
-      <span style={{ display: "block", fontFamily: "'Dancing Script', cursive", fontWeight: 700, fontSize: "14pt", color: light ? "#fff" : GOLD_DARK, marginTop: "-2px" }}>
+      <span style={{ display: "block", fontFamily: "'Dancing Script', cursive", fontWeight: 700, fontSize: "14pt", color: light ? "#fff" : goldDark, marginTop: "-2px" }}>
         Viajante
       </span>
     </div>
