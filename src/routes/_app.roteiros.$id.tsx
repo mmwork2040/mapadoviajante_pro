@@ -392,6 +392,7 @@ function ItineraryDetailPage() {
   });
   const [coverUrl, setCoverUrl] = useState<string | null>(null);
   const [coverLoaded, setCoverLoaded] = useState(false);
+  const [coverPickerOpen, setCoverPickerOpen] = useState(false);
   useEffect(() => {
     let active = true;
     setCoverLoaded(false);
