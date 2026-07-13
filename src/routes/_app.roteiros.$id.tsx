@@ -80,6 +80,7 @@ import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
 import { formatCurrency, parseCurrency, formatMoney, brlWithRate } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
+import { StarRatingSelect } from "@/components/StarRatingSelect";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
 import {
@@ -3039,16 +3040,8 @@ function ActivityRow({
               {suggKind === "restaurant" && (
                 <div>
                   <label className="text-[11px] font-medium text-muted-foreground">Estrelas (mínimo)</label>
-                  <select
-                    value={sfStars}
-                    onChange={(e) => setSfStars(e.target.value)}
-                    className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
-                  >
-                    <option value="">Qualquer</option>
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <option key={s} value={s}>{s} estrela(s) ou mais</option>
-                    ))}
-                  </select>
+                  <StarRatingSelect value={sfStars} onChange={setSfStars} />
+
                 </div>
               )}
               <div>
@@ -3205,16 +3198,8 @@ function ActivityRow({
               </div>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Estrelas (mínimo)</label>
-                <select
-                  value={hfStars}
-                  onChange={(e) => setHfStars(e.target.value)}
-                  className="mt-1 w-full rounded-lg border border-input bg-background px-2 py-1.5 text-xs outline-none focus:border-primary"
-                >
-                  <option value="">Qualquer</option>
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <option key={s} value={s}>{s} estrela(s) ou mais</option>
-                  ))}
-                </select>
+                <StarRatingSelect value={hfStars} onChange={setHfStars} />
+
               </div>
               <div>
                 <label className="text-[11px] font-medium text-muted-foreground">Média de valores da diária</label>
