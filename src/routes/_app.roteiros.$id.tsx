@@ -2367,12 +2367,14 @@ function ActivityRow({
             const cur = (p.currency || eCurrency || "BRL").toUpperCase();
             let amount_brl: number | null = null;
             let amount_brl_rate: number | null = null;
+            let amount_brl_at: string | null = p.amount_brl_at ?? null;
             if (p.amount != null && cur !== "BRL") {
               try {
                 const conv = await convertCurrency({ data: { amount: p.amount, currency: cur } });
                 if (conv.ok) {
                   amount_brl = conv.brl;
                   amount_brl_rate = conv.rate || null;
+                  amount_brl_at = new Date().toISOString();
                 }
               } catch {
                 /* ignore conversão indisponível */
@@ -2384,6 +2386,7 @@ function ActivityRow({
               currency: cur,
               amount_brl,
               amount_brl_rate,
+              amount_brl_at,
             };
           }),
       );
