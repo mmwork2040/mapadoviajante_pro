@@ -343,7 +343,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
   const [busy, setBusy] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   // Imagens resolvidas da biblioteca por atividade (id -> URL exibível).
-  const [actImages, setActImages] = useState<Record<string, string>>({});
+  const [actImages, setActImages] = useState<Record<string, string[]>>({});
 
 
   const destino = it.destination || it.title || "Sua Viagem";
