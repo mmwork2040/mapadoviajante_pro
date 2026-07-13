@@ -291,6 +291,7 @@ function ActivityImageBox({ images, preview }: { images: string[]; preview: bool
 export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   // Imagens resolvidas da biblioteca por atividade (id -> URL exibível).
   const [actImages, setActImages] = useState<Record<string, string>>({});
 
