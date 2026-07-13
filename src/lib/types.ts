@@ -203,6 +203,8 @@ export interface PassengerCost {
   name: string;
   amount?: number | null;
   currency?: string | null;
+  amount_brl?: number | null;
+  amount_brl_rate?: number | null;
 }
 
 export interface HotelOption {
