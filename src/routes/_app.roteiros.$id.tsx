@@ -3550,6 +3550,27 @@ function ActivityRow({
                   </span>
                   );
                 })}
+                {(() => {
+                  let total = 0;
+                  let ok = false;
+                  for (const p of activity.passenger_costs!) {
+                    if (p.amount == null) continue;
+                    const isForeign = (p.currency || "BRL").toUpperCase() !== "BRL";
+                    const val = isForeign
+                      ? p.amount_brl ?? brlWithRate(p.amount, p.currency, activity.currency, activity.cost_brl_rate)
+                      : p.amount;
+                    if (val == null) continue;
+                    total += val;
+                    ok = true;
+                  }
+                  if (!ok) return null;
+                  return (
+                    <span className="flex items-center justify-between gap-2 pt-0.5 text-[11px] text-muted-foreground">
+                      <span>Total ({activity.passenger_costs!.length} pessoa(s))</span>
+                      <span className="font-semibold text-foreground">{formatCurrency(total)}</span>
+                    </span>
+                  );
+                })()}
               </span>
             )}
             {activity.type === "hotel" && (activity.hotel_options?.length ?? 0) > 0 && (
