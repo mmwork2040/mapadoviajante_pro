@@ -205,6 +205,8 @@ export interface PassengerCost {
   currency?: string | null;
   amount_brl?: number | null;
   amount_brl_rate?: number | null;
+  /** Momento (ISO) em que a conversão para BRL foi feita. */
+  amount_brl_at?: string | null;
 }
 
 export interface HotelOption {

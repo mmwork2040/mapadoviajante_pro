@@ -2367,15 +2367,29 @@ function ActivityRow({
             const cur = (p.currency || eCurrency || "BRL").toUpperCase();
             let amount_brl: number | null = null;
             let amount_brl_rate: number | null = null;
+            let amount_brl_at: string | null = null;
             if (p.amount != null && cur !== "BRL") {
-              try {
-                const conv = await convertCurrency({ data: { amount: p.amount, currency: cur } });
-                if (conv.ok) {
-                  amount_brl = conv.brl;
-                  amount_brl_rate = conv.rate || null;
+              // Reaproveita a conversão já salva quando valor e moeda não mudaram,
+              // garantindo que a leitura futura mostre exatamente a mesma cotação.
+              if (
+                p.amount_brl != null &&
+                p.amount_brl_rate != null &&
+                Math.abs((p.amount_brl_rate * (p.amount ?? 0)) - p.amount_brl) < 0.01
+              ) {
+                amount_brl = p.amount_brl;
+                amount_brl_rate = p.amount_brl_rate;
+                amount_brl_at = p.amount_brl_at ?? null;
+              } else {
+                try {
+                  const conv = await convertCurrency({ data: { amount: p.amount, currency: cur } });
+                  if (conv.ok) {
+                    amount_brl = conv.brl;
+                    amount_brl_rate = conv.rate || null;
+                    amount_brl_at = new Date().toISOString();
+                  }
+                } catch {
+                  /* ignore conversão indisponível */
                 }
-              } catch {
-                /* ignore conversão indisponível */
               }
             }
             return {
@@ -2384,6 +2398,7 @@ function ActivityRow({
               currency: cur,
               amount_brl,
               amount_brl_rate,
+              amount_brl_at,
             };
           }),
       );
