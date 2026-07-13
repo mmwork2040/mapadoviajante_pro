@@ -2360,13 +2360,33 @@ function ActivityRow({
           source: h.source ?? "user",
           links: h.links && h.links.length ? h.links : (suggKind ? suggestionLinks(suggKind, h.name, eLocation) : []),
         }));
-      const cleanPax = ePax
-        .filter((p) => (p.name || "").trim())
-        .map((p) => ({
-          name: p.name.trim(),
-          amount: p.amount ?? null,
-          currency: p.currency || eCurrency || "BRL",
-        }));
+      const cleanPax = await Promise.all(
+        ePax
+          .filter((p) => (p.name || "").trim())
+          .map(async (p) => {
+            const cur = (p.currency || eCurrency || "BRL").toUpperCase();
+            let amount_brl: number | null = null;
+            let amount_brl_rate: number | null = null;
+            if (p.amount != null && cur !== "BRL") {
+              try {
+                const conv = await convertCurrency({ data: { amount: p.amount, currency: cur } });
+                if (conv.ok) {
+                  amount_brl = conv.brl;
+                  amount_brl_rate = conv.rate || null;
+                }
+              } catch {
+                /* ignore conversão indisponível */
+              }
+            }
+            return {
+              name: p.name.trim(),
+              amount: p.amount ?? null,
+              currency: cur,
+              amount_brl,
+              amount_brl_rate,
+            };
+          }),
+      );
       await updateItineraryActivity(activity.id, {
         title: eTitle.trim(),
         time: eTime || null,
