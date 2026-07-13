@@ -1,5 +1,64 @@
 import { supabase } from "@/integrations/supabase/client";
 
+// Personalização visual do PDF de roteiro (marca da agência): logo escolhida da
+// biblioteca, textos da página de abertura e cores douradas da paleta.
+export interface AgencyBranding {
+  /** Caminho/URL da imagem da biblioteca usada como logo (substitui o wordmark). */
+  logoPath?: string | null;
+  /** Textos da página de abertura/capa. */
+  openingTitle?: string;
+  openingSubtitle?: string;
+  openingFooter?: string;
+  /** Cores da paleta do PDF. */
+  colorGold?: string;
+  colorGoldDark?: string;
+}
+
+export const DEFAULT_BRANDING: AgencyBranding = {
+  logoPath: null,
+  openingTitle: "",
+  openingSubtitle: "",
+  openingFooter: "",
+  colorGold: "#B8965A",
+  colorGoldDark: "#A07B3B",
+};
+
+/** Carrega a personalização de marca da agência do usuário. */
+export async function getAgencyBranding(): Promise<AgencyBranding> {
+  const { data: agencyId } = await supabase.rpc("get_user_agency_id");
+  if (!agencyId) return { ...DEFAULT_BRANDING };
+  const { data } = await supabase
+    .from("agencies")
+    .select("settings")
+    .eq("id", agencyId as string)
+    .maybeSingle();
+  const branding = (data as { settings?: { branding?: AgencyBranding } } | null)?.settings?.branding;
+  return { ...DEFAULT_BRANDING, ...(branding ?? {}) };
+}
+
+/** Salva a personalização de marca preservando as demais chaves de settings. */
+export async function saveAgencyBranding(
+  branding: AgencyBranding,
+): Promise<{ ok: boolean; error?: string }> {
+  const { data: agencyId } = await supabase.rpc("get_user_agency_id");
+  if (!agencyId) return { ok: false, error: "Agência não encontrada." };
+  const { data: current } = await supabase
+    .from("agencies")
+    .select("settings")
+    .eq("id", agencyId as string)
+    .maybeSingle();
+  const settings = {
+    ...((current as { settings?: Record<string, unknown> } | null)?.settings ?? {}),
+    branding,
+  };
+  const { error } = await supabase
+    .from("agencies")
+    .update({ settings } as never)
+    .eq("id", agencyId as string);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 export interface AgencyAddress {
   cep?: string;
   street?: string;
