@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
+import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Itinerary, ItineraryActivity, ItineraryDay, LibraryItem } from "@/lib/types";
 import { fetchLibraryItems, resolveDisplayImageUrl } from "@/lib/services";
@@ -144,21 +144,23 @@ function tokens(s?: string | null): string[] {
   return Array.from(new Set(norm(s).split(/[^a-z0-9]+/).filter((t) => t.length >= 3)));
 }
 
-// Escolhe, entre as imagens da biblioteca, a mais relacionada à atividade.
-// Validação rígida: só aceita a imagem quando há CERTEZA de compatibilidade,
-// confirmando a CIDADE/LOCAL e ao menos um sinal do conteúdo base (título,
-// descrição) ou das tags. Em caso de dúvida, retorna null (não adiciona).
-function pickLibraryImage(
+// Escolhe, entre as imagens da biblioteca, as fotos mais relacionadas à
+// atividade (até `max`), montando um pequeno álbum quando há mais de um ponto
+// turístico/local relacionado. Validação rígida: só aceita imagens quando há
+// CERTEZA de compatibilidade, confirmando a CIDADE/LOCAL e ao menos um sinal do
+// conteúdo base (título, descrição) ou das tags. Em caso de dúvida, ignora.
+function pickLibraryImages(
   a: ItineraryActivity,
   images: LibraryItem[],
   used: Set<string>,
-): LibraryItem | null {
+  max = 3,
+): LibraryItem[] {
   const locTokens = tokens(a.location);
   // Sem local/cidade definidos não há como garantir compatibilidade.
-  if (locTokens.length === 0) return null;
+  if (locTokens.length === 0) return [];
   const contentTokens = new Set([...tokens(a.title), ...tokens(a.description)]);
 
-  let best: { item: LibraryItem; score: number } | null = null;
+  const scored: { item: LibraryItem; score: number }[] = [];
   for (const img of images) {
     const src = img.image_url || img.file_url;
     if (!src) continue;
@@ -179,118 +181,86 @@ function pickLibraryImage(
     }
     // Exige confirmação além da simples coincidência de cidade.
     if (score < 3) continue;
-
     if (used.has(src)) score -= 2; // penaliza reuso, mas não descarta
-    if (!best || score > best.score) best = { item: img, score };
+    scored.push({ item: img, score });
   }
-  return best && best.score >= 3 ? best.item : null;
+  scored.sort((x, y) => y.score - x.score);
+  return scored.slice(0, max).map((s) => s.item);
+}
+
+// Mescla, de forma resumida, as descrições/conhecimento dos locais encontrados
+// na biblioteca, para enriquecer a atividade com um pequeno texto sobre os
+// lugares. Mantém o resultado curto para não quebrar o layout do PDF.
+function mergeDescriptions(items: LibraryItem[]): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const it of items) {
+    const t = (it.description || it.content || "").replace(/\s+/g, " ").trim();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    parts.push(t);
+  }
+  if (parts.length === 0) return "";
+  let joined = parts.join(" ");
+  if (joined.length > 320) {
+    joined = joined.slice(0, 320);
+    const lastDot = joined.lastIndexOf(".");
+    joined = lastDot > 160 ? joined.slice(0, lastDot + 1) : joined.trim() + "…";
+  }
+  return joined;
 }
 
 // Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
-function estimateActivityHeight(a: ItineraryActivity, hasImage: boolean): number {
+function estimateActivityHeight(a: ItineraryActivity, imgCount: number, note?: string): number {
   const descLines = a.description ? Math.ceil(a.description.length / 52) : 0;
-  const textH = 9 + descLines * 5 + (a.location ? 6 : 0);
-  const imageH = hasImage ? 42 : 0;
+  const noteLines = note ? Math.ceil(note.length / 58) : 0;
+  const textH = 9 + descLines * 5 + noteLines * 4.5 + (a.location ? 6 : 0);
+  const imageH = imgCount >= 2 ? 62 : 42; // álbum ocupa mais que uma foto única
   return Math.max(textH, imageH) + 8;
 }
 
-// Caixa de imagem da atividade. Na pré-visualização (preview) com mais de uma
-// imagem, funciona como carrossel; na exportação do PDF mostra a 1ª imagem.
-function ActivityImageBox({ images, preview }: { images: string[]; preview: boolean }) {
-  const [idx, setIdx] = useState(0);
-  if (images.length === 0) return null;
-  const i = Math.min(idx, images.length - 1);
-  const multi = preview && images.length > 1;
-  const go = (delta: number) =>
-    setIdx((v) => (v + delta + images.length) % images.length);
+// Uma foto no estilo "polaroid" (fundo branco + sombra + leve rotação).
+function Polaroid({ src, w, h, rotate }: { src: string; w: string; h: string; rotate: number }) {
   return (
     <div
       style={{
         flexShrink: 0,
-        position: "relative",
         background: "#fff",
-        padding: "1.5mm 1.5mm 4mm",
-        boxShadow: "0 4px 12px rgba(0,0,0,.15)",
-        transform: "rotate(1.5deg)",
+        padding: "1mm 1mm 2.5mm",
+        boxShadow: "0 3px 9px rgba(0,0,0,.18)",
+        transform: `rotate(${rotate}deg)`,
       }}
     >
       <img
-        src={images[i]}
+        src={src}
         crossOrigin="anonymous"
         alt=""
-        style={{ width: "52mm", height: "36mm", objectFit: "cover", display: "block" }}
+        style={{ width: w, height: h, objectFit: "cover", display: "block" }}
       />
-      {multi && (
-        <>
-          <button
-            type="button"
-            onClick={() => go(-1)}
-            style={{
-              position: "absolute",
-              left: "3px",
-              top: "42%",
-              transform: "translateY(-50%)",
-              background: "rgba(0,0,0,.5)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "9999px",
-              width: "22px",
-              height: "22px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            <ChevronLeft size={14} />
-          </button>
-          <button
-            type="button"
-            onClick={() => go(1)}
-            style={{
-              position: "absolute",
-              right: "3px",
-              top: "42%",
-              transform: "translateY(-50%)",
-              background: "rgba(0,0,0,.5)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "9999px",
-              width: "22px",
-              height: "22px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              cursor: "pointer",
-            }}
-          >
-            <ChevronRight size={14} />
-          </button>
-          <div
-            style={{
-              position: "absolute",
-              bottom: "1mm",
-              left: 0,
-              right: 0,
-              display: "flex",
-              justifyContent: "center",
-              gap: "4px",
-            }}
-          >
-            {images.map((_, di) => (
-              <span
-                key={di}
-                style={{
-                  width: "6px",
-                  height: "6px",
-                  borderRadius: "9999px",
-                  background: di === i ? GOLD_DARK : "rgba(0,0,0,.25)",
-                }}
-              />
-            ))}
-          </div>
-        </>
-      )}
+    </div>
+  );
+}
+
+// Álbum de fotos da atividade: uma única foto quando há apenas uma; um pequeno
+// mosaico (até 3 fotos) quando a atividade reúne vários pontos turísticos.
+function ActivityImageBox({ images }: { images: string[] }) {
+  const imgs = images.slice(0, 3);
+  if (imgs.length === 0) return null;
+  if (imgs.length === 1) {
+    return (
+      <div style={{ flexShrink: 0, transform: "rotate(1.5deg)" }}>
+        <Polaroid src={imgs[0]} w="52mm" h="36mm" rotate={0} />
+      </div>
+    );
+  }
+  return (
+    <div style={{ flexShrink: 0, width: "56mm", display: "flex", flexDirection: "column", gap: "2mm", alignItems: "center" }}>
+      <Polaroid src={imgs[0]} w="52mm" h="30mm" rotate={-1.5} />
+      <div style={{ display: "flex", gap: "2mm", justifyContent: "center" }}>
+        {imgs.slice(1).map((u, i) => (
+          <Polaroid key={i} src={u} w="24mm" h="20mm" rotate={i % 2 === 0 ? 2 : -2} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -344,6 +314,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
   const [previewOpen, setPreviewOpen] = useState(false);
   // Imagens resolvidas da biblioteca por atividade (id -> URL exibível).
   const [actImages, setActImages] = useState<Record<string, string[]>>({});
+  // Resumo mesclado dos locais (biblioteca) por atividade.
+  const [actNotes, setActNotes] = useState<Record<string, string>>({});
 
 
   const destino = it.destination || it.title || "Sua Viagem";
@@ -380,7 +352,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
   // Para cada atividade: se já tiver imagem própria, usa-a (resolvendo a URL
   // exibível); caso contrário, busca na biblioteca uma foto compatível.
-  async function resolveActivityImages(): Promise<Record<string, string[]>> {
+  async function resolveActivityImages(): Promise<{ images: Record<string, string[]>; notes: Record<string, string> }> {
     let images: LibraryItem[] = [];
     try {
       images = await fetchLibraryItems("image");
@@ -389,11 +361,12 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     }
     const used = new Set<string>();
     const map: Record<string, string[]> = {};
+    const notes: Record<string, string> = {};
     for (const day of days) {
       for (const a of activityLines(day.activities)) {
         if (a.type === "hotel") continue;
 
-        // 1) Imagem já adicionada na atividade tem prioridade.
+        // 1) Imagens já adicionadas na atividade têm prioridade.
         const own = (a.images || []).map((i) => i.url).filter(Boolean) as string[];
         if (own.length) {
           const resolved: string[] = [];
@@ -407,19 +380,26 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           }
         }
 
-        // 2) Sem imagem própria: busca na biblioteca.
+        // 2) Sem imagem própria: busca até 3 fotos compatíveis na biblioteca,
+        // formando um pequeno álbum, e mescla um resumo dos locais.
         if (images.length === 0) continue;
-        const hit = pickLibraryImage(a, images, used);
-        const src = hit?.image_url || hit?.file_url;
-        if (!src) continue;
-        const url = await resolveDisplayImageUrl(src);
-        if (url) {
-          map[a.id] = [url];
-          used.add(src);
+        const hits = pickLibraryImages(a, images, used, 3);
+        const urls: string[] = [];
+        for (const h of hits) {
+          const src = h.image_url || h.file_url;
+          if (!src) continue;
+          const url = await resolveDisplayImageUrl(src);
+          if (url) {
+            urls.push(url);
+            used.add(src);
+          }
         }
+        if (urls.length) map[a.id] = urls;
+        const note = mergeDescriptions(hits);
+        if (note) notes[a.id] = note;
       }
     }
-    return map;
+    return { images: map, notes };
   }
 
   async function handleExport() {
@@ -427,8 +407,9 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     setBusy(true);
     try {
       // 1) Enriquecer atividades sem imagem com fotos da biblioteca.
-      const map = await resolveActivityImages();
+      const { images: map, notes } = await resolveActivityImages();
       setActImages(map);
+      setActNotes(notes);
       // Aguarda o React renderizar as novas imagens no container oculto.
       await new Promise((r) => setTimeout(r, 60));
       // Garante que capa e polaroids estejam totalmente carregadas antes
@@ -460,8 +441,9 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
   async function openPreview() {
     setBusy(true);
     try {
-      const map = await resolveActivityImages();
+      const { images: map, notes } = await resolveActivityImages();
       setActImages(map);
+      setActNotes(notes);
       setPreviewOpen(true);
     } catch (err) {
       console.error(err);
@@ -473,7 +455,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
 
 
-  const renderBody = (preview: boolean) => (
+  const renderBody = () => (
     <>
       {/* ----------------------------- CAPA ----------------------------- */}
 
@@ -629,9 +611,10 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
               for (const a of lines) {
                 const imgs = imagesFor(a);
+                const note = actNotes[a.id];
                 blocks.push({
                   key: a.id,
-                  height: estimateActivityHeight(a, true),
+                  height: estimateActivityHeight(a, imgs.length, note),
                   node: (
                     <div
                       style={{
@@ -658,6 +641,11 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                         {a.description && (
                           <p style={{ fontSize: "10.5pt", lineHeight: 1.5, color: "#4a4744", marginTop: "1.5mm" }}>{a.description}</p>
                         )}
+                        {note && (
+                          <p style={{ fontSize: "9.5pt", lineHeight: 1.5, color: "#6b6864", marginTop: "1.5mm", fontStyle: "italic" }}>
+                            {note}
+                          </p>
+                        )}
                         {a.location && (
                           <p style={{ fontSize: "10pt", color: SLATE, marginTop: "1mm", display: "flex", alignItems: "center", gap: "1.5mm" }}>
                             <MapPin size={12} /> {a.location}
@@ -665,7 +653,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                         )}
                       </div>
                       {imgs.length > 0 ? (
-                        <ActivityImageBox images={imgs} preview={preview} />
+                        <ActivityImageBox images={imgs} />
                       ) : (
                         <ActivityImagePlaceholder label={a.location || destino} />
                       )}
@@ -812,7 +800,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           <div className="flex-1 overflow-auto p-4">
             <style>{`.pdf-preview .pdf-page{margin:0 auto 14px;box-shadow:0 6px 24px rgba(0,0,0,.35);}`}</style>
             <div className="pdf-preview" style={{ width: "210mm", margin: "0 auto" }}>
-              {renderBody(true)}
+              {renderBody()}
             </div>
           </div>
         </div>
@@ -821,7 +809,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
       {/* Container renderizado fora da tela; capturado pelo html2pdf. */}
       <div style={{ position: "fixed", left: "-10000px", top: 0, zIndex: -1 }} aria-hidden>
         <div ref={containerRef} id="roteiro-pdf-container" style={{ width: "210mm", background: "#fff" }}>
-          {renderBody(false)}
+          {renderBody()}
         </div>
       </div>
     </>
