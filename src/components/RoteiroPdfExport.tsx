@@ -57,35 +57,37 @@ const SERVICOS_NAO_INCLUSOS = [
   "Todas as despesas não descritas neste guia",
 ];
 
-// Ornamento decorativo dourado nos cantos das páginas de conteúdo.
-function CornerBlobs({ gold = GOLD }: { gold?: string }) {
+// Arco decorativo removido: os cantos agora usam apenas a logo "presa" (Brandmark).
+function CornerBlobs(_props: { gold?: string }) {
+  return null;
+}
+
+// Clipe metálico que "prende" a logo no canto.
+function PaperClip() {
   return (
-    <>
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          right: 0,
-          width: "42mm",
-          height: "34mm",
-          background: gold,
-          borderBottomLeftRadius: "100%",
-          opacity: 0.9,
-        }}
+    <svg
+      width="22"
+      height="34"
+      viewBox="0 0 22 34"
+      fill="none"
+      style={{ display: "block", filter: "drop-shadow(0 1px 1.5px rgba(0,0,0,.35))" }}
+    >
+      <path
+        d="M11 3 C6 3 3 6 3 11 L3 24 C3 28 6 31 10 31 C14 31 17 28 17 24 L17 9 C17 6.5 15 5 13 5 C11 5 9 6.5 9 9 L9 23"
+        stroke="url(#clipGrad)"
+        strokeWidth="3"
+        strokeLinecap="round"
+        fill="none"
       />
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          width: "36mm",
-          height: "28mm",
-          background: gold,
-          borderTopRightRadius: "100%",
-          opacity: 0.9,
-        }}
-      />
-    </>
+      <defs>
+        <linearGradient id="clipGrad" x1="0" y1="0" x2="22" y2="0">
+          <stop offset="0" stopColor="#c9ccd1" />
+          <stop offset="0.45" stopColor="#8b8f96" />
+          <stop offset="0.55" stopColor="#f0f2f5" />
+          <stop offset="1" stopColor="#9aa0a8" />
+        </linearGradient>
+      </defs>
+    </svg>
   );
 }
 
