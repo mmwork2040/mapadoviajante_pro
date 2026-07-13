@@ -5479,5 +5479,142 @@ function DrivePreviewModal({
   );
 }
 
+// Seletor de capa do PDF: envia uma nova imagem ou escolhe da biblioteca.
+// A capa escolhida é salva em crm_itineraries.cover_image.
+function CoverPicker({
+  currentCover,
+  onClose,
+  onSaved,
+  onSet,
+}: {
+  currentCover: string | null;
+  onClose: () => void;
+  onSaved: () => void;
+  onSet: (path: string) => Promise<void>;
+}) {
+  const [images, setImages] = useState<LibraryItem[]>([]);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const imgs = await fetchLibraryItems("image").catch(() => [] as LibraryItem[]);
+      if (!active) return;
+      setImages(imgs);
+      setLoading(false);
+      const map: Record<string, string> = {};
+      await Promise.all(
+        imgs.map(async (im) => {
+          const src = im.image_url || im.file_url;
+          if (!src) return;
+          const u = await resolveDisplayImageUrl(src);
+          if (u) map[im.id] = u;
+        }),
+      );
+      if (active) setThumbs(map);
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function choose(path: string) {
+    setBusy(true);
+    try {
+      await onSet(path);
+      toast.success("Capa atualizada.");
+      onSaved();
+    } catch {
+      toast.error("Não foi possível definir a capa.");
+      setBusy(false);
+    }
+  }
+
+  async function handleUpload(file: File) {
+    setBusy(true);
+    try {
+      const res = await uploadLibraryAsset(file);
+      if (!res) throw new Error();
+      await onSet(res.path);
+      toast.success("Capa enviada e definida.");
+      onSaved();
+    } catch {
+      toast.error("Não foi possível enviar a imagem.");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="max-h-[85vh] w-full max-w-2xl overflow-auto rounded-2xl border border-border bg-card p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold">Capa do roteiro</h3>
+          <button type="button" onClick={onClose} aria-label="Fechar">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <label
+          className={`mb-4 flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-input bg-muted/30 px-4 py-8 text-center hover:border-primary ${busy ? "pointer-events-none opacity-60" : ""}`}
+        >
+          <FileUp className="mb-2 h-7 w-7 text-primary" />
+          <span className="text-sm font-semibold">Enviar nova imagem de capa</span>
+          <span className="mt-1 text-xs text-muted-foreground">JPG ou PNG</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void handleUpload(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
+
+        <p className="mb-2 text-sm font-semibold text-muted-foreground">Ou escolha da biblioteca</p>
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando…
+          </div>
+        ) : images.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhuma imagem na biblioteca.</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+            {images.map((im) => {
+              const src = im.image_url || im.file_url || "";
+              const selected = src === currentCover;
+              return (
+                <button
+                  key={im.id}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => choose(src)}
+                  className={`overflow-hidden rounded-lg border-2 disabled:opacity-60 ${selected ? "border-primary" : "border-border"} hover:border-primary`}
+                >
+                  <span className="flex h-24 items-center justify-center bg-muted/40">
+                    {thumbs[im.id] ? (
+                      <img src={thumbs[im.id]} alt={im.title} className="h-full w-full object-cover" />
+                    ) : (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </span>
+                  <span className="block truncate px-1 py-1 text-[10px] text-muted-foreground">{im.title}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 
 
