@@ -2045,6 +2045,71 @@ function ActivityRow({
   const [addingImg, setAddingImg] = useState<string | null>(null);
   const [eImages, setEImages] = useState<ActivityImage[]>(activity.images || []);
   const downloadImage = useServerFn(downloadDestinationImage);
+  const [imgChoiceOpen, setImgChoiceOpen] = useState(false);
+  const [libOpen, setLibOpen] = useState(false);
+  const [libItems, setLibItems] = useState<{ url: string; title: string }[]>([]);
+  const [libLoading, setLibLoading] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgFileRef = useRef<HTMLInputElement>(null);
+
+  function openImageSource() {
+    const title = eTitle.trim();
+    if (!title) {
+      toast.error("Informe o título da atração/local.");
+      return;
+    }
+    setImgChoiceOpen(true);
+  }
+
+  async function handleUploadImages(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const title = eTitle.trim();
+    const city = eLocation.trim();
+    setUploadingImg(true);
+    try {
+      for (const file of Array.from(files)) {
+        const item = await saveImageFileToLibrary(file, { title: title || file.name, location: city });
+        const url = item?.file_url ? await resolveDisplayImageUrl(item.file_url) : null;
+        if (url) setEImages((prev) => (prev.some((im) => im.url === url) ? prev : [...prev, { url, description: title || null }]));
+      }
+      qc.invalidateQueries({ queryKey: ["library"] });
+      toast.success("Imagem(ns) adicionada(s) ao dia e à biblioteca.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setUploadingImg(false);
+      if (imgFileRef.current) imgFileRef.current.value = "";
+    }
+  }
+
+  async function openLibraryPicker() {
+    setImgChoiceOpen(false);
+    setLibOpen(true);
+    setLibLoading(true);
+    try {
+      const items = await fetchLibraryItems("image");
+      const resolved = await Promise.all(
+        items.map(async (it) => ({
+          url: (await resolveDisplayImageUrl(it.file_url)) || "",
+          title: it.title || "",
+        })),
+      );
+      setLibItems(resolved.filter((r) => r.url));
+    } catch {
+      setLibItems([]);
+    } finally {
+      setLibLoading(false);
+    }
+  }
+
+  function addLibraryImage(url: string, title: string) {
+    if (eImages.some((im) => im.url === url)) {
+      toast.info("Imagem já adicionada.");
+      return;
+    }
+    setEImages((prev) => [...prev, { url, description: title || eTitle.trim() || null }]);
+    toast.success("Imagem adicionada ao dia.");
+  }
 
   async function handleFindImage() {
     const title = eTitle.trim();
@@ -2059,6 +2124,7 @@ function ActivityRow({
     }
     // Combina título + cidade para achar o local exato na cidade informada.
     const term = `${title}, ${city}`;
+    setImgChoiceOpen(false);
     setFindingImg(true);
     setImgOptions([]);
     setImgModalOpen(true);
@@ -2516,13 +2582,22 @@ function ActivityRow({
               <p className="text-[10px] font-medium text-muted-foreground">Imagens da atração</p>
               <button
                 type="button"
-                onClick={handleFindImage}
-                disabled={findingImg}
+                onClick={openImageSource}
+                disabled={findingImg || uploadingImg}
                 className="inline-flex items-center gap-1 rounded-lg border border-primary/40 px-2 py-0.5 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
               >
-                {findingImg ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
-                Buscar imagens
+                {findingImg || uploadingImg ? <Loader2 className="h-3 w-3 animate-spin" /> : <ImageIcon className="h-3 w-3" />}
+                Adicionar imagem
               </button>
+              <input
+                ref={imgFileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={(e) => handleUploadImages(e.target.files)}
+              />
+
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
               Localiza a atração pelo título na cidade informada. Adicione imagens sortidas com descrição — elas aparecem na página do dia e vão para a biblioteca.
@@ -2619,6 +2694,106 @@ function ActivityRow({
             </div>
           </div>
         )}
+
+        {/* Modal de escolha da origem da imagem */}
+        {imgChoiceOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setImgChoiceOpen(false)}>
+            <div className="w-full max-w-xs rounded-2xl bg-background p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">Adicionar imagem</h3>
+                <button type="button" onClick={() => setImgChoiceOpen(false)} className="rounded-lg p-1 hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">Como deseja adicionar a imagem?</p>
+              <div className="mt-3 space-y-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setImgChoiceOpen(false);
+                    imgFileRef.current?.click();
+                  }}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs hover:border-primary hover:bg-primary/5"
+                >
+                  <FileUp className="h-4 w-4 text-primary" />
+                  <span><span className="font-medium">Upload</span> — enviar do dispositivo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={openLibraryPicker}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs hover:border-primary hover:bg-primary/5"
+                >
+                  <ImageIcon className="h-4 w-4 text-primary" />
+                  <span><span className="font-medium">Biblioteca</span> — escolher do acervo</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleFindImage}
+                  className="flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs hover:border-primary hover:bg-primary/5"
+                >
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span><span className="font-medium">IA</span> — buscar automaticamente</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de seleção de imagem da biblioteca */}
+        {libOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setLibOpen(false)}>
+            <div className="max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-background p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold">Imagens da biblioteca</h3>
+                <button type="button" onClick={() => setLibOpen(false)} className="rounded-lg p-1 hover:bg-muted">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {libLoading ? "Carregando…" : "Toque nas imagens que deseja adicionar ao dia."}
+              </p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {libItems.map((it) => {
+                  const added = eImages.some((im) => im.url === it.url);
+                  return (
+                    <button
+                      key={it.url}
+                      type="button"
+                      onClick={() => !added && addLibraryImage(it.url, it.title)}
+                      disabled={added}
+                      className="group relative overflow-hidden rounded-lg border border-border/60 hover:border-primary focus:border-primary disabled:opacity-60"
+                    >
+                      <img src={it.url} alt={it.title || "Imagem"} className="h-28 w-full object-cover" />
+                      <span className={`absolute inset-0 items-center justify-center ${added ? "flex bg-primary/40" : "hidden bg-primary/30 group-hover:flex"}`}>
+                        {added ? <Check className="h-6 w-6 text-white drop-shadow" /> : <Plus className="h-6 w-6 text-white drop-shadow" />}
+                      </span>
+                    </button>
+                  );
+                })}
+                {libLoading &&
+                  Array.from({ length: 2 }).map((_, i) => (
+                    <div key={`lsk-${i}`} className="flex h-28 items-center justify-center rounded-lg border border-dashed border-border/60">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    </div>
+                  ))}
+              </div>
+              {!libLoading && libItems.length === 0 && (
+                <p className="mt-3 text-[11px] text-muted-foreground">Nenhuma imagem na biblioteca.</p>
+              )}
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setLibOpen(false)}
+                  className="rounded-lg bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                >
+                  Concluir
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+
 
 
 
