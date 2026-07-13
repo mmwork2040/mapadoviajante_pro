@@ -350,7 +350,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
   // Para cada atividade: se já tiver imagem própria, usa-a (resolvendo a URL
   // exibível); caso contrário, busca na biblioteca uma foto compatível.
-  async function resolveActivityImages(): Promise<Record<string, string[]>> {
+  async function resolveActivityImages(): Promise<{ images: Record<string, string[]>; notes: Record<string, string> }> {
     let images: LibraryItem[] = [];
     try {
       images = await fetchLibraryItems("image");
@@ -359,11 +359,12 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     }
     const used = new Set<string>();
     const map: Record<string, string[]> = {};
+    const notes: Record<string, string> = {};
     for (const day of days) {
       for (const a of activityLines(day.activities)) {
         if (a.type === "hotel") continue;
 
-        // 1) Imagem já adicionada na atividade tem prioridade.
+        // 1) Imagens já adicionadas na atividade têm prioridade.
         const own = (a.images || []).map((i) => i.url).filter(Boolean) as string[];
         if (own.length) {
           const resolved: string[] = [];
@@ -377,19 +378,26 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           }
         }
 
-        // 2) Sem imagem própria: busca na biblioteca.
+        // 2) Sem imagem própria: busca até 3 fotos compatíveis na biblioteca,
+        // formando um pequeno álbum, e mescla um resumo dos locais.
         if (images.length === 0) continue;
-        const hit = pickLibraryImage(a, images, used);
-        const src = hit?.image_url || hit?.file_url;
-        if (!src) continue;
-        const url = await resolveDisplayImageUrl(src);
-        if (url) {
-          map[a.id] = [url];
-          used.add(src);
+        const hits = pickLibraryImages(a, images, used, 3);
+        const urls: string[] = [];
+        for (const h of hits) {
+          const src = h.image_url || h.file_url;
+          if (!src) continue;
+          const url = await resolveDisplayImageUrl(src);
+          if (url) {
+            urls.push(url);
+            used.add(src);
+          }
         }
+        if (urls.length) map[a.id] = urls;
+        const note = mergeDescriptions(hits);
+        if (note) notes[a.id] = note;
       }
     }
-    return map;
+    return { images: map, notes };
   }
 
   async function handleExport() {
