@@ -516,17 +516,29 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
               <div style={{ position: "absolute", inset: 0, background: `linear-gradient(160deg, ${GOLD} 0%, ${GOLD_DARK} 100%)` }} />
             )}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.15) 40%, rgba(0,0,0,.65) 100%)" }} />
+            {logoUrl && (
+              <div style={{ position: "absolute", top: "16mm", right: "18mm" }}>
+                <img src={logoUrl} crossOrigin="anonymous" alt=""
+                  style={{ maxHeight: "26mm", maxWidth: "60mm", objectFit: "contain", display: "block", filter: "drop-shadow(0 2px 8px rgba(0,0,0,.4))" }} />
+              </div>
+            )}
             <div style={{ position: "absolute", top: "18mm", left: 0, background: GOLD, color: "#fff", padding: "6mm 14mm 6mm 16mm", borderTopRightRadius: "40px", borderBottomRightRadius: "40px", fontFamily: "Fredoka, sans-serif", fontWeight: 700, letterSpacing: "2px", fontSize: "16pt" }}>
-              ROTEIRO COMPLETO
+              {openingTitle || "ROTEIRO COMPLETO"}
             </div>
             <div style={{ position: "absolute", left: "20mm", right: "20mm", bottom: "40mm" }}>
               <div style={{ fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "34pt", lineHeight: 1.05, textShadow: "0 2px 12px rgba(0,0,0,.5)" }}>
                 {destino}
               </div>
               <div style={{ marginTop: "8mm", fontFamily: "'Dancing Script', cursive", fontSize: "22pt", color: "#fff", textShadow: "0 2px 10px rgba(0,0,0,.5)" }}>
-                Preparado para {cliente}
+                {openingSubtitle || `Preparado para ${cliente}`}
               </div>
+              {openingFooter && (
+                <div style={{ marginTop: "6mm", fontFamily: "Fredoka, sans-serif", fontSize: "11pt", color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,.5)" }}>
+                  {openingFooter}
+                </div>
+              )}
             </div>
+
           </Page>
 
           {/* -------------------------- INTRODUÇÃO -------------------------- */}
