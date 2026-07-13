@@ -454,8 +454,9 @@ Responda APENAS com um JSON válido, sem texto extra:
       message?: string;
     };
     const rate = typeof parsed.rate === "number" ? parsed.rate : 0;
-    let brl = typeof parsed.brl === "number" ? parsed.brl : 0;
-    if (!brl && rate) brl = amount * rate;
+    // Sempre derivar o BRL a partir da cotação para garantir consistência
+    // (brl = amount * rate). Assim a mesma cotação sempre gera o mesmo valor.
+    let brl = rate ? amount * rate : typeof parsed.brl === "number" ? parsed.brl : 0;
     if (!brl) return { ok: false, brl: 0, rate: 0, message: "Não foi possível obter a cotação." };
     return {
       ok: true,
