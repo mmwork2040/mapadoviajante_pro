@@ -231,35 +231,33 @@ function pickLibraryImages(
 // biblioteca. Para cada imagem gera uma frase curta a partir do "Conteúdo
 // (base de conhecimento p/ IA)" (campo content) — caindo para a descrição
 // quando não houver conteúdo — para não deixar o dia extenso no PDF.
-function briefFromKnowledge(text: string, max = 140): string {
+// Limita o resumo por PALAVRAS (com teto de caracteres) para que cada foto
+// tenha uma frase curta, sem alongar o dia no PDF.
+function briefFromKnowledge(text: string, maxWords = 18, maxChars = 110): string {
   const clean = text.replace(/\s+/g, " ").trim();
   if (!clean) return "";
-  if (clean.length <= max) return clean;
-  const cut = clean.slice(0, max);
-  const lastDot = cut.lastIndexOf(".");
-  return lastDot > max * 0.5 ? cut.slice(0, lastDot + 1) : cut.trim() + "…";
+  const words = clean.split(" ");
+  let out = words.length > maxWords ? words.slice(0, maxWords).join(" ") + "…" : clean;
+  if (out.length > maxChars) out = out.slice(0, maxChars).trim() + "…";
+  return out;
 }
 
 function mergeDescriptions(items: LibraryItem[]): string {
   const seen = new Set<string>();
   const parts: string[] = [];
   for (const it of items) {
-    const raw = (it.content || it.description || "").replace(/\s+/g, " ").trim();
-    const brief = briefFromKnowledge(raw, 120);
-    if (!brief || seen.has(brief)) continue;
-    seen.add(brief);
+    // Prioriza o conteúdo (base de conhecimento p/ IA); recorre à descrição e,
+    // por fim, ao próprio título/local para que nenhuma foto fique sem legenda.
+    const raw = (it.content || it.description || it.location || "").replace(/\s+/g, " ").trim();
+    const brief = briefFromKnowledge(raw);
+    if (!brief || seen.has(brief.toLowerCase())) continue;
+    seen.add(brief.toLowerCase());
     const label = (it.title || it.location || "").trim();
-    parts.push(label ? `${label}: ${brief}` : brief);
+    parts.push(label && !brief.toLowerCase().startsWith(label.toLowerCase()) ? `${label}: ${brief}` : brief);
   }
-  if (parts.length === 0) return "";
-  let joined = parts.join("  •  ");
-  if (joined.length > 360) {
-    joined = joined.slice(0, 360);
-    const lastDot = joined.lastIndexOf(".");
-    joined = lastDot > 180 ? joined.slice(0, lastDot + 1) : joined.trim() + "…";
-  }
-  return joined;
+  return parts.slice(0, 3).join("  •  ");
 }
+
 
 
 // Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
