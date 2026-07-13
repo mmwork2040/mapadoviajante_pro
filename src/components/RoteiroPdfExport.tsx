@@ -186,6 +186,107 @@ function estimateActivityHeight(a: ItineraryActivity, hasImage: boolean): number
   return Math.max(textH, imageH) + 8;
 }
 
+// Caixa de imagem da atividade. Na pré-visualização (preview) com mais de uma
+// imagem, funciona como carrossel; na exportação do PDF mostra a 1ª imagem.
+function ActivityImageBox({ images, preview }: { images: string[]; preview: boolean }) {
+  const [idx, setIdx] = useState(0);
+  if (images.length === 0) return null;
+  const i = Math.min(idx, images.length - 1);
+  const multi = preview && images.length > 1;
+  const go = (delta: number) =>
+    setIdx((v) => (v + delta + images.length) % images.length);
+  return (
+    <div
+      style={{
+        flexShrink: 0,
+        position: "relative",
+        background: "#fff",
+        padding: "1.5mm 1.5mm 4mm",
+        boxShadow: "0 4px 12px rgba(0,0,0,.15)",
+        transform: "rotate(1.5deg)",
+      }}
+    >
+      <img
+        src={images[i]}
+        crossOrigin="anonymous"
+        alt=""
+        style={{ width: "52mm", height: "36mm", objectFit: "cover", display: "block" }}
+      />
+      {multi && (
+        <>
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            style={{
+              position: "absolute",
+              left: "3px",
+              top: "42%",
+              transform: "translateY(-50%)",
+              background: "rgba(0,0,0,.5)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "9999px",
+              width: "22px",
+              height: "22px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => go(1)}
+            style={{
+              position: "absolute",
+              right: "3px",
+              top: "42%",
+              transform: "translateY(-50%)",
+              background: "rgba(0,0,0,.5)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "9999px",
+              width: "22px",
+              height: "22px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronRight size={14} />
+          </button>
+          <div
+            style={{
+              position: "absolute",
+              bottom: "1mm",
+              left: 0,
+              right: 0,
+              display: "flex",
+              justifyContent: "center",
+              gap: "4px",
+            }}
+          >
+            {images.map((_, di) => (
+              <span
+                key={di}
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "9999px",
+                  background: di === i ? GOLD_DARK : "rgba(0,0,0,.25)",
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 
 export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
