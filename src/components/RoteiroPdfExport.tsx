@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle } from "lucide-react";
+import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Itinerary, ItineraryActivity, ItineraryDay, LibraryItem } from "@/lib/types";
 import { fetchLibraryItems, resolveDisplayImageUrl } from "@/lib/services";
@@ -186,10 +186,112 @@ function estimateActivityHeight(a: ItineraryActivity, hasImage: boolean): number
   return Math.max(textH, imageH) + 8;
 }
 
+// Caixa de imagem da atividade. Na pré-visualização (preview) com mais de uma
+// imagem, funciona como carrossel; na exportação do PDF mostra a 1ª imagem.
+function ActivityImageBox({ images, preview }: { images: string[]; preview: boolean }) {
+  const [idx, setIdx] = useState(0);
+  if (images.length === 0) return null;
+  const i = Math.min(idx, images.length - 1);
+  const multi = preview && images.length > 1;
+  const go = (delta: number) =>
+    setIdx((v) => (v + delta + images.length) % images.length);
+  return (
+    <div
+      style={{
+        flexShrink: 0,
+        position: "relative",
+        background: "#fff",
+        padding: "1.5mm 1.5mm 4mm",
+        boxShadow: "0 4px 12px rgba(0,0,0,.15)",
+        transform: "rotate(1.5deg)",
+      }}
+    >
+      <img
+        src={images[i]}
+        crossOrigin="anonymous"
+        alt=""
+        style={{ width: "52mm", height: "36mm", objectFit: "cover", display: "block" }}
+      />
+      {multi && (
+        <>
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            style={{
+              position: "absolute",
+              left: "3px",
+              top: "42%",
+              transform: "translateY(-50%)",
+              background: "rgba(0,0,0,.5)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "9999px",
+              width: "22px",
+              height: "22px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronLeft size={14} />
+          </button>
+          <button
+            type="button"
+            onClick={() => go(1)}
+            style={{
+              position: "absolute",
+              right: "3px",
+              top: "42%",
+              transform: "translateY(-50%)",
+              background: "rgba(0,0,0,.5)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "9999px",
+              width: "22px",
+              height: "22px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            <ChevronRight size={14} />
+          </button>
+          <div
+            style={{
+              position: "absolute",
+              bottom: "1mm",
+              left: 0,
+              right: 0,
+              display: "flex",
+              justifyContent: "center",
+              gap: "4px",
+            }}
+          >
+            {images.map((_, di) => (
+              <span
+                key={di}
+                style={{
+                  width: "6px",
+                  height: "6px",
+                  borderRadius: "9999px",
+                  background: di === i ? GOLD_DARK : "rgba(0,0,0,.25)",
+                }}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 
 export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   // Imagens resolvidas da biblioteca por atividade (id -> URL exibível).
   const [actImages, setActImages] = useState<Record<string, string>>({});
 
@@ -288,20 +390,28 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     }
   }
 
-  return (
-    <>
-      <button
-        onClick={handleExport}
-        disabled={busy}
-        className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar PDF
-      </button>
+  // Abre a pré-visualização, resolvendo antes as imagens de biblioteca das
+  // atividades sem imagem própria (mesma lógica da exportação).
+  async function openPreview() {
+    setBusy(true);
+    try {
+      const map = await resolveActivityImages();
+      setActImages(map);
+      setPreviewOpen(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível montar a pré-visualização.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
-      {/* Container renderizado fora da tela; capturado pelo html2pdf. */}
-      <div style={{ position: "fixed", left: "-10000px", top: 0, zIndex: -1 }} aria-hidden>
-        <div ref={containerRef} id="roteiro-pdf-container" style={{ width: "210mm", background: "#fff" }}>
-          {/* ----------------------------- CAPA ----------------------------- */}
+
+
+  const renderBody = (preview: boolean) => (
+    <>
+      {/* ----------------------------- CAPA ----------------------------- */}
+
           <Page style={{ color: "#fff" }}>
             {heroImg ? (
               <img src={heroImg} crossOrigin="anonymous" alt=""
@@ -410,8 +520,15 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           {days.map((day) => {
             const hotel = findHotel(day);
             const lines = activityLines(day.activities).filter((a) => a.type !== "hotel");
-            const imgFor = (a: ItineraryActivity): string | null =>
-              a.images?.[0]?.url || actImages[a.id] || null;
+            // Lista de imagens da atividade: as próprias imagens adicionadas
+            // (comportamento de carrossel na pré-visualização) ou, na falta
+            // delas, a foto encontrada na biblioteca.
+            const imagesFor = (a: ItineraryActivity): string[] => {
+              const own = (a.images || []).map((i) => i.url).filter(Boolean) as string[];
+              if (own.length) return own;
+              return actImages[a.id] ? [actImages[a.id]] : [];
+            };
+            const imgFor = (a: ItineraryActivity): string | null => imagesFor(a)[0] || null;
 
             // Pagina as atividades para nunca quebrar imagem/texto entre páginas.
             const pages: ItineraryActivity[][] = [];
@@ -471,7 +588,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                           <p style={{ fontSize: "13pt", color: SLATE }}>Programação livre.</p>
                         )}
                         {chunk.map((a) => {
-                          const img = imgFor(a);
+                          const imgs = imagesFor(a);
                           return (
                             <div
                               key={a.id}
@@ -505,19 +622,13 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                                   </p>
                                 )}
                               </div>
-                              {img && (
-                                <div style={{ flexShrink: 0, background: "#fff", padding: "1.5mm 1.5mm 4mm", boxShadow: "0 4px 12px rgba(0,0,0,.15)", transform: "rotate(1.5deg)" }}>
-                                  <img
-                                    src={img}
-                                    crossOrigin="anonymous"
-                                    alt=""
-                                    style={{ width: "52mm", height: "36mm", objectFit: "cover", display: "block" }}
-                                  />
-                                </div>
+                              {imgs.length > 0 && (
+                                <ActivityImageBox images={imgs} preview={preview} />
                               )}
                             </div>
                           );
                         })}
+
                       </div>
 
                       {/* Hotel do dia (apenas na última página do dia) */}
@@ -575,8 +686,65 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
               <div style={{ fontFamily: "'Dancing Script', cursive", fontSize: "30pt", textShadow: "0 2px 10px rgba(0,0,0,.6)", marginTop: "-4px" }}>Viajante</div>
             </div>
           </Page>
+    </>
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => void openPreview()}
+          disabled={busy}
+          className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />} Pré-visualizar
+        </button>
+        <button
+          onClick={handleExport}
+          disabled={busy}
+          className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar PDF
+        </button>
+      </div>
+
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/70">
+          <div className="flex items-center justify-between gap-2 bg-card px-4 py-3 shadow">
+            <div className="text-sm font-semibold">Pré-visualização do roteiro</div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExport}
+                disabled={busy}
+                className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar PDF
+              </button>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+                aria-label="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto p-4">
+            <style>{`.pdf-preview .pdf-page{margin:0 auto 14px;box-shadow:0 6px 24px rgba(0,0,0,.35);}`}</style>
+            <div className="pdf-preview" style={{ width: "210mm", margin: "0 auto" }}>
+              {renderBody(true)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Container renderizado fora da tela; capturado pelo html2pdf. */}
+      <div style={{ position: "fixed", left: "-10000px", top: 0, zIndex: -1 }} aria-hidden>
+        <div ref={containerRef} id="roteiro-pdf-container" style={{ width: "210mm", background: "#fff" }}>
+          {renderBody(false)}
         </div>
       </div>
     </>
   );
 }
+
