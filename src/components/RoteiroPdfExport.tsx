@@ -144,38 +144,46 @@ function tokens(s?: string | null): string[] {
   return Array.from(new Set(norm(s).split(/[^a-z0-9]+/).filter((t) => t.length >= 3)));
 }
 
-// Escolhe, entre as imagens da biblioteca, a mais relacionada à atividade
-// (por local, tags ou descrição). Evita repetir a mesma imagem quando possível.
+// Escolhe, entre as imagens da biblioteca, a mais relacionada à atividade.
+// Validação rígida: só aceita a imagem quando há CERTEZA de compatibilidade,
+// confirmando a CIDADE/LOCAL e ao menos um sinal do conteúdo base (título,
+// descrição) ou das tags. Em caso de dúvida, retorna null (não adiciona).
 function pickLibraryImage(
   a: ItineraryActivity,
   images: LibraryItem[],
   used: Set<string>,
 ): LibraryItem | null {
-  const wantLoc = norm(a.location);
-  const need = new Set([...tokens(a.location), ...tokens(a.title), ...tokens(a.description)]);
-  if (need.size === 0) return null;
+  const locTokens = tokens(a.location);
+  // Sem local/cidade definidos não há como garantir compatibilidade.
+  if (locTokens.length === 0) return null;
+  const contentTokens = new Set([...tokens(a.title), ...tokens(a.description)]);
+
   let best: { item: LibraryItem; score: number } | null = null;
   for (const img of images) {
     const src = img.image_url || img.file_url;
     if (!src) continue;
-    const hay = new Set([
-      ...tokens(img.title),
-      ...tokens(img.location),
-      ...tokens((img.tags || []).join(" ")),
-      ...tokens(img.description),
-      ...tokens(img.content),
-    ]);
-    let score = 0;
-    for (const t of need) if (hay.has(t)) score += 1;
-    // Bônus forte quando o local da atividade bate com o local/titulo da imagem.
-    if (wantLoc && (norm(img.location).includes(wantLoc) || norm(img.title).includes(wantLoc))) {
-      score += 3;
+    const imgLoc = new Set([...tokens(img.location), ...tokens(img.title)]);
+    const imgTags = new Set(tokens((img.tags || []).join(" ")));
+    const imgContent = new Set([...tokens(img.title), ...tokens(img.description), ...tokens(img.content)]);
+
+    // 1) A CIDADE precisa bater: algum token do local da atividade tem que
+    // aparecer no local/título da imagem OU nas tags dela.
+    const cityMatch = locTokens.some((t) => imgLoc.has(t) || imgTags.has(t));
+    if (!cityMatch) continue;
+
+    // 2) Além da cidade, precisa de confirmação pelo conteúdo base ou tags.
+    let score = locTokens.filter((t) => imgLoc.has(t)).length * 2;
+    for (const t of contentTokens) {
+      if (imgContent.has(t)) score += 2;
+      if (imgTags.has(t)) score += 1;
     }
-    if (score <= 0) continue;
+    // Exige confirmação além da simples coincidência de cidade.
+    if (score < 3) continue;
+
     if (used.has(src)) score -= 2; // penaliza reuso, mas não descarta
     if (!best || score > best.score) best = { item: img, score };
   }
-  return best && best.score > 0 ? best.item : null;
+  return best && best.score >= 3 ? best.item : null;
 }
 
 // Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
@@ -517,132 +525,143 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           </Page>
 
           {/* ------------------------- ROTEIRO DIÁRIO ---------------------- */}
-          {days.map((day) => {
-            const hotel = findHotel(day);
-            const lines = activityLines(day.activities).filter((a) => a.type !== "hotel");
-            // Lista de imagens da atividade: as próprias imagens adicionadas
-            // (comportamento de carrossel na pré-visualização) ou, na falta
-            // delas, a foto encontrada na biblioteca.
+          {(() => {
             const imagesFor = (a: ItineraryActivity): string[] => {
               const own = (a.images || []).map((i) => i.url).filter(Boolean) as string[];
               if (own.length) return own;
               return actImages[a.id] ? [actImages[a.id]] : [];
             };
-            const imgFor = (a: ItineraryActivity): string | null => imagesFor(a)[0] || null;
 
-            // Pagina as atividades para nunca quebrar imagem/texto entre páginas.
-            const pages: ItineraryActivity[][] = [];
-            let cur: ItineraryActivity[] = [];
-            let budget = 190; // primeira página (após cabeçalho do dia)
-            let usedH = 0;
-            for (const a of lines) {
-              const h = estimateActivityHeight(a, !!imgFor(a));
-              if (usedH + h > budget && cur.length) {
+            type Block = {
+              key: string;
+              height: number;
+              keepWithNext?: boolean;
+              node: React.ReactNode;
+            };
+
+            // Gera um fluxo único de blocos de todos os dias; assim mais de um
+            // dia pode compartilhar a mesma página quando houver espaço.
+            const blocks: Block[] = [];
+            for (const day of days) {
+              const hotel = findHotel(day);
+              const lines = activityLines(day.activities).filter((a) => a.type !== "hotel");
+
+              blocks.push({
+                key: `h-${day.id}`,
+                height: 34,
+                keepWithNext: true,
+                node: (
+                  <div style={{ position: "relative" }}>
+                    <div style={{ fontFamily: "'Dancing Script', cursive", fontSize: "38pt", color: GOLD_DARK, lineHeight: 1 }}>
+                      Dia {day.day_number}
+                    </div>
+                    <div style={{ display: "inline-block", marginTop: "4mm", background: GOLD, color: "#fff", padding: "3mm 8mm", borderRadius: "30px", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "16pt" }}>
+                      {formatDayDate(day.date) || day.title || `Dia ${day.day_number}`}
+                    </div>
+                  </div>
+                ),
+              });
+
+              if (lines.length === 0) {
+                blocks.push({
+                  key: `empty-${day.id}`,
+                  height: 12,
+                  node: <p style={{ fontSize: "13pt", color: SLATE }}>Programação livre.</p>,
+                });
+              }
+
+              for (const a of lines) {
+                const imgs = imagesFor(a);
+                blocks.push({
+                  key: a.id,
+                  height: estimateActivityHeight(a, imgs.length > 0),
+                  node: (
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "5mm",
+                        alignItems: "flex-start",
+                        background: "#fff",
+                        borderRadius: "10px",
+                        padding: "4mm",
+                        boxShadow: "0 2px 8px rgba(0,0,0,.06)",
+                        pageBreakInside: "avoid",
+                        breakInside: "avoid",
+                      }}
+                    >
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "3mm", fontWeight: 600, fontSize: "12.5pt", color: INK }}>
+                          {a.time && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "1.5mm", color: GOLD_DARK }}>
+                              <Clock size={14} /> {a.time}
+                            </span>
+                          )}
+                          <span>{a.title}</span>
+                        </div>
+                        {a.description && (
+                          <p style={{ fontSize: "10.5pt", lineHeight: 1.5, color: "#4a4744", marginTop: "1.5mm" }}>{a.description}</p>
+                        )}
+                        {a.location && (
+                          <p style={{ fontSize: "10pt", color: SLATE, marginTop: "1mm", display: "flex", alignItems: "center", gap: "1.5mm" }}>
+                            <MapPin size={12} /> {a.location}
+                          </p>
+                        )}
+                      </div>
+                      {imgs.length > 0 && <ActivityImageBox images={imgs} preview={preview} />}
+                    </div>
+                  ),
+                });
+              }
+
+              if (hotel) {
+                blocks.push({
+                  key: `hotel-${day.id}`,
+                  height: 16,
+                  node: (
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: "3mm", background: GOLD, color: "#fff", padding: "3.5mm 8mm", borderRadius: "30px", fontWeight: 600, fontSize: "13pt", maxWidth: "120mm" }}>
+                      <Hotel size={18} /> {hotel}
+                    </div>
+                  ),
+                });
+              }
+            }
+
+            // Empacota os blocos em páginas A4 sem quebrar um bloco ao meio e
+            // mantendo o cabeçalho do dia junto do seu primeiro item.
+            const PAGE_BUDGET = 250; // mm úteis por página de conteúdo
+            const GAP = 5; // espaçamento vertical entre blocos (mm)
+            const pages: Block[][] = [];
+            let cur: Block[] = [];
+            let used = 0;
+            for (let i = 0; i < blocks.length; i++) {
+              const b = blocks[i];
+              let need = b.height + (cur.length ? GAP : 0);
+              if (b.keepWithNext && blocks[i + 1]) need += blocks[i + 1].height + GAP;
+              if (used + need > PAGE_BUDGET && cur.length) {
                 pages.push(cur);
                 cur = [];
-                usedH = 0;
-                budget = 238; // páginas de continuação
+                used = 0;
               }
-              cur.push(a);
-              usedH += h;
+              cur.push(b);
+              used += b.height + (cur.length > 1 ? GAP : 0);
             }
-            if (cur.length || pages.length === 0) pages.push(cur);
+            if (cur.length) pages.push(cur);
 
-            return (
-              <div key={day.id}>
-                {pages.map((chunk, pi) => {
-                  const isFirst = pi === 0;
-                  const isLast = pi === pages.length - 1;
-                  return (
-                    <Page
-                      key={`${day.id}-${pi}`}
-                      style={{ background: BEIGE, padding: "24mm 20mm 20mm" }}
-                    >
-                      <CornerBlobs />
-                      <div style={{ position: "absolute", top: "10mm", right: "14mm" }}>
-                        <Wordmark />
-                      </div>
+            return pages.map((chunk, pi) => (
+              <Page key={`roteiro-${pi}`} style={{ background: BEIGE, padding: "24mm 20mm 20mm" }}>
+                <CornerBlobs />
+                <div style={{ position: "absolute", top: "10mm", right: "14mm" }}>
+                  <Wordmark />
+                </div>
+                <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "5mm" }}>
+                  {chunk.map((b) => (
+                    <div key={b.key}>{b.node}</div>
+                  ))}
+                </div>
+              </Page>
+            ));
+          })()}
 
-                      {isFirst ? (
-                        <>
-                          <div style={{ position: "relative", fontFamily: "'Dancing Script', cursive", fontSize: "40pt", color: GOLD_DARK, lineHeight: 1 }}>
-                            Dia {day.day_number}
-                          </div>
-                          <div style={{ position: "relative", display: "inline-block", marginTop: "5mm", background: GOLD, color: "#fff", padding: "3mm 8mm", borderRadius: "30px", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "17pt" }}>
-                            {formatDayDate(day.date) || day.title || `Dia ${day.day_number}`}
-                          </div>
-                          {day.title && (
-                            <div style={{ position: "relative", marginTop: "6mm", display: "inline-block", background: "#fff", color: SLATE, padding: "2.5mm 6mm", borderRadius: "30px", fontWeight: 600, fontSize: "13pt", boxShadow: "0 2px 8px rgba(0,0,0,.08)" }}>
-                              {day.title}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        <div style={{ position: "relative", fontFamily: "'Dancing Script', cursive", fontSize: "26pt", color: GOLD_DARK, lineHeight: 1 }}>
-                          Dia {day.day_number} <span style={{ fontSize: "15pt" }}>(continuação)</span>
-                        </div>
-                      )}
-
-                      <div style={{ position: "relative", marginTop: isFirst ? "8mm" : "6mm", display: "flex", flexDirection: "column", gap: "5mm" }}>
-                        {isFirst && lines.length === 0 && (
-                          <p style={{ fontSize: "13pt", color: SLATE }}>Programação livre.</p>
-                        )}
-                        {chunk.map((a) => {
-                          const imgs = imagesFor(a);
-                          return (
-                            <div
-                              key={a.id}
-                              style={{
-                                display: "flex",
-                                gap: "5mm",
-                                alignItems: "flex-start",
-                                background: "#fff",
-                                borderRadius: "10px",
-                                padding: "4mm",
-                                boxShadow: "0 2px 8px rgba(0,0,0,.06)",
-                                pageBreakInside: "avoid",
-                                breakInside: "avoid",
-                              }}
-                            >
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: "flex", alignItems: "center", gap: "3mm", fontWeight: 600, fontSize: "12.5pt", color: INK }}>
-                                  {a.time && (
-                                    <span style={{ display: "inline-flex", alignItems: "center", gap: "1.5mm", color: GOLD_DARK }}>
-                                      <Clock size={14} /> {a.time}
-                                    </span>
-                                  )}
-                                  <span>{a.title}</span>
-                                </div>
-                                {a.description && (
-                                  <p style={{ fontSize: "10.5pt", lineHeight: 1.5, color: "#4a4744", marginTop: "1.5mm" }}>{a.description}</p>
-                                )}
-                                {a.location && (
-                                  <p style={{ fontSize: "10pt", color: SLATE, marginTop: "1mm", display: "flex", alignItems: "center", gap: "1.5mm" }}>
-                                    <MapPin size={12} /> {a.location}
-                                  </p>
-                                )}
-                              </div>
-                              {imgs.length > 0 && (
-                                <ActivityImageBox images={imgs} preview={preview} />
-                              )}
-                            </div>
-                          );
-                        })}
-
-                      </div>
-
-                      {/* Hotel do dia (apenas na última página do dia) */}
-                      {isLast && hotel && (
-                        <div style={{ position: "relative", marginTop: "8mm", display: "inline-flex", alignItems: "center", gap: "3mm", background: GOLD, color: "#fff", padding: "3.5mm 8mm", borderRadius: "30px", fontWeight: 600, fontSize: "13pt", maxWidth: "120mm" }}>
-                          <Hotel size={18} /> {hotel}
-                        </div>
-                      )}
-                    </Page>
-                  );
-                })}
-              </div>
-            );
-          })}
 
 
           {/* ----------------------- SERVIÇOS INCLUSOS --------------------- */}
