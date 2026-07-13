@@ -2045,6 +2045,71 @@ function ActivityRow({
   const [addingImg, setAddingImg] = useState<string | null>(null);
   const [eImages, setEImages] = useState<ActivityImage[]>(activity.images || []);
   const downloadImage = useServerFn(downloadDestinationImage);
+  const [imgChoiceOpen, setImgChoiceOpen] = useState(false);
+  const [libOpen, setLibOpen] = useState(false);
+  const [libItems, setLibItems] = useState<{ url: string; title: string }[]>([]);
+  const [libLoading, setLibLoading] = useState(false);
+  const [uploadingImg, setUploadingImg] = useState(false);
+  const imgFileRef = useRef<HTMLInputElement>(null);
+
+  function openImageSource() {
+    const title = eTitle.trim();
+    if (!title) {
+      toast.error("Informe o título da atração/local.");
+      return;
+    }
+    setImgChoiceOpen(true);
+  }
+
+  async function handleUploadImages(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const title = eTitle.trim();
+    const city = eLocation.trim();
+    setUploadingImg(true);
+    try {
+      for (const file of Array.from(files)) {
+        const item = await saveImageFileToLibrary(file, { title: title || file.name, location: city });
+        const url = item?.file_url ? await resolveDisplayImageUrl(item.file_url) : null;
+        if (url) setEImages((prev) => (prev.some((im) => im.url === url) ? prev : [...prev, { url, description: title || null }]));
+      }
+      qc.invalidateQueries({ queryKey: ["library"] });
+      toast.success("Imagem(ns) adicionada(s) ao dia e à biblioteca.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível enviar a imagem.");
+    } finally {
+      setUploadingImg(false);
+      if (imgFileRef.current) imgFileRef.current.value = "";
+    }
+  }
+
+  async function openLibraryPicker() {
+    setImgChoiceOpen(false);
+    setLibOpen(true);
+    setLibLoading(true);
+    try {
+      const items = await fetchLibraryItems("image");
+      const resolved = await Promise.all(
+        items.map(async (it) => ({
+          url: (await resolveDisplayImageUrl(it.file_url)) || "",
+          title: it.title || "",
+        })),
+      );
+      setLibItems(resolved.filter((r) => r.url));
+    } catch {
+      setLibItems([]);
+    } finally {
+      setLibLoading(false);
+    }
+  }
+
+  function addLibraryImage(url: string, title: string) {
+    if (eImages.some((im) => im.url === url)) {
+      toast.info("Imagem já adicionada.");
+      return;
+    }
+    setEImages((prev) => [...prev, { url, description: title || eTitle.trim() || null }]);
+    toast.success("Imagem adicionada ao dia.");
+  }
 
   async function handleFindImage() {
     const title = eTitle.trim();
