@@ -390,6 +390,24 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     }
   }
 
+  // Abre a pré-visualização, resolvendo antes as imagens de biblioteca das
+  // atividades sem imagem própria (mesma lógica da exportação).
+  async function openPreview() {
+    setBusy(true);
+    try {
+      const map = await resolveActivityImages();
+      setActImages(map);
+      setPreviewOpen(true);
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível montar a pré-visualização.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+
+
   const renderBody = (preview: boolean) => (
     <>
       {/* ----------------------------- CAPA ----------------------------- */}
