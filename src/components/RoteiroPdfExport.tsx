@@ -390,20 +390,10 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     }
   }
 
-  return (
+  const renderBody = (preview: boolean) => (
     <>
-      <button
-        onClick={handleExport}
-        disabled={busy}
-        className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
-      >
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar PDF
-      </button>
+      {/* ----------------------------- CAPA ----------------------------- */}
 
-      {/* Container renderizado fora da tela; capturado pelo html2pdf. */}
-      <div style={{ position: "fixed", left: "-10000px", top: 0, zIndex: -1 }} aria-hidden>
-        <div ref={containerRef} id="roteiro-pdf-container" style={{ width: "210mm", background: "#fff" }}>
-          {/* ----------------------------- CAPA ----------------------------- */}
           <Page style={{ color: "#fff" }}>
             {heroImg ? (
               <img src={heroImg} crossOrigin="anonymous" alt=""
