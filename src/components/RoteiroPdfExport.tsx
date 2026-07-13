@@ -611,9 +611,10 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
               for (const a of lines) {
                 const imgs = imagesFor(a);
+                const note = actNotes[a.id];
                 blocks.push({
                   key: a.id,
-                  height: estimateActivityHeight(a, true),
+                  height: estimateActivityHeight(a, imgs.length, note),
                   node: (
                     <div
                       style={{
@@ -640,6 +641,11 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                         {a.description && (
                           <p style={{ fontSize: "10.5pt", lineHeight: 1.5, color: "#4a4744", marginTop: "1.5mm" }}>{a.description}</p>
                         )}
+                        {note && (
+                          <p style={{ fontSize: "9.5pt", lineHeight: 1.5, color: "#6b6864", marginTop: "1.5mm", fontStyle: "italic" }}>
+                            {note}
+                          </p>
+                        )}
                         {a.location && (
                           <p style={{ fontSize: "10pt", color: SLATE, marginTop: "1mm", display: "flex", alignItems: "center", gap: "1.5mm" }}>
                             <MapPin size={12} /> {a.location}
@@ -647,7 +653,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                         )}
                       </div>
                       {imgs.length > 0 ? (
-                        <ActivityImageBox images={imgs} preview={preview} />
+                        <ActivityImageBox images={imgs} />
                       ) : (
                         <ActivityImagePlaceholder label={a.location || destino} />
                       )}
