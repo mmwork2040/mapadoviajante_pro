@@ -446,7 +446,7 @@ export const generateLibraryContent = createServerFn({ method: "POST" })
       field: d.field,
     };
   })
-  .handler(async ({ data, context }): Promise<{ text: string }> => {
+  .handler(async ({ data, context }): Promise<{ text: string; tags?: string[] }> => {
     const { data: cfg, error } = await context.supabase
       .from("crm_ai_config")
       .select("*")
