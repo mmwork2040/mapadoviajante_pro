@@ -531,8 +531,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* -------------------------- INTRODUÇÃO -------------------------- */}
           <Page style={{ background: BEIGE, padding: "26mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <div style={{ position: "relative", textAlign: "center", marginBottom: "10mm" }}>
               <span style={{ fontFamily: "'Dancing Script', cursive", fontSize: "40pt", color: SLATE }}>{destino}</span>
             </div>
@@ -555,8 +555,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* --------------------------- CHECK-LIST ------------------------- */}
           <Page style={{ background: BEIGE, padding: "24mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <h2 style={{ position: "relative", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "26pt", color: GOLD_DARK, marginBottom: "8mm" }}>
               O que preciso levar?
             </h2>
@@ -577,8 +577,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* ---------------------------- DINHEIRO -------------------------- */}
           <Page style={{ background: BEIGE, padding: "24mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <h2 style={{ position: "relative", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "26pt", color: GOLD_DARK, marginBottom: "8mm" }}>
               Como levar dinheiro
             </h2>
@@ -596,8 +596,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* ----------------------------- VISTO --------------------------- */}
           <Page style={{ background: BEIGE, padding: "24mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <h2 style={{ position: "relative", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "26pt", color: GOLD_DARK, marginBottom: "8mm" }}>
               Documentação e Visto
             </h2>
@@ -747,9 +747,9 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
             return pages.map((chunk, pi) => (
               <Page key={`roteiro-${pi}`} style={{ background: BEIGE, padding: "24mm 20mm 20mm" }}>
-                <CornerBlobs />
+                <CornerBlobs gold={GOLD} />
                 <div style={{ position: "absolute", top: "10mm", right: "14mm" }}>
-                  <Wordmark />
+                  <Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} />
                 </div>
                 <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "5mm" }}>
                   {chunk.map((b) => (
@@ -764,8 +764,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* ----------------------- SERVIÇOS INCLUSOS --------------------- */}
           <Page style={{ background: BEIGE, padding: "26mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <div style={{ position: "relative", display: "inline-block", background: GOLD, color: "#fff", padding: "2.5mm 7mm", borderRadius: "30px", fontWeight: 600, fontSize: "15pt", marginBottom: "6mm" }}>
               Serviços inclusos
             </div>
