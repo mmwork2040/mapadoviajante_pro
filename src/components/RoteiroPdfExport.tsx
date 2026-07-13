@@ -62,34 +62,51 @@ function CornerBlobs(_props: { gold?: string }) {
   return null;
 }
 
-// Clipe metálico que "prende" a logo no canto.
+// Clipe metálico (estilo "gem clip") que "prende" a logo no canto: dois laços
+// arredondados sobrepostos com brilho metálico, para leitura nítida de clips.
 function PaperClip() {
   return (
     <svg
-      width="22"
-      height="34"
-      viewBox="0 0 22 34"
+      width="20"
+      height="42"
+      viewBox="0 0 20 42"
       fill="none"
-      style={{ display: "block", filter: "drop-shadow(0 1px 1.5px rgba(0,0,0,.35))" }}
+      style={{ display: "block", filter: "drop-shadow(0 1.5px 2px rgba(0,0,0,.35))" }}
     >
-      <path
-        d="M11 3 C6 3 3 6 3 11 L3 24 C3 28 6 31 10 31 C14 31 17 28 17 24 L17 9 C17 6.5 15 5 13 5 C11 5 9 6.5 9 9 L9 23"
+      {/* laço externo */}
+      <rect
+        x="3"
+        y="4"
+        width="14"
+        height="34"
+        rx="7"
         stroke="url(#clipGrad)"
-        strokeWidth="3"
+        strokeWidth="2.6"
+        fill="none"
+      />
+      {/* laço interno, mais curto, criando a dobra do clipe */}
+      <path
+        d="M7 9 L7 30 C7 32.8 8.6 34.5 10 34.5 C11.4 34.5 13 32.8 13 30 L13 14"
+        stroke="url(#clipGrad)"
+        strokeWidth="2.6"
         strokeLinecap="round"
         fill="none"
       />
+      {/* brilho fino para dar aspecto metálico */}
+      <rect x="3" y="4" width="14" height="34" rx="7" stroke="#ffffff" strokeOpacity="0.5" strokeWidth="0.7" fill="none" />
       <defs>
-        <linearGradient id="clipGrad" x1="0" y1="0" x2="22" y2="0">
-          <stop offset="0" stopColor="#c9ccd1" />
-          <stop offset="0.45" stopColor="#8b8f96" />
-          <stop offset="0.55" stopColor="#f0f2f5" />
-          <stop offset="1" stopColor="#9aa0a8" />
+        <linearGradient id="clipGrad" x1="0" y1="0" x2="20" y2="0">
+          <stop offset="0" stopColor="#d7dade" />
+          <stop offset="0.35" stopColor="#8b8f96" />
+          <stop offset="0.55" stopColor="#f4f6f8" />
+          <stop offset="0.8" stopColor="#9aa0a8" />
+          <stop offset="1" stopColor="#c2c6cc" />
         </linearGradient>
       </defs>
     </svg>
   );
 }
+
 
 // Selo nos cantos: um cartãozinho branco levemente girado em 3D, "preso" por um
 // clipe metálico. Mostra a logo da agência ou, como padrão, o wordmark.
