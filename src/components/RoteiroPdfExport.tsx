@@ -144,21 +144,23 @@ function tokens(s?: string | null): string[] {
   return Array.from(new Set(norm(s).split(/[^a-z0-9]+/).filter((t) => t.length >= 3)));
 }
 
-// Escolhe, entre as imagens da biblioteca, a mais relacionada à atividade.
-// Validação rígida: só aceita a imagem quando há CERTEZA de compatibilidade,
-// confirmando a CIDADE/LOCAL e ao menos um sinal do conteúdo base (título,
-// descrição) ou das tags. Em caso de dúvida, retorna null (não adiciona).
-function pickLibraryImage(
+// Escolhe, entre as imagens da biblioteca, as fotos mais relacionadas à
+// atividade (até `max`), montando um pequeno álbum quando há mais de um ponto
+// turístico/local relacionado. Validação rígida: só aceita imagens quando há
+// CERTEZA de compatibilidade, confirmando a CIDADE/LOCAL e ao menos um sinal do
+// conteúdo base (título, descrição) ou das tags. Em caso de dúvida, ignora.
+function pickLibraryImages(
   a: ItineraryActivity,
   images: LibraryItem[],
   used: Set<string>,
-): LibraryItem | null {
+  max = 3,
+): LibraryItem[] {
   const locTokens = tokens(a.location);
   // Sem local/cidade definidos não há como garantir compatibilidade.
-  if (locTokens.length === 0) return null;
+  if (locTokens.length === 0) return [];
   const contentTokens = new Set([...tokens(a.title), ...tokens(a.description)]);
 
-  let best: { item: LibraryItem; score: number } | null = null;
+  const scored: { item: LibraryItem; score: number }[] = [];
   for (const img of images) {
     const src = img.image_url || img.file_url;
     if (!src) continue;
@@ -179,11 +181,33 @@ function pickLibraryImage(
     }
     // Exige confirmação além da simples coincidência de cidade.
     if (score < 3) continue;
-
     if (used.has(src)) score -= 2; // penaliza reuso, mas não descarta
-    if (!best || score > best.score) best = { item: img, score };
+    scored.push({ item: img, score });
   }
-  return best && best.score >= 3 ? best.item : null;
+  scored.sort((x, y) => y.score - x.score);
+  return scored.slice(0, max).map((s) => s.item);
+}
+
+// Mescla, de forma resumida, as descrições/conhecimento dos locais encontrados
+// na biblioteca, para enriquecer a atividade com um pequeno texto sobre os
+// lugares. Mantém o resultado curto para não quebrar o layout do PDF.
+function mergeDescriptions(items: LibraryItem[]): string {
+  const seen = new Set<string>();
+  const parts: string[] = [];
+  for (const it of items) {
+    const t = (it.description || it.content || "").replace(/\s+/g, " ").trim();
+    if (!t || seen.has(t)) continue;
+    seen.add(t);
+    parts.push(t);
+  }
+  if (parts.length === 0) return "";
+  let joined = parts.join(" ");
+  if (joined.length > 320) {
+    joined = joined.slice(0, 320);
+    const lastDot = joined.lastIndexOf(".");
+    joined = lastDot > 160 ? joined.slice(0, lastDot + 1) : joined.trim() + "…";
+  }
+  return joined;
 }
 
 // Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
