@@ -3466,17 +3466,26 @@ function ActivityRow({
                 </span>
                 {activity.passenger_costs!.map((p, i) => {
                   const pBrl = p.amount_brl ?? brlWithRate(p.amount, p.currency, activity.currency, activity.cost_brl_rate);
+                  const pRate = p.amount_brl_rate ?? (p.amount_brl == null ? activity.cost_brl_rate : null);
+                  const isForeign = (p.currency || "BRL").toUpperCase() !== "BRL";
                   return (
-                  <span key={i} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1">
-                    <span className="min-w-0 truncate text-foreground">{p.name}</span>
-                    {p.amount != null && (
-                      <span className="shrink-0 font-medium text-foreground">
-                        {formatMoney(p.amount, p.currency)}
-                        {(p.currency || "BRL").toUpperCase() !== "BRL" && pBrl != null && (
-                          <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(pBrl)}</span>
-                        )}
+                  <span key={i} className="flex flex-col gap-0.5 rounded-lg border border-border/60 bg-background/60 px-2 py-1">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-foreground">{p.name}</span>
+                      {p.amount != null && (
+                        <span className="shrink-0 font-medium text-foreground">
+                          {formatMoney(p.amount, p.currency)}
+                          {isForeign && pBrl != null && (
+                            <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(pBrl)}</span>
+                          )}
+                        </span>
+                      )}
+                    </span>
+                    {isForeign && pBrl != null && pRate ? (
+                      <span className="text-[10px] text-muted-foreground">
+                        Convertido a R$ {pRate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / {(p.currency || "").toUpperCase()}
                       </span>
-                    )}
+                    ) : null}
                   </span>
                   );
                 })}
