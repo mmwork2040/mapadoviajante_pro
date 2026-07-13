@@ -2017,6 +2017,7 @@ function ActivityRow({
   const [hfLimit, setHfLimit] = useState(5);
   const [hfSites, setHfSites] = useState<string[]>(["booking", "trivago", "hotels", "expedia", "tripadvisor"]);
   const convertCurrency = useServerFn(convertCurrencyFn);
+  const [convertingPax, setConvertingPax] = useState<number | null>(null);
   const searchHotels = useServerFn(searchHotelsFn);
   // Sugestões genéricas (transfer, restaurante, passeio)
   const [eSugg, setESugg] = useState<HotelOption[]>(activity.suggestion_options || []);
@@ -2319,6 +2320,34 @@ function ActivityRow({
       toast.error(err instanceof Error ? err.message : "Erro ao converter.");
     } finally {
       setConverting(false);
+    }
+  }
+
+  async function handleConvertPax(index: number) {
+    const p = ePax[index];
+    const amount = p?.amount;
+    if (!amount) {
+      toast.error("Informe um valor para converter.");
+      return;
+    }
+    const cur = (p.currency || "BRL").toUpperCase();
+    if (cur === "BRL") {
+      setEPax((arr) => arr.map((x, j) => (j === index ? { ...x, amount_brl: amount, amount_brl_rate: 1, amount_brl_at: new Date().toISOString() } : x)));
+      return;
+    }
+    setConvertingPax(index);
+    try {
+      const res = await convertCurrency({ data: { amount, currency: cur } });
+      if (res.ok) {
+        setEPax((arr) => arr.map((x, j) => (j === index ? { ...x, amount_brl: res.brl, amount_brl_rate: res.rate || null, amount_brl_at: new Date().toISOString() } : x)));
+        toast.success(res.message || "Conversão realizada.");
+      } else {
+        toast.error(res.message || "Não foi possível obter a cotação.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao converter.");
+    } finally {
+      setConvertingPax(null);
     }
   }
 
@@ -3374,7 +3403,7 @@ function ActivityRow({
                 <div className="flex items-center gap-1.5">
                   <select
                     value={p.currency || "BRL"}
-                    onChange={(e) => setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value } : x)))}
+                    onChange={(e) => setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, currency: e.target.value, amount_brl: null, amount_brl_rate: null, amount_brl_at: null } : x)))}
                     className="shrink-0 rounded-lg border border-input bg-background px-1.5 py-1 text-xs outline-none focus:border-primary"
                   >
                     {CURRENCIES.map((c) => (
@@ -3385,18 +3414,28 @@ function ActivityRow({
                     value={p.amount != null ? maskAmount(String(Math.round((p.amount || 0) * 100))) : ""}
                     onChange={(e) => {
                       const val = parseCurrency(maskAmount(e.target.value));
-                      setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, amount: val || null } : x)));
+                      setEPax((arr) => arr.map((x, j) => (j === i ? { ...x, amount: val || null, amount_brl: null, amount_brl_rate: null, amount_brl_at: null } : x)));
                     }}
                     placeholder="0,00"
                     inputMode="numeric"
                     className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
                   />
+                  {(p.currency || "BRL").toUpperCase() !== "BRL" && (p.amount || 0) > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => handleConvertPax(i)}
+                      disabled={convertingPax === i}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-primary/40 px-2 py-1 text-[11px] font-medium text-primary hover:bg-primary/10 disabled:opacity-60"
+                    >
+                      {convertingPax === i ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                      Converter p/ R$
+                    </button>
+                  )}
                 </div>
                 {p.amount != null && (p.currency || "BRL").toUpperCase() !== "BRL" && p.amount_brl != null ? (
                   <p className="text-[10px] text-muted-foreground">
                     ≈ {formatCurrency(p.amount_brl)}
                     {p.amount_brl_rate ? ` (R$ ${p.amount_brl_rate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / ${(p.currency || "").toUpperCase()})` : ""}
-                    <span className="ml-1">— recalculado ao salvar</span>
                   </p>
                 ) : null}
               </div>
