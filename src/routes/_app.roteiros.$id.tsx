@@ -2124,6 +2124,7 @@ function ActivityRow({
     }
     // Combina título + cidade para achar o local exato na cidade informada.
     const term = `${title}, ${city}`;
+    setImgChoiceOpen(false);
     setFindingImg(true);
     setImgOptions([]);
     setImgModalOpen(true);
