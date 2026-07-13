@@ -336,7 +336,35 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
   const [actImages, setActImages] = useState<Record<string, string[]>>({});
   // Resumo mesclado dos locais (biblioteca) por atividade.
   const [actNotes, setActNotes] = useState<Record<string, string>>({});
+  // Personalização da marca (logo, textos de abertura e cores) da agência.
+  const [branding, setBranding] = useState<AgencyBranding>({ ...DEFAULT_BRANDING });
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const b = await getAgencyBranding();
+      if (!active) return;
+      setBranding(b);
+      if (b.logoPath) {
+        const u = await resolveDisplayImageUrl(b.logoPath);
+        if (active) setLogoUrl(u);
+      } else {
+        setLogoUrl(null);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Cores e textos aplicados (com fallback ao padrão). Estes nomes sombreiam as
+  // constantes de módulo, então todas as referências no corpo do PDF usam a marca.
+  const GOLD = branding.colorGold || DEFAULT_BRANDING.colorGold!;
+  const GOLD_DARK = branding.colorGoldDark || DEFAULT_BRANDING.colorGoldDark!;
+  const openingTitle = (branding.openingTitle || "").trim();
+  const openingSubtitle = (branding.openingSubtitle || "").trim();
+  const openingFooter = (branding.openingFooter || "").trim();
 
   const destino = it.destination || it.title || "Sua Viagem";
   const cliente = it.client_name || it.lead?.name || "Viajante";
