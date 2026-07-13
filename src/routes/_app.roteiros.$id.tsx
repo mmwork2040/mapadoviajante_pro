@@ -1281,6 +1281,14 @@ function ItineraryDetailPage() {
             <MapPin className="h-4 w-4 shrink-0" />
             <span className="truncate">{it.destination || "—"}</span>
           </div>
+          <button
+            type="button"
+            onClick={() => setCoverPickerOpen(true)}
+            className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur hover:bg-black/70"
+          >
+            <ImageIcon className="h-3.5 w-3.5" /> Capa
+          </button>
+
         </div>
         <div className="flex flex-1 flex-wrap items-start justify-between gap-4 bg-card p-5">
         <div>
