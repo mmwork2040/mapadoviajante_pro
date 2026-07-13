@@ -91,8 +91,8 @@ function PaperClip() {
   );
 }
 
-// Selo nos cantos: usa a logo da agência (quando definida na Administração) ou,
-// como padrão, o wordmark "O segredo Viajante".
+// Selo nos cantos: um cartãozinho branco levemente girado em 3D, "preso" por um
+// clipe metálico. Mostra a logo da agência ou, como padrão, o wordmark.
 function Brandmark({
   light,
   logoUrl,
@@ -102,26 +102,43 @@ function Brandmark({
   logoUrl?: string | null;
   goldDark?: string;
 }) {
-  if (logoUrl) {
-    return (
-      <img
-        src={logoUrl}
-        crossOrigin="anonymous"
-        alt=""
-        style={{ maxHeight: "18mm", maxWidth: "46mm", objectFit: "contain", display: "block" }}
-      />
-    );
-  }
-  return (
+  const inner = logoUrl ? (
+    <img
+      src={logoUrl}
+      crossOrigin="anonymous"
+      alt=""
+      style={{ maxHeight: "15mm", maxWidth: "40mm", objectFit: "contain", display: "block" }}
+    />
+  ) : (
     <div style={{ lineHeight: 1, textAlign: "right" }}>
-      <span style={{ display: "block", fontFamily: "Fredoka, sans-serif", fontWeight: 600, fontSize: "10pt", color: light ? "#fff" : goldDark }}>
+      <span style={{ display: "block", fontFamily: "Fredoka, sans-serif", fontWeight: 600, fontSize: "10pt", color: goldDark }}>
         O segredo
       </span>
-      <span style={{ display: "block", fontFamily: "'Dancing Script', cursive", fontWeight: 700, fontSize: "14pt", color: light ? "#fff" : goldDark, marginTop: "-2px" }}>
+      <span style={{ display: "block", fontFamily: "'Dancing Script', cursive", fontWeight: 700, fontSize: "14pt", color: goldDark, marginTop: "-2px" }}>
         Viajante
       </span>
     </div>
   );
+  return (
+    <div style={{ position: "relative", perspective: "300px" }}>
+      <div
+        style={{
+          background: "#fff",
+          padding: "5mm 6mm",
+          borderRadius: "3px",
+          boxShadow: "0 6px 14px rgba(0,0,0,.22), 0 1px 2px rgba(0,0,0,.15)",
+          transform: "rotateX(6deg) rotateY(-14deg) rotate(3deg)",
+          transformOrigin: "top right",
+        }}
+      >
+        {inner}
+      </div>
+      <div style={{ position: "absolute", top: "-6mm", right: "6mm", transform: "rotate(10deg)" }}>
+        <PaperClip />
+      </div>
+    </div>
+  );
+}
 }
 
 // Uma página física A4.
