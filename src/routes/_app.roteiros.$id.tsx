@@ -2698,46 +2698,58 @@ function ActivityRow({
         {/* Modal de escolha da origem da imagem */}
         {imgChoiceOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setImgChoiceOpen(false)}>
-            <div className="w-full max-w-xs rounded-2xl bg-background p-4 shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Adicionar imagem</h3>
-                <button type="button" onClick={() => setImgChoiceOpen(false)} className="rounded-lg p-1 hover:bg-muted">
+            <ScrollLock />
+            <div
+              className="flex w-full max-w-md flex-col overflow-hidden rounded-2xl bg-card shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+                <ImageIcon className="h-4 w-4 text-primary" />
+                <span className="flex-1 text-sm font-semibold">Adicionar imagem</span>
+                <button
+                  type="button"
+                  onClick={() => setImgChoiceOpen(false)}
+                  className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
                   <X className="h-4 w-4" />
                 </button>
               </div>
-              <p className="mt-1 text-[11px] text-muted-foreground">Como deseja adicionar a imagem?</p>
-              <div className="mt-3 space-y-2">
+              <div className="grid gap-3 p-4 sm:grid-cols-3">
                 <button
                   type="button"
                   onClick={() => {
                     setImgChoiceOpen(false);
                     imgFileRef.current?.click();
                   }}
-                  className="flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs hover:border-primary hover:bg-primary/5"
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border p-5 text-center hover:border-primary hover:bg-muted/40"
                 >
-                  <FileUp className="h-4 w-4 text-primary" />
-                  <span><span className="font-medium">Upload</span> — enviar do dispositivo</span>
+                  <FileUp className="h-7 w-7 text-primary" />
+                  <span className="text-sm font-semibold">Do dispositivo</span>
+                  <span className="text-xs text-muted-foreground">Enviar imagem nova</span>
                 </button>
                 <button
                   type="button"
                   onClick={openLibraryPicker}
-                  className="flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs hover:border-primary hover:bg-primary/5"
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border p-5 text-center hover:border-primary hover:bg-muted/40"
                 >
-                  <ImageIcon className="h-4 w-4 text-primary" />
-                  <span><span className="font-medium">Biblioteca</span> — escolher do acervo</span>
+                  <ImageIcon className="h-7 w-7 text-primary" />
+                  <span className="text-sm font-semibold">Da biblioteca</span>
+                  <span className="text-xs text-muted-foreground">Reutilizar do acervo</span>
                 </button>
                 <button
                   type="button"
                   onClick={handleFindImage}
-                  className="flex w-full items-center gap-2 rounded-lg border border-border/60 px-3 py-2 text-left text-xs hover:border-primary hover:bg-primary/5"
+                  className="flex flex-col items-center gap-2 rounded-xl border border-border p-5 text-center hover:border-primary hover:bg-muted/40"
                 >
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span><span className="font-medium">IA</span> — buscar automaticamente</span>
+                  <Sparkles className="h-7 w-7 text-primary" />
+                  <span className="text-sm font-semibold">Com IA</span>
+                  <span className="text-xs text-muted-foreground">Buscar automaticamente</span>
                 </button>
               </div>
             </div>
           </div>
         )}
+
 
         {/* Modal de seleção de imagem da biblioteca */}
         {libOpen && (
