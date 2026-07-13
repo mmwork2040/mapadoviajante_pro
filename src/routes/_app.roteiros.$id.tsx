@@ -1476,6 +1476,48 @@ function ItineraryDetailPage() {
   );
 }
 
+function ActivityImagesCarousel({ images, alt }: { images: ActivityImage[]; alt: string }) {
+  const [idx, setIdx] = useState(0);
+  if (images.length === 0) return null;
+  const i = Math.min(idx, images.length - 1);
+  const multi = images.length > 1;
+  const go = (delta: number) => setIdx((v) => (v + delta + images.length) % images.length);
+  return (
+    <span className="relative mt-1.5 block overflow-hidden rounded-lg border border-border/60 bg-background/60">
+      <img src={images[i].url} alt={alt} className="h-40 w-full object-cover" loading="lazy" />
+      {multi && (
+        <>
+          <button
+            type="button"
+            onClick={() => go(-1)}
+            className="absolute left-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+            aria-label="Imagem anterior"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => go(1)}
+            className="absolute right-1.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white hover:bg-black/70"
+            aria-label="Próxima imagem"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          <span className="absolute bottom-1.5 left-0 right-0 flex justify-center gap-1">
+            {images.map((_, di) => (
+              <span
+                key={di}
+                className={`h-1.5 w-1.5 rounded-full ${di === i ? "bg-white" : "bg-white/40"}`}
+              />
+            ))}
+          </span>
+        </>
+      )}
+    </span>
+  );
+}
+
+
 function DaysCarousel({
   days,
   renderDay,
