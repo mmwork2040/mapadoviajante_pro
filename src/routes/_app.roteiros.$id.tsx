@@ -3673,16 +3673,7 @@ function ActivityRow({
               <span className="mt-0.5 block whitespace-pre-wrap text-[11px] text-muted-foreground">{activity.description}</span>
             )}
             {(activity.images?.length ?? 0) > 0 && (
-              <span className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
-                {activity.images!.map((im, i) => (
-                  <span key={i} className="block overflow-hidden rounded-lg border border-border/60 bg-background/60">
-                    <img src={im.url} alt={im.description || activity.title} className="h-24 w-full object-cover" loading="lazy" />
-                    {im.description && (
-                      <span className="block px-1.5 py-1 text-[10px] leading-snug text-muted-foreground">{im.description}</span>
-                    )}
-                  </span>
-                ))}
-              </span>
+              <ActivityImagesCarousel images={activity.images!} alt={activity.title} />
             )}
 
             {activity.cost != null && (
