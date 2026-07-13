@@ -616,7 +616,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                 const imgs = imagesFor(a);
                 blocks.push({
                   key: a.id,
-                  height: estimateActivityHeight(a, imgs.length > 0),
+                  height: estimateActivityHeight(a, true),
                   node: (
                     <div
                       style={{
