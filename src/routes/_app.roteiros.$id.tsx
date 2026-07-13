@@ -3377,6 +3377,13 @@ function ActivityRow({
                     className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-1 text-xs outline-none focus:border-primary"
                   />
                 </div>
+                {p.amount != null && (p.currency || "BRL").toUpperCase() !== "BRL" && p.amount_brl != null ? (
+                  <p className="text-[10px] text-muted-foreground">
+                    ≈ {formatCurrency(p.amount_brl)}
+                    {p.amount_brl_rate ? ` (R$ ${p.amount_brl_rate.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })} / ${(p.currency || "").toUpperCase()})` : ""}
+                    <span className="ml-1">— recalculado ao salvar</span>
+                  </p>
+                ) : null}
               </div>
             ))}
           </div>
