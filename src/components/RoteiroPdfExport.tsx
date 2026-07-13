@@ -407,8 +407,9 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     setBusy(true);
     try {
       // 1) Enriquecer atividades sem imagem com fotos da biblioteca.
-      const map = await resolveActivityImages();
+      const { images: map, notes } = await resolveActivityImages();
       setActImages(map);
+      setActNotes(notes);
       // Aguarda o React renderizar as novas imagens no container oculto.
       await new Promise((r) => setTimeout(r, 60));
       // Garante que capa e polaroids estejam totalmente carregadas antes
@@ -440,8 +441,9 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
   async function openPreview() {
     setBusy(true);
     try {
-      const map = await resolveActivityImages();
+      const { images: map, notes } = await resolveActivityImages();
       setActImages(map);
+      setActNotes(notes);
       setPreviewOpen(true);
     } catch (err) {
       console.error(err);
