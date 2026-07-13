@@ -668,8 +668,65 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
               <div style={{ fontFamily: "'Dancing Script', cursive", fontSize: "30pt", textShadow: "0 2px 10px rgba(0,0,0,.6)", marginTop: "-4px" }}>Viajante</div>
             </div>
           </Page>
+    </>
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          onClick={() => void openPreview()}
+          disabled={busy}
+          className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />} Pré-visualizar
+        </button>
+        <button
+          onClick={handleExport}
+          disabled={busy}
+          className="flex items-center gap-1 rounded-lg border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar PDF
+        </button>
+      </div>
+
+      {previewOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-black/70">
+          <div className="flex items-center justify-between gap-2 bg-card px-4 py-3 shadow">
+            <div className="text-sm font-semibold">Pré-visualização do roteiro</div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleExport}
+                disabled={busy}
+                className="flex items-center gap-1 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />} Exportar PDF
+              </button>
+              <button
+                onClick={() => setPreviewOpen(false)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+                aria-label="Fechar"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+          <div className="flex-1 overflow-auto p-4">
+            <style>{`.pdf-preview .pdf-page{margin:0 auto 14px;box-shadow:0 6px 24px rgba(0,0,0,.35);}`}</style>
+            <div className="pdf-preview" style={{ width: "210mm", margin: "0 auto" }}>
+              {renderBody(true)}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Container renderizado fora da tela; capturado pelo html2pdf. */}
+      <div style={{ position: "fixed", left: "-10000px", top: 0, zIndex: -1 }} aria-hidden>
+        <div ref={containerRef} id="roteiro-pdf-container" style={{ width: "210mm", background: "#fff" }}>
+          {renderBody(false)}
         </div>
       </div>
     </>
   );
 }
+
