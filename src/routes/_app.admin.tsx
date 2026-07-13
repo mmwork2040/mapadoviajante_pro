@@ -51,7 +51,9 @@ import { sendTestPush, getPushStatus, listDeviceTokens, getPushDeliveryStatus, t
 import {
   fetchAiConfig,
   fetchTeamMembers,
+  fetchLibraryItems,
   removeMember,
+  resolveDisplayImageUrl,
   revokeMember,
   saveAiConfig,
   setMemberBlocked,
@@ -59,6 +61,8 @@ import {
 } from "@/lib/services";
 import { sendTeamInvite, getEmailConfigStatus } from "@/lib/invites.functions";
 import { getAgencyInfo, saveAgencyInfo, lookupCep, type AgencyInfo } from "@/lib/agency";
+import { getAgencyBranding, saveAgencyBranding, DEFAULT_BRANDING, type AgencyBranding } from "@/lib/agency";
+import type { LibraryItem } from "@/lib/types";
 import {
   getAgencyPaymentConfig,
   saveAgencyPaymentConfig,
