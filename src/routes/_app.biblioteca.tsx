@@ -62,6 +62,7 @@ import {
 import { formatCurrency } from "@/lib/ui";
 import type { LibraryItem, LibraryItemType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { PlaceAutocomplete } from "@/components/PlaceAutocomplete";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { useConfirm } from "@/components/ConfirmDialog";
 
