@@ -584,9 +584,9 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           {/* ------------------------- ROTEIRO DIÁRIO ---------------------- */}
           {(() => {
             const imagesFor = (a: ItineraryActivity): string[] => {
-              const own = (a.images || []).map((i) => i.url).filter(Boolean) as string[];
-              if (own.length) return own;
-              return actImages[a.id] ? [actImages[a.id]] : [];
+              // O mapa já contém a imagem própria resolvida ou a da biblioteca.
+              if (actImages[a.id]?.length) return actImages[a.id];
+              return (a.images || []).map((i) => i.url).filter(Boolean) as string[];
             };
 
             type Block = {
