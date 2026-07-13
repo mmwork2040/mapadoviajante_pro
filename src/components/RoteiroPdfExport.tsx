@@ -226,13 +226,48 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
     );
   }
 
+  // Para atividades sem imagem própria, busca na biblioteca uma foto que
+  // combine com o local/tags/descrição e resolve a URL exibível.
+  async function resolveActivityImages(): Promise<Record<string, string>> {
+    let images: LibraryItem[] = [];
+    try {
+      images = await fetchLibraryItems("image");
+    } catch {
+      return {};
+    }
+    if (images.length === 0) return {};
+    const used = new Set<string>();
+    const map: Record<string, string> = {};
+    for (const day of days) {
+      for (const a of activityLines(day.activities)) {
+        if (a.type === "hotel") continue;
+        if (a.images && a.images.length && a.images[0]?.url) continue; // já tem imagem
+        const hit = pickLibraryImage(a, images, used);
+        const src = hit?.image_url || hit?.file_url;
+        if (!src) continue;
+        const url = await resolveDisplayImageUrl(src);
+        if (url) {
+          map[a.id] = url;
+          used.add(src);
+        }
+      }
+    }
+    return map;
+  }
+
   async function handleExport() {
     if (!containerRef.current) return;
     setBusy(true);
     try {
+      // 1) Enriquecer atividades sem imagem com fotos da biblioteca.
+      const map = await resolveActivityImages();
+      setActImages(map);
+      // Aguarda o React renderizar as novas imagens no container oculto.
+      await new Promise((r) => setTimeout(r, 60));
       // Garante que capa e polaroids estejam totalmente carregadas antes
       // do html2canvas capturar o container (evita áreas em branco no PDF).
       await waitForImages(containerRef.current);
+
       const html2pdf = (await import("html2pdf.js")).default;
       const opts = {
         margin: 0,
