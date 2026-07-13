@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Itinerary, ItineraryActivity, ItineraryDay, LibraryItem } from "@/lib/types";
 import { fetchLibraryItems, resolveDisplayImageUrl } from "@/lib/services";
+import { getAgencyBranding, DEFAULT_BRANDING, type AgencyBranding } from "@/lib/agency";
 
 
 // ============================================================================
