@@ -2600,31 +2600,20 @@ function ActivityRow({
 
             </div>
             <p className="mt-1 text-[10px] text-muted-foreground">
-              Localiza a atração pelo título na cidade informada. Adicione imagens sortidas com descrição — elas aparecem na página do dia e vão para a biblioteca.
+              Localiza a atração pelo título na cidade informada. Adicione imagens sortidas — elas aparecem como carrossel na página do dia e vão para a biblioteca.
             </p>
             {eImages.length === 0 ? (
               <p className="mt-1 text-[11px] text-muted-foreground">Nenhuma imagem adicionada.</p>
             ) : (
-              <div className="mt-2 space-y-2">
+              <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {eImages.map((im, i) => (
-                  <div key={im.url} className="flex gap-2 rounded-lg border border-border/60 bg-background p-1.5">
-                    <img src={im.url} alt={im.description || "Imagem"} className="h-16 w-20 flex-none rounded-md object-cover" />
-                    <div className="min-w-0 flex-1">
-                      <textarea
-                        value={im.description || ""}
-                        onChange={(e) =>
-                          setEImages((prev) => prev.map((x, idx) => (idx === i ? { ...x, description: e.target.value } : x)))
-                        }
-                        placeholder="Descrição da atração / local…"
-                        rows={2}
-                        className="w-full resize-y rounded-md border border-input bg-background px-1.5 py-1 text-[11px] outline-none focus:border-primary"
-                      />
-                    </div>
+                  <div key={im.url} className="group relative overflow-hidden rounded-lg border border-border/60 bg-background">
+                    <img src={im.url} alt="Imagem" className="h-20 w-full object-cover" />
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(i)}
                       title="Remover imagem"
-                      className="flex-none self-start rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-destructive"
+                      className="absolute right-1 top-1 rounded-md bg-black/50 p-1 text-white opacity-0 transition-opacity hover:bg-destructive group-hover:opacity-100"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
                     </button>
