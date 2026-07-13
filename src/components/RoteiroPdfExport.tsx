@@ -227,27 +227,40 @@ function pickLibraryImages(
   return scored.slice(0, max).map((s) => s.item);
 }
 
-// Mescla, de forma resumida, as descrições/conhecimento dos locais encontrados
-// na biblioteca, para enriquecer a atividade com um pequeno texto sobre os
-// lugares. Mantém o resultado curto para não quebrar o layout do PDF.
+// Resume, de forma breve, o conhecimento de cada local encontrado na
+// biblioteca. Para cada imagem gera uma frase curta a partir do "Conteúdo
+// (base de conhecimento p/ IA)" (campo content) — caindo para a descrição
+// quando não houver conteúdo — para não deixar o dia extenso no PDF.
+function briefFromKnowledge(text: string, max = 140): string {
+  const clean = text.replace(/\s+/g, " ").trim();
+  if (!clean) return "";
+  if (clean.length <= max) return clean;
+  const cut = clean.slice(0, max);
+  const lastDot = cut.lastIndexOf(".");
+  return lastDot > max * 0.5 ? cut.slice(0, lastDot + 1) : cut.trim() + "…";
+}
+
 function mergeDescriptions(items: LibraryItem[]): string {
   const seen = new Set<string>();
   const parts: string[] = [];
   for (const it of items) {
-    const t = (it.description || it.content || "").replace(/\s+/g, " ").trim();
-    if (!t || seen.has(t)) continue;
-    seen.add(t);
-    parts.push(t);
+    const raw = (it.content || it.description || "").replace(/\s+/g, " ").trim();
+    const brief = briefFromKnowledge(raw, 120);
+    if (!brief || seen.has(brief)) continue;
+    seen.add(brief);
+    const label = (it.title || it.location || "").trim();
+    parts.push(label ? `${label}: ${brief}` : brief);
   }
   if (parts.length === 0) return "";
-  let joined = parts.join(" ");
-  if (joined.length > 320) {
-    joined = joined.slice(0, 320);
+  let joined = parts.join("  •  ");
+  if (joined.length > 360) {
+    joined = joined.slice(0, 360);
     const lastDot = joined.lastIndexOf(".");
-    joined = lastDot > 160 ? joined.slice(0, lastDot + 1) : joined.trim() + "…";
+    joined = lastDot > 180 ? joined.slice(0, lastDot + 1) : joined.trim() + "…";
   }
   return joined;
 }
+
 
 // Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
 function estimateActivityHeight(a: ItineraryActivity, imgCount: number, note?: string): number {
