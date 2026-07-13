@@ -80,6 +80,7 @@ import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
 import { formatCurrency, parseCurrency, formatMoney, brlWithRate } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
+import { StarRatingSelect } from "@/components/StarRatingSelect";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useConfirm } from "@/components/ConfirmDialog";
 import {
