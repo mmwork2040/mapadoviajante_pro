@@ -2360,13 +2360,33 @@ function ActivityRow({
           source: h.source ?? "user",
           links: h.links && h.links.length ? h.links : (suggKind ? suggestionLinks(suggKind, h.name, eLocation) : []),
         }));
-      const cleanPax = ePax
-        .filter((p) => (p.name || "").trim())
-        .map((p) => ({
-          name: p.name.trim(),
-          amount: p.amount ?? null,
-          currency: p.currency || eCurrency || "BRL",
-        }));
+      const cleanPax = await Promise.all(
+        ePax
+          .filter((p) => (p.name || "").trim())
+          .map(async (p) => {
+            const cur = (p.currency || eCurrency || "BRL").toUpperCase();
+            let amount_brl: number | null = null;
+            let amount_brl_rate: number | null = null;
+            if (p.amount != null && cur !== "BRL") {
+              try {
+                const conv = await convertCurrency({ data: { amount: p.amount, currency: cur } });
+                if (conv.ok) {
+                  amount_brl = conv.brl;
+                  amount_brl_rate = conv.rate || null;
+                }
+              } catch {
+                /* ignore conversão indisponível */
+              }
+            }
+            return {
+              name: p.name.trim(),
+              amount: p.amount ?? null,
+              currency: cur,
+              amount_brl,
+              amount_brl_rate,
+            };
+          }),
+      );
       await updateItineraryActivity(activity.id, {
         title: eTitle.trim(),
         time: eTime || null,
@@ -3445,14 +3465,16 @@ function ActivityRow({
                   Valores por pessoa
                 </span>
                 {activity.passenger_costs!.map((p, i) => {
-                  const pBrl = brlWithRate(p.amount, p.currency, activity.currency, activity.cost_brl_rate);
+                  const pBrl = p.amount_brl ?? brlWithRate(p.amount, p.currency, activity.currency, activity.cost_brl_rate);
                   return (
                   <span key={i} className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1">
                     <span className="min-w-0 truncate text-foreground">{p.name}</span>
                     {p.amount != null && (
                       <span className="shrink-0 font-medium text-foreground">
                         {formatMoney(p.amount, p.currency)}
-                        {pBrl != null && <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(pBrl)}</span>}
+                        {(p.currency || "BRL").toUpperCase() !== "BRL" && pBrl != null && (
+                          <span className="ml-1 font-normal text-muted-foreground">≈ {formatCurrency(pBrl)}</span>
+                        )}
                       </span>
                     )}
                   </span>
