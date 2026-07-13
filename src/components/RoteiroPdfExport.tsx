@@ -295,6 +295,48 @@ function ActivityImageBox({ images, preview }: { images: string[]; preview: bool
   );
 }
 
+// Placeholder harmonizado usado quando nenhuma imagem da biblioteca passou na
+// validação (cidade + conteúdo base + tags). Mantém o mesmo tamanho da caixa de
+// imagem para não quebrar o layout do dia no PDF.
+function ActivityImagePlaceholder({ label }: { label?: string }) {
+  return (
+    <div
+      style={{
+        flexShrink: 0,
+        position: "relative",
+        background: "#fff",
+        padding: "1.5mm 1.5mm 4mm",
+        boxShadow: "0 4px 12px rgba(0,0,0,.15)",
+        transform: "rotate(1.5deg)",
+      }}
+    >
+      <div
+        style={{
+          width: "52mm",
+          height: "36mm",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "2mm",
+          background: `linear-gradient(135deg, ${BEIGE} 0%, #ECE3D4 100%)`,
+          border: `1px dashed ${GOLD}`,
+          color: GOLD_DARK,
+          textAlign: "center",
+          padding: "2mm",
+        }}
+      >
+        <MapPin size={22} />
+        <span style={{ fontFamily: "Fredoka, sans-serif", fontSize: "8.5pt", fontWeight: 600, lineHeight: 1.2 }}>
+          {label || "Imagem em breve"}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+
+
 
 export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
