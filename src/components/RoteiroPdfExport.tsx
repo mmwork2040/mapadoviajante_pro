@@ -133,6 +133,60 @@ function findHotel(day: ItineraryDay): string | null {
   return hotel?.title || null;
 }
 
+function norm(s?: string | null): string {
+  return (s || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+function tokens(s?: string | null): string[] {
+  return Array.from(new Set(norm(s).split(/[^a-z0-9]+/).filter((t) => t.length >= 3)));
+}
+
+// Escolhe, entre as imagens da biblioteca, a mais relacionada à atividade
+// (por local, tags ou descrição). Evita repetir a mesma imagem quando possível.
+function pickLibraryImage(
+  a: ItineraryActivity,
+  images: LibraryItem[],
+  used: Set<string>,
+): LibraryItem | null {
+  const wantLoc = norm(a.location);
+  const need = new Set([...tokens(a.location), ...tokens(a.title), ...tokens(a.description)]);
+  if (need.size === 0) return null;
+  let best: { item: LibraryItem; score: number } | null = null;
+  for (const img of images) {
+    const src = img.image_url || img.file_url;
+    if (!src) continue;
+    const hay = new Set([
+      ...tokens(img.title),
+      ...tokens(img.location),
+      ...tokens((img.tags || []).join(" ")),
+      ...tokens(img.description),
+      ...tokens(img.content),
+    ]);
+    let score = 0;
+    for (const t of need) if (hay.has(t)) score += 1;
+    // Bônus forte quando o local da atividade bate com o local/titulo da imagem.
+    if (wantLoc && (norm(img.location).includes(wantLoc) || norm(img.title).includes(wantLoc))) {
+      score += 3;
+    }
+    if (score <= 0) continue;
+    if (used.has(src)) score -= 2; // penaliza reuso, mas não descarta
+    if (!best || score > best.score) best = { item: img, score };
+  }
+  return best && best.score > 0 ? best.item : null;
+}
+
+// Estima a altura (mm) que uma atividade ocupará no PDF, para paginar sem quebra.
+function estimateActivityHeight(a: ItineraryActivity, hasImage: boolean): number {
+  const descLines = a.description ? Math.ceil(a.description.length / 52) : 0;
+  const textH = 9 + descLines * 5 + (a.location ? 6 : 0);
+  const imageH = hasImage ? 42 : 0;
+  return Math.max(textH, imageH) + 8;
+}
+
+
 export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
