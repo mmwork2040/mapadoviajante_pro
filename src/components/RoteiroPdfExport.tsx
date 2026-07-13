@@ -190,6 +190,9 @@ function estimateActivityHeight(a: ItineraryActivity, hasImage: boolean): number
 export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: string | null }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
+  // Imagens resolvidas da biblioteca por atividade (id -> URL exibível).
+  const [actImages, setActImages] = useState<Record<string, string>>({});
+
 
   const destino = it.destination || it.title || "Sua Viagem";
   const cliente = it.client_name || it.lead?.name || "Viajante";
