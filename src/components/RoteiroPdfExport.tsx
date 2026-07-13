@@ -1,7 +1,9 @@
 import { useMemo, useRef, useState } from "react";
 import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
-import type { Itinerary, ItineraryActivity, ItineraryDay } from "@/lib/types";
+import type { Itinerary, ItineraryActivity, ItineraryDay, LibraryItem } from "@/lib/types";
+import { fetchLibraryItems, resolveDisplayImageUrl } from "@/lib/services";
+
 
 // ============================================================================
 // Paleta / tokens visuais do PDF (fixos — o layout do PDF é independente do tema)
