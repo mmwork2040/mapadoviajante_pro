@@ -410,8 +410,15 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
           {days.map((day) => {
             const hotel = findHotel(day);
             const lines = activityLines(day.activities).filter((a) => a.type !== "hotel");
-            const imgFor = (a: ItineraryActivity): string | null =>
-              a.images?.[0]?.url || actImages[a.id] || null;
+            // Lista de imagens da atividade: as próprias imagens adicionadas
+            // (comportamento de carrossel na pré-visualização) ou, na falta
+            // delas, a foto encontrada na biblioteca.
+            const imagesFor = (a: ItineraryActivity): string[] => {
+              const own = (a.images || []).map((i) => i.url).filter(Boolean) as string[];
+              if (own.length) return own;
+              return actImages[a.id] ? [actImages[a.id]] : [];
+            };
+            const imgFor = (a: ItineraryActivity): string | null => imagesFor(a)[0] || null;
 
             // Pagina as atividades para nunca quebrar imagem/texto entre páginas.
             const pages: ItineraryActivity[][] = [];
