@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from "react";
-import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle } from "lucide-react";
+import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle, ChevronLeft, ChevronRight, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Itinerary, ItineraryActivity, ItineraryDay, LibraryItem } from "@/lib/types";
 import { fetchLibraryItems, resolveDisplayImageUrl } from "@/lib/services";
