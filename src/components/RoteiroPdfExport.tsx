@@ -478,7 +478,7 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                           <p style={{ fontSize: "13pt", color: SLATE }}>Programação livre.</p>
                         )}
                         {chunk.map((a) => {
-                          const img = imgFor(a);
+                          const imgs = imagesFor(a);
                           return (
                             <div
                               key={a.id}
@@ -512,19 +512,13 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                                   </p>
                                 )}
                               </div>
-                              {img && (
-                                <div style={{ flexShrink: 0, background: "#fff", padding: "1.5mm 1.5mm 4mm", boxShadow: "0 4px 12px rgba(0,0,0,.15)", transform: "rotate(1.5deg)" }}>
-                                  <img
-                                    src={img}
-                                    crossOrigin="anonymous"
-                                    alt=""
-                                    style={{ width: "52mm", height: "36mm", objectFit: "cover", display: "block" }}
-                                  />
-                                </div>
+                              {imgs.length > 0 && (
+                                <ActivityImageBox images={imgs} preview={preview} />
                               )}
                             </div>
                           );
                         })}
+
                       </div>
 
                       {/* Hotel do dia (apenas na última página do dia) */}
