@@ -649,7 +649,11 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
                           </p>
                         )}
                       </div>
-                      {imgs.length > 0 && <ActivityImageBox images={imgs} preview={preview} />}
+                      {imgs.length > 0 ? (
+                        <ActivityImageBox images={imgs} preview={preview} />
+                      ) : (
+                        <ActivityImagePlaceholder label={a.location || destino} />
+                      )}
                     </div>
                   ),
                 });
