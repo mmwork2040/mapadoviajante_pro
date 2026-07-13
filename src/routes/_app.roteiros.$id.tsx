@@ -2322,6 +2322,34 @@ function ActivityRow({
     }
   }
 
+  async function handleConvertPax(index: number) {
+    const p = ePax[index];
+    const amount = p?.amount;
+    if (!amount) {
+      toast.error("Informe um valor para converter.");
+      return;
+    }
+    const cur = (p.currency || "BRL").toUpperCase();
+    if (cur === "BRL") {
+      setEPax((arr) => arr.map((x, j) => (j === index ? { ...x, amount_brl: amount, amount_brl_rate: 1, amount_brl_at: new Date().toISOString() } : x)));
+      return;
+    }
+    setConvertingPax(index);
+    try {
+      const res = await convertCurrency({ data: { amount, currency: cur } });
+      if (res.ok) {
+        setEPax((arr) => arr.map((x, j) => (j === index ? { ...x, amount_brl: res.brl, amount_brl_rate: res.rate || null, amount_brl_at: new Date().toISOString() } : x)));
+        toast.success(res.message || "Conversão realizada.");
+      } else {
+        toast.error(res.message || "Não foi possível obter a cotação.");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao converter.");
+    } finally {
+      setConvertingPax(null);
+    }
+  }
+
   async function saveEdit() {
     if (!eTitle.trim()) {
       toast.error("Informe um título.");
