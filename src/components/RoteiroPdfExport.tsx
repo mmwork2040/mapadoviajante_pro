@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { FileDown, Loader2, Hotel, MapPin, Clock, Check, AlertTriangle, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Itinerary, ItineraryActivity, ItineraryDay, LibraryItem } from "@/lib/types";
 import { fetchLibraryItems, resolveDisplayImageUrl } from "@/lib/services";
+import { getAgencyBranding, DEFAULT_BRANDING, type AgencyBranding } from "@/lib/agency";
 
 
 // ============================================================================
@@ -57,7 +58,7 @@ const SERVICOS_NAO_INCLUSOS = [
 ];
 
 // Ornamento decorativo dourado nos cantos das páginas de conteúdo.
-function CornerBlobs() {
+function CornerBlobs({ gold = GOLD }: { gold?: string }) {
   return (
     <>
       <div
@@ -67,7 +68,7 @@ function CornerBlobs() {
           right: 0,
           width: "42mm",
           height: "34mm",
-          background: GOLD,
+          background: gold,
           borderBottomLeftRadius: "100%",
           opacity: 0.9,
         }}
@@ -79,7 +80,7 @@ function CornerBlobs() {
           left: 0,
           width: "36mm",
           height: "28mm",
-          background: GOLD,
+          background: gold,
           borderTopRightRadius: "100%",
           opacity: 0.9,
         }}
@@ -88,13 +89,33 @@ function CornerBlobs() {
   );
 }
 
-function Wordmark({ light }: { light?: boolean }) {
+// Selo nos cantos: usa a logo da agência (quando definida na Administração) ou,
+// como padrão, o wordmark "O segredo Viajante".
+function Brandmark({
+  light,
+  logoUrl,
+  goldDark = GOLD_DARK,
+}: {
+  light?: boolean;
+  logoUrl?: string | null;
+  goldDark?: string;
+}) {
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        crossOrigin="anonymous"
+        alt=""
+        style={{ maxHeight: "18mm", maxWidth: "46mm", objectFit: "contain", display: "block" }}
+      />
+    );
+  }
   return (
     <div style={{ lineHeight: 1, textAlign: "right" }}>
-      <span style={{ display: "block", fontFamily: "Fredoka, sans-serif", fontWeight: 600, fontSize: "10pt", color: light ? "#fff" : GOLD_DARK }}>
+      <span style={{ display: "block", fontFamily: "Fredoka, sans-serif", fontWeight: 600, fontSize: "10pt", color: light ? "#fff" : goldDark }}>
         O segredo
       </span>
-      <span style={{ display: "block", fontFamily: "'Dancing Script', cursive", fontWeight: 700, fontSize: "14pt", color: light ? "#fff" : GOLD_DARK, marginTop: "-2px" }}>
+      <span style={{ display: "block", fontFamily: "'Dancing Script', cursive", fontWeight: 700, fontSize: "14pt", color: light ? "#fff" : goldDark, marginTop: "-2px" }}>
         Viajante
       </span>
     </div>
@@ -316,7 +337,35 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
   const [actImages, setActImages] = useState<Record<string, string[]>>({});
   // Resumo mesclado dos locais (biblioteca) por atividade.
   const [actNotes, setActNotes] = useState<Record<string, string>>({});
+  // Personalização da marca (logo, textos de abertura e cores) da agência.
+  const [branding, setBranding] = useState<AgencyBranding>({ ...DEFAULT_BRANDING });
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const b = await getAgencyBranding();
+      if (!active) return;
+      setBranding(b);
+      if (b.logoPath) {
+        const u = await resolveDisplayImageUrl(b.logoPath);
+        if (active) setLogoUrl(u);
+      } else {
+        setLogoUrl(null);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Cores e textos aplicados (com fallback ao padrão). Estes nomes sombreiam as
+  // constantes de módulo, então todas as referências no corpo do PDF usam a marca.
+  const GOLD = branding.colorGold || DEFAULT_BRANDING.colorGold!;
+  const GOLD_DARK = branding.colorGoldDark || DEFAULT_BRANDING.colorGoldDark!;
+  const openingTitle = (branding.openingTitle || "").trim();
+  const openingSubtitle = (branding.openingSubtitle || "").trim();
+  const openingFooter = (branding.openingFooter || "").trim();
 
   const destino = it.destination || it.title || "Sua Viagem";
   const cliente = it.client_name || it.lead?.name || "Viajante";
@@ -467,23 +516,35 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
               <div style={{ position: "absolute", inset: 0, background: `linear-gradient(160deg, ${GOLD} 0%, ${GOLD_DARK} 100%)` }} />
             )}
             <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, rgba(0,0,0,.45) 0%, rgba(0,0,0,.15) 40%, rgba(0,0,0,.65) 100%)" }} />
+            {logoUrl && (
+              <div style={{ position: "absolute", top: "16mm", right: "18mm" }}>
+                <img src={logoUrl} crossOrigin="anonymous" alt=""
+                  style={{ maxHeight: "26mm", maxWidth: "60mm", objectFit: "contain", display: "block", filter: "drop-shadow(0 2px 8px rgba(0,0,0,.4))" }} />
+              </div>
+            )}
             <div style={{ position: "absolute", top: "18mm", left: 0, background: GOLD, color: "#fff", padding: "6mm 14mm 6mm 16mm", borderTopRightRadius: "40px", borderBottomRightRadius: "40px", fontFamily: "Fredoka, sans-serif", fontWeight: 700, letterSpacing: "2px", fontSize: "16pt" }}>
-              ROTEIRO COMPLETO
+              {openingTitle || "ROTEIRO COMPLETO"}
             </div>
             <div style={{ position: "absolute", left: "20mm", right: "20mm", bottom: "40mm" }}>
               <div style={{ fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "34pt", lineHeight: 1.05, textShadow: "0 2px 12px rgba(0,0,0,.5)" }}>
                 {destino}
               </div>
               <div style={{ marginTop: "8mm", fontFamily: "'Dancing Script', cursive", fontSize: "22pt", color: "#fff", textShadow: "0 2px 10px rgba(0,0,0,.5)" }}>
-                Preparado para {cliente}
+                {openingSubtitle || `Preparado para ${cliente}`}
               </div>
+              {openingFooter && (
+                <div style={{ marginTop: "6mm", fontFamily: "Fredoka, sans-serif", fontSize: "11pt", color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,.5)" }}>
+                  {openingFooter}
+                </div>
+              )}
             </div>
+
           </Page>
 
           {/* -------------------------- INTRODUÇÃO -------------------------- */}
           <Page style={{ background: BEIGE, padding: "26mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <div style={{ position: "relative", textAlign: "center", marginBottom: "10mm" }}>
               <span style={{ fontFamily: "'Dancing Script', cursive", fontSize: "40pt", color: SLATE }}>{destino}</span>
             </div>
@@ -506,8 +567,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* --------------------------- CHECK-LIST ------------------------- */}
           <Page style={{ background: BEIGE, padding: "24mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <h2 style={{ position: "relative", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "26pt", color: GOLD_DARK, marginBottom: "8mm" }}>
               O que preciso levar?
             </h2>
@@ -528,8 +589,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* ---------------------------- DINHEIRO -------------------------- */}
           <Page style={{ background: BEIGE, padding: "24mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <h2 style={{ position: "relative", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "26pt", color: GOLD_DARK, marginBottom: "8mm" }}>
               Como levar dinheiro
             </h2>
@@ -547,8 +608,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* ----------------------------- VISTO --------------------------- */}
           <Page style={{ background: BEIGE, padding: "24mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <h2 style={{ position: "relative", fontFamily: "Fredoka, sans-serif", fontWeight: 700, fontSize: "26pt", color: GOLD_DARK, marginBottom: "8mm" }}>
               Documentação e Visto
             </h2>
@@ -698,9 +759,9 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
             return pages.map((chunk, pi) => (
               <Page key={`roteiro-${pi}`} style={{ background: BEIGE, padding: "24mm 20mm 20mm" }}>
-                <CornerBlobs />
+                <CornerBlobs gold={GOLD} />
                 <div style={{ position: "absolute", top: "10mm", right: "14mm" }}>
-                  <Wordmark />
+                  <Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} />
                 </div>
                 <div style={{ position: "relative", display: "flex", flexDirection: "column", gap: "5mm" }}>
                   {chunk.map((b) => (
@@ -715,8 +776,8 @@ export function RoteiroPdfExport({ it, coverUrl }: { it: Itinerary; coverUrl: st
 
           {/* ----------------------- SERVIÇOS INCLUSOS --------------------- */}
           <Page style={{ background: BEIGE, padding: "26mm 20mm" }}>
-            <CornerBlobs />
-            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Wordmark /></div>
+            <CornerBlobs gold={GOLD} />
+            <div style={{ position: "absolute", top: "10mm", right: "14mm" }}><Brandmark logoUrl={logoUrl} goldDark={GOLD_DARK} /></div>
             <div style={{ position: "relative", display: "inline-block", background: GOLD, color: "#fff", padding: "2.5mm 7mm", borderRadius: "30px", fontWeight: 600, fontSize: "15pt", marginBottom: "6mm" }}>
               Serviços inclusos
             </div>
