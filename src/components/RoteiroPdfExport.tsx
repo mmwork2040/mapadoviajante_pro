@@ -139,7 +139,6 @@ function Brandmark({
     </div>
   );
 }
-}
 
 // Uma página física A4.
 function Page({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
