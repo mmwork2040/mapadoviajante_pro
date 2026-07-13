@@ -1363,6 +1363,21 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
+      {coverPickerOpen && (
+        <CoverPicker
+          currentCover={it.cover_image || null}
+          onClose={() => setCoverPickerOpen(false)}
+          onSaved={() => {
+            setCoverPickerOpen(false);
+            refresh();
+          }}
+          onSet={async (path) => {
+            await updateItinerary(id, { cover_image: path });
+          }}
+        />
+      )}
+
+
       <DndContext
         sensors={sensors}
         collisionDetection={kanbanCollisionDetection}
