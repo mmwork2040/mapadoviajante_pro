@@ -504,6 +504,102 @@ export type Database = {
           },
         ]
       }
+      crm_clients: {
+        Row: {
+          address_city: string | null
+          address_complement: string | null
+          address_country: string | null
+          address_neighborhood: string | null
+          address_number: string | null
+          address_state: string | null
+          address_street: string | null
+          address_zip: string | null
+          agency_id: string
+          birth_date: string | null
+          cpf: string | null
+          created_at: string
+          created_by: string | null
+          email: string | null
+          id: string
+          name: string
+          notes: string | null
+          passport_country: string | null
+          passport_expiry: string | null
+          passport_number: string | null
+          phone: string | null
+          preferences: Json
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_country?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          agency_id: string
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          passport_country?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          preferences?: Json
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          address_city?: string | null
+          address_complement?: string | null
+          address_country?: string | null
+          address_neighborhood?: string | null
+          address_number?: string | null
+          address_state?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          agency_id?: string
+          birth_date?: string | null
+          cpf?: string | null
+          created_at?: string
+          created_by?: string | null
+          email?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          passport_country?: string | null
+          passport_expiry?: string | null
+          passport_number?: string | null
+          phone?: string | null
+          preferences?: Json
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_clients_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_clients_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "agency_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       crm_itineraries: {
         Row: {
           agency_id: string
@@ -824,6 +920,7 @@ export type Database = {
           agency_id: string
           assigned_to: string | null
           checklists: Json | null
+          client_id: string | null
           created_at: string | null
           destination: string | null
           email: string | null
@@ -842,6 +939,7 @@ export type Database = {
           agency_id: string
           assigned_to?: string | null
           checklists?: Json | null
+          client_id?: string | null
           created_at?: string | null
           destination?: string | null
           email?: string | null
@@ -860,6 +958,7 @@ export type Database = {
           agency_id?: string
           assigned_to?: string | null
           checklists?: Json | null
+          client_id?: string | null
           created_at?: string | null
           destination?: string | null
           email?: string | null
@@ -887,6 +986,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "agency_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_leads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "crm_clients"
             referencedColumns: ["id"]
           },
         ]
