@@ -14,6 +14,7 @@ import type {
   LeadActivity,
   Task,
   Transaction,
+  TripExpense,
   Voucher,
 } from "@/lib/types";
 import {
