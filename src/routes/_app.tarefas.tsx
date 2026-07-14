@@ -25,19 +25,14 @@ function formatDue(iso?: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-const todayStr = () => {
-  const d = new Date();
-  const off = d.getTimezoneOffset();
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
-};
 
 function TarefasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
-  const [fromDate, setFromDate] = useState(todayStr());
-  const [toDate, setToDate] = useState(todayStr());
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["tasks"],
     queryFn: () => fetchTasks(),
@@ -68,11 +63,11 @@ function TarefasPage() {
   };
 
   const allTasks = (data ?? []).filter(inDateRange);
-  const hasFilters = statusFilter !== "all" || fromDate !== todayStr() || toDate !== todayStr();
+  const hasFilters = statusFilter !== "all" || fromDate !== "" || toDate !== "";
   const clearFilters = () => {
     setStatusFilter("all");
-    setFromDate(todayStr());
-    setToDate(todayStr());
+    setFromDate("");
+    setToDate("");
   };
 
   const pending = allTasks.filter((t) => !t.completed).sort(byDue);
