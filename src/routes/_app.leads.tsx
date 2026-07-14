@@ -169,7 +169,7 @@ function LeadsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Leads</h1>
+          <h1 className="text-2xl font-bold">Viagens</h1>
           <p className="text-sm text-muted-foreground">Funil de vendas (arraste para mover).</p>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
