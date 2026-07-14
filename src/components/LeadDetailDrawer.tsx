@@ -35,6 +35,7 @@ import {
   CheckCircle2,
   Maximize2,
   Minimize2,
+  CircleDollarSign,
 
 } from "lucide-react";
 import { toast } from "sonner";
