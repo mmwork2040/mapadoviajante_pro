@@ -51,7 +51,7 @@ function initials(name?: string | null) {
   return (parts[0][0] + (parts[1]?.[0] || "")).toUpperCase();
 }
 
-function CoverImage({ value, className, alt }: { value: string; className?: string; alt?: string }) {
+function CoverImage({ value, alt }: { value: string; className?: string; alt?: string }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
@@ -63,7 +63,23 @@ function CoverImage({ value, className, alt }: { value: string; className?: stri
     };
   }, [value]);
   if (!url) return null;
-  return <img src={url} alt={alt || "Imagem do destino"} className={className} loading="lazy" />;
+  return (
+    <>
+      <img
+        src={url}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl opacity-60"
+      />
+      <img
+        src={url}
+        alt={alt || "Imagem do destino"}
+        loading="lazy"
+        className="absolute inset-0 h-full w-full object-contain"
+      />
+    </>
+  );
 }
 
 function ItinerariesPage() {
@@ -153,7 +169,6 @@ function ItinerariesPage() {
                     <CoverImage
                       value={it.cover_image}
                       alt={it.destination || "Destino"}
-                      className="absolute inset-0 h-full w-full object-cover"
                     />
                   ) : (
                     <img
