@@ -1,57 +1,43 @@
-# Templates de Checklist para Roteiros
+## Aba de Clientes
 
-## Objetivo
-Permitir que o admin crie e edite templates de checklist (o primeiro será "Consultoria completa" com o conteúdo enviado). Ao iniciar um novo roteiro/lead, o consultor escolhe qual template aplicar — os itens são copiados para o roteiro e podem ser marcados individualmente.
+Nova aba **Clientes** com cadastro completo de viajantes e atalho para criar viagens já com os dados pré-preenchidos.
 
-## Estrutura de dados (Supabase)
+### 1. Banco de dados
 
-Nova tabela `crm_checklist_templates` (por agência):
-- `id uuid pk`, `agency_id uuid`, `name text`, `description text`, `is_default boolean`, `sections jsonb`, timestamps.
-- `sections` é um array: `[{ title, groups: [{ title, items: [{ id, label }] }] }]`.
-- RLS: SELECT para membros da agência; INSERT/UPDATE/DELETE apenas admin (`user_has_role('admin')`).
-- GRANTs para `authenticated` e `service_role`.
-- Seed: inserir template "Consultoria completa" com o conteúdo fornecido pelo usuário, marcado como `is_default = true`.
+Nova tabela `crm_clients` (por agência):
+- `id`, `agency_id`, `created_by`
+- Dados básicos: `name`, `email`, `phone`, `whatsapp`
+- Dados pessoais: `cpf`, `birth_date`, `passport_number`, `passport_expiry`, `passport_country`
+- Endereço: `address_street`, `address_number`, `address_complement`, `address_neighborhood`, `address_city`, `address_state`, `address_zip`, `address_country`
+- `preferences` (jsonb) — preferências base reutilizáveis (tipo de viagem, alimentação, hospedagem, etc.)
+- `notes` (text)
+- `created_at`, `updated_at`
 
-Nos leads, o checklist marcado já existe no campo `checklists jsonb` — vamos guardar como:
-```
-{
-  templateId: "...",
-  templateName: "Consultoria completa",
-  items: { "<itemId>": true, ... }
-}
-```
+RLS: membros da agência podem SELECT/INSERT/UPDATE/DELETE dentro da própria agência. Grants para `authenticated` e `service_role`.
 
-## Fluxo
+Ligação leads ↔ clientes: adicionar coluna opcional `client_id uuid` em `crm_leads` (FK → `crm_clients.id`, `ON DELETE SET NULL`).
 
-### Admin — nova página `/adm/checklists`
-- Lista de templates da agência.
-- Botão "Novo template" e edição inline de cada seção/grupo/item (add, remover, renomear, reordenar simples).
-- Marcar um como padrão (apenas um por agência).
-- Somente admin acessa (gate por `isAdminUser`).
+### 2. Backend (server functions)
 
-### Ao criar/abrir um lead sem checklist
-- No `LeadDetailDrawer` (aba Viagem ou nova aba "Checklist"):
-  - Se o lead não tem template aplicado, mostrar dropdown "Aplicar template" com os templates disponíveis (default pré-selecionado).
-  - Ao aplicar, salvar `templateId` + estrutura no `lead.checklists`.
-- Renderizar as seções/grupos/itens como checkboxes; alterações persistem em `crm_leads.checklists`.
-- Botão "Trocar template" (confirma antes, pois zera as marcações).
+`src/lib/clients.functions.ts` com `requireSupabaseAuth`:
+- `listClients`, `getClient`, `createClient`, `updateClient`, `deleteClient`
+- `createLeadFromClient({ clientId })` — cria um novo lead pré-preenchendo nome, contatos e copiando `preferences` para o `profile` do lead.
 
-## Arquivos
+### 3. UI
 
-**Migração**
-- Nova migration: cria `crm_checklist_templates`, grants, RLS, seed do template "Consultoria completa" para cada agência existente.
+- `src/routes/_app.clientes.tsx` — lista de clientes (busca por nome/email/cpf), botão "Novo cliente".
+- `src/components/ClientFormDialog.tsx` — formulário com abas: **Contato**, **Documentos**, **Endereço**, **Preferências**, **Observações**.
+- `src/components/ClientDetailDrawer.tsx` — visualização/edição + botões:
+  - **Criar nova viagem** → chama `createLeadFromClient` e navega para o lead criado.
+  - **Ver viagens** → lista de leads vinculados a esse cliente.
+- Adicionar link "Clientes" na sidebar principal (ao lado de Leads/Tarefas).
 
-**Backend / serviços**
-- `src/lib/checklist-templates.functions.ts`: `listTemplates`, `getTemplate`, `upsertTemplate`, `deleteTemplate`, `setDefault` (com `requireSupabaseAuth`).
-- Extender `src/lib/services.ts` (ou novo helper) para salvar `checklists` no lead.
+### 4. Integração com leads
 
-**UI**
-- `src/routes/_app.adm.checklists.tsx` — CRUD de templates (admin only).
-- `src/components/ChecklistEditor.tsx` — editor de seções/grupos/itens.
-- `src/components/LeadChecklistPanel.tsx` — usado no `LeadDetailDrawer` para escolher template e marcar itens.
-- Integrar no `LeadDetailDrawer.tsx` (nova aba "Checklist" ou dentro de "Viagem").
-- Adicionar link "Checklists" no menu admin.
+- No `LeadDetailDrawer`, no topo, se `lead.client_id` estiver vazio, mostrar botão "Vincular cliente" (busca/seleciona) ou "Salvar como cliente" (cria a partir dos dados do lead).
+- Se vinculado, mostrar chip com nome do cliente e link para abrir seu perfil.
 
-## Fora do escopo
-- Reordenação drag-and-drop refinada (usar botões up/down simples).
-- Versionamento de templates (alterar template não retroage em leads existentes).
+### Fora de escopo
+- Importação em massa de clientes.
+- Histórico de alterações do cliente.
+- Mesclagem/deduplicação automática.

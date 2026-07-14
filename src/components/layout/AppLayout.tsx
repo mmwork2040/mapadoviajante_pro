@@ -29,6 +29,7 @@ import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
 const NAV = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
+  { to: "/clientes", label: "Clientes", icon: UserCog },
   { to: "/tarefas", label: "Tarefas", icon: ListChecks },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
   { to: "/biblioteca", label: "Biblioteca", icon: Images },
@@ -44,9 +45,9 @@ const ADMIN_ONLY = ["/financeiro", "/admin"] as const;
 const MOBILE_NAV = [
   { to: "/", label: "Início", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
+  { to: "/clientes", label: "Clientes", icon: UserCog },
   { to: "/tarefas", label: "Tarefas", icon: ListChecks },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
-  { to: "/biblioteca", label: "Biblioteca", icon: Images },
 ] as const;
 
 export function AppLayout({ children }: { children: ReactNode }) {
