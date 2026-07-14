@@ -484,11 +484,13 @@ function ClientFormDrawer({
                     className="input"
                   />
                 </Field>
-                <Field label="CEP">
+                <Field label={cepLoading ? "CEP (buscando...)" : "CEP"}>
                   <input
                     value={form.address_zip ?? ""}
-                    onChange={(e) => set("address_zip", e.target.value)}
+                    onChange={(e) => handleCepChange(e.target.value)}
                     className="input"
+                    placeholder="00000-000"
+                    inputMode="numeric"
                   />
                 </Field>
                 <Field label="País">
