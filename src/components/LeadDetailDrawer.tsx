@@ -540,6 +540,19 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   onSave={(c) => update.mutate({ checklists: c as unknown as Record<string, unknown> })}
                 />
               )}
+              {tab === "financeiro" && (
+                <FinanceiroTab
+                  lead={lead}
+                  isAdmin={isAdmin}
+                  onUpdate={(u) => update.mutate(u)}
+                />
+              )}
+              {tab === "beneficios" && (
+                <BeneficiosTab
+                  lead={lead}
+                  onUpdate={(b) => update.mutate({ benefits: b as unknown as Record<string, unknown> })}
+                />
+              )}
 
               {tab === "notas" && (
                 <NotasTab
@@ -549,6 +562,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 />
               )}
             </div>
+
 
             {/* Footer */}
             <div className="flex gap-2 border-t border-border p-4">
