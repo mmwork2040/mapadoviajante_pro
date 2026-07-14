@@ -103,6 +103,17 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const [tab, setTab] = useState<TabKey>("perfil");
   const [editOpen, setEditOpen] = useState(false);
   const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
+  const [fullscreen, setFullscreen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("lead-panel-fullscreen") === "1";
+  });
+  const toggleFullscreen = () => {
+    setFullscreen((v) => {
+      const next = !v;
+      try { window.localStorage.setItem("lead-panel-fullscreen", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: lead } = useQuery({ queryKey: ["lead", leadId], queryFn: () => fetchLeadById(leadId) });
