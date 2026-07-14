@@ -389,12 +389,23 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   </p>
                   <p className="text-lg font-bold text-primary">{formatCurrency(lead.value)}</p>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={toggleFullscreen}
+                    aria-label={fullscreen ? "Reduzir painel" : "Expandir para tela cheia"}
+                    title={fullscreen ? "Reduzir" : "Tela cheia"}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
+                  >
+                    {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </button>
+                  <button
+                    onClick={onClose}
+                    aria-label="Fechar"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <div className="relative mt-3 flex items-center justify-between gap-2">
