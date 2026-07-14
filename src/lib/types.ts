@@ -16,6 +16,21 @@ export interface AgencyMember {
 
 export type LeadStatus = "new" | "contacted" | "negotiating" | "closed" | "lost";
 
+export interface TripBenefitMile {
+  program: string;
+  amount?: number | null;
+  notes?: string | null;
+}
+export interface TripBenefitPerk {
+  type: string; // ex.: "Sala VIP", "Upgrade", "Cortesia"
+  description?: string | null;
+  used?: boolean;
+}
+export interface TripBenefits {
+  miles?: TripBenefitMile[];
+  perks?: TripBenefitPerk[];
+}
+
 export interface Lead {
   id: string;
   agency_id: string;
@@ -36,7 +51,27 @@ export interface Lead {
   assigned_member?: { name: string; avatar_color?: string | null } | null;
   client_id?: string | null;
   client?: { id: string; name: string } | null;
+  budget_total?: number | null;
+  budget_client?: number | null;
+  budget_osv?: number | null;
+  benefits?: TripBenefits | null;
 }
+
+export interface TripExpense {
+  id: string;
+  lead_id: string;
+  agency_id: string;
+  activity_id?: string | null;
+  category: string; // passagem | hospedagem | seguro | alimentacao | transporte | extra | outro
+  description?: string | null;
+  amount: number;
+  paid_with: string; // dinheiro | milhas | beneficio | cartao
+  savings: number;
+  occurred_at?: string | null;
+  created_by?: string | null;
+  created_at?: string;
+}
+
 
 export interface Client {
   id: string;

@@ -43,6 +43,10 @@ import {
   createItinerary,
   createLeadActivity,
   createNotification,
+  createTripExpense,
+  deleteTripExpense,
+  fetchTripExpenses,
+  updateTripExpense,
   getMemberId,
   deleteLead,
   deleteLeadActivity,
@@ -63,7 +67,7 @@ import { formatCurrency, formatDate, initials, maskPhone, maskCurrency, parseCur
 import { useConfirm } from "@/components/ConfirmDialog";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { useAuth, isAdminUser } from "@/lib/auth";
-import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus, TripBenefits, TripExpense } from "@/lib/types";
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
   { key: "new", label: "Novo", dot: "bg-blue-500" },
@@ -78,6 +82,8 @@ const TABS = [
   { key: "viagem", label: "Viagem", icon: Plane },
   { key: "atividades", label: "Atividades", icon: ClipboardList },
   { key: "checklist", label: "Checklist", icon: ListChecks },
+  { key: "financeiro", label: "Financeiro", icon: CircleDollarSign },
+  { key: "beneficios", label: "Benefícios", icon: Gift },
   { key: "notas", label: "Notas", icon: StickyNote },
 ] as const;
 
@@ -534,6 +540,19 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   onSave={(c) => update.mutate({ checklists: c as unknown as Record<string, unknown> })}
                 />
               )}
+              {tab === "financeiro" && (
+                <FinanceiroTab
+                  lead={lead}
+                  isAdmin={isAdmin}
+                  onUpdate={(u) => update.mutate(u)}
+                />
+              )}
+              {tab === "beneficios" && (
+                <BeneficiosTab
+                  lead={lead}
+                  onUpdate={(b) => update.mutate({ benefits: b as unknown as Record<string, unknown> })}
+                />
+              )}
 
               {tab === "notas" && (
                 <NotasTab
@@ -543,6 +562,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 />
               )}
             </div>
+
 
             {/* Footer */}
             <div className="flex gap-2 border-t border-border p-4">
@@ -1701,6 +1721,604 @@ function NotasTab({
             ))}
           </ul>
         )}
+      </section>
+    </div>
+  );
+}
+
+// ═══════════════════════ Financeiro / Benefícios ═══════════════════════
+
+const EXPENSE_CATEGORIES = [
+  { key: "passagem", label: "Passagem" },
+  { key: "hospedagem", label: "Hospedagem" },
+  { key: "seguro", label: "Seguro" },
+  { key: "alimentacao", label: "Alimentação" },
+  { key: "transporte", label: "Transporte" },
+  { key: "extra", label: "Extra" },
+  { key: "outro", label: "Outro" },
+];
+
+const PAID_WITH = [
+  { key: "dinheiro", label: "Dinheiro/Pix" },
+  { key: "cartao", label: "Cartão" },
+  { key: "milhas", label: "Milhas/Pontos" },
+  { key: "beneficio", label: "Benefício/Cortesia" },
+];
+
+function FinanceiroTab({
+  lead,
+  isAdmin,
+  onUpdate,
+}: {
+  lead: Lead;
+  isAdmin: boolean;
+  onUpdate: (u: Partial<Lead>) => void;
+}) {
+  const qc = useQueryClient();
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["trip-expenses", lead.id],
+    queryFn: () => fetchTripExpenses(lead.id),
+  });
+
+  const [showForm, setShowForm] = useState(false);
+  const [editing, setEditing] = useState<TripExpense | null>(null);
+  const [editingBudgets, setEditingBudgets] = useState(false);
+
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["trip-expenses", lead.id] });
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteTripExpense(id),
+    onSuccess: () => { invalidate(); toast.success("Gasto removido"); },
+  });
+
+  const total = Number(lead.budget_total || 0);
+  const client = Number(lead.budget_client || 0);
+  const osv = Number(lead.budget_osv || 0);
+  const consultancy = Number(((lead.profile as Record<string, unknown> | undefined)?.consultancy_fee as number) || 0);
+  const gasto = expenses.reduce((s, e) => s + Number(e.amount || 0), 0);
+  const savings = expenses.reduce((s, e) => s + Number(e.savings || 0), 0);
+  const brought = client && osv ? client - osv : 0;
+  const totalSavings = savings + Math.max(brought, 0);
+  const saldo = total - gasto;
+  const pct = total > 0 ? Math.min(100, (gasto / total) * 100) : 0;
+
+  return (
+    <div className="space-y-5">
+      {/* Cards resumo */}
+      <div className="grid grid-cols-2 gap-3">
+        <SummaryCard label="Orçamento total" value={formatCurrency(total)} />
+        <SummaryCard label="Gasto até agora" value={formatCurrency(gasto)} tone={gasto > total && total > 0 ? "danger" : undefined} />
+        <SummaryCard label="Saldo restante" value={formatCurrency(saldo)} tone={saldo < 0 ? "danger" : "ok"} />
+        <SummaryCard label="Economia gerada" value={formatCurrency(totalSavings)} tone="ok" />
+      </div>
+
+      {total > 0 && (
+        <div>
+          <div className="mb-1 flex justify-between text-xs text-muted-foreground">
+            <span>Uso do orçamento</span>
+            <span>{pct.toFixed(0)}%</span>
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className={`h-full ${pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-primary"}`}
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Orçamentos */}
+      <div className="rounded-xl border border-border">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <h4 className="text-sm font-semibold">Orçamentos</h4>
+          <button
+            onClick={() => setEditingBudgets((v) => !v)}
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            {editingBudgets ? "Fechar" : "Editar"}
+          </button>
+        </div>
+        {editingBudgets ? (
+          <BudgetsForm
+            lead={lead}
+            onSave={(patch) => { onUpdate(patch); setEditingBudgets(false); }}
+          />
+        ) : (
+          <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-3">
+            <BudgetLine label="Total planejado" value={total} />
+            <BudgetLine label="Valor trazido pelo cliente" value={client} />
+            <BudgetLine label="Valor OSV" value={osv} />
+          </div>
+        )}
+        {client > 0 && osv > 0 && (
+          <div className="border-t border-border bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+            Diferença cliente × OSV:{" "}
+            <span className={brought > 0 ? "font-semibold text-emerald-600" : "font-semibold text-red-600"}>
+              {formatCurrency(brought)}
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Consultoria (admin) */}
+      {isAdmin && (
+        <div className="rounded-xl border border-border bg-muted/30 p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Valor da consultoria (admin)
+          </p>
+          <p className="mt-1 text-lg font-bold text-primary">{formatCurrency(consultancy)}</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Editável na aba Perfil → Financeiro (admin).
+          </p>
+        </div>
+      )}
+
+      {/* Lista de gastos */}
+      <div className="rounded-xl border border-border">
+        <div className="flex items-center justify-between border-b border-border px-3 py-2">
+          <h4 className="text-sm font-semibold">Gastos ({expenses.length})</h4>
+          <button
+            onClick={() => { setEditing(null); setShowForm(true); }}
+            className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="h-3.5 w-3.5" /> Adicionar
+          </button>
+        </div>
+        {showForm && (
+          <ExpenseForm
+            leadId={lead.id}
+            expense={editing}
+            onClose={() => { setShowForm(false); setEditing(null); }}
+            onSaved={() => { invalidate(); setShowForm(false); setEditing(null); }}
+          />
+        )}
+        {expenses.length === 0 ? (
+          <p className="p-4 text-sm text-muted-foreground">Nenhum gasto registrado ainda.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {expenses.map((e) => {
+              const cat = EXPENSE_CATEGORIES.find((c) => c.key === e.category)?.label || e.category;
+              const pw = PAID_WITH.find((p) => p.key === e.paid_with)?.label || e.paid_with;
+              return (
+                <li key={e.id} className="flex items-start justify-between gap-3 p-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium">{e.description || cat}</p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      {cat} • {pw}
+                      {e.occurred_at && <> • {formatDate(e.occurred_at)}</>}
+                      {Number(e.savings) > 0 && (
+                        <> • <span className="text-emerald-600">economia {formatCurrency(Number(e.savings))}</span></>
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold">{formatCurrency(Number(e.amount))}</p>
+                    <button
+                      onClick={() => { setEditing(e); setShowForm(true); }}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+                      title="Editar"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => del.mutate(e.id)}
+                      className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                      title="Remover"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone?: "ok" | "danger";
+}) {
+  const toneCls =
+    tone === "ok"
+      ? "text-emerald-600"
+      : tone === "danger"
+        ? "text-red-600"
+        : "text-foreground";
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className={`mt-1 text-base font-bold ${toneCls}`}>{value}</p>
+    </div>
+  );
+}
+
+function BudgetLine({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-sm font-semibold">{value ? formatCurrency(value) : "—"}</p>
+    </div>
+  );
+}
+
+function BudgetsForm({
+  lead,
+  onSave,
+}: {
+  lead: Lead;
+  onSave: (patch: Partial<Lead>) => void;
+}) {
+  const toStr = (n?: number | null) =>
+    n && Number(n) > 0 ? maskCurrency(String(Math.round(Number(n) * 100))) : "";
+  const [total, setTotal] = useState<string>(toStr(lead.budget_total));
+  const [client, setClient] = useState<string>(toStr(lead.budget_client));
+  const [osv, setOsv] = useState<string>(toStr(lead.budget_osv));
+
+  return (
+    <div className="space-y-3 p-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Total planejado</span>
+          <input
+            value={total}
+            onChange={(e) => setTotal(maskCurrency(e.target.value))}
+            placeholder="R$ 0,00"
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Trazido pelo cliente</span>
+          <input
+            value={client}
+            onChange={(e) => setClient(maskCurrency(e.target.value))}
+            placeholder="R$ 0,00 (opcional)"
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Valor OSV</span>
+          <input
+            value={osv}
+            onChange={(e) => setOsv(maskCurrency(e.target.value))}
+            placeholder="R$ 0,00 (opcional)"
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
+      <div className="flex justify-end">
+        <button
+          onClick={() =>
+            onSave({
+              budget_total: parseCurrency(total) || null,
+              budget_client: parseCurrency(client) || null,
+              budget_osv: parseCurrency(osv) || null,
+            })
+          }
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          Salvar
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ExpenseForm({
+  leadId,
+  expense,
+  onClose,
+  onSaved,
+}: {
+  leadId: string;
+  expense: TripExpense | null;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const isEdit = !!expense;
+  const [category, setCategory] = useState(expense?.category || "outro");
+  const [paidWith, setPaidWith] = useState(expense?.paid_with || "dinheiro");
+  const [description, setDescription] = useState(expense?.description || "");
+  const [amount, setAmount] = useState(
+    expense ? maskCurrency(String(Math.round(Number(expense.amount) * 100))) : "",
+  );
+  const [savings, setSavings] = useState(
+    expense && Number(expense.savings) > 0
+      ? maskCurrency(String(Math.round(Number(expense.savings) * 100)))
+      : "",
+  );
+  const [occurredAt, setOccurredAt] = useState(
+    expense?.occurred_at || new Date().toISOString().slice(0, 10),
+  );
+  const [saving, setSaving] = useState(false);
+
+  async function submit() {
+    const amt = parseCurrency(amount);
+    if (!amt || amt <= 0) {
+      toast.error("Informe um valor");
+      return;
+    }
+    setSaving(true);
+    const payload: Partial<TripExpense> = {
+      category,
+      paid_with: paidWith,
+      description: description.trim() || null,
+      amount: amt,
+      savings: parseCurrency(savings) || 0,
+      occurred_at: occurredAt,
+    };
+    const res = isEdit
+      ? await updateTripExpense(expense!.id, payload)
+      : await createTripExpense(leadId, payload);
+    setSaving(false);
+    if (!res) {
+      toast.error("Não foi possível salvar");
+      return;
+    }
+    toast.success(isEdit ? "Gasto atualizado" : "Gasto registrado");
+    onSaved();
+  }
+
+  return (
+    <div className="space-y-3 border-b border-border bg-muted/20 p-3">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Categoria</span>
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          >
+            {EXPENSE_CATEGORIES.map((c) => (
+              <option key={c.key} value={c.key}>{c.label}</option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Forma de pagamento</span>
+          <select
+            value={paidWith}
+            onChange={(e) => setPaidWith(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          >
+            {PAID_WITH.map((p) => (
+              <option key={p.key} value={p.key}>{p.label}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <label className="block">
+        <span className="text-xs text-muted-foreground">Descrição</span>
+        <input
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Ex.: Passagem GRU-CDG"
+          className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+        />
+      </label>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Valor</span>
+          <input
+            value={amount}
+            onChange={(e) => setAmount(maskCurrency(e.target.value))}
+            placeholder="R$ 0,00"
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Economia</span>
+          <input
+            value={savings}
+            onChange={(e) => setSavings(maskCurrency(e.target.value))}
+            placeholder="R$ 0,00 (opcional)"
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+        <label className="block">
+          <span className="text-xs text-muted-foreground">Data</span>
+          <input
+            type="date"
+            value={occurredAt}
+            onChange={(e) => setOccurredAt(e.target.value)}
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+          />
+        </label>
+      </div>
+      <div className="flex justify-end gap-2">
+        <button
+          onClick={onClose}
+          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={submit}
+          disabled={saving}
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+        >
+          {isEdit ? "Salvar" : "Registrar"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BeneficiosTab({
+  lead,
+  onUpdate,
+}: {
+  lead: Lead;
+  onUpdate: (b: TripBenefits) => void;
+}) {
+  const initial: TripBenefits = (lead.benefits as TripBenefits) || {};
+  const [miles, setMiles] = useState(initial.miles || []);
+  const [perks, setPerks] = useState(initial.perks || []);
+  const [newProgram, setNewProgram] = useState("");
+  const [newAmount, setNewAmount] = useState("");
+  const [newPerkType, setNewPerkType] = useState("");
+  const [newPerkDesc, setNewPerkDesc] = useState("");
+
+  function persist(next: TripBenefits) {
+    onUpdate(next);
+  }
+
+  function addMile() {
+    if (!newProgram.trim()) return;
+    const updated = [...miles, { program: newProgram.trim(), amount: Number(newAmount) || null, notes: null }];
+    setMiles(updated);
+    setNewProgram(""); setNewAmount("");
+    persist({ miles: updated, perks });
+  }
+  function removeMile(i: number) {
+    const updated = miles.filter((_, idx) => idx !== i);
+    setMiles(updated);
+    persist({ miles: updated, perks });
+  }
+  function addPerk() {
+    if (!newPerkType.trim()) return;
+    const updated = [...perks, { type: newPerkType.trim(), description: newPerkDesc.trim() || null, used: false }];
+    setPerks(updated);
+    setNewPerkType(""); setNewPerkDesc("");
+    persist({ miles, perks: updated });
+  }
+  function togglePerk(i: number) {
+    const updated = perks.map((p, idx) => idx === i ? { ...p, used: !p.used } : p);
+    setPerks(updated);
+    persist({ miles, perks: updated });
+  }
+  function removePerk(i: number) {
+    const updated = perks.filter((_, idx) => idx !== i);
+    setPerks(updated);
+    persist({ miles, perks: updated });
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Milhas */}
+      <section className="rounded-xl border border-border">
+        <h4 className="border-b border-border px-3 py-2 text-sm font-semibold">
+          Milhas & Pontos
+        </h4>
+        <div className="p-3">
+          {miles.length === 0 ? (
+            <p className="mb-3 text-sm text-muted-foreground">Nenhum programa adicionado.</p>
+          ) : (
+            <ul className="mb-3 space-y-2">
+              {miles.map((m, i) => (
+                <li key={i} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
+                  <div>
+                    <p className="font-medium">{m.program}</p>
+                    {m.amount != null && (
+                      <p className="text-xs text-muted-foreground">
+                        {Number(m.amount).toLocaleString("pt-BR")} pontos
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => removeMile(i)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={newProgram}
+              onChange={(e) => setNewProgram(e.target.value)}
+              placeholder="Programa (ex.: Smiles)"
+              className="flex-1 min-w-[140px] rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <input
+              value={newAmount}
+              onChange={(e) => setNewAmount(e.target.value.replace(/\D/g, ""))}
+              placeholder="Pontos"
+              className="w-32 rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <button
+              onClick={addMile}
+              disabled={!newProgram.trim()}
+              className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            >
+              Adicionar
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Perks */}
+      <section className="rounded-xl border border-border">
+        <h4 className="border-b border-border px-3 py-2 text-sm font-semibold">
+          Cortesias & Sala VIP
+        </h4>
+        <div className="p-3">
+          {perks.length === 0 ? (
+            <p className="mb-3 text-sm text-muted-foreground">Nenhuma cortesia registrada.</p>
+          ) : (
+            <ul className="mb-3 space-y-2">
+              {perks.map((p, i) => (
+                <li key={i} className="flex items-start justify-between gap-2 rounded-lg border border-border px-3 py-2 text-sm">
+                  <button
+                    onClick={() => togglePerk(i)}
+                    className="flex flex-1 items-start gap-2 text-left"
+                  >
+                    <span
+                      className={`mt-0.5 flex h-4 w-4 items-center justify-center rounded border ${
+                        p.used ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                      }`}
+                    >
+                      {p.used && <Check className="h-3 w-3" />}
+                    </span>
+                    <div className="min-w-0">
+                      <p className={`font-medium ${p.used ? "line-through text-muted-foreground" : ""}`}>
+                        {p.type}
+                      </p>
+                      {p.description && <p className="text-xs text-muted-foreground">{p.description}</p>}
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => removePerk(i)}
+                    className="rounded-md p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex flex-wrap gap-2">
+            <input
+              value={newPerkType}
+              onChange={(e) => setNewPerkType(e.target.value)}
+              placeholder="Tipo (ex.: Sala VIP GRU)"
+              className="flex-1 min-w-[140px] rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <input
+              value={newPerkDesc}
+              onChange={(e) => setNewPerkDesc(e.target.value)}
+              placeholder="Descrição (opcional)"
+              className="flex-1 min-w-[140px] rounded-lg border border-input bg-background px-3 py-2 text-sm"
+            />
+            <button
+              onClick={addPerk}
+              disabled={!newPerkType.trim()}
+              className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            >
+              Adicionar
+            </button>
+          </div>
+        </div>
       </section>
     </div>
   );
