@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Plus, Search, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles } from "lucide-react";
@@ -11,7 +11,7 @@ import {
   createLeadFromClient,
   fetchLeadsByClient,
 } from "@/lib/services";
-import type { Client } from "@/lib/types";
+import type { Client, LeadStatus } from "@/lib/types";
 import { maskPhone, maskCpfCnpj } from "@/lib/ui";
 import { lookupCep } from "@/lib/agency";
 import { useConfirm } from "@/components/ConfirmDialog";
@@ -25,6 +25,14 @@ function maskCep(v: string): string {
 export const Route = createFileRoute("/_app/clientes")({
   component: ClientesPage,
 });
+
+const LEAD_STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
+  new: { label: "Novo", cls: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
+  contacted: { label: "Contatado", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
+  negotiating: { label: "Em Negociação", cls: "bg-amber-500/20 text-amber-800 dark:text-amber-300" },
+  closed: { label: "Fechado", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
+  lost: { label: "Perdido", cls: "bg-red-500/15 text-red-700 dark:text-red-300" },
+};
 
 const EMPTY: Partial<Client> = {
   name: "",
@@ -232,17 +240,40 @@ function ClientCard({
         )}
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-        <span className="text-xs text-muted-foreground">
-          {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
-        </span>
-        <button
-          onClick={onCreateTrip}
-          disabled={creating}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-        >
-          <Plane className="h-3.5 w-3.5" /> Nova viagem
-        </button>
+      <div className="mt-3 border-t border-border pt-3">
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-xs font-medium text-muted-foreground">
+            {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
+          </span>
+          <button
+            onClick={onCreateTrip}
+            disabled={creating}
+            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          >
+            <Plane className="h-3.5 w-3.5" /> Nova viagem
+          </button>
+        </div>
+        {tripCount > 0 && (
+          <ul className="space-y-1">
+            {(tripsQ.data ?? []).map((t) => {
+              const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted text-foreground" };
+              return (
+                <li key={t.id}>
+                  <Link
+                    to="/leads"
+                    search={{ lead: t.id }}
+                    className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-xs hover:bg-muted"
+                  >
+                    <span className="min-w-0 truncate">{t.name || "Viagem sem título"}</span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
+                      {meta.label}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );
