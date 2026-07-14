@@ -879,9 +879,53 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
         )}
       </CollapsibleSection>
 
+      <ClientTripHistory lead={lead} />
     </div>
   );
 }
+
+function ClientTripHistory({ lead }: { lead: Lead }) {
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["client-trip-history", lead.id, lead.email, lead.phone],
+    queryFn: () => fetchClientTripHistory(lead),
+  });
+  return (
+    <CollapsibleSection icon={MapIcon} title="Histórico de viagens do cliente" count={data.length}>
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando…</p>
+      ) : data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma viagem anterior encontrada.</p>
+      ) : (
+        <ul className="space-y-2">
+          {data.map((it) => (
+            <li key={it.id}>
+              <Link
+                to="/roteiros/$id"
+                params={{ id: it.id }}
+                className="flex items-start justify-between gap-3 rounded-lg border border-border p-3 text-sm hover:border-primary hover:bg-muted/40"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{it.title || it.destination || "Roteiro"}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {[it.destination, it.lead_name].filter(Boolean).join(" • ") || "—"}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {it.start_date ? formatDate(it.start_date) : "s/ data"}
+                    {it.end_date ? ` → ${formatDate(it.end_date)}` : ""}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                  {it.status}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </CollapsibleSection>
+  );
+}
+
 
 
 function AtividadesTab({
