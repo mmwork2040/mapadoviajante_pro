@@ -351,10 +351,14 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+    <div className={`fixed inset-0 z-50 flex bg-black/40 ${fullscreen ? "justify-center" : "justify-end"}`} onClick={onClose}>
       <ScrollLock />
       <aside
-        className="flex h-full w-full max-w-md flex-col bg-card shadow-2xl animate-in slide-in-from-right duration-200"
+        className={`flex h-full flex-col bg-card shadow-2xl animate-in duration-200 ${
+          fullscreen
+            ? "w-full max-w-none fade-in"
+            : "w-full max-w-md slide-in-from-right"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {!lead ? (
