@@ -1570,20 +1570,7 @@ function ResolvedActivityImage({
   alt: string;
   className: string;
 }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    setUrl(null);
-    setFailed(false);
-    resolveDisplayImageUrl(value).then((resolved) => {
-      if (active) setUrl(resolved);
-    });
-    return () => {
-      active = false;
-    };
-  }, [value]);
+  const { url, failed, onError } = useResolvedImageUrl(value);
 
   if (!url || failed) {
     return (
@@ -1593,7 +1580,7 @@ function ResolvedActivityImage({
     );
   }
 
-  return <img src={url} alt={alt} className={className} loading="lazy" onError={() => setFailed(true)} />;
+  return <img src={url} alt={alt} className={className} loading="lazy" onError={onError} />;
 }
 
 
