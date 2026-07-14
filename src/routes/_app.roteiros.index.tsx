@@ -11,13 +11,14 @@ import {
   duplicateItinerary,
   fetchItineraries,
   fetchLeads,
-  resolveDisplayImageUrl,
+  
   updateLead,
   fetchAiConfig,
   searchLibraryImageForDestination,
   saveExternalImageToLibrary,
   uploadImageToLibraryForDestination,
 } from "@/lib/services";
+import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
@@ -52,17 +53,8 @@ function initials(name?: string | null) {
 }
 
 function CoverImage({ value, alt }: { value: string; className?: string; alt?: string }) {
-  const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => {
-    let active = true;
-    resolveDisplayImageUrl(value).then((u) => {
-      if (active) setUrl(u);
-    });
-    return () => {
-      active = false;
-    };
-  }, [value]);
-  if (!url) return null;
+  const { url, failed, onError } = useResolvedImageUrl(value);
+  if (!url || failed) return null;
   return (
     <>
       <img
@@ -70,12 +62,14 @@ function CoverImage({ value, alt }: { value: string; className?: string; alt?: s
         alt=""
         aria-hidden
         loading="lazy"
+        onError={onError}
         className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl opacity-60"
       />
       <img
         src={url}
         alt={alt || "Imagem do destino"}
         loading="lazy"
+        onError={onError}
         className="absolute inset-0 h-full w-full object-contain"
       />
     </>

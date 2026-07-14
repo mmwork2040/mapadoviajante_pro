@@ -95,6 +95,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData, HotelOption, PassengerCost, ActivityImage, LibraryItem } from "@/lib/types";
 import roteiroFallback from "@/assets/roteiro-fallback.jpg";
+import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
   component: ItineraryDetailPage,
@@ -393,16 +394,14 @@ function ItineraryDetailPage() {
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
   });
-  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const { url: coverUrl, failed: coverFailed, onError: onCoverError } = useResolvedImageUrl(it?.cover_image);
   const [coverLoaded, setCoverLoaded] = useState(false);
   const [coverPickerOpen, setCoverPickerOpen] = useState(false);
   useEffect(() => {
-    let active = true;
     setCoverLoaded(false);
-    setCoverUrl(null);
-    resolveDisplayImageUrl(it?.cover_image).then((u) => { if (active) setCoverUrl(u); });
-    return () => { active = false; };
-  }, [it?.cover_image]);
+  }, [coverUrl]);
+
+
 
 
   const refresh = () => qc.invalidateQueries({ queryKey: ["itinerary", id] });
@@ -1269,16 +1268,27 @@ function ItineraryDetailPage() {
                     src={coverUrl}
                     alt={it.destination || "Destino"}
                     onLoad={() => setCoverLoaded(true)}
-                    onError={() => setCoverLoaded(true)}
+                    onError={(e) => {
+                      onCoverError();
+                      // Mantém o skeleton enquanto tentamos revalidar.
+                      (e.currentTarget as HTMLImageElement).style.opacity = "0";
+                    }}
                     className={`absolute inset-0 h-full w-full object-contain transition-opacity ${coverLoaded ? "opacity-100" : "opacity-0"}`}
                   />
                 </>
               )}
-              {!coverLoaded && (
+              {!coverLoaded && !coverFailed && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" />
                   <span className="text-xs">Carregando…</span>
                 </div>
+              )}
+              {coverFailed && (
+                <img
+                  src={roteiroFallback}
+                  alt={it.destination || "Destino"}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
               )}
             </>
           ) : (
@@ -1570,20 +1580,7 @@ function ResolvedActivityImage({
   alt: string;
   className: string;
 }) {
-  const [url, setUrl] = useState<string | null>(null);
-  const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    setUrl(null);
-    setFailed(false);
-    resolveDisplayImageUrl(value).then((resolved) => {
-      if (active) setUrl(resolved);
-    });
-    return () => {
-      active = false;
-    };
-  }, [value]);
+  const { url, failed, onError } = useResolvedImageUrl(value);
 
   if (!url || failed) {
     return (
@@ -1593,7 +1590,7 @@ function ResolvedActivityImage({
     );
   }
 
-  return <img src={url} alt={alt} className={className} loading="lazy" onError={() => setFailed(true)} />;
+  return <img src={url} alt={alt} className={className} loading="lazy" onError={onError} />;
 }
 
 
