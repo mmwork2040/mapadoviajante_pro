@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Plus, Search, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles } from "lucide-react";
@@ -11,7 +11,7 @@ import {
   createLeadFromClient,
   fetchLeadsByClient,
 } from "@/lib/services";
-import type { Client } from "@/lib/types";
+import type { Client, LeadStatus } from "@/lib/types";
 import { maskPhone, maskCpfCnpj } from "@/lib/ui";
 import { lookupCep } from "@/lib/agency";
 import { useConfirm } from "@/components/ConfirmDialog";
