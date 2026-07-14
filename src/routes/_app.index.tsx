@@ -714,7 +714,7 @@ function DashboardPage() {
               <tr className="text-left text-xs uppercase text-muted-foreground">
                 <th className="pb-2">Cliente</th>
                 <th className="pb-2">Destino</th>
-                <th className="pb-2">Valor</th>
+                <th className="pb-2">Orçamento</th>
                 <th className="pb-2">Status</th>
                 <th className="pb-2">Última Atividade</th>
                 <th className="pb-2"></th>
