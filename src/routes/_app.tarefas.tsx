@@ -1,12 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, ListChecks, Check, CalendarClock, ExternalLink } from "lucide-react";
+import { Plus, ListChecks, Check, CalendarClock } from "lucide-react";
 import { fetchTasks, updateTask, cleanTaskDescription, isOverdue } from "@/lib/services";
 import { Button } from "@/components/ui/button";
 import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import type { Task } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/tarefas")({
@@ -33,6 +34,7 @@ const todayStr = () => {
 function TarefasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
   const [fromDate, setFromDate] = useState(todayStr());
   const [toDate, setToDate] = useState(todayStr());
@@ -154,36 +156,59 @@ function TarefasPage() {
       ) : (
         <div className="space-y-6">
           {showPending && pending.length > 0 && (
-            <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} />
+            <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} onOpenLead={setDetailLeadId} />
           )}
           {showDone && done.length > 0 && (
             <div>
               <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
                 Concluídas ({done.length})
               </h2>
-              <TaskList tasks={done} onToggle={(t) => toggle.mutate(t)} />
+              <TaskList tasks={done} onToggle={(t) => toggle.mutate(t)} onOpenLead={setDetailLeadId} />
             </div>
           )}
         </div>
       )}
 
       <CreateTaskModal open={open} onOpenChange={setOpen} />
+      {detailLeadId && (
+        <LeadDetailDrawer leadId={detailLeadId} onClose={() => setDetailLeadId(null)} />
+      )}
     </div>
   );
 }
 
-function TaskList({ tasks, onToggle }: { tasks: Task[]; onToggle: (t: Task) => void }) {
+function TaskList({
+  tasks,
+  onToggle,
+  onOpenLead,
+}: {
+  tasks: Task[];
+  onToggle: (t: Task) => void;
+  onOpenLead: (id: string) => void;
+}) {
   return (
     <ul className="space-y-2">
       {tasks.map((t) => {
         const prio = PRIORITY_META[t.priority] ?? PRIORITY_META.normal;
+        const clickable = !!t.lead_id;
         return (
           <li
             key={t.id}
-            className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
+            onClick={() => clickable && onOpenLead(t.lead_id!)}
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            onKeyDown={(e) => {
+              if (clickable && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                onOpenLead(t.lead_id!);
+              }
+            }}
+            className={`flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm ${
+              clickable ? "cursor-pointer transition hover:border-primary hover:bg-muted/40" : ""
+            }`}
           >
             <button
-              onClick={() => onToggle(t)}
+              onClick={(e) => { e.stopPropagation(); onToggle(t); }}
               aria-label={t.completed ? "Reabrir tarefa" : "Concluir tarefa"}
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
                 t.completed
@@ -212,21 +237,9 @@ function TaskList({ tasks, onToggle }: { tasks: Task[]; onToggle: (t: Task) => v
               </div>
               {cleanTaskDescription(t.description) && (
                 <p className="mt-1 text-xs text-muted-foreground">{cleanTaskDescription(t.description)}</p>
-
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {t.lead_id && (
-                <Link
-                  to="/leads"
-                  search={{ lead: t.lead_id }}
-                  aria-label="Abrir detalhes do lead"
-                  title="Abrir lead"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:border-primary hover:text-primary"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
-              )}
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.cls}`}>
                 {prio.label}
               </span>

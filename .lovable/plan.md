@@ -1,53 +1,31 @@
 ## Objetivo
+- Clicar em qualquer card de tarefa (dashboard e página Tarefas) abre o painel do lead vinculado.
+- O painel do lead ganha um botão para alternar entre **lateral (drawer)** e **tela cheia**.
+- Dentro do painel, exibir o **histórico de outras viagens/roteiros do mesmo cliente**.
 
-Ler documentos de uma **conta Google Drive compartilhada da agência** para alimentar a elaboração do roteiro, com a conexão configurada na página de **Administração** e a importação disponível no **editor de roteiro** (ao lado de "Documento (IA)").
+## Mudanças
 
-## Arquitetura
+### 1. Abrir lead ao clicar em card de tarefa
+- `src/routes/_app.index.tsx` (Tarefas do Dia): tornar cada `<li>` clicável — se `t.lead_id` existir, `setDetailLeadId(t.lead_id)`; caso contrário, sem ação (cursor default). Adicionar `role="button"`, hover e foco acessíveis.
+- `src/routes/_app.tarefas.tsx`: substituir o botão `ExternalLink` (que hoje vai para `/leads?lead=…`) por clique no próprio card, abrindo o `LeadDetailDrawer` inline. Adicionar estado local `detailLeadId` e renderizar `<LeadDetailDrawer />` no final da página (mesmo padrão do dashboard). Manter o toggle de concluir isolado (stopPropagation).
 
-Usamos o **connector nativo Google Drive da Lovable** (gateway) — uma única conta Google conectada no nível do workspace, sem gerenciar tokens OAuth manualmente.
+### 2. Modo tela cheia no painel do lead
+- `src/components/LeadDetailDrawer.tsx`:
+  - Nova prop opcional `initialFullscreen?: boolean` e estado interno `fullscreen`.
+  - Botão no header (ao lado do X) com ícones `Maximize2` / `Minimize2` (lucide) para alternar.
+  - Ajustar classes do container:
+    - Drawer atual: `right-0 h-full w-full max-w-[560px]` (ou similar).
+    - Tela cheia: `inset-0 w-full max-w-none rounded-none`.
+  - Preservar `ScrollLock` e `useBackButtonClose`. Persistir preferência do usuário em `localStorage` (`lead-panel-fullscreen`).
 
-```text
-Admin (ligar/desligar + pasta padrão)
-        │
-        ▼
-Server functions (createServerFn)  ──►  Gateway Google Drive
-  - listar arquivos                      (Bearer LOVABLE_API_KEY +
-  - baixar/extrair texto                  X-Connection-Api-Key)
-        │
-        ▼
-Editor de roteiro → "Importar do Drive" → texto → mesmo pipeline do "Documento (IA)"
-```
+### 3. Histórico de viagens do cliente
+- Reutilizar `fetchItinerariesByLead` (já importado) apenas para o lead atual. Para trazer viagens **de outros leads do mesmo cliente**, agrupar por `email` (fallback: `phone`) do lead:
+  - Nova função em `src/lib/services.ts`: `fetchClientTripHistory(lead: Lead)` que:
+    1. Busca leads da agência com mesmo `email` (ou `phone`) diferentes do atual.
+    2. Retorna itinerários (`crm_itineraries`) ligados a esses leads + os do lead atual, ordenados por `created_at` desc, com campos: id, title, destination, start_date, end_date, status, budget, lead_name.
+- Na aba **Viagem** do `LeadDetailDrawer`, adicionar uma seção "Histórico do cliente" (colapsável) listando as viagens retornadas com link para abrir o roteiro (`/roteiros/$id`). Mostrar "Nenhuma viagem anterior" quando vazio.
 
-## Etapas
-
-### 1. Conectar o connector
-- Vincular o connector `google_drive` ao projeto (fluxo de conexão da Lovable). Você escolhe/autoriza a conta Google da agência.
-- Sem isso, as chamadas ao gateway falham por falta de credencial.
-
-### 2. Configuração na Administração (`_app.admin.tsx`)
-- Nova seção **"Google Drive"** seguindo o padrão das outras (webhook, gmail, n8n).
-- Campos: **ativar/desativar** e **pasta padrão** (ID ou seleção de pasta do Drive).
-- Persistir via `settings.functions.ts` adicionando o scope `"gdrive"` (mesma tabela `system_settings`, chave por agência). É a única mudança de "config"; sem alterar schema.
-
-### 3. Server functions novas (`src/lib/gdrive.functions.ts`)
-- `listDriveFiles({ folderId?, query? })` → lista arquivos (PDF, DOCX, Google Docs) da pasta configurada, via `GET /files` no gateway.
-- `fetchDriveFileText({ fileId, mimeType })` → extrai texto:
-  - Google Docs nativo → export como texto simples.
-  - PDF/DOCX → baixa o conteúdo (`alt=media`) e reaproveita o parser de documentos já existente no fluxo "Documento (IA)".
-- Todas com `requireSupabaseAuth` (só membros logados) e lendo `LOVABLE_API_KEY`/`GOOGLE_DRIVE_API_KEY` do runtime do servidor.
-
-### 4. UI no editor de roteiro (`_app.roteiros.$id.tsx`)
-- Novo botão **"Importar do Drive"** junto ao "Documento (IA)".
-- Modal simples: lista arquivos da pasta padrão (com busca), você seleciona um, o sistema extrai o texto e o injeta no **mesmo pipeline** que hoje trata o documento importado pela IA.
-- Só aparece se a seção Google Drive estiver ativada na Administração.
-
-## Detalhes técnicos
-
-- Escopo do connector = conta compartilhada (não é o Drive pessoal de cada consultor); condiz com a opção escolhida.
-- Gateway: `https://connector-gateway.lovable.dev/google_drive/drive/v3/...` — nunca chamamos a API do Google direto.
-- Sem mudança de schema no banco; apenas novo scope de settings + novas server functions + UI.
-- Reaproveita o parser/pipeline atual de documentos para manter consistência com "Documento (IA)".
-
-## Fora de escopo (por agora)
-- OAuth por usuário (Drive pessoal de cada consultor).
-- Importar do Drive na Biblioteca ou no chat de IA (só o editor de roteiro nesta entrega).
+## Notas técnicas
+- Nenhuma mudança de schema; consulta usa RLS existente (mesma agência).
+- Toggle full-screen é puramente CSS + estado, sem rota nova, mantendo compatibilidade com `search={{ lead }}` da página `/leads`.
+- Card de tarefa sem `lead_id` continua não clicável (visual normal).

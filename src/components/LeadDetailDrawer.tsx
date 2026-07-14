@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ScrollLock } from "@/components/ScrollLock";
 import { useBackButtonClose } from "@/hooks/useBackButtonClose";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import {
   X,
   MapPin,
@@ -33,6 +33,8 @@ import {
   Plus,
   RotateCcw,
   CheckCircle2,
+  Maximize2,
+  Minimize2,
 
 } from "lucide-react";
 import { toast } from "sonner";
@@ -44,6 +46,7 @@ import {
   deleteLead,
   deleteLeadActivity,
   fetchItinerariesByLead,
+  fetchClientTripHistory,
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
@@ -100,6 +103,17 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const [tab, setTab] = useState<TabKey>("perfil");
   const [editOpen, setEditOpen] = useState(false);
   const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
+  const [fullscreen, setFullscreen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("lead-panel-fullscreen") === "1";
+  });
+  const toggleFullscreen = () => {
+    setFullscreen((v) => {
+      const next = !v;
+      try { window.localStorage.setItem("lead-panel-fullscreen", next ? "1" : "0"); } catch {}
+      return next;
+    });
+  };
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: lead } = useQuery({ queryKey: ["lead", leadId], queryFn: () => fetchLeadById(leadId) });
@@ -337,10 +351,14 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+    <div className={`fixed inset-0 z-50 flex bg-black/40 ${fullscreen ? "justify-center" : "justify-end"}`} onClick={onClose}>
       <ScrollLock />
       <aside
-        className="flex h-full w-full max-w-md flex-col bg-card shadow-2xl animate-in slide-in-from-right duration-200"
+        className={`flex h-full flex-col bg-card shadow-2xl animate-in duration-200 ${
+          fullscreen
+            ? "w-full max-w-none fade-in"
+            : "w-full max-w-md slide-in-from-right"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {!lead ? (
@@ -371,12 +389,23 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   </p>
                   <p className="text-lg font-bold text-primary">{formatCurrency(lead.value)}</p>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={toggleFullscreen}
+                    aria-label={fullscreen ? "Reduzir painel" : "Expandir para tela cheia"}
+                    title={fullscreen ? "Reduzir" : "Tela cheia"}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
+                  >
+                    {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                  </button>
+                  <button
+                    onClick={onClose}
+                    aria-label="Fechar"
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <div className="relative mt-3 flex items-center justify-between gap-2">
@@ -850,9 +879,53 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
         )}
       </CollapsibleSection>
 
+      <ClientTripHistory lead={lead} />
     </div>
   );
 }
+
+function ClientTripHistory({ lead }: { lead: Lead }) {
+  const { data = [], isLoading } = useQuery({
+    queryKey: ["client-trip-history", lead.id, lead.email, lead.phone],
+    queryFn: () => fetchClientTripHistory(lead),
+  });
+  return (
+    <CollapsibleSection icon={MapIcon} title="Histórico de viagens do cliente" count={data.length}>
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Carregando…</p>
+      ) : data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nenhuma viagem anterior encontrada.</p>
+      ) : (
+        <ul className="space-y-2">
+          {data.map((it) => (
+            <li key={it.id}>
+              <Link
+                to="/roteiros/$id"
+                params={{ id: it.id }}
+                className="flex items-start justify-between gap-3 rounded-lg border border-border p-3 text-sm hover:border-primary hover:bg-muted/40"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium">{it.title || it.destination || "Roteiro"}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {[it.destination, it.lead_name].filter(Boolean).join(" • ") || "—"}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground">
+                    {it.start_date ? formatDate(it.start_date) : "s/ data"}
+                    {it.end_date ? ` → ${formatDate(it.end_date)}` : ""}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                  {it.status}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </CollapsibleSection>
+  );
+}
+
 
 
 function AtividadesTab({

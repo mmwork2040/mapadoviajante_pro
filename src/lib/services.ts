@@ -1876,6 +1876,44 @@ export async function fetchItinerariesByLead(leadId: string): Promise<Itinerary[
   return (data as Itinerary[]) || [];
 }
 
+/**
+ * Retorna todos os roteiros do cliente (mesmo email/telefone) da agência,
+ * incluindo os do próprio lead. Ordenado por criação desc.
+ */
+export async function fetchClientTripHistory(
+  lead: Pick<import("@/lib/types").Lead, "id" | "email" | "phone">,
+): Promise<Array<Itinerary & { lead_name?: string | null }>> {
+  const email = (lead.email || "").trim().toLowerCase();
+  const phoneDigits = (lead.phone || "").replace(/\D/g, "");
+  const leadIds = new Set<string>([lead.id]);
+
+  const filters: string[] = [];
+  if (email) filters.push(`email.ilike.${email}`);
+  if (phoneDigits) filters.push(`phone.ilike.%${phoneDigits}%`);
+
+  if (filters.length > 0) {
+    const { data: leads } = await supabase
+      .from("crm_leads")
+      .select("id")
+      .or(filters.join(","));
+    for (const l of (leads as { id: string }[]) || []) leadIds.add(l.id);
+  }
+
+  const { data, error } = await supabase
+    .from("crm_itineraries")
+    .select("*, lead:crm_leads(name)")
+    .in("lead_id", Array.from(leadIds))
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("fetchClientTripHistory:", error);
+    return [];
+  }
+  return ((data as (Itinerary & { lead?: { name?: string } | null })[]) || []).map((it) => ({
+    ...it,
+    lead_name: it.lead?.name ?? null,
+  }));
+}
+
 /** Retorna o status do roteiro mais recente por lead que possui roteiro. */
 export async function fetchLeadItineraryStatuses(): Promise<Record<string, string>> {
   const { data, error } = await supabase

@@ -355,7 +355,18 @@ function DashboardPage() {
               return (
                 <li
                   key={t.id}
-                  className="flex items-start gap-3 rounded-xl border border-border p-3"
+                  onClick={() => t.lead_id && setDetailLeadId(t.lead_id)}
+                  role={t.lead_id ? "button" : undefined}
+                  tabIndex={t.lead_id ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (t.lead_id && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      setDetailLeadId(t.lead_id);
+                    }
+                  }}
+                  className={`flex items-start gap-3 rounded-xl border border-border p-3 ${
+                    t.lead_id ? "cursor-pointer transition hover:border-primary hover:bg-muted/40" : ""
+                  }`}
                 >
                   <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                     <CalendarClock className="h-4 w-4" />
