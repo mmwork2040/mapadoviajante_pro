@@ -432,7 +432,15 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 )}
               </div>
 
+              <TripSummaryStrip
+                clientName={lead.name}
+                destination={lead.destination}
+                travelDates={String(p.travel_dates || "")}
+                clientNotes={String(p.trip_notes || "")}
+              />
+
               <div className="relative mt-3 grid grid-cols-2 gap-2">
+
                 <button
                   onClick={openWhatsApp}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
