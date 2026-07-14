@@ -494,9 +494,10 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   {t.label}
                   {t.key === "checklist" && (
                     <span className="text-xs text-muted-foreground">
-                      {checklistCount((lead.checklists as Record<string, boolean>) || {})}
+                      {checklistCount(lead.checklists as unknown)}
                     </span>
                   )}
+
                 </button>
               ))}
             </div>
@@ -529,10 +530,11 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               )}
               {tab === "checklist" && (
                 <ChecklistTab
-                  checklists={(lead.checklists as Record<string, boolean>) || {}}
-                  onSave={(c) => update.mutate({ checklists: c })}
+                  checklists={lead.checklists as unknown}
+                  onSave={(c) => update.mutate({ checklists: c as unknown as Record<string, unknown> })}
                 />
               )}
+
               {tab === "notas" && (
                 <NotasTab
                   notes={lead.notes || ""}
@@ -634,11 +636,13 @@ function StatusDropdown({
 }
 
 
-function checklistCount(c: Record<string, boolean>) {
-  const entries = Object.values(c);
-  const done = entries.filter(Boolean).length;
-  return `${done}/${entries.length}`;
+function checklistCount(raw: unknown) {
+  const norm = normalizeChecklist(raw);
+  const values = Object.values(norm.items);
+  const done = values.filter(Boolean).length;
+  return `${done}/${values.length}`;
 }
+
 
 function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
   return (
@@ -1340,78 +1344,324 @@ function AtividadesTab({
   );
 }
 
+type LeadChecklistState = {
+  templateId?: string;
+  templateName?: string;
+  sections?: import("@/lib/checklist-templates.functions").ChecklistSection[];
+  items: Record<string, boolean>;
+  extras?: { id: string; label: string }[];
+};
+
+function normalizeChecklist(raw: unknown): LeadChecklistState {
+  if (!raw || typeof raw !== "object") return { items: {}, extras: [] };
+  const obj = raw as Record<string, unknown>;
+  if (obj.items && typeof obj.items === "object") {
+    return {
+      templateId: typeof obj.templateId === "string" ? obj.templateId : undefined,
+      templateName: typeof obj.templateName === "string" ? obj.templateName : undefined,
+      sections: Array.isArray(obj.sections) ? (obj.sections as never) : undefined,
+      items: obj.items as Record<string, boolean>,
+      extras: Array.isArray(obj.extras) ? (obj.extras as { id: string; label: string }[]) : [],
+    };
+  }
+  // Legado: Record<label, boolean>
+  const items: Record<string, boolean> = {};
+  const extras: { id: string; label: string }[] = [];
+  for (const [k, v] of Object.entries(obj)) {
+    const id = `legacy:${k}`;
+    items[id] = !!v;
+    extras.push({ id, label: k });
+  }
+  return { items, extras };
+}
+
 function ChecklistTab({
   checklists,
   onSave,
 }: {
-  checklists: Record<string, boolean>;
-  onSave: (c: Record<string, boolean>) => void;
+  checklists: unknown;
+  onSave: (c: LeadChecklistState) => void;
 }) {
-  const [items, setItems] = useState<Record<string, boolean>>(checklists);
+  const [state, setState] = useState<LeadChecklistState>(() => normalizeChecklist(checklists));
+  const [templates, setTemplates] = useState<
+    import("@/lib/checklist-templates.functions").ChecklistTemplate[]
+  >([]);
+  const [defaultId, setDefaultId] = useState<string | null>(null);
+  const [loadingTpl, setLoadingTpl] = useState(true);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [newItem, setNewItem] = useState("");
-  const entries = Object.entries(items);
+  const confirm = useConfirm();
 
-  function toggle(key: string) {
-    const next = { ...items, [key]: !items[key] };
-    setItems(next);
+  useEffect(() => {
+    setState(normalizeChecklist(checklists));
+  }, [checklists]);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const { listChecklistTemplates } = await import("@/lib/checklist-templates.functions");
+        const res = await listChecklistTemplates();
+        if (!active) return;
+        setTemplates(res.templates);
+        setDefaultId(res.defaultId);
+      } catch {
+        // silently ignore — usuário pode continuar com checklist livre
+      } finally {
+        if (active) setLoadingTpl(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  function persist(next: LeadChecklistState) {
+    setState(next);
     onSave(next);
   }
-  function add() {
+
+  function applyTemplate(templateId: string) {
+    const tpl = templates.find((t) => t.id === templateId);
+    if (!tpl) return;
+    const items: Record<string, boolean> = {};
+    for (const s of tpl.sections)
+      for (const g of s.groups) for (const it of g.items) items[it.id] = false;
+    persist({
+      templateId: tpl.id,
+      templateName: tpl.name,
+      sections: tpl.sections,
+      items,
+      extras: [],
+    });
+    setPickerOpen(false);
+  }
+
+  async function changeTemplate() {
+    const ok = await confirm({
+      title: "Trocar template?",
+      description:
+        "Todas as marcações atuais deste checklist serão substituídas pelo template selecionado.",
+      confirmLabel: "Trocar",
+      destructive: true,
+    });
+    if (!ok) return;
+    setPickerOpen(true);
+  }
+
+  function toggle(id: string) {
+    persist({ ...state, items: { ...state.items, [id]: !state.items[id] } });
+  }
+
+  function addExtra() {
     const label = newItem.trim();
-    if (!label || items[label] !== undefined) return;
-    const next = { ...items, [label]: false };
-    setItems(next);
+    if (!label) return;
+    const id = `extra:${Date.now().toString(36)}`;
+    persist({
+      ...state,
+      items: { ...state.items, [id]: false },
+      extras: [...(state.extras || []), { id, label }],
+    });
     setNewItem("");
-    onSave(next);
   }
-  function remove(key: string) {
-    const next = { ...items };
-    delete next[key];
-    setItems(next);
-    onSave(next);
+
+  function removeExtra(id: string) {
+    const items = { ...state.items };
+    delete items[id];
+    persist({
+      ...state,
+      items,
+      extras: (state.extras || []).filter((e) => e.id !== id),
+    });
+  }
+
+  const hasTemplate = !!state.sections && state.sections.length > 0;
+  const totalItems = Object.keys(state.items).length;
+  const doneItems = Object.values(state.items).filter(Boolean).length;
+
+  if (!hasTemplate && (state.extras || []).length === 0) {
+    // Sem template aplicado ainda
+    return (
+      <div className="space-y-4">
+        <SectionTitle icon={ListChecks}>Checklist</SectionTitle>
+        <div className="rounded-xl border border-dashed border-border p-6 text-center">
+          <p className="text-sm text-muted-foreground">
+            Nenhum checklist aplicado ainda.
+          </p>
+          {loadingTpl ? (
+            <p className="mt-2 text-xs text-muted-foreground">Carregando templates…</p>
+          ) : templates.length === 0 ? (
+            <p className="mt-2 text-xs text-muted-foreground">Nenhum template disponível.</p>
+          ) : (
+            <div className="mt-3">
+              <label className="text-xs text-muted-foreground">Aplicar template</label>
+              <select
+                defaultValue={defaultId || templates[0]?.id}
+                onChange={(e) => applyTemplate(e.target.value)}
+                className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+              >
+                {templates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} {t.id === defaultId ? "(padrão)" : ""}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => applyTemplate(defaultId || templates[0].id)}
+                className="mt-3 w-full rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
+                Aplicar
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <SectionTitle icon={ListChecks}>Checklist</SectionTitle>
-      <ul className="space-y-2">
-        {entries.length === 0 && <li className="text-sm text-muted-foreground">Nenhum item.</li>}
-        {entries.map(([key, done]) => (
-          <li key={key} className="flex items-center gap-3 rounded-lg border border-border px-3 py-2">
-            <button
-              onClick={() => toggle(key)}
-              className={`flex h-5 w-5 items-center justify-center rounded border ${
-                done ? "border-primary bg-primary text-primary-foreground" : "border-input"
-              }`}
-            >
-              {done && <Check className="h-3.5 w-3.5" />}
-            </button>
-            <span className={`flex-1 text-sm ${done ? "text-muted-foreground line-through" : ""}`}>{key}</span>
-            <button onClick={() => remove(key)} className="text-muted-foreground hover:text-destructive">
-              <X className="h-3.5 w-3.5" />
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-3 flex gap-2">
-        <input
-          value={newItem}
-          onChange={(e) => setNewItem(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && add()}
-          placeholder="Novo item…"
-          className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-        />
+    <div className="space-y-5">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Template
+          </p>
+          <p className="text-sm font-medium">
+            {state.templateName || "Checklist personalizado"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {doneItems}/{totalItems} concluídos
+          </p>
+        </div>
         <button
-          onClick={add}
-          disabled={!newItem.trim()}
-          className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          onClick={changeTemplate}
+          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
         >
-          Adicionar
+          Trocar template
         </button>
       </div>
+
+      {pickerOpen && (
+        <div className="rounded-xl border border-border p-3">
+          <label className="text-xs text-muted-foreground">Selecione um template</label>
+          <div className="mt-2 space-y-2">
+            {templates.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => applyTemplate(t.id)}
+                className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-left text-sm hover:bg-muted"
+              >
+                <span>
+                  {t.name}
+                  {t.id === defaultId && (
+                    <span className="ml-2 text-xs text-muted-foreground">(padrão)</span>
+                  )}
+                </span>
+                <span className="text-xs text-primary">Aplicar</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {state.sections?.map((section) => (
+        <section key={section.id} className="rounded-xl border border-border">
+          <h4 className="border-b border-border px-3 py-2 text-sm font-semibold">
+            {section.title}
+          </h4>
+          <div className="space-y-4 p-3">
+            {section.groups.map((group) => (
+              <div key={group.id}>
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {group.title}
+                </p>
+                <ul className="space-y-1.5">
+                  {group.items.map((it) => {
+                    const done = !!state.items[it.id];
+                    return (
+                      <li key={it.id}>
+                        <button
+                          onClick={() => toggle(it.id)}
+                          className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
+                        >
+                          <span
+                            className={`flex h-4 w-4 items-center justify-center rounded border ${
+                              done
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-input"
+                            }`}
+                          >
+                            {done && <Check className="h-3 w-3" />}
+                          </span>
+                          <span className={done ? "text-muted-foreground line-through" : ""}>
+                            {it.label}
+                          </span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+      ))}
+
+      <section className="rounded-xl border border-border p-3">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Itens extras
+        </p>
+        <ul className="space-y-1.5">
+          {(state.extras || []).map((e) => {
+            const done = !!state.items[e.id];
+            return (
+              <li key={e.id} className="flex items-center gap-2">
+                <button
+                  onClick={() => toggle(e.id)}
+                  className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
+                >
+                  <span
+                    className={`flex h-4 w-4 items-center justify-center rounded border ${
+                      done ? "border-primary bg-primary text-primary-foreground" : "border-input"
+                    }`}
+                  >
+                    {done && <Check className="h-3 w-3" />}
+                  </span>
+                  <span className={done ? "text-muted-foreground line-through" : ""}>
+                    {e.label}
+                  </span>
+                </button>
+                <button
+                  onClick={() => removeExtra(e.id)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="mt-2 flex gap-2">
+          <input
+            value={newItem}
+            onChange={(e) => setNewItem(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addExtra()}
+            placeholder="Novo item…"
+            className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+          <button
+            onClick={addExtra}
+            disabled={!newItem.trim()}
+            className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+          >
+            Adicionar
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
+
 
 function NotasTab({
   notes,

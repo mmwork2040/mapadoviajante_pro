@@ -1,9 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw, Smartphone, Ban, LockOpen, Building2, HardDrive, Palette } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw, Smartphone, Ban, LockOpen, Building2, HardDrive, Palette, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -387,6 +387,27 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
 
       {isAdmin && (
         <CollapsibleSection
+          icon={ListChecks}
+          color="#f97316"
+          title="Templates de Checklist"
+          subtitle="Crie e edite checklists reutilizáveis para novos roteiros"
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Gerencie os templates de checklist que os consultores poderão aplicar em cada lead.
+            </p>
+            <Link
+              to="/checklist-templates"
+              className="inline-flex items-center gap-1.5 self-start rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            >
+              <ListChecks className="h-4 w-4" /> Abrir gerenciador
+            </Link>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {isAdmin && (
+        <CollapsibleSection
           icon={Sparkles}
           color="#7c5cff"
           title="Inteligência Artificial"
@@ -395,6 +416,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
           <AiConfigCard />
         </CollapsibleSection>
       )}
+
 
       {isAdmin && (
         <CollapsibleSection
