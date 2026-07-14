@@ -530,10 +530,11 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               )}
               {tab === "checklist" && (
                 <ChecklistTab
-                  checklists={(lead.checklists as Record<string, boolean>) || {}}
-                  onSave={(c) => update.mutate({ checklists: c })}
+                  checklists={lead.checklists as unknown}
+                  onSave={(c) => update.mutate({ checklists: c as unknown as Record<string, unknown> })}
                 />
               )}
+
               {tab === "notas" && (
                 <NotasTab
                   notes={lead.notes || ""}
