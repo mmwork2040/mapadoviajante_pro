@@ -394,7 +394,7 @@ function ItineraryDetailPage() {
     queryKey: ["itinerary", id],
     queryFn: () => fetchItineraryById(id),
   });
-  const { url: coverUrl, onError: onCoverError } = useResolvedImageUrl(it?.cover_image);
+  const { url: coverUrl, failed: coverFailed, onError: onCoverError } = useResolvedImageUrl(it?.cover_image);
   const [coverLoaded, setCoverLoaded] = useState(false);
   const [coverPickerOpen, setCoverPickerOpen] = useState(false);
   useEffect(() => {
