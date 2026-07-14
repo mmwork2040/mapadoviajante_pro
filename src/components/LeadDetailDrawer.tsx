@@ -46,6 +46,7 @@ import {
   deleteLead,
   deleteLeadActivity,
   fetchItinerariesByLead,
+  fetchClientTripHistory,
   fetchLeadActivities,
   fetchLeadById,
   fetchTeamMembers,
