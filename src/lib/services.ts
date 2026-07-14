@@ -2134,3 +2134,100 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     chartData: buildMonthlyChartData(confirmedIncome),
   };
 }
+
+// ── Clientes / Viajantes ────────────────────────────────────────
+export async function fetchClients(search?: string): Promise<Client[]> {
+  if (!_agencyId) await loadAgencyContext();
+  let q = supabase
+    .from("crm_clients")
+    .select("*")
+    .eq("agency_id", _agencyId!)
+    .order("name", { ascending: true });
+  if (search && search.trim()) {
+    const s = `%${search.trim()}%`;
+    q = q.or(`name.ilike.${s},email.ilike.${s},cpf.ilike.${s},phone.ilike.${s}`);
+  }
+  const { data, error } = await q;
+  if (error) {
+    console.error("fetchClients:", error);
+    return [];
+  }
+  return (data ?? []) as Client[];
+}
+
+export async function fetchClientById(id: string): Promise<Client | null> {
+  const { data, error } = await supabase.from("crm_clients").select("*").eq("id", id).maybeSingle();
+  if (error) {
+    console.error("fetchClientById:", error);
+    return null;
+  }
+  return (data as Client) ?? null;
+}
+
+export async function createClient(payload: Partial<Client>): Promise<Client | null> {
+  if (!_agencyId) await loadAgencyContext();
+  const insert = {
+    ...payload,
+    agency_id: _agencyId,
+    created_by: _memberId,
+    name: payload.name ?? "",
+    preferences: payload.preferences ?? {},
+  };
+  const { data, error } = await supabase.from("crm_clients").insert(insert).select().single();
+  if (error) {
+    console.error("createClient:", error);
+    return null;
+  }
+  return data as Client;
+}
+
+export async function updateClient(id: string, updates: Partial<Client>): Promise<Client | null> {
+  const patch = { ...updates };
+  delete (patch as Partial<Client>).id;
+  delete (patch as Partial<Client>).agency_id;
+  const { data, error } = await supabase.from("crm_clients").update(patch).eq("id", id).select().single();
+  if (error) {
+    console.error("updateClient:", error);
+    return null;
+  }
+  return data as Client;
+}
+
+export async function deleteClient(id: string): Promise<boolean> {
+  const { error } = await supabase.from("crm_clients").delete().eq("id", id);
+  if (error) {
+    console.error("deleteClient:", error);
+    return false;
+  }
+  return true;
+}
+
+export async function fetchLeadsByClient(clientId: string): Promise<Lead[]> {
+  const { data, error } = await supabase
+    .from("crm_leads")
+    .select("*")
+    .eq("client_id", clientId)
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("fetchLeadsByClient:", error);
+    return [];
+  }
+  return (data ?? []) as Lead[];
+}
+
+export async function createLeadFromClient(clientId: string): Promise<Lead | null> {
+  const client = await fetchClientById(clientId);
+  if (!client) return null;
+  const lead = await createLead({
+    name: client.name,
+    email: client.email ?? null,
+    phone: client.phone ?? null,
+    profile: { ...(client.preferences ?? {}), client_notes: client.notes ?? null },
+    status: "new",
+  });
+  if (!lead) return null;
+  // Vincula o lead ao cliente
+  const { error } = await supabase.from("crm_leads").update({ client_id: clientId }).eq("id", lead.id);
+  if (error) console.error("createLeadFromClient link:", error);
+  return { ...lead, client_id: clientId };
+}
