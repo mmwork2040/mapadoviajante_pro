@@ -2232,3 +2232,73 @@ export async function createLeadFromClient(clientId: string): Promise<Lead | nul
   if (error) console.error("createLeadFromClient link:", error);
   return { ...lead, client_id: clientId };
 }
+
+// ── Gastos da viagem (crm_trip_expenses) ────────────────────────
+export async function fetchTripExpenses(leadId: string): Promise<TripExpense[]> {
+  const { data, error } = await supabase
+    .from("crm_trip_expenses")
+    .select("*")
+    .eq("lead_id", leadId)
+    .order("occurred_at", { ascending: false })
+    .order("created_at", { ascending: false });
+  if (error) {
+    console.error("fetchTripExpenses:", error);
+    return [];
+  }
+  return (data ?? []) as TripExpense[];
+}
+
+export async function createTripExpense(
+  leadId: string,
+  payload: Partial<TripExpense>,
+): Promise<TripExpense | null> {
+  if (!_agencyId) await loadAgencyContext();
+  const insert = {
+    lead_id: leadId,
+    agency_id: _agencyId,
+    created_by: _memberId,
+    category: payload.category ?? "outro",
+    description: payload.description ?? null,
+    amount: payload.amount ?? 0,
+    paid_with: payload.paid_with ?? "dinheiro",
+    savings: payload.savings ?? 0,
+    occurred_at: payload.occurred_at ?? new Date().toISOString().slice(0, 10),
+    activity_id: payload.activity_id ?? null,
+  };
+  const { data, error } = await supabase.from("crm_trip_expenses").insert(insert).select().single();
+  if (error) {
+    console.error("createTripExpense:", error);
+    return null;
+  }
+  return data as TripExpense;
+}
+
+export async function updateTripExpense(
+  id: string,
+  updates: Partial<TripExpense>,
+): Promise<TripExpense | null> {
+  const patch = { ...updates };
+  delete (patch as Partial<TripExpense>).id;
+  delete (patch as Partial<TripExpense>).agency_id;
+  delete (patch as Partial<TripExpense>).lead_id;
+  const { data, error } = await supabase
+    .from("crm_trip_expenses")
+    .update(patch)
+    .eq("id", id)
+    .select()
+    .single();
+  if (error) {
+    console.error("updateTripExpense:", error);
+    return null;
+  }
+  return data as TripExpense;
+}
+
+export async function deleteTripExpense(id: string): Promise<boolean> {
+  const { error } = await supabase.from("crm_trip_expenses").delete().eq("id", id);
+  if (error) {
+    console.error("deleteTripExpense:", error);
+    return false;
+  }
+  return true;
+}
