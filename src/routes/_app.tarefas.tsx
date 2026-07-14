@@ -25,11 +25,6 @@ function formatDue(iso?: string | null) {
   return new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
 }
 
-const todayStr = () => {
-  const d = new Date();
-  const off = d.getTimezoneOffset();
-  return new Date(d.getTime() - off * 60000).toISOString().slice(0, 10);
-};
 
 function TarefasPage() {
   const qc = useQueryClient();
