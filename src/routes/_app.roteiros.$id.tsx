@@ -95,6 +95,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData, HotelOption, PassengerCost, ActivityImage, LibraryItem } from "@/lib/types";
 import roteiroFallback from "@/assets/roteiro-fallback.jpg";
+import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
   component: ItineraryDetailPage,
