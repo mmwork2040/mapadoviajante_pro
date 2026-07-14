@@ -169,7 +169,6 @@ function ItinerariesPage() {
                     <CoverImage
                       value={it.cover_image}
                       alt={it.destination || "Destino"}
-                      className="absolute inset-0 h-full w-full object-cover"
                     />
                   ) : (
                     <img
