@@ -33,6 +33,8 @@ import {
   Plus,
   RotateCcw,
   CheckCircle2,
+  Maximize2,
+  Minimize2,
 
 } from "lucide-react";
 import { toast } from "sonner";
