@@ -5543,11 +5543,10 @@ function CoverPicker({
       await createLibraryItem({
         type: "image",
         title,
-        image_url: res.path,
         file_url: res.path,
         file_name: file.name,
         tags: ["capa"],
-      }).catch(() => null);
+      }).catch((e) => { console.error("createLibraryItem cover:", e); return null; });
       await onSet(res.path);
       toast.success("Capa enviada e definida.");
       onSaved();
