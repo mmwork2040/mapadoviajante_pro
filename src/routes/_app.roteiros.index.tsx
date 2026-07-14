@@ -392,7 +392,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
       return;
     }
     setSaving(true);
-    const res = await createItinerary(form);
+    const res = await createItinerary({ ...form, cover_image: coverImage || null });
     if (res && coverImage && form.lead_id) {
       const lead = leads.find((l) => l.id === form.lead_id);
       const profile = { ...((lead?.profile as Record<string, unknown>) || {}), cover_image: coverImage };

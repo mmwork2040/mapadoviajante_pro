@@ -1367,6 +1367,7 @@ function ItineraryDetailPage() {
       {coverPickerOpen && (
         <CoverPicker
           currentCover={it.cover_image || null}
+          destination={it.destination || ""}
           onClose={() => setCoverPickerOpen(false)}
           onSaved={() => {
             setCoverPickerOpen(false);
@@ -5489,11 +5490,13 @@ function DrivePreviewModal({
 // A capa escolhida é salva em crm_itineraries.cover_image.
 function CoverPicker({
   currentCover,
+  destination,
   onClose,
   onSaved,
   onSet,
 }: {
   currentCover: string | null;
+  destination: string;
   onClose: () => void;
   onSaved: () => void;
   onSet: (path: string) => Promise<void>;
@@ -5548,12 +5551,12 @@ function CoverPicker({
       const res = await uploadLibraryAsset(file);
       if (!res) throw new Error();
       // Também registra a imagem na biblioteca para reuso futuro.
-      const destination = currentCover?.trim() || "";
       const rawTitle = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
-      const title = rawTitle.slice(0, 120) || "Capa do roteiro";
+      const place = destination.trim();
+      const title = (place || rawTitle || "Capa do roteiro").slice(0, 120);
       const tags = Array.from(
         new Set(
-          ["capa", ...title.toLowerCase().split(/[\s,]+/).filter((t) => t.length >= 3)].slice(0, 12),
+          ["capa", ...`${title} ${rawTitle}`.toLowerCase().split(/[\s,]+/).filter((t) => t.length >= 3)].slice(0, 12),
         ),
       );
       const item = await createLibraryItem({
@@ -5561,7 +5564,7 @@ function CoverPicker({
         title,
         description: `Imagem de capa enviada para reutilização em roteiros relacionados a ${title}.`,
         content: `Imagem de capa do roteiro ${title}. Pode ser usada na elaboração de roteiros quando tiver relação com o destino.`,
-        location: title,
+        location: place || title,
         file_url: res.path,
         file_name: file.name,
         tags,
