@@ -44,7 +44,7 @@ const ADMIN_ONLY = ["/financeiro", "/admin"] as const;
 // Itens principais exibidos na barra de navegação inferior (mobile)
 const MOBILE_NAV = [
   { to: "/", label: "Início", icon: LayoutDashboard },
-  { to: "/leads", label: "Leads", icon: Users },
+  { to: "/leads", label: "Viagens", icon: Users },
   { to: "/clientes", label: "Clientes", icon: UserCog },
   { to: "/tarefas", label: "Tarefas", icon: ListChecks },
   { to: "/roteiros", label: "Roteiros", icon: RouteIcon },
