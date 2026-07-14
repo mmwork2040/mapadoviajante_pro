@@ -34,6 +34,35 @@ export interface Lead {
   created_at?: string;
   updated_at?: string;
   assigned_member?: { name: string; avatar_color?: string | null } | null;
+  client_id?: string | null;
+  client?: { id: string; name: string } | null;
+}
+
+export interface Client {
+  id: string;
+  agency_id: string;
+  created_by?: string | null;
+  name: string;
+  email?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  cpf?: string | null;
+  birth_date?: string | null;
+  passport_number?: string | null;
+  passport_expiry?: string | null;
+  passport_country?: string | null;
+  address_street?: string | null;
+  address_number?: string | null;
+  address_complement?: string | null;
+  address_neighborhood?: string | null;
+  address_city?: string | null;
+  address_state?: string | null;
+  address_zip?: string | null;
+  address_country?: string | null;
+  preferences?: Record<string, unknown>;
+  notes?: string | null;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface LeadActivity {
