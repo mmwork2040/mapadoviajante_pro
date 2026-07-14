@@ -1268,7 +1268,11 @@ function ItineraryDetailPage() {
                     src={coverUrl}
                     alt={it.destination || "Destino"}
                     onLoad={() => setCoverLoaded(true)}
-                    onError={() => setCoverLoaded(true)}
+                    onError={(e) => {
+                      onCoverError();
+                      // Mantém o skeleton enquanto tentamos revalidar.
+                      (e.currentTarget as HTMLImageElement).style.opacity = "0";
+                    }}
                     className={`absolute inset-0 h-full w-full object-contain transition-opacity ${coverLoaded ? "opacity-100" : "opacity-0"}`}
                   />
                 </>
