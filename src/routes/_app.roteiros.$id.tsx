@@ -41,6 +41,8 @@ import {
   fetchAiConfig,
 
   reorderDayActivitiesByTime,
+  getLibraryAssetPathFromUrl,
+  normalizeLibraryImageValue,
   resolveDisplayImageUrl,
   saveActivityImageToLibrary,
   saveImageFileToLibrary,
@@ -1526,7 +1528,7 @@ function ActivityImagesCarousel({ images, alt }: { images: ActivityImage[]; alt:
   const go = (delta: number) => setIdx((v) => (v + delta + images.length) % images.length);
   return (
     <span className="relative mt-1.5 block overflow-hidden rounded-lg border border-border/60 bg-background/60">
-      <img src={images[i].url} alt={alt} className="h-40 w-full object-cover" loading="lazy" />
+      <ResolvedActivityImage value={images[i].url} alt={alt} className="h-40 w-full object-cover" />
       {multi && (
         <>
           <button
@@ -1557,6 +1559,41 @@ function ActivityImagesCarousel({ images, alt }: { images: ActivityImage[]; alt:
       )}
     </span>
   );
+}
+
+function ResolvedActivityImage({
+  value,
+  alt,
+  className,
+}: {
+  value?: string | null;
+  alt: string;
+  className: string;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setUrl(null);
+    setFailed(false);
+    resolveDisplayImageUrl(value).then((resolved) => {
+      if (active) setUrl(resolved);
+    });
+    return () => {
+      active = false;
+    };
+  }, [value]);
+
+  if (!url || failed) {
+    return (
+      <span className={`${className} flex items-center justify-center bg-muted text-muted-foreground`}>
+        <ImageIcon className="h-5 w-5" />
+      </span>
+    );
+  }
+
+  return <img src={url} alt={alt} className={className} loading="lazy" onError={() => setFailed(true)} />;
 }
 
 
@@ -2131,7 +2168,7 @@ function ActivityRow({
   const downloadImage = useServerFn(downloadDestinationImage);
   const [imgChoiceOpen, setImgChoiceOpen] = useState(false);
   const [libOpen, setLibOpen] = useState(false);
-  const [libItems, setLibItems] = useState<{ url: string; title: string }[]>([]);
+  const [libItems, setLibItems] = useState<{ url: string; value: string; title: string }[]>([]);
   const [libLoading, setLibLoading] = useState(false);
   const [uploadingImg, setUploadingImg] = useState(false);
   const imgFileRef = useRef<HTMLInputElement>(null);
@@ -2153,8 +2190,15 @@ function ActivityRow({
     try {
       for (const file of Array.from(files)) {
         const item = await saveImageFileToLibrary(file, { title: title || file.name, location: city });
-        const url = item?.file_url ? await resolveDisplayImageUrl(item.file_url) : null;
-        if (url) setEImages((prev) => (prev.some((im) => im.url === url) ? prev : [...prev, { url, description: title || null }]));
+        const value = item?.file_url || item?.image_url || null;
+        if (value) {
+          const stableValue = normalizeLibraryImageValue(value) ?? value;
+          setEImages((prev) =>
+            prev.some((im) => normalizeLibraryImageValue(im.url) === stableValue)
+              ? prev
+              : [...prev, { url: stableValue, description: title || null }],
+          );
+        }
       }
       qc.invalidateQueries({ queryKey: ["library"] });
       toast.success("Imagem(ns) adicionada(s) ao dia e à biblioteca.");
@@ -2173,12 +2217,16 @@ function ActivityRow({
     try {
       const items = await fetchLibraryItems("image");
       const resolved = await Promise.all(
-        items.map(async (it) => ({
-          url: (await resolveDisplayImageUrl(it.file_url)) || "",
-          title: it.title || "",
-        })),
+        items.map(async (it) => {
+          const value = it.file_url || it.image_url || "";
+          return {
+            url: (await resolveDisplayImageUrl(value)) || "",
+            value: normalizeLibraryImageValue(value) || value,
+            title: it.title || "",
+          };
+        }),
       );
-      setLibItems(resolved.filter((r) => r.url));
+      setLibItems(resolved.filter((r) => r.url && r.value));
     } catch {
       setLibItems([]);
     } finally {
@@ -2187,11 +2235,12 @@ function ActivityRow({
   }
 
   function addLibraryImage(url: string, title: string) {
-    if (eImages.some((im) => im.url === url)) {
+    const stableValue = normalizeLibraryImageValue(url) ?? url;
+    if (eImages.some((im) => normalizeLibraryImageValue(im.url) === stableValue)) {
       toast.info("Imagem já adicionada.");
       return;
     }
-    setEImages((prev) => [...prev, { url, description: title || eTitle.trim() || null }]);
+    setEImages((prev) => [...prev, { url: stableValue, description: title || eTitle.trim() || null }]);
     toast.success("Imagem adicionada ao dia.");
   }
 
@@ -2244,7 +2293,7 @@ function ActivityRow({
     setAddingImg(url);
     try {
       const saved = await saveActivityImageToLibrary(url, tag, city || title);
-      const display = saved || url;
+      const display = normalizeLibraryImageValue(saved || url) ?? url;
       setEImages((prev) => [...prev, { url: display, description: title || null }]);
       qc.invalidateQueries({ queryKey: ["library"] });
       toast.success("Imagem adicionada ao dia e salva na biblioteca.");
@@ -2259,10 +2308,7 @@ function ActivityRow({
     const img = eImages[index];
     if (!img) return;
     // Descobre se a imagem está salva na biblioteca (para confirmar exclusão).
-    const m =
-      img.url.match(/\/object\/sign\/library-assets\/([^?]+)/) ||
-      img.url.match(/\/object\/public\/library-assets\/([^?]+)/);
-    const path = m?.[1] ? decodeURIComponent(m[1]) : null;
+    const path = getLibraryAssetPathFromUrl(img.url) ?? (/^https?:\/\//i.test(img.url) ? null : img.url);
     let libItem: LibraryItem | null = null;
     if (path) {
       try {
@@ -2597,7 +2643,10 @@ function ActivityRow({
         images: eType === "activity" && eImages.length
           ? eImages
               .filter((im) => im.url)
-              .map((im) => ({ url: im.url, description: im.description?.trim() || null }))
+              .map((im) => ({
+                url: normalizeLibraryImageValue(im.url) ?? im.url,
+                description: im.description?.trim() || null,
+              }))
           : null,
 
       });
@@ -2692,7 +2741,7 @@ function ActivityRow({
               <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-4">
                 {eImages.map((im, i) => (
                   <div key={im.url} className="group relative overflow-hidden rounded-lg border border-border/60 bg-background">
-                    <img src={im.url} alt="Imagem" className="h-20 w-full object-cover" />
+                    <ResolvedActivityImage value={im.url} alt="Imagem" className="h-20 w-full object-cover" />
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(i)}
@@ -2839,16 +2888,16 @@ function ActivityRow({
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {libItems.map((it) => {
-                  const added = eImages.some((im) => im.url === it.url);
+                  const added = eImages.some((im) => normalizeLibraryImageValue(im.url) === it.value);
                   return (
                     <button
                       key={it.url}
                       type="button"
-                      onClick={() => !added && addLibraryImage(it.url, it.title)}
+                      onClick={() => !added && addLibraryImage(it.value, it.title)}
                       disabled={added}
                       className="group relative overflow-hidden rounded-lg border border-border/60 hover:border-primary focus:border-primary disabled:opacity-60"
                     >
-                      <img src={it.url} alt={it.title || "Imagem"} className="h-28 w-full object-cover" />
+                      <ResolvedActivityImage value={it.value} alt={it.title || "Imagem"} className="h-28 w-full object-cover" />
                       <span className={`absolute inset-0 items-center justify-center ${added ? "flex bg-primary/40" : "hidden bg-primary/30 group-hover:flex"}`}>
                         {added ? <Check className="h-6 w-6 text-white drop-shadow" /> : <Plus className="h-6 w-6 text-white drop-shadow" />}
                       </span>
