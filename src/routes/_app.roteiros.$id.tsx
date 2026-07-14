@@ -1277,11 +1277,18 @@ function ItineraryDetailPage() {
                   />
                 </>
               )}
-              {!coverLoaded && (
+              {!coverLoaded && !coverFailed && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
                   <Loader2 className="h-5 w-5 animate-spin" />
                   <span className="text-xs">Carregando…</span>
                 </div>
+              )}
+              {coverFailed && (
+                <img
+                  src={roteiroFallback}
+                  alt={it.destination || "Destino"}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
               )}
             </>
           ) : (
