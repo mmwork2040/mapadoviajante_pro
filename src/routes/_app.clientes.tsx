@@ -26,6 +26,14 @@ export const Route = createFileRoute("/_app/clientes")({
   component: ClientesPage,
 });
 
+const LEAD_STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
+  new: { label: "Novo", cls: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
+  contacted: { label: "Contatado", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
+  negotiating: { label: "Em Negociação", cls: "bg-amber-500/20 text-amber-800 dark:text-amber-300" },
+  closed: { label: "Fechado", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
+  lost: { label: "Perdido", cls: "bg-red-500/15 text-red-700 dark:text-red-300" },
+};
+
 const EMPTY: Partial<Client> = {
   name: "",
   email: "",
