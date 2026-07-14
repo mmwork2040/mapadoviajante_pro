@@ -145,7 +145,7 @@ function ClientesPage() {
               onDelete={async () => {
                 const ok = await confirm({
                   title: "Remover cliente?",
-                  message: `Deseja remover ${c.name}? As viagens vinculadas serão desvinculadas.`,
+                  description: `Deseja remover ${c.name}? As viagens vinculadas serão desvinculadas.`,
                   confirmText: "Remover",
                 });
                 if (ok) deleteMut.mutate(c.id);
