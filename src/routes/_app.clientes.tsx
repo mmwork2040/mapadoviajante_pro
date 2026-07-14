@@ -146,7 +146,8 @@ function ClientesPage() {
                 const ok = await confirm({
                   title: "Remover cliente?",
                   description: `Deseja remover ${c.name}? As viagens vinculadas serão desvinculadas.`,
-                  confirmText: "Remover",
+                  confirmLabel: "Remover",
+                  destructive: true,
                 });
                 if (ok) deleteMut.mutate(c.id);
               }}
