@@ -21,6 +21,7 @@ import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNotificacoesRouteImport } from './routes/_app.notificacoes'
 import { Route as AppLeadsRouteImport } from './routes/_app.leads'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
+import { Route as AppClientesRouteImport } from './routes/_app.clientes'
 import { Route as AppChecklistTemplatesRouteImport } from './routes/_app.checklist-templates'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
@@ -89,6 +90,11 @@ const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => AppRoute,
 } as any)
+const AppClientesRoute = AppClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppChecklistTemplatesRoute = AppChecklistTemplatesRouteImport.update({
   id: '/checklist-templates',
   path: '/checklist-templates',
@@ -138,6 +144,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
   '/checklist-templates': typeof AppChecklistTemplatesRoute
+  '/clientes': typeof AppClientesRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
   '/checklist-templates': typeof AppChecklistTemplatesRoute
+  '/clientes': typeof AppClientesRoute
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -180,6 +188,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRoute
   '/_app/biblioteca': typeof AppBibliotecaRoute
   '/_app/checklist-templates': typeof AppChecklistTemplatesRoute
+  '/_app/clientes': typeof AppClientesRoute
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/leads': typeof AppLeadsRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
@@ -204,6 +213,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/biblioteca'
     | '/checklist-templates'
+    | '/clientes'
     | '/financeiro'
     | '/leads'
     | '/notificacoes'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/biblioteca'
     | '/checklist-templates'
+    | '/clientes'
     | '/financeiro'
     | '/leads'
     | '/notificacoes'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/_app/biblioteca'
     | '/_app/checklist-templates'
+    | '/_app/clientes'
     | '/_app/financeiro'
     | '/_app/leads'
     | '/_app/notificacoes'
@@ -357,6 +369,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFinanceiroRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/clientes': {
+      id: '/_app/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof AppClientesRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/checklist-templates': {
       id: '/_app/checklist-templates'
       path: '/checklist-templates'
@@ -434,6 +453,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppBibliotecaRoute: typeof AppBibliotecaRoute
   AppChecklistTemplatesRoute: typeof AppChecklistTemplatesRoute
+  AppClientesRoute: typeof AppClientesRoute
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppLeadsRoute: typeof AppLeadsRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
@@ -447,6 +467,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppBibliotecaRoute: AppBibliotecaRoute,
   AppChecklistTemplatesRoute: AppChecklistTemplatesRoute,
+  AppClientesRoute: AppClientesRoute,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppLeadsRoute: AppLeadsRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
