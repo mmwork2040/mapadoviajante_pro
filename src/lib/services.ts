@@ -1013,21 +1013,23 @@ export async function bulkDeleteLibraryItems(items: LibraryItem[]): Promise<numb
   return items.length;
 }
 
+export function getLibraryAssetPathFromUrl(value?: string | null): string | null {
+  if (!value) return null;
+  const match = value.match(/\/object\/(?:sign|public)\/library-assets\/([^?]+)/);
+  return match?.[1] ? decodeURIComponent(match[1]) : null;
+}
+
+export function normalizeLibraryImageValue(value?: string | null): string | null {
+  if (!value) return null;
+  return getLibraryAssetPathFromUrl(value) ?? value;
+}
+
 // Resolve um valor de imagem: URL http(s) direto ou caminho no bucket da biblioteca.
 export async function resolveDisplayImageUrl(value?: string | null): Promise<string | null> {
   if (!value) return null;
   // URLs assinadas do bucket expiram (token). Extrai o caminho e re-assina.
-  const signMatch = value.match(/\/object\/sign\/library-assets\/([^?]+)/);
-  if (signMatch?.[1]) {
-    const path = decodeURIComponent(signMatch[1]);
-    return (await getLibraryAssetUrl(path)) ?? value;
-  }
-  // URL pública do bucket (sem token) também pode ser normalizada para assinada.
-  const pubMatch = value.match(/\/object\/public\/library-assets\/([^?]+)/);
-  if (pubMatch?.[1]) {
-    const path = decodeURIComponent(pubMatch[1]);
-    return (await getLibraryAssetUrl(path)) ?? value;
-  }
+  const assetPath = getLibraryAssetPathFromUrl(value);
+  if (assetPath) return (await getLibraryAssetUrl(assetPath)) ?? value;
   if (/^https?:\/\//i.test(value) || value.startsWith("data:")) return value;
   return getLibraryAssetUrl(value);
 }
