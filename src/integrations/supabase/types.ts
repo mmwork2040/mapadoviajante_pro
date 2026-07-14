@@ -919,6 +919,10 @@ export type Database = {
         Row: {
           agency_id: string
           assigned_to: string | null
+          benefits: Json
+          budget_client: number | null
+          budget_osv: number | null
+          budget_total: number | null
           checklists: Json | null
           client_id: string | null
           created_at: string | null
@@ -938,6 +942,10 @@ export type Database = {
         Insert: {
           agency_id: string
           assigned_to?: string | null
+          benefits?: Json
+          budget_client?: number | null
+          budget_osv?: number | null
+          budget_total?: number | null
           checklists?: Json | null
           client_id?: string | null
           created_at?: string | null
@@ -957,6 +965,10 @@ export type Database = {
         Update: {
           agency_id?: string
           assigned_to?: string | null
+          benefits?: Json
+          budget_client?: number | null
+          budget_osv?: number | null
+          budget_total?: number | null
           checklists?: Json | null
           client_id?: string | null
           created_at?: string | null
@@ -1336,6 +1348,59 @@ export type Database = {
           },
           {
             foreignKeyName: "crm_transactions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "crm_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      crm_trip_expenses: {
+        Row: {
+          activity_id: string | null
+          agency_id: string
+          amount: number
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          lead_id: string
+          occurred_at: string | null
+          paid_with: string
+          savings: number
+        }
+        Insert: {
+          activity_id?: string | null
+          agency_id: string
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          lead_id: string
+          occurred_at?: string | null
+          paid_with?: string
+          savings?: number
+        }
+        Update: {
+          activity_id?: string | null
+          agency_id?: string
+          amount?: number
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          lead_id?: string
+          occurred_at?: string | null
+          paid_with?: string
+          savings?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_trip_expenses_lead_id_fkey"
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "crm_leads"
