@@ -854,7 +854,17 @@ function PerfilTab({
   );
 }
 
-function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
+function ViagemTab({
+  lead,
+  p,
+  isAdmin,
+  onUpdateProfile,
+}: {
+  lead: Lead;
+  p: Record<string, string>;
+  isAdmin: boolean;
+  onUpdateProfile: (patch: Record<string, unknown>) => void;
+}) {
   const hasBenefits = p.loyalty_programs || p.points_miles || p.has_passport || p.preferences;
   return (
     <div className="space-y-6">
@@ -862,6 +872,7 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
         <div className="grid grid-cols-2 gap-2">
           <Field label="Ponto de partida" value={p.departure} />
           <Field label="Destino" value={lead.destination} />
+          <Field label="Orçamento da viagem" value={lead.value ? formatCurrency(lead.value) : ""} />
           <Field label="Data pretendida" value={p.travel_dates} />
           <Field label="Nº de passageiros" value={p.passengers} />
           <Field label="Tipo de viagem" value={p.trip_type} />
@@ -894,8 +905,82 @@ function ViagemTab({ lead, p }: { lead: Lead; p: Record<string, string> }) {
         )}
       </CollapsibleSection>
 
+      {isAdmin && <FinanceiroSection p={p} onUpdateProfile={onUpdateProfile} />}
+
       <ClientTripHistory lead={lead} />
     </div>
+  );
+}
+
+function FinanceiroSection({
+  p,
+  onUpdateProfile,
+}: {
+  p: Record<string, string>;
+  onUpdateProfile: (patch: Record<string, unknown>) => void;
+}) {
+  const current = p.consultancy_fee || "";
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState<string>(
+    current ? maskCurrency(String(Math.round(Number(current) * 100))) : "",
+  );
+  useEffect(() => {
+    setValue(current ? maskCurrency(String(Math.round(Number(current) * 100))) : "");
+  }, [current]);
+
+  const save = () => {
+    const num = parseCurrency(value);
+    onUpdateProfile({ consultancy_fee: num });
+    setEditing(false);
+    toast.success("Valor de consultoria atualizado.");
+  };
+
+  return (
+    <CollapsibleSection icon={CircleDollarSign} title="Financeiro (admin)">
+      <div className="rounded-xl border border-border bg-muted/30 p-3">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Valor da consultoria
+        </p>
+        {editing ? (
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              autoFocus
+              value={value}
+              onChange={(e) => setValue(maskCurrency(e.target.value))}
+              placeholder="R$ 0,00"
+              className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <button
+              onClick={save}
+              className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+            >
+              Salvar
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-muted"
+            >
+              Cancelar
+            </button>
+          </div>
+        ) : (
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <p className="text-lg font-bold text-primary">
+              {current ? formatCurrency(Number(current)) : "—"}
+            </p>
+            <button
+              onClick={() => setEditing(true)}
+              className="rounded-lg border border-border px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+            >
+              {current ? "Editar" : "Definir"}
+            </button>
+          </div>
+        )}
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Visível apenas para administradores. Não afeta o orçamento da viagem.
+        </p>
+      </div>
+    </CollapsibleSection>
   );
 }
 
