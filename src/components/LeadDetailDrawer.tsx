@@ -110,7 +110,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const confirm = useConfirm();
   const { member, session } = useAuth();
   const isAdmin = isAdminUser(member, session?.user?.email);
-  const [tab, setTab] = useState<TabKey>("perfil");
+  const [tab, setTab] = useState<TabKey>("checklist");
   const [editOpen, setEditOpen] = useState(false);
   const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
   const [fullscreen, setFullscreen] = useState<boolean>(() => {
@@ -432,7 +432,15 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                 )}
               </div>
 
+              <TripSummaryStrip
+                clientName={lead.name}
+                destination={lead.destination}
+                travelDates={String(p.travel_dates || "")}
+                clientNotes={String(p.trip_notes || "")}
+              />
+
               <div className="relative mt-3 grid grid-cols-2 gap-2">
+
                 <button
                   onClick={openWhatsApp}
                   className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
@@ -678,6 +686,76 @@ function Field({ label, value, wrap }: { label: string; value?: string | null; w
     <div className="rounded-xl bg-muted/50 p-3">
       <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className={`mt-0.5 text-xs font-medium ${wrap ? "whitespace-pre-wrap break-words" : "truncate"}`}>{text}</p>
+    </div>
+  );
+}
+
+function TripSummaryStrip({
+  clientName,
+  destination,
+  travelDates,
+  clientNotes,
+}: {
+  clientName?: string | null;
+  destination?: string | null;
+  travelDates?: string;
+  clientNotes?: string;
+}) {
+  const m = /^(\d{4}-\d{2}-\d{2})\s*a\s*(\d{4}-\d{2}-\d{2})$/.exec((travelDates || "").trim());
+  const startISO = m?.[1] || null;
+  const endISO = m?.[2] || null;
+  let countdown: string | null = null;
+  if (startISO) {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const start = new Date(`${startISO}T00:00:00`);
+    const end = endISO ? new Date(`${endISO}T00:00:00`) : null;
+    const diffDays = Math.round((start.getTime() - today.getTime()) / 86400000);
+    if (diffDays > 0) countdown = `Faltam ${diffDays} ${diffDays === 1 ? "dia" : "dias"}`;
+    else if (end && today.getTime() <= end.getTime()) countdown = "Viagem em andamento";
+    else if (diffDays === 0) countdown = "Começa hoje";
+    else countdown = `Concluída há ${Math.abs(diffDays)} ${Math.abs(diffDays) === 1 ? "dia" : "dias"}`;
+  }
+  const dateLabel = startISO
+    ? `${formatDate(startISO)}${endISO ? " – " + formatDate(endISO) : ""}`
+    : (travelDates?.trim() || null);
+
+  const hasAny = clientName || destination || dateLabel || countdown || clientNotes;
+  if (!hasAny) return null;
+
+  return (
+    <div className="relative mt-3 rounded-lg border border-border bg-muted/50 p-3 text-xs">
+      <div className="grid gap-1.5 sm:grid-cols-2">
+        {clientName && (
+          <div className="flex items-center gap-1.5">
+            <User className="h-3.5 w-3.5 text-primary" />
+            <span className="truncate"><span className="text-muted-foreground">Cliente: </span><span className="font-medium text-foreground">{clientName}</span></span>
+          </div>
+        )}
+        {destination && (
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 text-primary" />
+            <span className="truncate"><span className="text-muted-foreground">Destino: </span><span className="font-medium text-foreground">{destination}</span></span>
+          </div>
+        )}
+        {dateLabel && (
+          <div className="flex items-center gap-1.5">
+            <CalendarClock className="h-3.5 w-3.5 text-primary" />
+            <span className="truncate"><span className="text-muted-foreground">Datas: </span><span className="font-medium text-foreground">{dateLabel}</span></span>
+          </div>
+        )}
+        {countdown && (
+          <div className="flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold text-foreground">{countdown}</span>
+          </div>
+        )}
+      </div>
+      {clientNotes && (
+        <div className="mt-2 flex gap-1.5 border-t border-border pt-2">
+          <StickyNote className="mt-0.5 h-3.5 w-3.5 shrink-0 text-primary" />
+          <p className="whitespace-pre-wrap text-muted-foreground line-clamp-4">{clientNotes}</p>
+        </div>
+      )}
     </div>
   );
 }
