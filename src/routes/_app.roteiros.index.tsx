@@ -18,6 +18,7 @@ import {
   saveExternalImageToLibrary,
   uploadImageToLibraryForDestination,
 } from "@/lib/services";
+import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
