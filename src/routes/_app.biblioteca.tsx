@@ -41,6 +41,7 @@ import {
   updateLibraryItem,
   uploadLibraryAsset,
   findSimilarLibraryImage,
+  resolveDisplayImageUrl,
 } from "@/lib/services";
 import { generateLibraryContent } from "@/lib/ai.functions";
 import { visibleTags, computeImagePHashFromFile, phashToTag } from "@/lib/image-hash";
@@ -532,12 +533,9 @@ function useAssetUrl(item: LibraryItem): string | null {
   const [url, setUrl] = useState<string | null>(item.image_url ?? null);
   useEffect(() => {
     let alive = true;
-    if (item.image_url) {
-      setUrl(item.image_url);
-      return;
-    }
-    if (item.file_url && isImagePath(item.file_url)) {
-      getLibraryAssetUrl(item.file_url).then((u) => alive && setUrl(u));
+    const value = item.file_url || item.image_url;
+    if (value && (isImagePath(value) || /^https?:\/\//i.test(value))) {
+      resolveDisplayImageUrl(value).then((u) => alive && setUrl(u));
     } else {
       setUrl(null);
     }
