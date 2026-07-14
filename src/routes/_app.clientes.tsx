@@ -268,11 +268,32 @@ function ClientFormDrawer({
       ? JSON.stringify(initial.preferences, null, 2)
       : "{}",
   );
+  const [cepLoading, setCepLoading] = useState(false);
 
   const set = <K extends keyof Client>(key: K, value: Client[K]) => setForm((f) => ({ ...f, [key]: value }));
 
-  const submit = () => {
-    if (!form.name?.trim()) return toast.error("Informe o nome");
+  const handleCepChange = async (raw: string) => {
+    const masked = maskCep(raw);
+    const digits = masked.replace(/\D/g, "");
+    setForm((f) => ({ ...f, address_zip: masked }));
+    if (digits.length !== 8) return;
+    setCepLoading(true);
+    const res = await lookupCep(digits);
+    setCepLoading(false);
+    if (!res) {
+      toast.error("CEP não encontrado");
+      return;
+    }
+    setForm((f) => ({
+      ...f,
+      address_street: res.street || f.address_street || "",
+      address_neighborhood: res.district || f.address_neighborhood || "",
+      address_city: res.city || "",
+      address_state: res.state || "",
+      address_country: f.address_country?.trim() ? f.address_country : "Brasil",
+    }));
+  };
+
     let preferences: Record<string, unknown> = {};
     try {
       preferences = prefText.trim() ? JSON.parse(prefText) : {};
