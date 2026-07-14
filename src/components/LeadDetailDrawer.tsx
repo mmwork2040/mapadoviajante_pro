@@ -509,7 +509,18 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   onOpenActivities={() => setTab("atividades")}
                 />
               )}
-              {tab === "viagem" && <ViagemTab lead={lead} p={p} />}
+              {tab === "viagem" && (
+                <ViagemTab
+                  lead={lead}
+                  p={p}
+                  isAdmin={isAdmin}
+                  onUpdateProfile={(patch) =>
+                    update.mutate({
+                      profile: { ...((lead.profile as Record<string, unknown>) || {}), ...patch },
+                    })
+                  }
+                />
+              )}
               {tab === "atividades" && (
                 <AtividadesTab leadId={leadId} team={team} activities={activities} />
               )}
