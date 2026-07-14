@@ -102,6 +102,8 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const qc = useQueryClient();
   const navigate = useNavigate();
   const confirm = useConfirm();
+  const { member, session } = useAuth();
+  const isAdmin = isAdminUser(member, session?.user?.email);
   const [tab, setTab] = useState<TabKey>("perfil");
   const [editOpen, setEditOpen] = useState(false);
   const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
