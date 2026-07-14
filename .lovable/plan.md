@@ -1,31 +1,57 @@
+# Templates de Checklist para Roteiros
+
 ## Objetivo
-- Clicar em qualquer card de tarefa (dashboard e página Tarefas) abre o painel do lead vinculado.
-- O painel do lead ganha um botão para alternar entre **lateral (drawer)** e **tela cheia**.
-- Dentro do painel, exibir o **histórico de outras viagens/roteiros do mesmo cliente**.
+Permitir que o admin crie e edite templates de checklist (o primeiro será "Consultoria completa" com o conteúdo enviado). Ao iniciar um novo roteiro/lead, o consultor escolhe qual template aplicar — os itens são copiados para o roteiro e podem ser marcados individualmente.
 
-## Mudanças
+## Estrutura de dados (Supabase)
 
-### 1. Abrir lead ao clicar em card de tarefa
-- `src/routes/_app.index.tsx` (Tarefas do Dia): tornar cada `<li>` clicável — se `t.lead_id` existir, `setDetailLeadId(t.lead_id)`; caso contrário, sem ação (cursor default). Adicionar `role="button"`, hover e foco acessíveis.
-- `src/routes/_app.tarefas.tsx`: substituir o botão `ExternalLink` (que hoje vai para `/leads?lead=…`) por clique no próprio card, abrindo o `LeadDetailDrawer` inline. Adicionar estado local `detailLeadId` e renderizar `<LeadDetailDrawer />` no final da página (mesmo padrão do dashboard). Manter o toggle de concluir isolado (stopPropagation).
+Nova tabela `crm_checklist_templates` (por agência):
+- `id uuid pk`, `agency_id uuid`, `name text`, `description text`, `is_default boolean`, `sections jsonb`, timestamps.
+- `sections` é um array: `[{ title, groups: [{ title, items: [{ id, label }] }] }]`.
+- RLS: SELECT para membros da agência; INSERT/UPDATE/DELETE apenas admin (`user_has_role('admin')`).
+- GRANTs para `authenticated` e `service_role`.
+- Seed: inserir template "Consultoria completa" com o conteúdo fornecido pelo usuário, marcado como `is_default = true`.
 
-### 2. Modo tela cheia no painel do lead
-- `src/components/LeadDetailDrawer.tsx`:
-  - Nova prop opcional `initialFullscreen?: boolean` e estado interno `fullscreen`.
-  - Botão no header (ao lado do X) com ícones `Maximize2` / `Minimize2` (lucide) para alternar.
-  - Ajustar classes do container:
-    - Drawer atual: `right-0 h-full w-full max-w-[560px]` (ou similar).
-    - Tela cheia: `inset-0 w-full max-w-none rounded-none`.
-  - Preservar `ScrollLock` e `useBackButtonClose`. Persistir preferência do usuário em `localStorage` (`lead-panel-fullscreen`).
+Nos leads, o checklist marcado já existe no campo `checklists jsonb` — vamos guardar como:
+```
+{
+  templateId: "...",
+  templateName: "Consultoria completa",
+  items: { "<itemId>": true, ... }
+}
+```
 
-### 3. Histórico de viagens do cliente
-- Reutilizar `fetchItinerariesByLead` (já importado) apenas para o lead atual. Para trazer viagens **de outros leads do mesmo cliente**, agrupar por `email` (fallback: `phone`) do lead:
-  - Nova função em `src/lib/services.ts`: `fetchClientTripHistory(lead: Lead)` que:
-    1. Busca leads da agência com mesmo `email` (ou `phone`) diferentes do atual.
-    2. Retorna itinerários (`crm_itineraries`) ligados a esses leads + os do lead atual, ordenados por `created_at` desc, com campos: id, title, destination, start_date, end_date, status, budget, lead_name.
-- Na aba **Viagem** do `LeadDetailDrawer`, adicionar uma seção "Histórico do cliente" (colapsável) listando as viagens retornadas com link para abrir o roteiro (`/roteiros/$id`). Mostrar "Nenhuma viagem anterior" quando vazio.
+## Fluxo
 
-## Notas técnicas
-- Nenhuma mudança de schema; consulta usa RLS existente (mesma agência).
-- Toggle full-screen é puramente CSS + estado, sem rota nova, mantendo compatibilidade com `search={{ lead }}` da página `/leads`.
-- Card de tarefa sem `lead_id` continua não clicável (visual normal).
+### Admin — nova página `/adm/checklists`
+- Lista de templates da agência.
+- Botão "Novo template" e edição inline de cada seção/grupo/item (add, remover, renomear, reordenar simples).
+- Marcar um como padrão (apenas um por agência).
+- Somente admin acessa (gate por `isAdminUser`).
+
+### Ao criar/abrir um lead sem checklist
+- No `LeadDetailDrawer` (aba Viagem ou nova aba "Checklist"):
+  - Se o lead não tem template aplicado, mostrar dropdown "Aplicar template" com os templates disponíveis (default pré-selecionado).
+  - Ao aplicar, salvar `templateId` + estrutura no `lead.checklists`.
+- Renderizar as seções/grupos/itens como checkboxes; alterações persistem em `crm_leads.checklists`.
+- Botão "Trocar template" (confirma antes, pois zera as marcações).
+
+## Arquivos
+
+**Migração**
+- Nova migration: cria `crm_checklist_templates`, grants, RLS, seed do template "Consultoria completa" para cada agência existente.
+
+**Backend / serviços**
+- `src/lib/checklist-templates.functions.ts`: `listTemplates`, `getTemplate`, `upsertTemplate`, `deleteTemplate`, `setDefault` (com `requireSupabaseAuth`).
+- Extender `src/lib/services.ts` (ou novo helper) para salvar `checklists` no lead.
+
+**UI**
+- `src/routes/_app.adm.checklists.tsx` — CRUD de templates (admin only).
+- `src/components/ChecklistEditor.tsx` — editor de seções/grupos/itens.
+- `src/components/LeadChecklistPanel.tsx` — usado no `LeadDetailDrawer` para escolher template e marcar itens.
+- Integrar no `LeadDetailDrawer.tsx` (nova aba "Checklist" ou dentro de "Viagem").
+- Adicionar link "Checklists" no menu admin.
+
+## Fora do escopo
+- Reordenação drag-and-drop refinada (usar botões up/down simples).
+- Versionamento de templates (alterar template não retroage em leads existentes).
