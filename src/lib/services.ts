@@ -7,6 +7,7 @@ import type {
   Itinerary,
   ItineraryActivity,
   ItineraryDay,
+  Client,
   Lead,
   LibraryItem,
   LibraryItemType,
