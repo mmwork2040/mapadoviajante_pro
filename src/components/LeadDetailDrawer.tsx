@@ -636,11 +636,13 @@ function StatusDropdown({
 }
 
 
-function checklistCount(c: Record<string, boolean>) {
-  const entries = Object.values(c);
-  const done = entries.filter(Boolean).length;
-  return `${done}/${entries.length}`;
+function checklistCount(raw: unknown) {
+  const norm = normalizeChecklist(raw);
+  const values = Object.values(norm.items);
+  const done = values.filter(Boolean).length;
+  return `${done}/${values.length}`;
 }
+
 
 function SectionTitle({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
   return (
