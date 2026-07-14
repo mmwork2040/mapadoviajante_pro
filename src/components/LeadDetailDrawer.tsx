@@ -110,7 +110,7 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
   const confirm = useConfirm();
   const { member, session } = useAuth();
   const isAdmin = isAdminUser(member, session?.user?.email);
-  const [tab, setTab] = useState<TabKey>("perfil");
+  const [tab, setTab] = useState<TabKey>("checklist");
   const [editOpen, setEditOpen] = useState(false);
   const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
   const [fullscreen, setFullscreen] = useState<boolean>(() => {
