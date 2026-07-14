@@ -1255,13 +1255,22 @@ function ItineraryDetailPage() {
           {it.cover_image ? (
             <>
               {coverUrl && (
-                <img
-                  src={coverUrl}
-                  alt={it.destination || "Destino"}
-                  onLoad={() => setCoverLoaded(true)}
-                  onError={() => setCoverLoaded(true)}
-                  className={`absolute inset-0 h-full w-full object-cover transition-opacity ${coverLoaded ? "opacity-100" : "opacity-0"}`}
-                />
+                <>
+                  {/* Fundo desfocado para preencher sem cortar */}
+                  <img
+                    src={coverUrl}
+                    alt=""
+                    aria-hidden
+                    className="absolute inset-0 h-full w-full object-cover scale-110 blur-xl opacity-60"
+                  />
+                  <img
+                    src={coverUrl}
+                    alt={it.destination || "Destino"}
+                    onLoad={() => setCoverLoaded(true)}
+                    onError={() => setCoverLoaded(true)}
+                    className={`absolute inset-0 h-full w-full object-contain transition-opacity ${coverLoaded ? "opacity-100" : "opacity-0"}`}
+                  />
+                </>
               )}
               {!coverLoaded && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
@@ -1277,6 +1286,7 @@ function ItineraryDetailPage() {
               className="absolute inset-0 h-full w-full object-cover"
             />
           )}
+
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
 
           <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-sm font-bold text-white">
