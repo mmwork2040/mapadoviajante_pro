@@ -58,9 +58,10 @@ import {
   updateLeadActivity,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
-import { formatCurrency, formatDate, initials, maskPhone } from "@/lib/ui";
+import { formatCurrency, formatDate, initials, maskPhone, maskCurrency, parseCurrency } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { NewLeadModal } from "@/routes/_app.leads";
+import { useAuth, isAdminUser } from "@/lib/auth";
 import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
