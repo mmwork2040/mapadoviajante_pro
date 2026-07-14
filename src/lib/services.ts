@@ -1032,6 +1032,10 @@ export async function resolveDisplayImageUrl(value?: string | null): Promise<str
   return getLibraryAssetUrl(value);
 }
 
+function libraryImageValue(item: LibraryItem): string | null {
+  return item.file_url || item.image_url || null;
+}
+
 function normalizeText(s: string): string {
   return s
     .normalize("NFD")
@@ -1108,10 +1112,11 @@ export function matchLibraryImage(
 
   const itemHit = items.find(
     (i) =>
-      i.image_url &&
+      libraryImageValue(i) &&
       (matches(i.title) || matches(i.location) || matches((i.tags || []).join(" "))),
   );
-  if (itemHit?.image_url) return itemHit.image_url;
+  const itemImage = itemHit ? libraryImageValue(itemHit) : null;
+  if (itemImage) return itemImage;
   return null;
 }
 
@@ -1398,8 +1403,8 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
   }
   const items = (data as (Itinerary & { lead?: { name?: string; profile?: Record<string, unknown> } })[]) || [];
 
-  // Carrega no card a foto do destino: prioriza a imagem já configurada no lead
-  // (profile.cover_image) e, se não houver, tenta casar com a biblioteca.
+  // Carrega no card a foto do destino: prioriza a capa salva no roteiro,
+  // depois a imagem do lead e, por fim, uma imagem relacionada da biblioteca.
   try {
     const [destinations, libItems] = await Promise.all([
       fetchDestinations().catch(() => [] as Destination[]),
@@ -1407,7 +1412,9 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
     ]);
     for (const it of items) {
       const leadCover = (it.lead?.profile as Record<string, string> | undefined)?.cover_image;
-      if (leadCover) {
+      if (it.cover_image) {
+        continue;
+      } else if (leadCover) {
         it.cover_image = leadCover;
       } else if (it.destination) {
         it.cover_image = matchLibraryImage(it.destination, destinations, libItems);
@@ -1447,10 +1454,12 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
   }
   if (!itinerary) return null;
 
-  // Resolve a imagem de capa: prioriza a foto configurada no lead.
+  // Resolve a imagem de capa: prioriza a capa salva no roteiro, depois lead/biblioteca.
   const itAny = itinerary as Itinerary & { lead?: { profile?: Record<string, unknown> } };
   const leadCover = (itAny.lead?.profile as Record<string, string> | undefined)?.cover_image;
-  if (leadCover) {
+  if (itAny.cover_image) {
+    // mantém a seleção explícita do roteiro
+  } else if (leadCover) {
     itAny.cover_image = leadCover;
   } else if (itAny.destination && !itAny.cover_image) {
     itAny.cover_image = await searchLibraryImageForDestination(itAny.destination);
@@ -1503,6 +1512,7 @@ export async function createItinerary(d: Partial<Itinerary>): Promise<Itinerary 
       budget: d.budget || 0,
       spent: d.spent || 0,
       status: d.status || "draft",
+      cover_image: d.cover_image || null,
       share_token: crypto.randomUUID(),
     })
     .select()
@@ -1555,6 +1565,7 @@ export async function duplicateItinerary(id: string): Promise<Itinerary | null> 
     passengers: source.passengers,
     budget: source.budget,
     spent: source.spent,
+    cover_image: source.cover_image,
     status: "draft",
   });
   if (!copy) return null;
