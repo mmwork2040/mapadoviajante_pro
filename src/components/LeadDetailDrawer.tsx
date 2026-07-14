@@ -67,7 +67,7 @@ import { formatCurrency, formatDate, initials, maskPhone, maskCurrency, parseCur
 import { useConfirm } from "@/components/ConfirmDialog";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { useAuth, isAdminUser } from "@/lib/auth";
-import type { Itinerary, Lead, LeadStatus } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus, TripBenefits, TripExpense } from "@/lib/types";
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
   { key: "new", label: "Novo", dot: "bg-blue-500" },
