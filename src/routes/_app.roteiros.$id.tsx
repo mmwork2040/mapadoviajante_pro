@@ -1367,13 +1367,19 @@ function ItineraryDetailPage() {
       {coverPickerOpen && (
         <CoverPicker
           currentCover={it.cover_image || null}
+          destination={it.destination || ""}
           onClose={() => setCoverPickerOpen(false)}
           onSaved={() => {
             setCoverPickerOpen(false);
             refresh();
           }}
           onSet={async (path) => {
-            await updateItinerary(id, { cover_image: path });
+            const updated = await updateItinerary(id, { cover_image: path });
+            if (!updated) throw new Error("Não foi possível salvar a capa.");
+            qc.setQueryData<Itinerary | null>(["itinerary", id], (old) =>
+              old ? { ...old, cover_image: path } : old,
+            );
+            qc.invalidateQueries({ queryKey: ["itineraries"] });
           }}
         />
       )}
@@ -5484,11 +5490,13 @@ function DrivePreviewModal({
 // A capa escolhida é salva em crm_itineraries.cover_image.
 function CoverPicker({
   currentCover,
+  destination,
   onClose,
   onSaved,
   onSet,
 }: {
   currentCover: string | null;
+  destination: string;
   onClose: () => void;
   onSaved: () => void;
   onSet: (path: string) => Promise<void>;
@@ -5497,6 +5505,10 @@ function CoverPicker({
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+
+  function imageValue(item: LibraryItem): string | null {
+    return item.file_url || item.image_url || null;
+  }
 
   useEffect(() => {
     let active = true;
@@ -5508,7 +5520,7 @@ function CoverPicker({
       const map: Record<string, string> = {};
       await Promise.all(
         imgs.map(async (im) => {
-          const src = im.image_url || im.file_url;
+          const src = imageValue(im);
           if (!src) return;
           const u = await resolveDisplayImageUrl(src);
           if (u) map[im.id] = u;
@@ -5539,14 +5551,25 @@ function CoverPicker({
       const res = await uploadLibraryAsset(file);
       if (!res) throw new Error();
       // Também registra a imagem na biblioteca para reuso futuro.
-      const title = file.name.replace(/\.[^.]+$/, "").slice(0, 120) || "Capa";
-      await createLibraryItem({
+      const rawTitle = file.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim();
+      const place = destination.trim();
+      const title = (place || rawTitle || "Capa do roteiro").slice(0, 120);
+      const tags = Array.from(
+        new Set(
+          ["capa", ...`${title} ${rawTitle}`.toLowerCase().split(/[\s,]+/).filter((t) => t.length >= 3)].slice(0, 12),
+        ),
+      );
+      const item = await createLibraryItem({
         type: "image",
         title,
+        description: `Imagem de capa enviada para reutilização em roteiros relacionados a ${title}.`,
+        content: `Imagem de capa do roteiro ${title}. Pode ser usada na elaboração de roteiros quando tiver relação com o destino.`,
+        location: place || title,
         file_url: res.path,
         file_name: file.name,
-        tags: ["capa"],
+        tags,
       }).catch((e) => { console.error("createLibraryItem cover:", e); return null; });
+      if (!item) throw new Error("Não foi possível salvar a imagem na biblioteca.");
       await onSet(res.path);
       toast.success("Capa enviada e definida.");
       onSaved();
@@ -5599,7 +5622,7 @@ function CoverPicker({
         ) : (
           <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
             {images.map((im) => {
-              const src = im.image_url || im.file_url || "";
+              const src = imageValue(im) || "";
               const selected = src === currentCover;
               return (
                 <button
