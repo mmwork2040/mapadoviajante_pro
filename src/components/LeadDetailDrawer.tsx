@@ -494,9 +494,10 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                   {t.label}
                   {t.key === "checklist" && (
                     <span className="text-xs text-muted-foreground">
-                      {checklistCount((lead.checklists as Record<string, boolean>) || {})}
+                      {checklistCount(lead.checklists as unknown)}
                     </span>
                   )}
+
                 </button>
               ))}
             </div>
