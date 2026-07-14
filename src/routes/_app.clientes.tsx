@@ -13,7 +13,14 @@ import {
 } from "@/lib/services";
 import type { Client } from "@/lib/types";
 import { maskPhone, maskCpfCnpj } from "@/lib/ui";
+import { lookupCep } from "@/lib/agency";
 import { useConfirm } from "@/components/ConfirmDialog";
+
+function maskCep(v: string): string {
+  const d = String(v ?? "").replace(/\D/g, "").slice(0, 8);
+  if (d.length <= 5) return d;
+  return `${d.slice(0, 5)}-${d.slice(5)}`;
+}
 
 export const Route = createFileRoute("/_app/clientes")({
   component: ClientesPage,
