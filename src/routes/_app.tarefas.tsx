@@ -174,18 +174,38 @@ function TarefasPage() {
   );
 }
 
-function TaskList({ tasks, onToggle }: { tasks: Task[]; onToggle: (t: Task) => void }) {
+function TaskList({
+  tasks,
+  onToggle,
+  onOpenLead,
+}: {
+  tasks: Task[];
+  onToggle: (t: Task) => void;
+  onOpenLead: (id: string) => void;
+}) {
   return (
     <ul className="space-y-2">
       {tasks.map((t) => {
         const prio = PRIORITY_META[t.priority] ?? PRIORITY_META.normal;
+        const clickable = !!t.lead_id;
         return (
           <li
             key={t.id}
-            className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
+            onClick={() => clickable && onOpenLead(t.lead_id!)}
+            role={clickable ? "button" : undefined}
+            tabIndex={clickable ? 0 : undefined}
+            onKeyDown={(e) => {
+              if (clickable && (e.key === "Enter" || e.key === " ")) {
+                e.preventDefault();
+                onOpenLead(t.lead_id!);
+              }
+            }}
+            className={`flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm ${
+              clickable ? "cursor-pointer transition hover:border-primary hover:bg-muted/40" : ""
+            }`}
           >
             <button
-              onClick={() => onToggle(t)}
+              onClick={(e) => { e.stopPropagation(); onToggle(t); }}
               aria-label={t.completed ? "Reabrir tarefa" : "Concluir tarefa"}
               className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
                 t.completed
@@ -214,21 +234,9 @@ function TaskList({ tasks, onToggle }: { tasks: Task[]; onToggle: (t: Task) => v
               </div>
               {cleanTaskDescription(t.description) && (
                 <p className="mt-1 text-xs text-muted-foreground">{cleanTaskDescription(t.description)}</p>
-
               )}
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              {t.lead_id && (
-                <Link
-                  to="/leads"
-                  search={{ lead: t.lead_id }}
-                  aria-label="Abrir detalhes do lead"
-                  title="Abrir lead"
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:border-primary hover:text-primary"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Link>
-              )}
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.cls}`}>
                 {prio.label}
               </span>
