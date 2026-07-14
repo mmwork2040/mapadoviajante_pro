@@ -294,6 +294,8 @@ function ClientFormDrawer({
     }));
   };
 
+  const submit = () => {
+    if (!form.name?.trim()) return toast.error("Informe o nome");
     let preferences: Record<string, unknown> = {};
     try {
       preferences = prefText.trim() ? JSON.parse(prefText) : {};
