@@ -391,7 +391,10 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
                     <MapPin className="h-3.5 w-3.5 text-primary" />
                     {lead.destination || "—"}
                   </p>
-                  <p className="text-lg font-bold text-primary">{formatCurrency(lead.value)}</p>
+                  <p className="text-lg font-bold text-primary" title="Orçamento da viagem">
+                    {formatCurrency(lead.value)}
+                    <span className="ml-1 text-[11px] font-medium text-muted-foreground">orçamento</span>
+                  </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
                   <button
