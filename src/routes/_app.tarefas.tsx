@@ -34,6 +34,7 @@ const todayStr = () => {
 function TarefasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
   const [fromDate, setFromDate] = useState(todayStr());
   const [toDate, setToDate] = useState(todayStr());
