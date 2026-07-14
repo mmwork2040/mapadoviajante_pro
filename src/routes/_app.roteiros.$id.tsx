@@ -5538,10 +5538,21 @@ function CoverPicker({
     try {
       const res = await uploadLibraryAsset(file);
       if (!res) throw new Error();
+      // Também registra a imagem na biblioteca para reuso futuro.
+      const title = file.name.replace(/\.[^.]+$/, "").slice(0, 120) || "Capa";
+      await createLibraryItem({
+        type: "image",
+        title,
+        image_url: res.path,
+        file_url: res.path,
+        file_name: file.name,
+        tags: ["capa"],
+      }).catch(() => null);
       await onSet(res.path);
       toast.success("Capa enviada e definida.");
       onSaved();
-    } catch {
+    } catch (err) {
+      console.error("CoverPicker upload:", err);
       toast.error("Não foi possível enviar a imagem.");
       setBusy(false);
     }
