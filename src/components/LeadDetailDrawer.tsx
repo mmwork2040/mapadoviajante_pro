@@ -82,6 +82,8 @@ const TABS = [
   { key: "viagem", label: "Viagem", icon: Plane },
   { key: "atividades", label: "Atividades", icon: ClipboardList },
   { key: "checklist", label: "Checklist", icon: ListChecks },
+  { key: "financeiro", label: "Financeiro", icon: CircleDollarSign },
+  { key: "beneficios", label: "Benefícios", icon: Gift },
   { key: "notas", label: "Notas", icon: StickyNote },
 ] as const;
 
