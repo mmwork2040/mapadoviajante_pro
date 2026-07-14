@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ScrollLock } from "@/components/ScrollLock";
 import { useBackButtonClose } from "@/hooks/useBackButtonClose";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import {
   X,
   MapPin,
