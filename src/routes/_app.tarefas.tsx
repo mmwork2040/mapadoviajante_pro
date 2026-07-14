@@ -1,12 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, ListChecks, Check, CalendarClock, ExternalLink } from "lucide-react";
+import { Plus, ListChecks, Check, CalendarClock } from "lucide-react";
 import { fetchTasks, updateTask, cleanTaskDescription, isOverdue } from "@/lib/services";
 import { Button } from "@/components/ui/button";
 import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import type { Task } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/tarefas")({
