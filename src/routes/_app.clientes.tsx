@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, ChevronDown } from "lucide-react";
@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
 import { ModalField, ModalTextarea, Section } from "@/routes/_app.leads";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
