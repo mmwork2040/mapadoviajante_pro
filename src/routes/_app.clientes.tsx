@@ -436,39 +436,42 @@ function ClientFormDrawer({
             </button>
           </div>
 
-          <div className="mt-5 flex items-center">
-            {tabs.map((t, i) => {
-              const Icon = t.icon;
-              const active = tab === t.key;
-              return (
-                <div key={t.key} className="flex flex-1 items-center last:flex-none">
-                  <button
-                    type="button"
-                    onClick={() => setTab(t.key)}
-                    className="flex flex-col items-center"
-                  >
-                    <div
-                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition ${
-                        active
-                          ? "bg-primary text-primary-foreground ring-4 ring-primary/25"
-                          : "bg-card text-muted-foreground hover:text-foreground"
-                      }`}
+          <div className="-mx-6 mt-5 overflow-x-auto px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex items-center sm:justify-between">
+              {tabs.map((t, i) => {
+                const Icon = t.icon;
+                const active = tab === t.key;
+                return (
+                  <div key={t.key} className="flex shrink-0 items-center sm:flex-1 sm:last:flex-none">
+                    <button
+                      type="button"
+                      onClick={() => setTab(t.key)}
+                      className="flex flex-col items-center"
                     >
-                      <Icon className="h-4 w-4" />
-                    </div>
-                    <span
-                      className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${
-                        active ? "text-primary" : "text-muted-foreground"
-                      }`}
-                    >
-                      {t.label}
-                    </span>
-                  </button>
-                  {i < tabs.length - 1 && <div className="mx-2 h-0.5 flex-1 bg-border" />}
-                </div>
-              );
-            })}
+                      <div
+                        className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition ${
+                          active
+                            ? "bg-primary text-primary-foreground ring-4 ring-primary/25"
+                            : "bg-card text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span
+                        className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${
+                          active ? "text-primary" : "text-muted-foreground"
+                        }`}
+                      >
+                        {t.label}
+                      </span>
+                    </button>
+                    {i < tabs.length - 1 && <div className="mx-3 h-0.5 w-8 bg-border sm:w-auto sm:flex-1" />}
+                  </div>
+                );
+              })}
+            </div>
           </div>
+
         </div>
 
         <div className="flex-1 overflow-y-auto px-6 py-6">
