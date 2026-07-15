@@ -176,9 +176,10 @@ async function resolveMember(
   return { agencyId: data.agency_id as string, role: (data.role as string) || "user" };
 }
 
-async function readValue(agencyId: string): Promise<StoredValue> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
+type SupaLike = { from: (t: string) => any };
+
+async function readValue(supabase: SupaLike, agencyId: string): Promise<StoredValue> {
+  const { data } = await supabase
     .from("system_settings")
     .select("value")
     .eq("key", KEY(agencyId))
@@ -190,9 +191,8 @@ async function readValue(agencyId: string): Promise<StoredValue> {
   return raw;
 }
 
-async function writeValue(agencyId: string, value: StoredValue): Promise<void> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { error } = await supabaseAdmin.from("system_settings").upsert(
+async function writeValue(supabase: SupaLike, agencyId: string, value: StoredValue): Promise<void> {
+  const { error } = await supabase.from("system_settings").upsert(
     {
       key: KEY(agencyId),
       value: value as never,
