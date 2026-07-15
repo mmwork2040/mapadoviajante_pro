@@ -1382,7 +1382,7 @@ function TravelDatesField({
   );
 }
 
-function Section({
+export function Section({
   icon: Icon,
   title,
   children,
@@ -1673,7 +1673,7 @@ export function LibraryImagePicker({
 
 
 
-function ModalSelect({
+export function ModalSelect({
   label,
   value,
   onChange,
@@ -1714,7 +1714,7 @@ function ModalSelect({
   );
 }
 
-function ModalTextarea({
+export function ModalTextarea({
   label,
   value,
   onChange,

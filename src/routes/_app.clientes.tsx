@@ -1,9 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users } from "lucide-react";
+import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
+import { ScrollLock } from "@/components/ScrollLock";
+import { ModalField, ModalTextarea, Section } from "@/routes/_app.leads";
+
 
 import { toast } from "sonner";
 import {
@@ -15,7 +18,7 @@ import {
   fetchLeadsByClient,
 } from "@/lib/services";
 import type { Client, LeadStatus } from "@/lib/types";
-import { maskPhone, maskCpfCnpj } from "@/lib/ui";
+
 import { lookupCep } from "@/lib/agency";
 import { useConfirm } from "@/components/ConfirmDialog";
 
@@ -354,243 +357,240 @@ function ClientFormDrawer({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <ScrollLock />
       <div
-        className="flex h-full w-full max-w-2xl flex-col bg-background shadow-xl"
+        className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-lg font-semibold">{isEdit ? "Editar cliente" : "Novo cliente"}</h2>
-          <button onClick={onClose} className="rounded-md p-1.5 hover:bg-muted">
-            <X className="h-5 w-5" />
-          </button>
-        </header>
+        <div className="bg-[var(--accent)] px-6 pb-5 pt-6">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+                <UserPlus className="h-5 w-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold">{isEdit ? "Editar cliente" : "Novo cliente"}</h2>
+                <p className="text-xs text-muted-foreground">
+                  {isEdit
+                    ? "Revise e atualize os dados do cliente"
+                    : "Preencha os dados para criar o cadastro completo do cliente"}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
 
-        <div className="border-b border-border px-5">
-          <div className="flex gap-1 overflow-x-auto">
-            {tabs.map((t) => {
+          <div className="mt-5 flex items-center">
+            {tabs.map((t, i) => {
               const Icon = t.icon;
               const active = tab === t.key;
               return (
-                <button
-                  key={t.key}
-                  onClick={() => setTab(t.key)}
-                  className={`flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
-                    active
-                      ? "border-primary text-foreground"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {t.label}
-                </button>
+                <div key={t.key} className="flex flex-1 items-center last:flex-none">
+                  <button
+                    type="button"
+                    onClick={() => setTab(t.key)}
+                    className="flex flex-col items-center"
+                  >
+                    <div
+                      className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold transition ${
+                        active
+                          ? "bg-primary text-primary-foreground ring-4 ring-primary/25"
+                          : "bg-card text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span
+                      className={`mt-1 text-[10px] font-semibold uppercase tracking-wide ${
+                        active ? "text-primary" : "text-muted-foreground"
+                      }`}
+                    >
+                      {t.label}
+                    </span>
+                  </button>
+                  {i < tabs.length - 1 && <div className="mx-2 h-0.5 flex-1 bg-border" />}
+                </div>
               );
             })}
           </div>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-6 py-6">
           {tab === "contato" && (
-            <>
-              <Field label="Nome completo *">
-                <input
-                  value={form.name ?? ""}
-                  onChange={(e) => set("name", e.target.value)}
-                  className="input"
-                />
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="E-mail">
-                  <input
-                    type="email"
-                    value={form.email ?? ""}
-                    onChange={(e) => set("email", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-                <Field label="Telefone">
-                  <input
-                    value={form.phone ?? ""}
-                    onChange={(e) => set("phone", maskPhone(e.target.value))}
-                    className="input"
-                  />
-                </Field>
-                <Field label="WhatsApp">
-                  <input
-                    value={form.whatsapp ?? ""}
-                    onChange={(e) => set("whatsapp", maskPhone(e.target.value))}
-                    className="input"
-                  />
-                </Field>
-                <Field label="Data de nascimento">
-                  <input
-                    type="date"
-                    value={form.birth_date ?? ""}
-                    onChange={(e) => set("birth_date", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-              </div>
-            </>
+            <Section icon={User} title="Dados de Contato">
+              <ModalField
+                label="Nome completo"
+                required
+                full
+                placeholder="Ex: Maria Silva"
+                value={form.name ?? ""}
+                onChange={(v) => set("name", v)}
+              />
+              <ModalField
+                label="E-mail"
+                type="email"
+                placeholder="email@exemplo.com"
+                value={form.email ?? ""}
+                onChange={(v) => set("email", v)}
+              />
+              <ModalField
+                label="Telefone"
+                format="phone"
+                placeholder="(11) 99999-9999"
+                value={form.phone ?? ""}
+                onChange={(v) => set("phone", v)}
+              />
+              <ModalField
+                label="WhatsApp"
+                format="phone"
+                placeholder="(11) 99999-9999"
+                value={form.whatsapp ?? ""}
+                onChange={(v) => set("whatsapp", v)}
+              />
+              <ModalField
+                label="Data de nascimento"
+                type="date"
+                value={form.birth_date ?? ""}
+                onChange={(v) => set("birth_date", v)}
+              />
+            </Section>
           )}
 
           {tab === "documentos" && (
-            <>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="CPF">
-                  <input
-                    value={form.cpf ?? ""}
-                    onChange={(e) => set("cpf", maskCpfCnpj(e.target.value))}
-                    className="input"
-                  />
-                </Field>
-                <Field label="País emissor do passaporte">
-                  <input
-                    value={form.passport_country ?? ""}
-                    onChange={(e) => set("passport_country", e.target.value)}
-                    className="input"
-                    placeholder="Ex.: Brasil"
-                  />
-                </Field>
-                <Field label="Número do passaporte">
-                  <input
-                    value={form.passport_number ?? ""}
-                    onChange={(e) => set("passport_number", e.target.value.toUpperCase())}
-                    className="input"
-                  />
-                </Field>
-                <Field label="Validade do passaporte">
-                  <input
-                    type="date"
-                    value={form.passport_expiry ?? ""}
-                    onChange={(e) => set("passport_expiry", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-              </div>
-            </>
+            <Section icon={IdCard} title="Documentos">
+              <ModalField
+                label="CPF"
+                format="cpfcnpj"
+                placeholder="000.000.000-00"
+                value={form.cpf ?? ""}
+                onChange={(v) => set("cpf", v)}
+              />
+              <ModalField
+                label="País emissor do passaporte"
+                placeholder="Ex.: Brasil"
+                value={form.passport_country ?? ""}
+                onChange={(v) => set("passport_country", v)}
+              />
+              <ModalField
+                label="Número do passaporte"
+                value={form.passport_number ?? ""}
+                onChange={(v) => set("passport_number", v.toUpperCase())}
+              />
+              <ModalField
+                label="Validade do passaporte"
+                type="date"
+                value={form.passport_expiry ?? ""}
+                onChange={(v) => set("passport_expiry", v)}
+              />
+            </Section>
           )}
 
           {tab === "endereco" && (
-            <>
-              <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
-                <Field label="Rua / Logradouro">
-                  <input
-                    value={form.address_street ?? ""}
-                    onChange={(e) => set("address_street", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-                <Field label="Número">
-                  <input
-                    value={form.address_number ?? ""}
-                    onChange={(e) => set("address_number", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-              </div>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Field label="Complemento">
-                  <input
-                    value={form.address_complement ?? ""}
-                    onChange={(e) => set("address_complement", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-                <Field label="Bairro">
-                  <input
-                    value={form.address_neighborhood ?? ""}
-                    onChange={(e) => set("address_neighborhood", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-                <Field label="Cidade">
-                  <input
-                    value={form.address_city ?? ""}
-                    onChange={(e) => set("address_city", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-                <Field label="Estado / UF">
-                  <input
-                    value={form.address_state ?? ""}
-                    onChange={(e) => set("address_state", e.target.value)}
-                    className="input"
-                  />
-                </Field>
-                <Field label={cepLoading ? "CEP (buscando...)" : "CEP"}>
-                  <input
-                    value={form.address_zip ?? ""}
-                    onChange={(e) => handleCepChange(e.target.value)}
-                    className="input"
-                    placeholder="00000-000"
-                    inputMode="numeric"
-                  />
-                </Field>
-                <Field label="País">
-                  <input
-                    value={form.address_country ?? ""}
-                    onChange={(e) => set("address_country", e.target.value)}
-                    className="input"
-                    placeholder="Ex.: Brasil"
-                  />
-                </Field>
-              </div>
-            </>
+            <Section icon={MapPin} title="Endereço">
+              <ModalField
+                label={cepLoading ? "CEP (buscando…)" : "CEP"}
+                placeholder="00000-000"
+                value={form.address_zip ?? ""}
+                onChange={handleCepChange}
+              />
+              <ModalField
+                label="País"
+                placeholder="Ex.: Brasil"
+                value={form.address_country ?? ""}
+                onChange={(v) => set("address_country", v)}
+              />
+              <ModalField
+                label="Rua / Logradouro"
+                full
+                value={form.address_street ?? ""}
+                onChange={(v) => set("address_street", v)}
+              />
+              <ModalField
+                label="Número"
+                value={form.address_number ?? ""}
+                onChange={(v) => set("address_number", v)}
+              />
+              <ModalField
+                label="Complemento"
+                value={form.address_complement ?? ""}
+                onChange={(v) => set("address_complement", v)}
+              />
+              <ModalField
+                label="Bairro"
+                value={form.address_neighborhood ?? ""}
+                onChange={(v) => set("address_neighborhood", v)}
+              />
+              <ModalField
+                label="Cidade"
+                value={form.address_city ?? ""}
+                onChange={(v) => set("address_city", v)}
+              />
+              <ModalField
+                label="Estado / UF"
+                value={form.address_state ?? ""}
+                onChange={(v) => set("address_state", v)}
+              />
+            </Section>
           )}
 
           {tab === "preferencias" && (
-            <Field label="Preferências base (JSON)">
-              <p className="mb-2 text-xs text-muted-foreground">
-                Preferências que serão copiadas para o perfil de cada nova viagem. Ex.: alimentação, hospedagem, tipo de viagem.
-              </p>
-              <textarea
-                value={prefText}
-                onChange={(e) => setPrefText(e.target.value)}
-                rows={12}
-                className="input font-mono text-xs"
-                spellCheck={false}
-              />
-            </Field>
+            <Section icon={Sparkles} title="Preferências">
+              <div className="sm:col-span-2">
+                <label className="block">
+                  <span className="mb-1 flex h-8 items-center text-sm font-semibold">
+                    Preferências base (JSON)
+                  </span>
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    Preferências copiadas para cada nova viagem. Ex.: alimentação, hospedagem, tipo de viagem.
+                  </p>
+                  <textarea
+                    value={prefText}
+                    onChange={(e) => setPrefText(e.target.value)}
+                    rows={10}
+                    spellCheck={false}
+                    className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 font-mono text-xs outline-none focus:border-primary focus:bg-background"
+                  />
+                </label>
+              </div>
+            </Section>
           )}
 
           {tab === "notas" && (
-            <Field label="Observações">
-              <textarea
+            <Section icon={StickyNote} title="Observações">
+              <ModalTextarea
+                label="Observações"
+                placeholder="Anotações gerais sobre o cliente…"
                 value={form.notes ?? ""}
-                onChange={(e) => set("notes", e.target.value)}
-                rows={10}
-                className="input"
-                placeholder="Anotações gerais sobre o cliente..."
+                onChange={(v) => set("notes", v)}
               />
-            </Field>
+            </Section>
           )}
         </div>
 
-        <footer className="flex items-center justify-end gap-2 border-t border-border px-5 py-4">
-          <button onClick={onClose} className="rounded-lg border border-input px-4 py-2 text-sm font-medium hover:bg-muted">
+        <div className="flex items-center justify-end gap-2 border-t border-border px-6 py-4">
+          <button
+            onClick={onClose}
+            className="rounded-lg border border-input px-4 py-2.5 text-sm font-semibold hover:bg-muted"
+          >
             Cancelar
           </button>
           <button
             onClick={submit}
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            <Save className="h-4 w-4" /> {saving ? "Salvando..." : "Salvar"}
+            <Save className="h-4 w-4" />
+            {saving ? "Salvando…" : isEdit ? "Salvar Alterações" : "Criar Cliente"}
           </button>
-        </footer>
+        </div>
       </div>
-
-      <style>{`.input{width:100%;border:1px solid hsl(var(--input));background:hsl(var(--background));color:hsl(var(--foreground));border-radius:8px;padding:8px 12px;font-size:14px;outline:none}.input:focus{border-color:hsl(var(--primary))}`}</style>
     </div>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-sm font-medium text-foreground">{label}</span>
-      {children}
-    </label>
-  );
-}
