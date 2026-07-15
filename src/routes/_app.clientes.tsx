@@ -216,6 +216,24 @@ function ClientesPage() {
         />
       )}
 
+      {newProposalClient && (
+        <NewLeadModal
+          onClose={() => setNewProposalClient(null)}
+          onCreated={() => {
+            setNewProposalClient(null);
+            qc.invalidateQueries({ queryKey: ["leads"] });
+            qc.invalidateQueries({ queryKey: ["client-trips"] });
+            qc.invalidateQueries({ queryKey: ["clients"] });
+          }}
+          clientId={newProposalClient.id}
+          initialForm={{
+            name: newProposalClient.name || "",
+            email: newProposalClient.email || "",
+            phone: newProposalClient.phone || "",
+          }}
+        />
+      )}
+
       {openForm && (
         <ClientFormDrawer
           initial={editing ?? EMPTY}
