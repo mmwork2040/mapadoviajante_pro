@@ -266,13 +266,36 @@ function ClientCard({
 
       <div className="mt-3 space-y-1 text-xs text-muted-foreground">
         {client.email && (
-          <div className="flex items-center gap-1.5 truncate"><Mail className="h-3.5 w-3.5" />{client.email}</div>
+          <a
+            href={`mailto:${client.email}`}
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1.5 truncate hover:text-primary hover:underline"
+          >
+            <Mail className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{client.email}</span>
+          </a>
         )}
         {client.phone && (
-          <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{client.phone}</div>
+          <a
+            href={`https://wa.me/${String(client.phone).replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1.5 hover:text-primary hover:underline"
+          >
+            <Phone className="h-3.5 w-3.5" />{client.phone}
+          </a>
         )}
         {client.whatsapp && (
-          <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5" />{client.whatsapp}</div>
+          <a
+            href={`https://wa.me/${String(client.whatsapp).replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="flex items-center gap-1.5 hover:text-primary hover:underline"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />{client.whatsapp}
+          </a>
         )}
       </div>
 
