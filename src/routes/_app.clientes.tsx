@@ -339,16 +339,16 @@ function ClientCard({
               const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted text-foreground" };
               return (
                 <li key={t.id}>
-                  <Link
-                    to="/leads"
-                    search={{ lead: t.id }}
-                    className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-xs hover:bg-muted"
+                  <button
+                    type="button"
+                    onClick={() => onOpenTrip(t.id)}
+                    className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-muted"
                   >
                     <span className="min-w-0 truncate">{t.name || "Viagem sem título"}</span>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
                       {meta.label}
                     </span>
-                  </Link>
+                  </button>
                 </li>
               );
             })}
