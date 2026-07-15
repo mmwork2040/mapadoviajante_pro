@@ -10,6 +10,7 @@ import {
   Search,
   Trash2,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchNotificationsPage,
@@ -121,21 +122,23 @@ function NotificationsPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-6">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Bell className="h-6 w-6 text-primary" />
-          <h1 className="text-xl font-bold">Notificações</h1>
-        </div>
-        <button
-          onClick={async () => {
-            await markAllNotificationsRead();
-            invalidate();
-          }}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted"
-        >
-          <CheckCheck className="h-4 w-4" />
-          Marcar todas
-        </button>
+      <div className="mb-5">
+        <PageHeader
+          icon={Bell}
+          title="Notificações"
+          actions={
+            <button
+              onClick={async () => {
+                await markAllNotificationsRead();
+                invalidate();
+              }}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted"
+            >
+              <CheckCheck className="h-4 w-4" />
+              Marcar todas
+            </button>
+          }
+        />
       </div>
 
       <form onSubmit={submitSearch} className="mb-3 flex gap-2">
