@@ -35,6 +35,30 @@ function maskCep(v: string): string {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
+/**
+ * Normaliza telefone para o formato E.164 usado pelo wa.me (só dígitos, com DDI).
+ * - Remove qualquer caractere não-numérico.
+ * - Descarta prefixo internacional "00".
+ * - Se vier sem DDI e tiver 10 ou 11 dígitos (DDD + número), assume Brasil (55).
+ * - Retorna string vazia se não houver dígitos suficientes (mín. 10).
+ */
+function normalizeWhatsPhone(raw: string | null | undefined): string {
+  let d = String(raw ?? "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.startsWith("00")) d = d.slice(2);
+  if (d.length === 10 || d.length === 11) d = `55${d}`;
+  if (d.length < 12) return "";
+  return d;
+}
+
+function waLink(phone: string | null | undefined, name: string | null | undefined): string | null {
+  const p = normalizeWhatsPhone(phone);
+  if (!p) return null;
+  const first = String(name || "").trim().split(/\s+/)[0] || "";
+  const text = encodeURIComponent(`Olá, ${first}! Tudo bem?`);
+  return `https://wa.me/${p}?text=${text}`;
+}
+
 export const Route = createFileRoute("/_app/clientes")({
   component: ClientesPage,
 });
