@@ -188,7 +188,7 @@ function ClientesPage() {
           Nenhum cliente cadastrado ainda.
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {clients.map((c) => (
             <ClientCard
               key={c.id}
