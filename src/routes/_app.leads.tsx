@@ -1103,7 +1103,7 @@ export function NewLeadModal({
                   </div>
                 )}
               </div>
-              <ModalField label="E-mail" type="email" required placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} disabled={editing && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead?.email?.trim() || "")} />
+              <ModalField label="E-mail" type="email" required placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} disabled={!!clientId || (editing && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead?.email?.trim() || ""))} />
               <ModalField label="WhatsApp" format="phone" required placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
               <ModalField label="Orçamento Estimado (R$)" format="currency" placeholder="R$ 0,00" value={form.value} onChange={(v) => set({ value: v })} />
               <ModalSelect label="Como nos encontrou?" value={form.origin} onChange={(v) => set({ origin: v })} options={ORIGINS} />
