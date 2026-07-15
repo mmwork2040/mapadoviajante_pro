@@ -1629,13 +1629,17 @@ export function LibraryImagePicker({
           </button>
         </div>
         <div className="border-b border-border p-4">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por destino, título ou tag…"
-            className="w-full rounded-xl border border-input bg-muted/40 px-4 py-2.5 text-sm outline-none focus:border-primary focus:bg-background"
-          />
+          <div className="flex items-center gap-2 rounded-xl border border-input bg-muted/40 px-3 py-2.5 focus-within:border-primary focus-within:bg-background">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar por destino, título ou tag…"
+              className="w-full bg-transparent text-sm outline-none"
+            />
+          </div>
         </div>
+
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading ? (
             <div className="grid place-items-center py-10 text-muted-foreground">
