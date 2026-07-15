@@ -299,17 +299,9 @@ function ClientCard({
             <span className="truncate">{client.email}</span>
           </a>
         )}
-        {client.phone && (() => {
-          const href = waLink(client.phone, client.name);
-          const cls = "flex items-center gap-1.5 hover:text-primary hover:underline";
-          return href ? (
-            <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={cls}>
-              <Phone className="h-3.5 w-3.5" />{client.phone}
-            </a>
-          ) : (
-            <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{client.phone}</div>
-          );
-        })()}
+        {client.phone && (
+          <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{client.phone}</div>
+        )}
         {client.whatsapp && (() => {
           const href = waLink(client.whatsapp, client.name);
           const cls = "flex items-center gap-1.5 hover:text-primary hover:underline";
