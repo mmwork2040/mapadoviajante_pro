@@ -981,6 +981,10 @@ export function NewLeadModal({
       }
     }
 
+    if (res && !editing && clientId) {
+      await updateLead(res.id, { client_id: clientId });
+    }
+
     setSaving(false);
     if (res) {
       dispatchWebhook(editing ? "lead.updated" : "lead.created", res);
