@@ -1,8 +1,10 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Search, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users } from "lucide-react";
+import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchBar } from "@/components/SearchBar";
+
 import { toast } from "sonner";
 import {
   fetchClients,
@@ -120,15 +122,13 @@ function ClientesPage() {
         subtitle="Cadastro completo dos viajantes. Crie uma nova viagem com um clique."
         actions={
           <>
-            <div className="flex w-full items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 sm:w-64">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar cliente…"
-                className="w-full bg-transparent text-sm outline-none"
-              />
-            </div>
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar cliente…"
+              className="w-full sm:w-64"
+            />
+
             <button
               onClick={() => {
                 setEditing(null);

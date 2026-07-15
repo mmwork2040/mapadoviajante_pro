@@ -1,10 +1,12 @@
 import { createFileRoute, Link, useParams } from "@tanstack/react-router";
 import { ScrollLock } from "@/components/ScrollLock";
 import { PlaceAutocomplete } from "@/components/PlaceAutocomplete";
+import { SearchBar } from "@/components/SearchBar";
+
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Search } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -4403,16 +4405,13 @@ function AttachSourceModal({
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="p-3">
-              <div className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 focus-within:border-primary">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar documento…"
-                  className="w-full bg-transparent text-sm outline-none"
-                />
-              </div>
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar documento…"
+              />
             </div>
+
 
             <div className="flex-1 space-y-1 overflow-y-auto px-3 pb-3">
               {isLoading ? (
@@ -5247,20 +5246,18 @@ function DriveImportModal({
 
         <div className="border-b border-border p-3">
           <form
-            className="flex items-center gap-2 rounded-lg border border-border bg-background px-3"
             onSubmit={(e) => {
               e.preventDefault();
               setTerm(search.trim());
             }}
           >
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <input
+            <SearchBar
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={setSearch}
               placeholder="Buscar arquivo…"
-              className="h-9 flex-1 bg-transparent text-sm outline-none"
             />
           </form>
+
         </div>
 
         <div className="flex-1 overflow-y-auto p-2">

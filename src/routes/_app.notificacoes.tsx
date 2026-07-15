@@ -7,10 +7,11 @@ import {
   CheckCheck,
   ChevronLeft,
   ChevronRight,
-  Search,
   Trash2,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchBar } from "@/components/SearchBar";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchNotificationsPage,
@@ -142,15 +143,12 @@ function NotificationsPage() {
       </div>
 
       <form onSubmit={submitSearch} className="mb-3 flex gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={term}
-            onChange={(e) => setTerm(e.target.value)}
-            placeholder="Buscar notificações…"
-            className="w-full rounded-lg border border-border bg-background py-2 pl-9 pr-3 text-sm outline-none focus:border-primary"
-          />
-        </div>
+        <SearchBar
+          value={term}
+          onChange={setTerm}
+          placeholder="Buscar notificações…"
+          className="flex-1"
+        />
         <button
           type="submit"
           className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
@@ -158,6 +156,7 @@ function NotificationsPage() {
           Buscar
         </button>
       </form>
+
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-1.5">
