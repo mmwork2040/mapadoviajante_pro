@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
+import { PageHeader } from "@/components/PageHeader";
 import type { Task } from "@/lib/types";
 
 export const Route = createFileRoute("/_app/tarefas")({
