@@ -307,7 +307,44 @@ function ClientFormDrawer({
   );
   const [cepLoading, setCepLoading] = useState(false);
 
+  const { data: ibgeCities = [] } = useQuery({
+    queryKey: ["ibge-municipios"],
+    staleTime: Infinity,
+    gcTime: Infinity,
+    queryFn: async () => {
+      const r = await fetch("https://servicosdados.ibge.gov.br/api/v1/localidades/municipios");
+      if (!r.ok) return [] as { name: string; uf: string }[];
+      const list = (await r.json()) as Array<{
+        nome: string;
+        microrregiao?: { mesorregiao?: { UF?: { sigla?: string } } };
+      }>;
+      return list
+        .map((m) => ({ name: m.nome, uf: m.microrregiao?.mesorregiao?.UF?.sigla ?? "" }))
+        .filter((c) => c.name && c.uf);
+    },
+  });
+  const cityOptions = ibgeCities.map((c) => `${c.name} - ${c.uf}`);
+  const cityDisplay = form.address_city
+    ? (() => {
+        const uf = form.address_state?.trim();
+        const match = ibgeCities.find(
+          (c) => c.name.toLowerCase() === (form.address_city ?? "").toLowerCase() && (!uf || c.uf === uf),
+        );
+        return match ? `${match.name} - ${match.uf}` : (form.address_city ?? "");
+      })()
+    : "";
+
+  const handleCityChange = (v: string) => {
+    const m = /^(.+?)\s-\s([A-Z]{2})$/.exec(v.trim());
+    if (m) {
+      setForm((f) => ({ ...f, address_city: m[1], address_state: m[2] }));
+    } else {
+      set("address_city", v);
+    }
+  };
+
   const set = <K extends keyof Client>(key: K, value: Client[K]) => setForm((f) => ({ ...f, [key]: value }));
+
 
   const handleCepChange = async (raw: string) => {
     const masked = maskCep(raw);
@@ -528,9 +565,12 @@ function ClientFormDrawer({
               />
               <ModalField
                 label="Cidade"
-                value={form.address_city ?? ""}
-                onChange={(v) => set("address_city", v)}
+                placeholder="Digite para buscar…"
+                value={cityDisplay}
+                onChange={handleCityChange}
+                suggestions={cityOptions}
               />
+
               <ModalField
                 label="Estado / UF"
                 value={form.address_state ?? ""}
