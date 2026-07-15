@@ -22,7 +22,7 @@ import {
   createClient as createClientSvc,
   updateClient,
   deleteClient,
-  createLeadFromClient,
+  
   fetchLeadsByClient,
 } from "@/lib/services";
 import type { Client, LeadStatus } from "@/lib/types";
