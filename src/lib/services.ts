@@ -462,7 +462,53 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     console.error("updateLead:", error);
     return null;
   }
-  return normalizeLead(data as Lead);
+  const lead = normalizeLead(data as Lead);
+  if (lead && (updates.status === "closed" || updates.status === "lost")) {
+    const clientId = await ensureClientFromLead(lead);
+    if (clientId) lead.client_id = clientId;
+  }
+  return lead;
+}
+
+async function ensureClientFromLead(lead: Lead): Promise<string | null> {
+  if (lead.client_id) return lead.client_id;
+  if (!_agencyId) await loadAgencyContext();
+  if (!_agencyId) return null;
+  const email = lead.email?.trim() || null;
+  const phone = lead.phone?.trim() || null;
+  let existingId: string | null = null;
+  if (email) {
+    const { data } = await supabase
+      .from("crm_clients")
+      .select("id")
+      .eq("agency_id", _agencyId)
+      .ilike("email", email)
+      .limit(1)
+      .maybeSingle();
+    if (data) existingId = (data as { id: string }).id;
+  }
+  if (!existingId && phone) {
+    const { data } = await supabase
+      .from("crm_clients")
+      .select("id")
+      .eq("agency_id", _agencyId)
+      .eq("phone", phone)
+      .limit(1)
+      .maybeSingle();
+    if (data) existingId = (data as { id: string }).id;
+  }
+  if (!existingId) {
+    const created = await createClient({
+      name: lead.name,
+      email: lead.email ?? null,
+      phone: lead.phone ?? null,
+    });
+    existingId = created?.id ?? null;
+  }
+  if (existingId) {
+    await supabase.from("crm_leads").update({ client_id: existingId }).eq("id", lead.id);
+  }
+  return existingId;
 }
 
 export async function deleteLead(leadId: string): Promise<boolean> {
