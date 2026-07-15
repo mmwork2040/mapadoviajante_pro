@@ -103,6 +103,7 @@ function ClientesPage() {
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", search],
