@@ -299,28 +299,28 @@ function ClientCard({
             <span className="truncate">{client.email}</span>
           </a>
         )}
-        {client.phone && (
-          <a
-            href={`https://wa.me/${String(client.phone).replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${(client.name || "").split(" ")[0] || ""}! Tudo bem?`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 hover:text-primary hover:underline"
-          >
-            <Phone className="h-3.5 w-3.5" />{client.phone}
-          </a>
-        )}
-        {client.whatsapp && (
-          <a
-            href={`https://wa.me/${String(client.whatsapp).replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${(client.name || "").split(" ")[0] || ""}! Tudo bem?`)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 hover:text-primary hover:underline"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />{client.whatsapp}
-          </a>
-        )}
+        {client.phone && (() => {
+          const href = waLink(client.phone, client.name);
+          const cls = "flex items-center gap-1.5 hover:text-primary hover:underline";
+          return href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={cls}>
+              <Phone className="h-3.5 w-3.5" />{client.phone}
+            </a>
+          ) : (
+            <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{client.phone}</div>
+          );
+        })()}
+        {client.whatsapp && (() => {
+          const href = waLink(client.whatsapp, client.name);
+          const cls = "flex items-center gap-1.5 hover:text-primary hover:underline";
+          return href ? (
+            <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={cls}>
+              <MessageCircle className="h-3.5 w-3.5" />{client.whatsapp}
+            </a>
+          ) : (
+            <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5" />{client.whatsapp}</div>
+          );
+        })()}
       </div>
 
       <div className="mt-3 border-t border-border pt-3">
