@@ -1,11 +1,18 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus } from "lucide-react";
+import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
 import { ModalField, ModalTextarea, Section } from "@/routes/_app.leads";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 import { toast } from "sonner";
@@ -229,9 +236,31 @@ function ClientCard({
             {client.cpf && <div className="truncate text-xs text-muted-foreground">CPF {client.cpf}</div>}
           </div>
         </button>
-        <button onClick={onDelete} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Remover">
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              title="Mais opções"
+              className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onSelect={onCreateTrip} disabled={creating}>
+              <Plane className="mr-2 h-4 w-4" /> Nova proposta
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onEdit}>
+              <Pencil className="mr-2 h-4 w-4" /> Editar
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={onDelete}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="text-destructive mr-2 h-4 w-4" /> Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="mt-3 space-y-1 text-xs text-muted-foreground">
@@ -247,17 +276,8 @@ function ClientCard({
       </div>
 
       <div className="mt-3 border-t border-border pt-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground">
-            {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
-          </span>
-          <button
-            onClick={onCreateTrip}
-            disabled={creating}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-          >
-            <Plane className="h-3.5 w-3.5" /> Nova viagem
-          </button>
+        <div className="mb-2 text-xs font-medium text-muted-foreground">
+          {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
         </div>
         {tripCount > 0 && (
           <ul className="space-y-1">
