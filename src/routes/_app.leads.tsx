@@ -1382,7 +1382,7 @@ function TravelDatesField({
   );
 }
 
-function Section({
+export function Section({
   icon: Icon,
   title,
   children,
