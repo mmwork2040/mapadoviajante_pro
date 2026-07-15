@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, ChevronDown } from "lucide-react";
@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
 import { ModalField, ModalTextarea, Section } from "@/routes/_app.leads";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -97,11 +98,12 @@ type Tab = "contato" | "documentos" | "endereco" | "preferencias" | "notas";
 
 function ClientesPage() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
+  
   const confirm = useConfirm();
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["clients", search],
@@ -144,7 +146,8 @@ function ClientesPage() {
       if (!lead) return toast.error("Não foi possível criar a viagem");
       toast.success("Viagem criada!");
       qc.invalidateQueries({ queryKey: ["leads"] });
-      navigate({ to: "/leads", search: { lead: lead.id } });
+      qc.invalidateQueries({ queryKey: ["client-trips"] });
+      setOpenLeadId(lead.id);
     },
   });
 
@@ -204,10 +207,22 @@ function ClientesPage() {
                 if (ok) deleteMut.mutate(c.id);
               }}
               onCreateTrip={() => createTripMut.mutate(c.id)}
+              onOpenTrip={(id) => setOpenLeadId(id)}
               creating={createTripMut.isPending}
             />
           ))}
         </div>
+      )}
+
+      {openLeadId && (
+        <LeadDetailDrawer
+          leadId={openLeadId}
+          onClose={() => {
+            setOpenLeadId(null);
+            qc.invalidateQueries({ queryKey: ["client-trips"] });
+            qc.invalidateQueries({ queryKey: ["clients"] });
+          }}
+        />
       )}
 
       {openForm && (
@@ -234,12 +249,14 @@ function ClientCard({
   onEdit,
   onDelete,
   onCreateTrip,
+  onOpenTrip,
   creating,
 }: {
   client: Client;
   onEdit: () => void;
   onDelete: () => void;
   onCreateTrip: () => void;
+  onOpenTrip: (leadId: string) => void;
   creating: boolean;
 }) {
   const tripsQ = useQuery({
@@ -338,16 +355,16 @@ function ClientCard({
               const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted text-foreground" };
               return (
                 <li key={t.id}>
-                  <Link
-                    to="/leads"
-                    search={{ lead: t.id }}
-                    className="flex items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-xs hover:bg-muted"
+                  <button
+                    type="button"
+                    onClick={() => onOpenTrip(t.id)}
+                    className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-muted"
                   >
                     <span className="min-w-0 truncate">{t.name || "Viagem sem título"}</span>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
                       {meta.label}
                     </span>
-                  </Link>
+                  </button>
                 </li>
               );
             })}
