@@ -1668,48 +1668,63 @@ function ChecklistTab({
         </div>
       )}
 
-      {state.sections?.map((section) => (
-        <section key={section.id} className="rounded-xl border border-border">
-          <h4 className="border-b border-border px-3 py-2 text-sm font-semibold">
-            {section.title}
-          </h4>
-          <div className="space-y-4 p-3">
-            {section.groups.map((group) => (
-              <div key={group.id}>
-                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {group.title}
-                </p>
-                <ul className="space-y-1.5">
-                  {group.items.map((it) => {
-                    const done = !!state.items[it.id];
-                    return (
-                      <li key={it.id}>
-                        <button
-                          onClick={() => toggle(it.id)}
-                          className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
-                        >
-                          <span
-                            className={`flex h-4 w-4 items-center justify-center rounded border ${
-                              done
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-input"
-                            }`}
+      {state.sections?.map((section) => {
+        const sectionItemIds = section.groups.flatMap((g) => g.items.map((i) => i.id));
+        const sectionDone = sectionItemIds.filter((id) => state.items[id]).length;
+        const sectionTotal = sectionItemIds.length;
+        return (
+          <details
+            key={section.id}
+            open
+            className="group rounded-xl border border-border [&_summary::-webkit-details-marker]:hidden"
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 border-b border-border px-3 py-2 text-sm font-semibold">
+              <span className="flex items-center gap-2">
+                <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-0 -rotate-90" />
+                {section.title}
+              </span>
+              <span className="text-xs font-normal text-muted-foreground">
+                {sectionDone}/{sectionTotal}
+              </span>
+            </summary>
+            <div className="space-y-4 p-3">
+              {section.groups.map((group) => (
+                <div key={group.id}>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {group.title}
+                  </p>
+                  <ul className="space-y-1.5">
+                    {group.items.map((it) => {
+                      const done = !!state.items[it.id];
+                      return (
+                        <li key={it.id}>
+                          <button
+                            onClick={() => toggle(it.id)}
+                            className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
                           >
-                            {done && <Check className="h-3 w-3" />}
-                          </span>
-                          <span className={done ? "text-muted-foreground line-through" : ""}>
-                            {it.label}
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
-      ))}
+                            <span
+                              className={`flex h-4 w-4 items-center justify-center rounded border ${
+                                done
+                                  ? "border-primary bg-primary text-primary-foreground"
+                                  : "border-input"
+                              }`}
+                            >
+                              {done && <Check className="h-3 w-3" />}
+                            </span>
+                            <span className={done ? "text-muted-foreground line-through" : ""}>
+                              {it.label}
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </details>
+        );
+      })}
 
       <section className="rounded-xl border border-border p-3">
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
