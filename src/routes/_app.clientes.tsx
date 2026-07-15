@@ -236,9 +236,31 @@ function ClientCard({
             {client.cpf && <div className="truncate text-xs text-muted-foreground">CPF {client.cpf}</div>}
           </div>
         </button>
-        <button onClick={onDelete} className="rounded-md p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive" title="Remover">
-          <Trash2 className="h-4 w-4" />
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              title="Mais opções"
+              className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            >
+              <MoreVertical className="h-4 w-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            <DropdownMenuItem onSelect={onCreateTrip} disabled={creating}>
+              <Plane className="mr-2 h-4 w-4" /> Nova proposta
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={onEdit}>
+              <Pencil className="mr-2 h-4 w-4" /> Editar
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onSelect={onDelete}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="text-destructive mr-2 h-4 w-4" /> Excluir
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <div className="mt-3 space-y-1 text-xs text-muted-foreground">
