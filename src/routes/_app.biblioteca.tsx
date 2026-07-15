@@ -26,7 +26,9 @@ import {
   Square,
   Lock,
   ArrowUpRight,
+  BookOpen,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 
 import { toast } from "sonner";
@@ -312,25 +314,24 @@ function LibraryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Biblioteca</h1>
-          <p className="text-sm text-muted-foreground">
-            Base de conhecimento para elaborar novos roteiros e dicas de viagem.
-          </p>
-        </div>
-        {!isDocuments && (
-          <button
-            onClick={() => {
-              setEditing(null);
-              setOpen(true);
-            }}
-            className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-          >
-            <Plus className="h-4 w-4 shrink-0" /> Novo {active.label.replace(/s$/, "")}
-          </button>
-        )}
-      </div>
+      <PageHeader
+        icon={BookOpen}
+        title="Biblioteca"
+        subtitle="Base de conhecimento para elaborar novos roteiros e dicas de viagem."
+        actions={
+          !isDocuments && (
+            <button
+              onClick={() => {
+                setEditing(null);
+                setOpen(true);
+              }}
+              className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+            >
+              <Plus className="h-4 w-4 shrink-0" /> Novo {active.label.replace(/s$/, "")}
+            </button>
+          )
+        }
+      />
 
       <div className="flex flex-wrap gap-2">
         {TABS.map((t) => {

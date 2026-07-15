@@ -1,7 +1,8 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Search, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles } from "lucide-react";
+import { Plus, Search, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
   fetchClients,
@@ -113,23 +114,22 @@ function ClientesPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
-      <header className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Clientes</h1>
-          <p className="text-sm text-muted-foreground">
-            Cadastro completo dos viajantes. Crie uma nova viagem com um clique.
-          </p>
-        </div>
-        <button
-          onClick={() => {
-            setEditing(null);
-            setOpenForm(true);
-          }}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Novo cliente
-        </button>
-      </header>
+      <PageHeader
+        icon={Users}
+        title="Clientes"
+        subtitle="Cadastro completo dos viajantes. Crie uma nova viagem com um clique."
+        actions={
+          <button
+            onClick={() => {
+              setEditing(null);
+              setOpenForm(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> Novo cliente
+          </button>
+        }
+      />
 
       <div className="mb-4 flex items-center gap-2 rounded-lg border border-input bg-card px-3 py-2">
         <Search className="h-4 w-4 text-muted-foreground" />

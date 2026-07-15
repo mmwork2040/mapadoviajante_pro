@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type ReactNode } from "react";
 import { UserCog, Lock, Save, Loader2, ChevronDown } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { updateMyPassword, updateMyProfile } from "@/lib/services";
@@ -87,10 +88,11 @@ function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Meu Perfil</h1>
-        <p className="text-sm text-muted-foreground">Gerencie suas informações e sua senha.</p>
-      </div>
+      <PageHeader
+        icon={UserCog}
+        title="Meu Perfil"
+        subtitle="Gerencie suas informações e sua senha."
+      />
 
       <CollapsibleCard
         icon={UserCog}

@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, X, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Plus, X, ArrowUpRight, ArrowDownRight, Wallet } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
   Chart as ChartJS,
@@ -94,18 +95,19 @@ function FinanceContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Financeiro</h1>
-          <p className="text-sm text-muted-foreground">Receitas, comissões e despesas da agência.</p>
-        </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-        >
-          <Plus className="h-4 w-4" /> Nova Transação
-        </button>
-      </div>
+      <PageHeader
+        icon={Wallet}
+        title="Financeiro"
+        subtitle="Receitas, comissões e despesas da agência."
+        actions={
+          <button
+            onClick={() => setOpen(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+          >
+            <Plus className="h-4 w-4" /> Nova Transação
+          </button>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Receita Total" value={formatCurrency(income)} tone="text-[var(--success)]" />

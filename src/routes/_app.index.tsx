@@ -14,8 +14,9 @@ import {
   ListChecks,
   CalendarClock,
   Eye,
-
+  LayoutDashboard,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { fetchDashboardStats, createTask, cleanTaskDescription, isOverdue, getMemberId, fetchTasksMinePref, setTasksMinePref, fetchAgendaMinePref, setAgendaMinePref } from "@/lib/services";
 import { formatCurrency } from "@/lib/ui";
@@ -254,18 +255,19 @@ function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Painel</h1>
-          <p className="text-sm text-muted-foreground">Visão geral das suas vendas e operações.</p>
-        </div>
-        <Link
-          to="/roteiros"
-          className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> Novo Roteiro
-        </Link>
-      </div>
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Painel"
+        subtitle="Visão geral das suas vendas e operações."
+        actions={
+          <Link
+            to="/roteiros"
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> Novo Roteiro
+          </Link>
+        }
+      />
 
       {/* Stat cards */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">

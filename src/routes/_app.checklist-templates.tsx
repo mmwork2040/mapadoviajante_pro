@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Plus, Save, Star, Trash2, ListChecks } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
   listChecklistTemplates,
@@ -147,22 +148,19 @@ function ChecklistTemplatesPage() {
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
-      <div className="mb-4 flex items-center gap-2">
+      <div className="mb-4">
         <Link
           to="/admin"
-          className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
+          className="mb-3 inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
         >
           <ArrowLeft className="h-4 w-4" /> Administração
         </Link>
-        <h1 className="ml-2 flex items-center gap-2 text-xl font-bold">
-          <ListChecks className="h-5 w-5 text-primary" /> Templates de Checklist
-        </h1>
+        <PageHeader
+          icon={ListChecks}
+          title="Templates de Checklist"
+          subtitle="Crie e edite templates de checklist. O template padrão será pré-selecionado ao aplicar um checklist em novos leads."
+        />
       </div>
-
-      <p className="mb-4 text-sm text-muted-foreground">
-        Crie e edite templates de checklist. O template padrão será pré-selecionado
-        ao aplicar um checklist em novos leads.
-      </p>
 
       <div className="grid gap-4 md:grid-cols-[260px_1fr]">
         {/* Lista */}

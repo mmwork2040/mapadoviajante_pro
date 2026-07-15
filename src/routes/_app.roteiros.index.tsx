@@ -3,7 +3,8 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot } from "lucide-react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
   createItinerary,
@@ -129,18 +130,19 @@ function ItinerariesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Roteiros</h1>
-          <p className="text-sm text-muted-foreground">Planejamento dia a dia das viagens.</p>
-        </div>
-        <button
-          onClick={() => setOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-        >
-          <Plus className="h-4 w-4" /> Novo Roteiro
-        </button>
-      </div>
+      <PageHeader
+        icon={RouteIcon}
+        title="Roteiros"
+        subtitle="Planejamento dia a dia das viagens."
+        actions={
+          <button
+            onClick={() => setOpen(true)}
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+          >
+            <Plus className="h-4 w-4" /> Novo Roteiro
+          </button>
+        }
+      />
 
       {isError ? (
         <QueryError message="Não foi possível carregar os roteiros." onRetry={() => refetch()} />

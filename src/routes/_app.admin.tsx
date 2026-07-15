@@ -3,7 +3,8 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw, Smartphone, Ban, LockOpen, Building2, HardDrive, Palette, ListChecks } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw, Smartphone, Ban, LockOpen, Building2, HardDrive, Palette, ListChecks, Shield } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -217,10 +218,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Administração</h1>
-        <p className="text-sm text-muted-foreground">Equipe e tarefas da agência.</p>
-      </div>
+      <PageHeader icon={Shield} title="Administração" subtitle="Equipe e tarefas da agência." />
 
       <CollapsibleSection
         icon={Users}
