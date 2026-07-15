@@ -174,12 +174,16 @@ function LeadsPage() {
         subtitle="Funil de vendas (arraste para mover)."
         actions={
           <>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar nome, e-mail, destino…"
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary sm:w-56"
-            />
+            <div className="flex w-full items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 sm:w-56">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar nome, e-mail, destino…"
+                className="w-full bg-transparent text-sm outline-none"
+              />
+            </div>
+
             <button
               onClick={toggleOnlyMine}
               className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
