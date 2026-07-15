@@ -580,13 +580,19 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               >
                 <X className="h-4 w-4" /> Fechar
               </button>
-              <button
-                onClick={handleCreateRoteiro}
-                disabled={createRoteiro.isPending}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-              >
-                <MapIcon className="h-4 w-4" /> Criar Roteiro
-              </button>
+              {(() => {
+                const blocked = lead?.status === "closed" || lead?.status === "lost";
+                return (
+                  <button
+                    onClick={handleCreateRoteiro}
+                    disabled={createRoteiro.isPending || blocked}
+                    title={blocked ? "Não é possível criar roteiro para leads fechados ou perdidos" : undefined}
+                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <MapIcon className="h-4 w-4" /> Criar Roteiro
+                  </button>
+                );
+              })()}
             </div>
           </>
         )}
