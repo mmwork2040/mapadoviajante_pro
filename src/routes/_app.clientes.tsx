@@ -5,7 +5,7 @@ import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard,
 import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
-import { ModalField, ModalTextarea, Section } from "@/routes/_app.leads";
+import { ModalField, ModalTextarea, Section, NewLeadModal } from "@/routes/_app.leads";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import {
   DropdownMenu,
@@ -22,7 +22,7 @@ import {
   createClient as createClientSvc,
   updateClient,
   deleteClient,
-  createLeadFromClient,
+  
   fetchLeadsByClient,
 } from "@/lib/services";
 import type { Client, LeadStatus } from "@/lib/types";
@@ -140,16 +140,7 @@ function ClientesPage() {
     },
   });
 
-  const createTripMut = useMutation({
-    mutationFn: (clientId: string) => createLeadFromClient(clientId),
-    onSuccess: (lead) => {
-      if (!lead) return toast.error("Não foi possível criar a viagem");
-      toast.success("Viagem criada!");
-      qc.invalidateQueries({ queryKey: ["leads"] });
-      qc.invalidateQueries({ queryKey: ["client-trips"] });
-      setOpenLeadId(lead.id);
-    },
-  });
+  const [newProposalClient, setNewProposalClient] = useState<Client | null>(null);
 
   return (
     <div className="space-y-6">
@@ -206,9 +197,9 @@ function ClientesPage() {
                 });
                 if (ok) deleteMut.mutate(c.id);
               }}
-              onCreateTrip={() => createTripMut.mutate(c.id)}
+              onCreateTrip={() => setNewProposalClient(c)}
               onOpenTrip={(id) => setOpenLeadId(id)}
-              creating={createTripMut.isPending}
+              creating={false}
             />
           ))}
         </div>
@@ -221,6 +212,24 @@ function ClientesPage() {
             setOpenLeadId(null);
             qc.invalidateQueries({ queryKey: ["client-trips"] });
             qc.invalidateQueries({ queryKey: ["clients"] });
+          }}
+        />
+      )}
+
+      {newProposalClient && (
+        <NewLeadModal
+          onClose={() => setNewProposalClient(null)}
+          onCreated={() => {
+            setNewProposalClient(null);
+            qc.invalidateQueries({ queryKey: ["leads"] });
+            qc.invalidateQueries({ queryKey: ["client-trips"] });
+            qc.invalidateQueries({ queryKey: ["clients"] });
+          }}
+          clientId={newProposalClient.id}
+          initialForm={{
+            name: newProposalClient.name || "",
+            email: newProposalClient.email || "",
+            phone: newProposalClient.phone || "",
           }}
         />
       )}

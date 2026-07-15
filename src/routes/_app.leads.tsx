@@ -646,6 +646,8 @@ export function NewLeadModal({
   lead,
   allLeads = [],
   linkedItinerary = null,
+  initialForm,
+  clientId,
 }: {
   onClose: () => void;
   onCreated: () => void;
@@ -653,10 +655,14 @@ export function NewLeadModal({
   lead?: Lead;
   allLeads?: Lead[];
   linkedItinerary?: Itinerary | null;
+  initialForm?: Partial<WizardForm>;
+  clientId?: string;
 }) {
   const editing = !!lead;
   const [step, setStep] = useState(0);
-  const [form, setForm] = useState<WizardForm>(lead ? leadToForm(lead) : EMPTY_FORM);
+  const [form, setForm] = useState<WizardForm>(
+    lead ? leadToForm(lead) : { ...EMPTY_FORM, ...(initialForm || {}) },
+  );
   const [saving, setSaving] = useState(false);
   const [nameFocused, setNameFocused] = useState(false);
   const set = (patch: Partial<WizardForm>) => setForm((f) => ({ ...f, ...patch }));
@@ -973,6 +979,10 @@ export function NewLeadModal({
         if (upd) toast.success("Rascunho do roteiro atualizado.");
         else toast.error("Erro ao atualizar o rascunho do roteiro.");
       }
+    }
+
+    if (res && !editing && clientId) {
+      await updateLead(res.id, { client_id: clientId });
     }
 
     setSaving(false);
