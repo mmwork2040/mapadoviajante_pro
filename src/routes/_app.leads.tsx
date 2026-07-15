@@ -1714,7 +1714,7 @@ export function ModalSelect({
   );
 }
 
-function ModalTextarea({
+export function ModalTextarea({
   label,
   value,
   onChange,
