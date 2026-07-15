@@ -18,7 +18,7 @@ import {
   fetchLeadsByClient,
 } from "@/lib/services";
 import type { Client, LeadStatus } from "@/lib/types";
-import { maskPhone, maskCpfCnpj } from "@/lib/ui";
+
 import { lookupCep } from "@/lib/agency";
 import { useConfirm } from "@/components/ConfirmDialog";
 
