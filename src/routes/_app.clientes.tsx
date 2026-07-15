@@ -98,7 +98,7 @@ type Tab = "contato" | "documentos" | "endereco" | "preferencias" | "notas";
 
 function ClientesPage() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
+  
   const confirm = useConfirm();
   const [search, setSearch] = useState("");
   const [openForm, setOpenForm] = useState(false);
