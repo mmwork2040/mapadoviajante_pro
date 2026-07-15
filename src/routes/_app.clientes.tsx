@@ -223,6 +223,7 @@ function ClientCard({
     queryFn: () => fetchLeadsByClient(client.id),
   });
   const tripCount = tripsQ.data?.length ?? 0;
+  const [tripsOpen, setTripsOpen] = useState(false);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
