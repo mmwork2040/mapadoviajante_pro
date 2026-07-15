@@ -349,26 +349,34 @@ function ClientCard({
             />
           )}
         </button>
-        {tripsOpen && tripCount > 0 && (
-          <ul className="mt-2 space-y-1">
-            {(tripsQ.data ?? []).map((t) => {
-              const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted text-foreground" };
-              return (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    onClick={() => onOpenTrip(t.id)}
-                    className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-muted"
-                  >
-                    <span className="min-w-0 truncate">{t.name || "Viagem sem título"}</span>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
-                      {meta.label}
-                    </span>
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+        {tripCount > 0 && (
+          <div
+            className={`grid transition-[grid-template-rows,margin] duration-300 ease-out ${
+              tripsOpen ? "mt-2 grid-rows-[1fr]" : "grid-rows-[0fr]"
+            }`}
+          >
+            <div className="overflow-hidden">
+              <ul className="space-y-1">
+                {(tripsQ.data ?? []).map((t) => {
+                  const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted text-foreground" };
+                  return (
+                    <li key={t.id}>
+                      <button
+                        type="button"
+                        onClick={() => onOpenTrip(t.id)}
+                        className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-muted"
+                      >
+                        <span className="min-w-0 truncate">{t.name || "Viagem sem título"}</span>
+                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
+                          {meta.label}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
         )}
       </div>
     </div>
