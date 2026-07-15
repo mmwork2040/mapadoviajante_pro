@@ -276,17 +276,8 @@ function ClientCard({
       </div>
 
       <div className="mt-3 border-t border-border pt-3">
-        <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-medium text-muted-foreground">
-            {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
-          </span>
-          <button
-            onClick={onCreateTrip}
-            disabled={creating}
-            className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-          >
-            <Plane className="h-3.5 w-3.5" /> Nova viagem
-          </button>
+        <div className="mb-2 text-xs font-medium text-muted-foreground">
+          {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
         </div>
         {tripCount > 0 && (
           <ul className="space-y-1">
