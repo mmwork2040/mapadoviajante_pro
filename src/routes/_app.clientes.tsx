@@ -235,12 +235,14 @@ function ClientCard({
   onEdit,
   onDelete,
   onCreateTrip,
+  onOpenTrip,
   creating,
 }: {
   client: Client;
   onEdit: () => void;
   onDelete: () => void;
   onCreateTrip: () => void;
+  onOpenTrip: (leadId: string) => void;
   creating: boolean;
 }) {
   const tripsQ = useQuery({
