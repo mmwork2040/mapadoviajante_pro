@@ -5,6 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot, Map as MapIcon, Search } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchBar } from "@/components/SearchBar";
+
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { getTripTypes, addTripType } from "@/lib/trip-types.functions";
