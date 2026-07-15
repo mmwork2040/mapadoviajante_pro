@@ -78,20 +78,16 @@ function TarefasPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold">
-            <ListChecks className="h-6 w-6 text-primary" />
-            Tarefas
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {pending.length} pendente{pending.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <Button onClick={() => setOpen(true)}>
-          <Plus className="mr-1 h-4 w-4" /> Criar Tarefa
-        </Button>
-      </div>
+      <PageHeader
+        icon={ListChecks}
+        title="Tarefas"
+        subtitle={`${pending.length} pendente${pending.length !== 1 ? "s" : ""}`}
+        actions={
+          <Button onClick={() => setOpen(true)}>
+            <Plus className="mr-1 h-4 w-4" /> Criar Tarefa
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card p-3 shadow-sm">
         <div className="flex flex-col gap-1">
