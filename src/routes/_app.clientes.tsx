@@ -146,7 +146,8 @@ function ClientesPage() {
       if (!lead) return toast.error("Não foi possível criar a viagem");
       toast.success("Viagem criada!");
       qc.invalidateQueries({ queryKey: ["leads"] });
-      navigate({ to: "/leads", search: { lead: lead.id } });
+      qc.invalidateQueries({ queryKey: ["client-trips"] });
+      setOpenLeadId(lead.id);
     },
   });
 
