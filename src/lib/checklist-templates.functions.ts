@@ -209,7 +209,7 @@ export const listChecklistTemplates = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<StoredValue> => {
     const m = await resolveMember(context.supabase, context.userId);
     if (!m) return { templates: [DEFAULT_TEMPLATE], defaultId: DEFAULT_TEMPLATE.id };
-    return await readValue(m.agencyId);
+    return await readValue(context.supabase, m.agencyId);
   });
 
 const templateSchema = z.object({
@@ -243,14 +243,14 @@ export const saveChecklistTemplate = createServerFn({ method: "POST" })
     const m = await resolveMember(context.supabase, context.userId);
     if (!m) throw new Error("Agência não encontrada.");
     if (m.role !== "admin") throw new Error("Sem permissão.");
-    const current = await readValue(m.agencyId);
+    const current = await readValue(context.supabase, m.agencyId);
     const now = new Date().toISOString();
     const idx = current.templates.findIndex((t) => t.id === data.template.id);
     const incoming: ChecklistTemplate = { ...data.template, updatedAt: now };
     if (idx >= 0) current.templates[idx] = { ...current.templates[idx], ...incoming };
     else current.templates.push({ ...incoming, createdAt: now });
     if (!current.defaultId) current.defaultId = current.templates[0]?.id ?? null;
-    await writeValue(m.agencyId, current);
+    await writeValue(context.supabase, m.agencyId, current);
     return current;
   });
 
@@ -262,14 +262,14 @@ export const deleteChecklistTemplate = createServerFn({ method: "POST" })
     const m = await resolveMember(context.supabase, context.userId);
     if (!m) throw new Error("Agência não encontrada.");
     if (m.role !== "admin") throw new Error("Sem permissão.");
-    const current = await readValue(m.agencyId);
+    const current = await readValue(context.supabase, m.agencyId);
     current.templates = current.templates.filter((t) => t.id !== data.id);
     if (current.defaultId === data.id) current.defaultId = current.templates[0]?.id ?? null;
     if (current.templates.length === 0) {
       current.templates = [DEFAULT_TEMPLATE];
       current.defaultId = DEFAULT_TEMPLATE.id;
     }
-    await writeValue(m.agencyId, current);
+    await writeValue(context.supabase, m.agencyId, current);
     return current;
   });
 
@@ -281,11 +281,11 @@ export const setDefaultChecklistTemplate = createServerFn({ method: "POST" })
     const m = await resolveMember(context.supabase, context.userId);
     if (!m) throw new Error("Agência não encontrada.");
     if (m.role !== "admin") throw new Error("Sem permissão.");
-    const current = await readValue(m.agencyId);
+    const current = await readValue(context.supabase, m.agencyId);
     if (!current.templates.some((t) => t.id === data.id)) {
       throw new Error("Template não encontrado.");
     }
     current.defaultId = data.id;
-    await writeValue(m.agencyId, current);
+    await writeValue(context.supabase, m.agencyId, current);
     return current;
   });
