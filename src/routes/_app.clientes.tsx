@@ -565,9 +565,12 @@ function ClientFormDrawer({
               />
               <ModalField
                 label="Cidade"
-                value={form.address_city ?? ""}
-                onChange={(v) => set("address_city", v)}
+                placeholder="Digite para buscar…"
+                value={cityDisplay}
+                onChange={handleCityChange}
+                suggestions={cityOptions}
               />
+
               <ModalField
                 label="Estado / UF"
                 value={form.address_state ?? ""}
