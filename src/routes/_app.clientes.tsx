@@ -324,15 +324,23 @@ function ClientFormDrawer({
     },
   });
   const cityOptions = ibgeCities.map((c) => `${c.name} - ${c.uf}`);
+  const norm = (s: string) =>
+    (s ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim()
+      .toLowerCase();
   const cityDisplay = form.address_city
     ? (() => {
-        const uf = form.address_state?.trim();
+        const uf = form.address_state?.trim().toUpperCase();
+        const target = norm(form.address_city);
         const match = ibgeCities.find(
-          (c) => c.name.toLowerCase() === (form.address_city ?? "").toLowerCase() && (!uf || c.uf === uf),
+          (c) => norm(c.name) === target && (!uf || c.uf === uf),
         );
         return match ? `${match.name} - ${match.uf}` : (form.address_city ?? "");
       })()
     : "";
+
 
   const handleCityChange = (v: string) => {
     const m = /^(.+?)\s-\s([A-Z]{2})$/.exec(v.trim());
