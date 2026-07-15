@@ -1673,7 +1673,7 @@ export function LibraryImagePicker({
 
 
 
-function ModalSelect({
+export function ModalSelect({
   label,
   value,
   onChange,
