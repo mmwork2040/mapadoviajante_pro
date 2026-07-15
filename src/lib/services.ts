@@ -474,10 +474,30 @@ async function ensureClientFromLead(lead: Lead): Promise<string | null> {
   if (lead.client_id) return lead.client_id;
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return null;
-  const email = lead.email?.trim() || null;
+  const email = lead.email?.trim().toLowerCase() || null;
   const phone = lead.phone?.trim() || null;
+  const phoneDigits = phone ? phone.replace(/\D/g, "") : null;
+  const profile = (lead.profile ?? {}) as Record<string, unknown>;
+  const rawCpf = (profile.cpf ?? profile.cnpj ?? profile.cpf_cnpj ?? profile.document ?? "") as string;
+  const cpfDigits = String(rawCpf || "").replace(/\D/g, "") || null;
+
   let existingId: string | null = null;
-  if (email) {
+
+  // 1) CPF/CNPJ (digits only, ignora máscara existente)
+  if (!existingId && cpfDigits) {
+    const { data } = await supabase
+      .from("crm_clients")
+      .select("id, cpf")
+      .eq("agency_id", _agencyId)
+      .not("cpf", "is", null);
+    const hit = (data ?? []).find(
+      (c) => String((c as { cpf?: string }).cpf ?? "").replace(/\D/g, "") === cpfDigits,
+    );
+    if (hit) existingId = (hit as { id: string }).id;
+  }
+
+  // 2) E-mail (case-insensitive)
+  if (!existingId && email) {
     const { data } = await supabase
       .from("crm_clients")
       .select("id")
@@ -487,21 +507,27 @@ async function ensureClientFromLead(lead: Lead): Promise<string | null> {
       .maybeSingle();
     if (data) existingId = (data as { id: string }).id;
   }
-  if (!existingId && phone) {
+
+  // 3) Telefone (comparação por dígitos)
+  if (!existingId && phoneDigits) {
     const { data } = await supabase
       .from("crm_clients")
-      .select("id")
-      .eq("agency_id", _agencyId)
-      .eq("phone", phone)
-      .limit(1)
-      .maybeSingle();
-    if (data) existingId = (data as { id: string }).id;
+      .select("id, phone, whatsapp")
+      .eq("agency_id", _agencyId);
+    const hit = (data ?? []).find((c) => {
+      const p = String((c as { phone?: string }).phone ?? "").replace(/\D/g, "");
+      const w = String((c as { whatsapp?: string }).whatsapp ?? "").replace(/\D/g, "");
+      return (p && p === phoneDigits) || (w && w === phoneDigits);
+    });
+    if (hit) existingId = (hit as { id: string }).id;
   }
+
   if (!existingId) {
     const created = await createClient({
       name: lead.name,
       email: lead.email ?? null,
       phone: lead.phone ?? null,
+      cpf: cpfDigits ? rawCpf : null,
     });
     existingId = created?.id ?? null;
   }
