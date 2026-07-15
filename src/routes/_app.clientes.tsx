@@ -277,7 +277,7 @@ function ClientCard({
         )}
         {client.phone && (
           <a
-            href={`https://wa.me/${String(client.phone).replace(/\D/g, "")}`}
+            href={`https://wa.me/${String(client.phone).replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${(client.name || "").split(" ")[0] || ""}! Tudo bem?`)}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
@@ -288,7 +288,7 @@ function ClientCard({
         )}
         {client.whatsapp && (
           <a
-            href={`https://wa.me/${String(client.whatsapp).replace(/\D/g, "")}`}
+            href={`https://wa.me/${String(client.whatsapp).replace(/\D/g, "")}?text=${encodeURIComponent(`Olá, ${(client.name || "").split(" ")[0] || ""}! Tudo bem?`)}`}
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
