@@ -1672,20 +1672,28 @@ function ChecklistTab({
         const sectionItemIds = section.groups.flatMap((g) => g.items.map((i) => i.id));
         const sectionDone = sectionItemIds.filter((id) => state.items[id]).length;
         const sectionTotal = sectionItemIds.length;
+        const pct = sectionTotal > 0 ? Math.round((sectionDone / sectionTotal) * 100) : 0;
         return (
           <details
             key={section.id}
-            open
             className="group rounded-xl border border-border [&_summary::-webkit-details-marker]:hidden"
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-2 border-b border-border px-3 py-2 text-sm font-semibold">
-              <span className="flex items-center gap-2">
-                <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-0 -rotate-90" />
-                {section.title}
-              </span>
-              <span className="text-xs font-normal text-muted-foreground">
-                {sectionDone}/{sectionTotal}
-              </span>
+            <summary className="flex cursor-pointer list-none flex-col gap-1.5 border-b border-border px-3 py-2 text-sm font-semibold">
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <ChevronDown className="h-4 w-4 shrink-0 -rotate-90 transition-transform group-open:rotate-0" />
+                  {section.title}
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  {sectionDone}/{sectionTotal}
+                </span>
+              </div>
+              <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
             </summary>
             <div className="space-y-4 p-3">
               {section.groups.map((group) => (
