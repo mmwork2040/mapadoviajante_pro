@@ -140,16 +140,7 @@ function ClientesPage() {
     },
   });
 
-  const createTripMut = useMutation({
-    mutationFn: (clientId: string) => createLeadFromClient(clientId),
-    onSuccess: (lead) => {
-      if (!lead) return toast.error("Não foi possível criar a viagem");
-      toast.success("Viagem criada!");
-      qc.invalidateQueries({ queryKey: ["leads"] });
-      qc.invalidateQueries({ queryKey: ["client-trips"] });
-      setOpenLeadId(lead.id);
-    },
-  });
+  const [newProposalClient, setNewProposalClient] = useState<Client | null>(null);
 
   return (
     <div className="space-y-6">
