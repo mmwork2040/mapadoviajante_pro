@@ -4403,16 +4403,13 @@ function AttachSourceModal({
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             <div className="p-3">
-              <div className="flex items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 focus-within:border-primary">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar documento…"
-                  className="w-full bg-transparent text-sm outline-none"
-                />
-              </div>
+              <SearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder="Buscar documento…"
+              />
             </div>
+
 
             <div className="flex-1 space-y-1 overflow-y-auto px-3 pb-3">
               {isLoading ? (
