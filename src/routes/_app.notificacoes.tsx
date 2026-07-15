@@ -7,10 +7,11 @@ import {
   CheckCheck,
   ChevronLeft,
   ChevronRight,
-  Search,
   Trash2,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchBar } from "@/components/SearchBar";
+
 import { supabase } from "@/integrations/supabase/client";
 import {
   fetchNotificationsPage,
