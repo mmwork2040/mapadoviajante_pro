@@ -295,22 +295,22 @@ function ClientCard({
             onClick={(e) => e.stopPropagation()}
             className="flex items-center gap-1.5 truncate hover:text-primary hover:underline"
           >
-            <Mail className="h-3.5 w-3.5 shrink-0" />
+            <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
             <span className="truncate">{client.email}</span>
           </a>
         )}
         {client.phone && (
-          <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5" />{client.phone}</div>
+          <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-blue-500" />{client.phone}</div>
         )}
         {client.whatsapp && (() => {
           const href = waLink(client.whatsapp, client.name);
           const cls = "flex items-center gap-1.5 hover:text-primary hover:underline";
           return href ? (
             <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={cls}>
-              <MessageCircle className="h-3.5 w-3.5" />{client.whatsapp}
+              <MessageCircle className="h-3.5 w-3.5 text-green-500" />{client.whatsapp}
             </a>
           ) : (
-            <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5" />{client.whatsapp}</div>
+            <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-green-500" />{client.whatsapp}</div>
           );
         })()}
       </div>
