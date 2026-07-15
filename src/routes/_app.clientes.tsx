@@ -366,14 +366,19 @@ function ClientFormDrawer({
       toast.error("CEP não encontrado");
       return;
     }
+    const uf = (res.state || "").toUpperCase();
+    const cityMatch = ibgeCities.find(
+      (c) => norm(c.name) === norm(res.city || "") && (!uf || c.uf === uf),
+    );
     setForm((f) => ({
       ...f,
       address_street: res.street || f.address_street || "",
       address_neighborhood: res.district || f.address_neighborhood || "",
-      address_city: res.city || "",
-      address_state: res.state || "",
+      address_city: cityMatch?.name || res.city || "",
+      address_state: cityMatch?.uf || uf,
       address_country: f.address_country?.trim() ? f.address_country : "Brasil",
     }));
+
   };
 
   const submit = () => {
