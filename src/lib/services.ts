@@ -2263,7 +2263,29 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
     console.error("updateClient:", error);
     return null;
   }
-  return data as Client;
+  // Propaga campos-chave para viagens (leads) e roteiros vinculados
+  const client = data as Client;
+  const leadPatch: Record<string, unknown> = {};
+  if (updates.name !== undefined) leadPatch.name = client.name;
+  if (updates.email !== undefined) leadPatch.email = client.email ?? null;
+  if (updates.phone !== undefined) leadPatch.phone = client.phone ?? null;
+  if (Object.keys(leadPatch).length > 0) {
+    const { error: leadErr } = await supabase.from("crm_leads").update(leadPatch).eq("client_id", id);
+    if (leadErr) console.error("updateClient(leads sync):", leadErr);
+  }
+  if (updates.name !== undefined) {
+    // Roteiros usam client_name (texto); atualizamos via leads vinculados.
+    const { data: leadIds } = await supabase.from("crm_leads").select("id").eq("client_id", id);
+    const ids = (leadIds ?? []).map((l) => (l as { id: string }).id);
+    if (ids.length > 0) {
+      const { error: itErr } = await supabase
+        .from("crm_itineraries")
+        .update({ client_name: client.name })
+        .in("lead_id", ids);
+      if (itErr) console.error("updateClient(itineraries sync):", itErr);
+    }
+  }
+  return client;
 }
 
 export async function deleteClient(id: string): Promise<boolean> {

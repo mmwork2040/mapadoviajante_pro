@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil } from "lucide-react";
+import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, ChevronDown } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
@@ -223,6 +223,7 @@ function ClientCard({
     queryFn: () => fetchLeadsByClient(client.id),
   });
   const tripCount = tripsQ.data?.length ?? 0;
+  const [tripsOpen, setTripsOpen] = useState(false);
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -276,11 +277,24 @@ function ClientCard({
       </div>
 
       <div className="mt-3 border-t border-border pt-3">
-        <div className="mb-2 text-xs font-medium text-muted-foreground">
-          {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
-        </div>
-        {tripCount > 0 && (
-          <ul className="space-y-1">
+        <button
+          type="button"
+          onClick={() => setTripsOpen((v) => !v)}
+          disabled={tripCount === 0}
+          className="flex w-full items-center justify-between gap-2 text-xs font-medium text-muted-foreground disabled:cursor-default"
+          aria-expanded={tripsOpen}
+        >
+          <span>
+            {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
+          </span>
+          {tripCount > 0 && (
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${tripsOpen ? "rotate-180" : ""}`}
+            />
+          )}
+        </button>
+        {tripsOpen && tripCount > 0 && (
+          <ul className="mt-2 space-y-1">
             {(tripsQ.data ?? []).map((t) => {
               const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted text-foreground" };
               return (
