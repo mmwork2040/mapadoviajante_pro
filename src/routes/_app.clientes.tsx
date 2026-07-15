@@ -120,15 +120,6 @@ function ClientesPage() {
         subtitle="Cadastro completo dos viajantes. Crie uma nova viagem com um clique."
         actions={
           <>
-            <button
-              onClick={() => {
-                setEditing(null);
-                setOpenForm(true);
-              }}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-            >
-              <Plus className="h-4 w-4" /> Novo cliente
-            </button>
             <div className="flex w-full items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 sm:w-64">
               <Search className="h-4 w-4 text-muted-foreground" />
               <input
@@ -138,7 +129,17 @@ function ClientesPage() {
                 className="w-full bg-transparent text-sm outline-none"
               />
             </div>
+            <button
+              onClick={() => {
+                setEditing(null);
+                setOpenForm(true);
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+            >
+              <Plus className="h-4 w-4" /> Novo cliente
+            </button>
           </>
+
         }
       />
 
