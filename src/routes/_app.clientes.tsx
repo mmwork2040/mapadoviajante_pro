@@ -206,10 +206,22 @@ function ClientesPage() {
                 if (ok) deleteMut.mutate(c.id);
               }}
               onCreateTrip={() => createTripMut.mutate(c.id)}
+              onOpenTrip={(id) => setOpenLeadId(id)}
               creating={createTripMut.isPending}
             />
           ))}
         </div>
+      )}
+
+      {openLeadId && (
+        <LeadDetailDrawer
+          leadId={openLeadId}
+          onClose={() => {
+            setOpenLeadId(null);
+            qc.invalidateQueries({ queryKey: ["client-trips"] });
+            qc.invalidateQueries({ queryKey: ["clients"] });
+          }}
+        />
       )}
 
       {openForm && (
