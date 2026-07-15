@@ -197,9 +197,9 @@ function ClientesPage() {
                 });
                 if (ok) deleteMut.mutate(c.id);
               }}
-              onCreateTrip={() => createTripMut.mutate(c.id)}
+              onCreateTrip={() => setNewProposalClient(c)}
               onOpenTrip={(id) => setOpenLeadId(id)}
-              creating={createTripMut.isPending}
+              creating={false}
             />
           ))}
         </div>
