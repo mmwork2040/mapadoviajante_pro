@@ -113,33 +113,35 @@ function ClientesPage() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+    <div className="space-y-6">
       <PageHeader
         icon={Users}
         title="Clientes"
         subtitle="Cadastro completo dos viajantes. Crie uma nova viagem com um clique."
         actions={
-          <button
-            onClick={() => {
-              setEditing(null);
-              setOpenForm(true);
-            }}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-          >
-            <Plus className="h-4 w-4" /> Novo cliente
-          </button>
+          <>
+            <button
+              onClick={() => {
+                setEditing(null);
+                setOpenForm(true);
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+            >
+              <Plus className="h-4 w-4" /> Novo cliente
+            </button>
+            <div className="flex w-full items-center gap-2 rounded-lg border border-input bg-background px-3 py-2 sm:w-64">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar cliente…"
+                className="w-full bg-transparent text-sm outline-none"
+              />
+            </div>
+          </>
         }
       />
 
-      <div className="mb-4 flex items-center gap-2 rounded-lg border border-input bg-card px-3 py-2">
-        <Search className="h-4 w-4 text-muted-foreground" />
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar por nome, e-mail, CPF ou telefone"
-          className="w-full bg-transparent text-sm outline-none"
-        />
-      </div>
 
       {isLoading ? (
         <div className="py-16 text-center text-sm text-muted-foreground">Carregando...</div>
