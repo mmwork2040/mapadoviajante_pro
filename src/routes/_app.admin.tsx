@@ -217,10 +217,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Administração</h1>
-        <p className="text-sm text-muted-foreground">Equipe e tarefas da agência.</p>
-      </div>
+      <PageHeader icon={Shield} title="Administração" subtitle="Equipe e tarefas da agência." />
 
       <CollapsibleSection
         icon={Users}
