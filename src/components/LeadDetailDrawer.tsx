@@ -1688,9 +1688,9 @@ function ChecklistTab({
                   {sectionDone}/{sectionTotal}
                 </span>
               </div>
-              <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+              <div className="h-1 w-full overflow-hidden rounded-full bg-red-500">
                 <div
-                  className="h-full bg-primary transition-all"
+                  className="h-full bg-green-500 transition-all"
                   style={{ width: `${pct}%` }}
                 />
               </div>
