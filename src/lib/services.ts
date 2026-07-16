@@ -947,6 +947,8 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
     if (updates.description !== undefined)
       actPatch.details = cleanTaskDescription(updates.description) || null;
     if (updates.assigned_to !== undefined) actPatch.assigned_to_id = updates.assigned_to || null;
+    const actType = (updates as { activity_type?: string }).activity_type;
+    if (actType) actPatch.type = actType;
     if (Object.keys(actPatch).length) {
       await supabase.from("crm_lead_activities").update(actPatch).eq("id", linkedId);
     }
