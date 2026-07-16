@@ -121,7 +121,13 @@ export function CreateTaskModal({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <FieldLabel>Cliente</FieldLabel>
-              <Select value={leadId} onValueChange={setLeadId}>
+              <Select
+                value={leadId}
+                onValueChange={(v) => {
+                  setLeadId(v);
+                  setItineraryId("");
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione cliente" />
                 </SelectTrigger>
@@ -150,6 +156,40 @@ export function CreateTaskModal({
               </Select>
             </div>
           </div>
+
+          {leadId && (
+            <div>
+              <FieldLabel hint="(opcional)">Roteiro vinculado</FieldLabel>
+              <Select
+                value={itineraryId || "__none__"}
+                onValueChange={(v) => setItineraryId(v === "__none__" ? "" : v)}
+                disabled={itinerariesQ.isLoading}
+              >
+                <SelectTrigger>
+                  <SelectValue
+                    placeholder={
+                      itinerariesQ.isLoading ? "Carregando roteiros…" : "Selecione um roteiro"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__none__">Nenhum</SelectItem>
+                  {(itinerariesQ.data ?? []).map((it) => (
+                    <SelectItem key={it.id} value={it.id}>
+                      {it.title}
+                      {it.destination ? ` — ${it.destination}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {!itinerariesQ.isLoading && (itinerariesQ.data ?? []).length === 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Este cliente ainda não possui roteiros.
+                </p>
+              )}
+            </div>
+          )}
+
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
