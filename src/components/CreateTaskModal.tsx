@@ -35,11 +35,14 @@ function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: stri
 export function CreateTaskModal({
   open,
   onOpenChange,
+  task,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
+  task?: Task | null;
 }) {
   const qc = useQueryClient();
+  const isEdit = !!task;
   const [title, setTitle] = useState("");
   const [leadId, setLeadId] = useState<string>("");
   const [itineraryId, setItineraryId] = useState<string>("");
@@ -56,6 +59,21 @@ export function CreateTaskModal({
     enabled: open && !!leadId,
   });
 
+  useEffect(() => {
+    if (!open) return;
+    if (task) {
+      setTitle(task.title ?? "");
+      setLeadId(task.lead_id ?? "");
+      setItineraryId(task.itinerary_id ?? "");
+      setAssignedTo(task.assigned_to ?? "");
+      setDueDate(task.due_date ? task.due_date.slice(0, 10) : "");
+      setPriority(task.priority ?? "normal");
+      setDescription(task.description ?? "");
+    } else {
+      reset();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, task?.id]);
 
   function reset() {
     setTitle("");
@@ -68,8 +86,8 @@ export function CreateTaskModal({
   }
 
   const mutation = useMutation({
-    mutationFn: () =>
-      createTask({
+    mutationFn: () => {
+      const payload = {
         title: title.trim(),
         lead_id: leadId || null,
         itinerary_id: itineraryId || null,
@@ -77,17 +95,19 @@ export function CreateTaskModal({
         priority,
         due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
         description: description.trim() || null,
-      }),
+      };
+      return isEdit ? updateTask(task!.id, payload) : createTask(payload);
+    },
 
     onSuccess: (res) => {
-      if (!res) return toast.error("Erro ao criar tarefa.");
-      toast.success("Tarefa criada!");
+      if (!res) return toast.error(isEdit ? "Erro ao atualizar tarefa." : "Erro ao criar tarefa.");
+      toast.success(isEdit ? "Tarefa atualizada!" : "Tarefa criada!");
       qc.invalidateQueries({ queryKey: ["tasks"] });
       qc.invalidateQueries({ queryKey: ["dashboard"] });
       reset();
       onOpenChange(false);
     },
-    onError: () => toast.error("Erro ao criar tarefa."),
+    onError: () => toast.error(isEdit ? "Erro ao atualizar tarefa." : "Erro ao criar tarefa."),
   });
 
   function submit() {
@@ -95,6 +115,7 @@ export function CreateTaskModal({
     if (!dueDate) return toast.error("Informe a data de vencimento.");
     mutation.mutate();
   }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
