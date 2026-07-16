@@ -289,3 +289,50 @@ export const setDefaultChecklistTemplate = createServerFn({ method: "POST" })
     await writeValue(context.supabase, m.agencyId, current);
     return current;
   });
+
+/** Gera estrutura de checklist (formato Markdown ##/###/-) via IA. */
+export const generateChecklistStructureFn = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({ context: z.string().min(1).max(2000) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<{ text: string }> => {
+    const { data: cfg, error } = await context.supabase
+      .from("crm_ai_config")
+      .select("*")
+      .maybeSingle();
+    if (error) throw new Error("Não foi possível carregar a configuração de IA.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
+    if (ks?.status !== "connected") {
+      throw new Error("A IA precisa ser testada e conectada nas configurações.");
+    }
+    const { askCopilot } = await import("./ai.server");
+    const prompt = `Você é um especialista em consultoria de viagens. Gere uma estrutura de checklist em Markdown para o seguinte contexto:
+
+"${data.context}"
+
+Formato ESTRITO da resposta (sem explicações, sem código, sem cabeçalhos extras):
+- Use "## Título da Seção" para seções (etapas principais).
+- Use "### Título do Grupo" para subgrupos dentro de uma seção.
+- Use "- item" para cada tarefa/verificação.
+- Cubra de forma prática e objetiva as etapas relevantes.
+- Português do Brasil, tom profissional e conciso.
+
+Responda apenas com o Markdown do checklist.`;
+    const text = await askCopilot(
+      {
+        provider: cfg.provider ?? "openai",
+        model: cfg.model ?? "",
+        apiKey: cfg.api_key_encrypted,
+        maxTokens: cfg.max_tokens,
+      },
+      prompt,
+    );
+    // Remove fences se a IA envolver em ```
+    const cleaned = text
+      .replace(/^```(?:markdown|md)?\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+    return { text: cleaned + "\n" };
+  });
