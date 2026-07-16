@@ -185,7 +185,13 @@ function TarefasPage() {
             <TaskList
               tasks={pending}
               onToggle={(t) => toggle.mutate(t)}
-              onOpenTask={setDetailTask}
+              onOpenTask={(t) => {
+                if (t.itinerary_id) {
+                  navigate({ to: "/roteiros/$id", params: { id: t.itinerary_id } });
+                } else if (t.lead_id) {
+                  setDetailTask(t);
+                }
+              }}
               onEditTask={setEditTask}
               onDeleteTask={handleDelete}
             />
