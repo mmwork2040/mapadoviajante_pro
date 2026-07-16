@@ -1,16 +1,30 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Plus, Save, Star, Trash2, ListChecks } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  Copy,
+  ListChecks,
+  Pencil,
+  Plus,
+  Save,
+  Sparkles,
+  Star,
+  Trash2,
+  X,
+} from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
+  deleteChecklistTemplate,
+  generateChecklistStructureFn,
   listChecklistTemplates,
   saveChecklistTemplate,
-  deleteChecklistTemplate,
   setDefaultChecklistTemplate,
-  type ChecklistTemplate,
   type ChecklistSection,
+  type ChecklistTemplate,
 } from "@/lib/checklist-templates.functions";
+import { fetchAiConfig } from "@/lib/services";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import { useConfirm } from "@/components/ConfirmDialog";
 
@@ -29,6 +43,12 @@ function ChecklistTemplatesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingList, setLoadingList] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [isNew, setIsNew] = useState(false);
+  const [aiEnabled, setAiEnabled] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  const [aiContext, setAiContext] = useState("");
+  const [aiBusy, setAiBusy] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -41,10 +61,14 @@ function ChecklistTemplatesPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await listChecklistTemplates();
+        const [res, cfg] = await Promise.all([
+          listChecklistTemplates(),
+          fetchAiConfig().catch(() => null),
+        ]);
         setTemplates(res.templates);
         setDefaultId(res.defaultId);
-        if (res.templates[0]) selectTemplate(res.templates[0]);
+        const ks = (cfg?.knowledge_sources as { status?: string } | null) ?? null;
+        setAiEnabled(!!cfg?.api_key_encrypted && ks?.status === "connected");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Falha ao carregar templates");
       } finally {
@@ -56,6 +80,8 @@ function ChecklistTemplatesPage() {
 
   function selectTemplate(t: ChecklistTemplate) {
     setSelectedId(t.id);
+    setIsNew(false);
+    setEditMode(false);
     setName(t.name);
     setDescription(t.description || "");
     setText(sectionsToText(t.sections));
@@ -63,14 +89,55 @@ function ChecklistTemplatesPage() {
 
   function newTemplate() {
     setSelectedId(null);
+    setIsNew(true);
+    setEditMode(true);
     setName("Novo template");
     setDescription("");
     setText("## Seção\n### Grupo\n- Item exemplo\n");
   }
 
+  function duplicateTemplate(t: ChecklistTemplate) {
+    const baseName = `${t.name} (cópia)`;
+    const uniqueName = ensureUniqueName(baseName, templates, null);
+    setSelectedId(null);
+    setIsNew(true);
+    setEditMode(true);
+    setName(uniqueName);
+    setDescription(t.description || "");
+    setText(sectionsToText(t.sections));
+    toast.info("Cópia carregada. Ajuste e salve para criar o novo template.");
+  }
+
+  function cancelEdit() {
+    if (isNew) {
+      // Volta para nada selecionado
+      setSelectedId(null);
+      setIsNew(false);
+      setEditMode(false);
+      setName("");
+      setDescription("");
+      setText("");
+      return;
+    }
+    const original = templates.find((t) => t.id === selectedId);
+    if (original) selectTemplate(original);
+    else setEditMode(false);
+  }
+
   async function save() {
-    if (!name.trim()) {
+    const trimmed = name.trim();
+    if (!trimmed) {
       toast.error("Informe um nome para o template.");
+      return;
+    }
+    // Nome único (case-insensitive), ignorando o próprio quando editando
+    const dup = templates.some(
+      (t) =>
+        t.name.trim().toLowerCase() === trimmed.toLowerCase() &&
+        t.id !== (selectedId ?? ""),
+    );
+    if (dup) {
+      toast.error("Já existe um template com esse nome.");
       return;
     }
     let sections: ChecklistSection[];
@@ -82,10 +149,10 @@ function ChecklistTemplatesPage() {
     }
     setSaving(true);
     try {
-      const id = selectedId || slugify(name) + "-" + Date.now().toString(36);
+      const id = selectedId || slugify(trimmed) + "-" + Date.now().toString(36);
       const tpl: ChecklistTemplate = {
         id,
-        name: name.trim(),
+        name: trimmed,
         description: description.trim() || undefined,
         sections,
       };
@@ -93,6 +160,8 @@ function ChecklistTemplatesPage() {
       setTemplates(res.templates);
       setDefaultId(res.defaultId);
       setSelectedId(id);
+      setIsNew(false);
+      setEditMode(false);
       toast.success("Template salvo");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar");
@@ -114,8 +183,12 @@ function ChecklistTemplatesPage() {
       setTemplates(res.templates);
       setDefaultId(res.defaultId);
       if (selectedId === id) {
-        if (res.templates[0]) selectTemplate(res.templates[0]);
-        else newTemplate();
+        setSelectedId(null);
+        setIsNew(false);
+        setEditMode(false);
+        setName("");
+        setDescription("");
+        setText("");
       }
       toast.success("Template excluído");
     } catch (e) {
@@ -133,6 +206,33 @@ function ChecklistTemplatesPage() {
     }
   }
 
+  async function runAiGenerate() {
+    const ctx = aiContext.trim();
+    if (!ctx) {
+      toast.error("Descreva o contexto para a IA gerar a estrutura.");
+      return;
+    }
+    setAiBusy(true);
+    try {
+      const res = await generateChecklistStructureFn({ data: { context: ctx } });
+      // Valida antes de sobrescrever
+      try {
+        textToSections(res.text);
+      } catch {
+        toast.error("A IA retornou um formato inválido. Tente novamente.");
+        return;
+      }
+      setText(res.text);
+      setAiOpen(false);
+      setAiContext("");
+      toast.success("Estrutura gerada pela IA");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao gerar com IA");
+    } finally {
+      setAiBusy(false);
+    }
+  }
+
   const parsedPreview = useMemo(() => {
     try {
       return textToSections(text);
@@ -140,6 +240,9 @@ function ChecklistTemplatesPage() {
       return null;
     }
   }, [text]);
+
+  const hasSelection = isNew || !!selectedId;
+  const locked = !editMode;
 
   if (loading || loadingList) {
     return <div className="p-6 text-sm text-muted-foreground">Carregando…</div>;
@@ -162,7 +265,7 @@ function ChecklistTemplatesPage() {
         />
       </div>
 
-      <div className="grid gap-4 md:grid-cols-[260px_1fr]">
+      <div className="grid gap-4 md:grid-cols-[280px_1fr]">
         {/* Lista */}
         <aside className="rounded-xl border border-border p-3">
           <button
@@ -177,7 +280,9 @@ function ChecklistTemplatesPage() {
                 <button
                   onClick={() => selectTemplate(t)}
                   className={`flex-1 truncate rounded-lg px-2 py-1.5 text-left text-sm ${
-                    selectedId === t.id ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                    selectedId === t.id && !isNew
+                      ? "bg-primary/10 text-primary"
+                      : "hover:bg-muted"
                   }`}
                 >
                   {t.name}
@@ -186,10 +291,19 @@ function ChecklistTemplatesPage() {
                   )}
                 </button>
                 <button
+                  onClick={() => duplicateTemplate(t)}
+                  title="Duplicar"
+                  className="p-1 text-muted-foreground hover:text-primary"
+                >
+                  <Copy className="h-4 w-4" />
+                </button>
+                <button
                   onClick={() => makeDefault(t.id)}
                   title="Definir como padrão"
                   className={`p-1 ${
-                    t.id === defaultId ? "text-amber-500" : "text-muted-foreground hover:text-amber-500"
+                    t.id === defaultId
+                      ? "text-amber-500"
+                      : "text-muted-foreground hover:text-amber-500"
                   }`}
                 >
                   <Star className="h-4 w-4" fill={t.id === defaultId ? "currentColor" : "none"} />
@@ -206,64 +320,164 @@ function ChecklistTemplatesPage() {
           </ul>
         </aside>
 
-        {/* Editor */}
-        <div className="space-y-3 rounded-xl border border-border p-4">
-          <div>
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Nome</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold uppercase text-muted-foreground">
-              Descrição (opcional)
-            </label>
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold uppercase text-muted-foreground">
-              Estrutura
-            </label>
-            <p className="mb-1 text-xs text-muted-foreground">
-              Use <code>## Título da seção</code>, <code>### Título do grupo</code>, e
-              <code> - item</code> em cada linha.
-            </p>
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={20}
-              spellCheck={false}
-              className="w-full rounded-lg border border-input bg-background p-3 font-mono text-xs outline-none focus:border-primary"
-            />
-            {parsedPreview ? (
-              <p className="mt-1 text-xs text-emerald-600">
-                {parsedPreview.reduce(
-                  (n, s) => n + s.groups.reduce((m, g) => m + g.items.length, 0),
-                  0,
-                )}{" "}
-                itens em {parsedPreview.length} seção(ões).
-              </p>
-            ) : (
-              <p className="mt-1 text-xs text-destructive">Formato inválido.</p>
-            )}
-          </div>
-          <div className="flex justify-end">
-            <button
-              onClick={save}
-              disabled={saving}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-            >
-              <Save className="h-4 w-4" /> Salvar
-            </button>
-          </div>
+        {/* Editor / visualização */}
+        <div className="rounded-xl border border-border p-4">
+          {!hasSelection ? (
+            <div className="flex h-full min-h-[280px] flex-col items-center justify-center gap-2 text-center text-sm text-muted-foreground">
+              <ListChecks className="h-8 w-8 opacity-50" />
+              <p>Selecione um template à esquerda para visualizar</p>
+              <p className="text-xs">ou clique em “Novo template” para criar um novo.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Barra de ações */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {isNew ? "Novo template" : locked ? "Detalhes do template" : "Editando template"}
+                </span>
+                <div className="flex items-center gap-2">
+                  {locked ? (
+                    <button
+                      onClick={() => setEditMode(true)}
+                      className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
+                      title="Editar"
+                    >
+                      <Pencil className="h-4 w-4" /> Editar
+                    </button>
+                  ) : (
+                    <button
+                      onClick={cancelEdit}
+                      className="flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
+                    >
+                      <X className="h-4 w-4" /> Cancelar
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Nome</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  disabled={locked}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-70"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold uppercase text-muted-foreground">
+                  Descrição (opcional)
+                </label>
+                <input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={locked}
+                  className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-70"
+                />
+              </div>
+
+              {/* Estrutura recolhível */}
+              <details className="group rounded-lg border border-border" open={!locked}>
+                <summary className="flex cursor-pointer items-center justify-between gap-2 px-3 py-2 text-sm">
+                  <span className="flex items-center gap-2 font-semibold">
+                    <ChevronDown className="h-4 w-4 -rotate-90 transition-transform group-open:rotate-0" />
+                    Estrutura
+                  </span>
+                  {parsedPreview ? (
+                    <span className="text-xs text-muted-foreground">
+                      {parsedPreview.reduce(
+                        (n, s) => n + s.groups.reduce((m, g) => m + g.items.length, 0),
+                        0,
+                      )}{" "}
+                      itens · {parsedPreview.length} seção(ões)
+                    </span>
+                  ) : (
+                    <span className="text-xs text-destructive">Formato inválido</span>
+                  )}
+                </summary>
+                <div className="space-y-2 border-t border-border p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      Use <code>## Seção</code>, <code>### Grupo</code> e <code>- item</code>.
+                    </p>
+                    {!locked && aiEnabled && (
+                      <button
+                        onClick={() => setAiOpen(true)}
+                        className="flex items-center gap-1.5 rounded-lg border border-primary/40 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary hover:bg-primary/10"
+                      >
+                        <Sparkles className="h-3.5 w-3.5" /> Gerar com IA
+                      </button>
+                    )}
+                  </div>
+                  <textarea
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    rows={18}
+                    spellCheck={false}
+                    disabled={locked}
+                    className="w-full rounded-lg border border-input bg-background p-3 font-mono text-xs outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-70"
+                  />
+                </div>
+              </details>
+
+              <div className="flex justify-end">
+                <button
+                  onClick={save}
+                  disabled={saving || locked}
+                  className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Save className="h-4 w-4" /> Salvar
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Modal IA */}
+      {aiOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl border border-border bg-background p-4 shadow-xl">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="flex items-center gap-2 text-base font-semibold">
+                <Sparkles className="h-4 w-4 text-primary" /> Gerar estrutura com IA
+              </h3>
+              <button
+                onClick={() => setAiOpen(false)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Descreva o tipo de consultoria/viagem ou os pontos que a checklist deve cobrir. A
+              estrutura atual será substituída.
+            </p>
+            <textarea
+              value={aiContext}
+              onChange={(e) => setAiContext(e.target.value)}
+              rows={6}
+              placeholder="Ex.: Consultoria completa para viagem internacional em família com crianças, foco em documentação, hospedagem, passeios e entrega do material."
+              className="w-full rounded-lg border border-input bg-background p-3 text-sm outline-none focus:border-primary"
+            />
+            <div className="mt-3 flex justify-end gap-2">
+              <button
+                onClick={() => setAiOpen(false)}
+                className="rounded-lg border border-border px-3 py-1.5 text-sm hover:bg-muted"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={runAiGenerate}
+                disabled={aiBusy}
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                <Sparkles className="h-4 w-4" /> {aiBusy ? "Gerando…" : "Gerar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -275,6 +489,22 @@ function slugify(s: string) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-|-$/g, "");
+}
+
+function ensureUniqueName(
+  base: string,
+  templates: ChecklistTemplate[],
+  ignoreId: string | null,
+): string {
+  const taken = new Set(
+    templates
+      .filter((t) => t.id !== ignoreId)
+      .map((t) => t.name.trim().toLowerCase()),
+  );
+  if (!taken.has(base.trim().toLowerCase())) return base;
+  let i = 2;
+  while (taken.has(`${base} ${i}`.toLowerCase())) i += 1;
+  return `${base} ${i}`;
 }
 
 function sectionsToText(sections: ChecklistSection[]): string {
@@ -325,7 +555,6 @@ function textToSections(text: string): ChecklistSection[] {
       curSection.groups.push(curGroup);
     } else if (line.startsWith("- ") || line.startsWith("* ") || line.startsWith("☐")) {
       if (!curSection) throw new Error("Item antes de uma seção.");
-      // Grupo implícito se não houver
       if (!curGroup) {
         gIdx += 1;
         curGroup = { id: `s${sIdx}g${gIdx}`, title: "Itens", items: [] };
@@ -333,8 +562,7 @@ function textToSections(text: string): ChecklistSection[] {
       }
       iIdx += 1;
       const label = line.replace(/^[-*☐]\s*/, "").trim();
-      if (label)
-        curGroup.items.push({ id: `s${sIdx}g${gIdx}i${iIdx}`, label });
+      if (label) curGroup.items.push({ id: `s${sIdx}g${gIdx}i${iIdx}`, label });
     }
   }
   if (sections.length === 0) throw new Error("Adicione ao menos uma seção (## Título).");
