@@ -177,11 +177,11 @@ function TarefasPage() {
 function TaskList({
   tasks,
   onToggle,
-  onOpenLead,
+  onOpenTask,
 }: {
   tasks: Task[];
   onToggle: (t: Task) => void;
-  onOpenLead: (id: string) => void;
+  onOpenTask: (t: Task) => void;
 }) {
   return (
     <ul className="space-y-2">
@@ -191,15 +191,16 @@ function TaskList({
         return (
           <li
             key={t.id}
-            onClick={() => clickable && onOpenLead(t.lead_id!)}
+            onClick={() => clickable && onOpenTask(t)}
             role={clickable ? "button" : undefined}
             tabIndex={clickable ? 0 : undefined}
             onKeyDown={(e) => {
               if (clickable && (e.key === "Enter" || e.key === " ")) {
                 e.preventDefault();
-                onOpenLead(t.lead_id!);
+                onOpenTask(t);
               }
             }}
+
             className={`flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm ${
               clickable ? "cursor-pointer transition hover:border-primary hover:bg-muted/40" : ""
             }`}
