@@ -124,9 +124,10 @@ export function CreateTaskModal({
         <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-foreground">
-              <ListPlus className="h-5 w-5" />
+              {isEdit ? <Pencil className="h-5 w-5" /> : <ListPlus className="h-5 w-5" />}
             </div>
-            <DialogTitle className="text-lg font-bold">Criar Tarefa</DialogTitle>
+            <DialogTitle className="text-lg font-bold">{isEdit ? "Editar Tarefa" : "Criar Tarefa"}</DialogTitle>
+
           </div>
         </div>
 
