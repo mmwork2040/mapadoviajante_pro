@@ -181,6 +181,8 @@ function ChecklistTemplatesPage() {
       destructive: true,
     });
     if (!ok) return;
+    setBusyDeleteId(id);
+    const tid = toast.loading("Excluindo template…");
     try {
       const res = await deleteChecklistTemplate({ data: { id } });
       setTemplates(res.templates);
@@ -193,19 +195,25 @@ function ChecklistTemplatesPage() {
         setDescription("");
         setText("");
       }
-      toast.success("Template excluído");
+      toast.success("Template excluído", { id: tid });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
+    } finally {
+      setBusyDeleteId(null);
     }
   }
 
   async function makeDefault(id: string) {
+    setBusyDefaultId(id);
+    const tid = toast.loading("Definindo como padrão…");
     try {
       const res = await setDefaultChecklistTemplate({ data: { id } });
       setDefaultId(res.defaultId);
-      toast.success("Template definido como padrão");
+      toast.success("Template definido como padrão", { id: tid });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
+    } finally {
+      setBusyDefaultId(null);
     }
   }
 
