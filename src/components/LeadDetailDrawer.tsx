@@ -510,55 +510,70 @@ export function LeadDetailDrawer({
                 )}
               </div>
 
-              <TripSummaryStrip
-                clientName={lead.name}
-                destination={lead.destination}
-                travelDates={String(p.travel_dates || "")}
-                clientNotes={String(p.trip_notes || "")}
-              />
-
-              <div className="relative mt-3 grid grid-cols-2 gap-2">
-
-                <button
-                  onClick={openWhatsApp}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
-                >
-                  <MessageCircle className="h-4 w-4 text-[var(--success)]" /> WhatsApp
-                </button>
-                <button
-                  onClick={handleEdit}
-                  className="flex items-center justify-center gap-1.5 rounded-lg border border-border py-2 text-xs font-semibold hover:bg-muted"
-                >
-                  <Pencil className="h-4 w-4" /> Editar
-                </button>
-              </div>
-
-              <div className="relative mt-2 flex items-center gap-2">
-                <span className="flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-muted-foreground">
-                  <User className="h-4 w-4 text-primary" /> Atribuir a:
-                </span>
-                <select
-                  value={lead.assigned_to || ""}
-                  onChange={(e) => handleAssign(e.target.value)}
-                  disabled={assign.isPending}
-                  className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-xs outline-none focus:border-primary disabled:opacity-60"
-                >
-                  <option value="">Ninguém</option>
-                  {team.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {lead.assigned_to && (
-                <p className="relative mt-1 pl-6 text-[11px] text-muted-foreground">
-                  Responsável:{" "}
-                  <span className="font-medium text-foreground">
-                    {team.find((m) => m.id === lead.assigned_to)?.name || "—"}
+              <details className="group relative mt-3 rounded-xl border border-border bg-muted/30 open:bg-muted/40">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-semibold hover:bg-muted/60">
+                  <span className="flex min-w-0 flex-1 items-center gap-2 text-muted-foreground">
+                    <User className="h-3.5 w-3.5 shrink-0 text-primary" />
+                    <span className="truncate">
+                      {lead.destination || "Sem destino"}
+                      {(() => {
+                        const dates = String(p.travel_dates || "").trim();
+                        return dates ? <> · <span className="text-foreground">{dates}</span></> : null;
+                      })()}
+                    </span>
+                    {lead.assigned_to && (
+                      <span className="ml-auto hidden shrink-0 rounded-full bg-background px-2 py-0.5 text-[10px] font-medium text-foreground sm:inline">
+                        {team.find((m) => m.id === lead.assigned_to)?.name || "—"}
+                      </span>
+                    )}
                   </span>
-                </p>
-              )}
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
+                </summary>
+
+                <div className="space-y-3 px-3 pb-3 pt-1">
+                  <TripSummaryStrip
+                    clientName={lead.name}
+                    destination={lead.destination}
+                    travelDates={String(p.travel_dates || "")}
+                    clientNotes={String(p.trip_notes || "")}
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      onClick={openWhatsApp}
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-2 text-xs font-semibold hover:bg-muted"
+                    >
+                      <MessageCircle className="h-4 w-4 text-[var(--success)]" /> WhatsApp
+                    </button>
+                    <button
+                      onClick={handleEdit}
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-2 text-xs font-semibold hover:bg-muted"
+                    >
+                      <Pencil className="h-4 w-4" /> Editar
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="flex items-center gap-1.5 whitespace-nowrap text-xs font-semibold text-muted-foreground">
+                      <User className="h-4 w-4 text-primary" /> Atribuir a:
+                    </span>
+                    <select
+                      value={lead.assigned_to || ""}
+                      onChange={(e) => handleAssign(e.target.value)}
+                      disabled={assign.isPending}
+                      className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-xs outline-none focus:border-primary disabled:opacity-60"
+                    >
+                      <option value="">Ninguém</option>
+                      {team.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </details>
+
             </div>
 
             {highlightTask && (
