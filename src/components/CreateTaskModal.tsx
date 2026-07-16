@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ListPlus, Pencil } from "lucide-react";
+import {
+  ListPlus,
+  Pencil,
+  Phone,
+  MessageCircle,
+  Mail,
+  Video,
+  StickyNote,
+  FileText,
+  ClipboardList,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead } from "@/lib/services";
 import type { Task } from "@/lib/types";
 
@@ -21,6 +32,16 @@ const PRIORITIES = [
   { value: "low", label: "Baixa", dot: "bg-emerald-500" },
   { value: "normal", label: "Média", dot: "bg-amber-500" },
   { value: "high", label: "Alta", dot: "bg-red-500" },
+];
+
+const ACTIVITY_TYPES = [
+  { key: "call", label: "Ligação", icon: Phone },
+  { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+  { key: "email", label: "E-mail", icon: Mail },
+  { key: "meeting", label: "Reunião", icon: Video },
+  { key: "note", label: "Observação", icon: StickyNote },
+  { key: "document", label: "Documento", icon: FileText },
+  { key: "outros", label: "Outros", icon: ClipboardList },
 ];
 
 function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: string }) {
