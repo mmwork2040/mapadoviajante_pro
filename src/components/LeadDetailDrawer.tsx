@@ -1545,13 +1545,16 @@ function ChecklistTab({
     const ok = await confirm({
       title: "Trocar template?",
       description:
-        "Todas as marcações atuais deste checklist serão substituídas pelo template selecionado.",
+        "Os itens do template atual serão removidos imediatamente da listagem. Escolha o novo template em seguida.",
       confirmLabel: "Trocar",
       destructive: true,
     });
     if (!ok) return;
+    // Remove imediatamente os itens do template anterior da listagem
+    persist({ items: {}, extras: [] });
     setPickerOpen(true);
   }
+
 
   function toggle(id: string) {
     persist({ ...state, items: { ...state.items, [id]: !state.items[id] } });
