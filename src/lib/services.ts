@@ -619,20 +619,61 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
   // Enriquece cada atividade com a data de execução e o status da tarefa vinculada.
   const { data: tasks } = await supabase
     .from("crm_tasks")
-    .select("due_date, completed, description")
+    .select("id, title, description, due_date, completed, assigned_to, created_by")
     .eq("lead_id", leadId);
-  if (tasks) {
-    for (const a of activities) {
-      const linked = (tasks as { due_date?: string | null; completed?: boolean | null; description?: string | null }[])
-        .find((t) => (t.description || "").includes(ACTIVITY_TASK_MARK(a.id)));
-      if (linked) {
-        a.due_date = linked.due_date ?? a.due_date;
-        a.completed = linked.completed ?? false;
-      }
+  const taskList = (tasks as {
+    id: string;
+    title: string;
+    description?: string | null;
+    due_date?: string | null;
+    completed?: boolean | null;
+    assigned_to?: string | null;
+    created_by?: string | null;
+  }[] | null) || [];
+
+  // Backfill: tarefas sem atividade vinculada ganham uma do tipo "Outros"
+  // para aparecerem no histórico do lead.
+  const orphanTasks = taskList.filter((t) => !extractLinkedActivityId(t.description));
+  for (const t of orphanTasks) {
+    const { data: act, error: actErr } = await supabase
+      .from("crm_lead_activities")
+      .insert({
+        agency_id: _agencyId,
+        lead_id: leadId,
+        author_id: t.created_by || _memberId,
+        assigned_to_id: t.assigned_to || null,
+        type: "outros",
+        title: t.title || "Tarefa",
+        details: cleanTaskDescription(t.description) || null,
+        due_date: t.due_date || null,
+        mentions: [],
+      })
+      .select(
+        "*, author:agency_members!crm_lead_activities_author_id_fkey(id, name, avatar_color, role), assigned:agency_members!crm_lead_activities_assigned_to_id_fkey(id, name, avatar_color)",
+      )
+      .single();
+    if (actErr || !act) {
+      if (actErr) console.error("fetchLeadActivities(backfill):", actErr);
+      continue;
+    }
+    const linkedId = (act as { id: string }).id;
+    const newDesc = [cleanTaskDescription(t.description), ACTIVITY_TASK_MARK(linkedId)]
+      .filter(Boolean)
+      .join("\n\n");
+    await supabase.from("crm_tasks").update({ description: newDesc }).eq("id", t.id);
+    activities.unshift(act as LeadActivity);
+  }
+
+  for (const a of activities) {
+    const linked = taskList.find((t) => (t.description || "").includes(ACTIVITY_TASK_MARK(a.id)));
+    if (linked) {
+      a.due_date = linked.due_date ?? a.due_date;
+      a.completed = linked.completed ?? false;
     }
   }
   return activities;
 }
+
 
 
 // Marca invisível que liga uma tarefa de agenda à atividade que a originou.
