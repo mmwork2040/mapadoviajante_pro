@@ -264,6 +264,7 @@ function ChecklistTemplatesPage() {
       const res = await setDefaultChecklistTemplate({ data: { id } });
       setDefaultId(res.defaultId);
       toast.success("Template definido como padrão", { id: tid });
+      await refreshAll();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
     } finally {
