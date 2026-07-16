@@ -61,13 +61,16 @@ import {
   updateItinerary,
   updateLead,
   updateLeadActivity,
+  updateTask,
+  cleanTaskDescription,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, initials, maskPhone, maskCurrency, parseCurrency } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { useAuth, isAdminUser } from "@/lib/auth";
-import type { Itinerary, Lead, LeadStatus, TripBenefits, TripExpense } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus, Task, TripBenefits, TripExpense } from "@/lib/types";
+
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
   { key: "new", label: "Novo", dot: "bg-blue-500" },
