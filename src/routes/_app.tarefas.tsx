@@ -255,7 +255,7 @@ function TaskList({
     <ul className="space-y-2">
       {tasks.map((t) => {
         const prio = PRIORITY_META[t.priority] ?? PRIORITY_META.normal;
-        const clickable = !!t.lead_id;
+        const clickable = !!t.itinerary_id;
         return (
           <li
             key={t.id}
