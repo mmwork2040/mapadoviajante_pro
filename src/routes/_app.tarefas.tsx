@@ -2,14 +2,23 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, ListChecks, Check, CalendarClock } from "lucide-react";
-import { fetchTasks, updateTask, cleanTaskDescription, isOverdue } from "@/lib/services";
+import { Plus, ListChecks, Check, CalendarClock, MoreVertical, ExternalLink, Pencil, Trash2, RotateCcw, CheckCircle2 } from "lucide-react";
+import { fetchTasks, updateTask, deleteTask, cleanTaskDescription, isOverdue } from "@/lib/services";
 import { Button } from "@/components/ui/button";
 import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { PageHeader } from "@/components/PageHeader";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useConfirm } from "@/components/ConfirmDialog";
 import type { Task } from "@/lib/types";
+
 
 export const Route = createFileRoute("/_app/tarefas")({
   component: TarefasPage,
@@ -29,8 +38,10 @@ function formatDue(iso?: string | null) {
 
 function TarefasPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
+  const [editTask, setEditTask] = useState<Task | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -47,6 +58,28 @@ function TarefasPage() {
     },
     onError: () => toast.error("Erro ao atualizar tarefa."),
   });
+
+  const removeTask = useMutation({
+    mutationFn: (id: string) => deleteTask(id),
+    onSuccess: (ok) => {
+      if (!ok) return toast.error("Erro ao excluir tarefa.");
+      toast.success("Tarefa excluída.");
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: () => toast.error("Erro ao excluir tarefa."),
+  });
+
+  async function handleDelete(t: Task) {
+    const ok = await confirm({
+      title: "Excluir tarefa?",
+      description: `“${t.title}” será removida definitivamente.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (ok === true) removeTask.mutate(t.id);
+  }
+
 
   const byDue = (a: Task, b: Task) => {
     const ta = a.due_date ? new Date(a.due_date).getTime() : Infinity;
@@ -148,20 +181,37 @@ function TarefasPage() {
       ) : (
         <div className="space-y-6">
           {showPending && pending.length > 0 && (
-            <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} onOpenTask={setDetailTask} />
+            <TaskList
+              tasks={pending}
+              onToggle={(t) => toggle.mutate(t)}
+              onOpenTask={setDetailTask}
+              onEditTask={setEditTask}
+              onDeleteTask={handleDelete}
+            />
           )}
           {showDone && done.length > 0 && (
             <div>
               <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
                 Concluídas ({done.length})
               </h2>
-              <TaskList tasks={done} onToggle={(t) => toggle.mutate(t)} onOpenTask={setDetailTask} />
+              <TaskList
+                tasks={done}
+                onToggle={(t) => toggle.mutate(t)}
+                onOpenTask={setDetailTask}
+                onEditTask={setEditTask}
+                onDeleteTask={handleDelete}
+              />
             </div>
           )}
         </div>
       )}
 
       <CreateTaskModal open={open} onOpenChange={setOpen} />
+      <CreateTaskModal
+        open={!!editTask}
+        onOpenChange={(v) => !v && setEditTask(null)}
+        task={editTask}
+      />
       {detailTask?.lead_id && (
         <LeadDetailDrawer
           leadId={detailTask.lead_id}
@@ -174,14 +224,19 @@ function TarefasPage() {
   );
 }
 
+
 function TaskList({
   tasks,
   onToggle,
   onOpenTask,
+  onEditTask,
+  onDeleteTask,
 }: {
   tasks: Task[];
   onToggle: (t: Task) => void;
   onOpenTask: (t: Task) => void;
+  onEditTask: (t: Task) => void;
+  onDeleteTask: (t: Task) => void;
 }) {
   return (
     <ul className="space-y-2">
@@ -241,6 +296,45 @@ function TaskList({
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.cls}`}>
                 {prio.label}
               </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Ações da tarefa"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  {clickable && (
+                    <DropdownMenuItem onSelect={() => onOpenTask(t)}>
+                      <ExternalLink className="mr-2 h-4 w-4" /> Abrir
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => onEditTask(t)}>
+                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onToggle(t)}>
+                    {t.completed ? (
+                      <>
+                        <RotateCcw className="mr-2 h-4 w-4" /> Reabrir
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar como concluída
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => onDeleteTask(t)}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </li>
         );
@@ -248,3 +342,4 @@ function TaskList({
     </ul>
   );
 }
+
