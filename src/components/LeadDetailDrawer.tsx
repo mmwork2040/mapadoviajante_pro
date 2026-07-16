@@ -1661,16 +1661,45 @@ function ChecklistTab({
               const snapshot = state;
               persist({ items: {}, extras: [] });
               setPickerOpen(false);
-              toast.success("Checklist removido", {
-                duration: 6000,
-                action: {
-                  label: "Desfazer",
-                  onClick: () => {
-                    persist(snapshot);
-                    toast.success("Checklist restaurado");
-                  },
-                },
-              });
+              const SECONDS = 6;
+              const tid = `undo-checklist-${Date.now()}`;
+              let remaining = SECONDS;
+              let undone = false;
+              const render = () =>
+                toast(
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium">Checklist removido</span>
+                      <span className="text-xs text-muted-foreground">
+                        Desfazendo em {remaining}s…
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        undone = true;
+                        clearInterval(iv);
+                        persist(snapshot);
+                        toast.dismiss(tid);
+                        toast.success("Checklist restaurado");
+                      }}
+                      className="rounded-md border border-border px-2.5 py-1 text-xs font-medium hover:bg-muted"
+                    >
+                      Desfazer
+                    </button>
+                  </div>,
+                  { id: tid, duration: Infinity },
+                );
+              render();
+              const iv = setInterval(() => {
+                remaining -= 1;
+                if (undone) return;
+                if (remaining <= 0) {
+                  clearInterval(iv);
+                  toast.dismiss(tid);
+                  return;
+                }
+                render();
+              }, 1000);
             }}
             className="rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
           >
