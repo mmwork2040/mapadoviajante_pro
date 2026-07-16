@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createTask, fetchLeads, fetchTeamMembers } from "@/lib/services";
+import { createTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead } from "@/lib/services";
 
 const PRIORITIES = [
   { value: "low", label: "Baixa", dot: "bg-emerald-500" },
