@@ -67,12 +67,14 @@ function ChecklistTemplatesPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [res, cfg] = await Promise.all([
+        const [res, cfg, u] = await Promise.all([
           listChecklistTemplates(),
           fetchAiConfig().catch(() => null),
+          getChecklistTemplatesUsage().catch(() => ({}) as Record<string, number>),
         ]);
         setTemplates(res.templates);
         setDefaultId(res.defaultId);
+        setUsage(u);
         const ks = (cfg?.knowledge_sources as { status?: string } | null) ?? null;
         setAiEnabled(!!cfg?.api_key_encrypted && ks?.status === "connected");
       } catch (e) {
@@ -84,7 +86,30 @@ function ChecklistTemplatesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function selectTemplate(t: ChecklistTemplate) {
+  async function refreshAll(preferId?: string | null) {
+    try {
+      const [res, u] = await Promise.all([
+        listChecklistTemplates(),
+        getChecklistTemplatesUsage().catch(() => ({}) as Record<string, number>),
+      ]);
+      setTemplates(res.templates);
+      setDefaultId(res.defaultId);
+      setUsage(u);
+      // Reflete o card selecionado com dados atualizados
+      const targetId = preferId ?? selectedId;
+      if (targetId) {
+        const t = res.templates.find((x) => x.id === targetId);
+        if (t && !editMode) {
+          setSelectedId(t.id);
+          setName(t.name);
+          setDescription(t.description || "");
+          setText(sectionsToText(t.sections));
+        }
+      }
+    } catch {
+      /* silencioso */
+    }
+  }
     setSelectedId(t.id);
     setIsNew(false);
     setEditMode(false);
