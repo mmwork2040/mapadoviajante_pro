@@ -873,7 +873,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
         lead_id: taskData.lead_id,
         author_id: _memberId,
         assigned_to_id: taskData.assigned_to || null,
-        type: "outros",
+        type: (taskData as { activity_type?: string }).activity_type || "outros",
         title: taskData.title || "Tarefa",
         details: cleanTaskDescription(description) || null,
         mentions: [],
@@ -924,7 +924,8 @@ function extractLinkedActivityId(desc?: string | null): string | null {
 }
 
 export async function updateTask(taskId: string, updates: Partial<Task>): Promise<Task | null> {
-  const patch = { ...updates };
+  const patch = { ...updates } as Record<string, unknown>;
+  delete patch.activity_type;
   if (patch.completed === true && !patch.completed_at) {
     patch.completed_at = new Date().toISOString();
   }
@@ -947,6 +948,8 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
     if (updates.description !== undefined)
       actPatch.details = cleanTaskDescription(updates.description) || null;
     if (updates.assigned_to !== undefined) actPatch.assigned_to_id = updates.assigned_to || null;
+    const actType = (updates as { activity_type?: string }).activity_type;
+    if (actType) actPatch.type = actType;
     if (Object.keys(actPatch).length) {
       await supabase.from("crm_lead_activities").update(actPatch).eq("id", linkedId);
     }

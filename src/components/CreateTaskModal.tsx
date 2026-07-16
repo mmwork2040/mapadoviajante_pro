@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ListPlus, Pencil } from "lucide-react";
+import {
+  ListPlus,
+  Pencil,
+  Phone,
+  MessageCircle,
+  Mail,
+  Video,
+  StickyNote,
+  FileText,
+  ClipboardList,
+} from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,6 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { supabase } from "@/integrations/supabase/client";
 import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead } from "@/lib/services";
 import type { Task } from "@/lib/types";
 
@@ -21,6 +32,16 @@ const PRIORITIES = [
   { value: "low", label: "Baixa", dot: "bg-emerald-500" },
   { value: "normal", label: "Média", dot: "bg-amber-500" },
   { value: "high", label: "Alta", dot: "bg-red-500" },
+];
+
+const ACTIVITY_TYPES = [
+  { key: "call", label: "Ligação", icon: Phone },
+  { key: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+  { key: "email", label: "E-mail", icon: Mail },
+  { key: "meeting", label: "Reunião", icon: Video },
+  { key: "note", label: "Observação", icon: StickyNote },
+  { key: "document", label: "Documento", icon: FileText },
+  { key: "outros", label: "Outros", icon: ClipboardList },
 ];
 
 function FieldLabel({ children, hint }: { children: React.ReactNode; hint?: string }) {
@@ -50,6 +71,7 @@ export function CreateTaskModal({
   const [dueDate, setDueDate] = useState<string>("");
   const [priority, setPriority] = useState("normal");
   const [description, setDescription] = useState("");
+  const [activityType, setActivityType] = useState<string>("outros");
 
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}), enabled: open });
   const membersQ = useQuery({ queryKey: ["team-members"], queryFn: fetchTeamMembers, enabled: open });
@@ -69,6 +91,20 @@ export function CreateTaskModal({
       setDueDate(task.due_date ? task.due_date.slice(0, 10) : "");
       setPriority(task.priority ?? "normal");
       setDescription(task.description ?? "");
+      setActivityType("outros");
+      // Se a tarefa está ligada a uma atividade, busca o tipo atual.
+      const m = (task.description ?? "").match(/\[atv:([0-9a-f-]+)\]/i);
+      if (m) {
+        supabase
+          .from("crm_lead_activities")
+          .select("type")
+          .eq("id", m[1])
+          .maybeSingle()
+          .then(({ data }) => {
+            const t = (data as { type?: string } | null)?.type;
+            if (t && ACTIVITY_TYPES.some((a) => a.key === t)) setActivityType(t);
+          });
+      }
     } else {
       reset();
     }
@@ -83,6 +119,7 @@ export function CreateTaskModal({
     setDueDate("");
     setPriority("normal");
     setDescription("");
+    setActivityType("outros");
   }
 
   const mutation = useMutation({
@@ -95,7 +132,8 @@ export function CreateTaskModal({
         priority,
         due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
         description: description.trim() || null,
-      };
+        activity_type: activityType,
+      } as Partial<Task> & { activity_type: string };
       return isEdit ? updateTask(task!.id, payload) : createTask(payload);
     },
 
@@ -141,6 +179,33 @@ export function CreateTaskModal({
               placeholder="Ex: Emitir bilhete, Enviar voucher, Confirmar reserva…"
             />
           </div>
+
+          <div>
+            <FieldLabel>Tipo</FieldLabel>
+            <div className="flex flex-wrap gap-2">
+              {ACTIVITY_TYPES.map((t) => {
+                const Icon = t.icon;
+                const active = activityType === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setActivityType(t.key)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-muted-foreground hover:border-primary hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>

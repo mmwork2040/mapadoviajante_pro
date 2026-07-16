@@ -778,8 +778,10 @@ export type Database = {
           agency_id: string
           assigned_to_id: string | null
           author_id: string
+          completed_at: string | null
           created_at: string | null
           details: string | null
+          due_date: string | null
           id: string
           lead_id: string
           mentions: string[] | null
@@ -790,8 +792,10 @@ export type Database = {
           agency_id: string
           assigned_to_id?: string | null
           author_id: string
+          completed_at?: string | null
           created_at?: string | null
           details?: string | null
+          due_date?: string | null
           id?: string
           lead_id: string
           mentions?: string[] | null
@@ -802,8 +806,10 @@ export type Database = {
           agency_id?: string
           assigned_to_id?: string | null
           author_id?: string
+          completed_at?: string | null
           created_at?: string | null
           details?: string | null
+          due_date?: string | null
           id?: string
           lead_id?: string
           mentions?: string[] | null
