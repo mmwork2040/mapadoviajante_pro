@@ -769,8 +769,9 @@ export async function fetchTasks(filters: { completed?: boolean; assigned_to?: s
   let query = supabase
     .from("crm_tasks")
     .select(
-      "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name)",
+      "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name), itinerary:crm_itineraries!crm_tasks_itinerary_id_fkey(title)",
     )
+
     .eq("agency_id", _agencyId)
     .order("due_date", { ascending: true });
   if (filters.completed !== undefined) query = query.eq("completed", filters.completed);
