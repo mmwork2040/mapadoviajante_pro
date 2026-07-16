@@ -110,6 +110,8 @@ function ChecklistTemplatesPage() {
       /* silencioso */
     }
   }
+
+  function selectTemplate(t: ChecklistTemplate) {
     setSelectedId(t.id);
     setIsNew(false);
     setEditMode(false);
@@ -127,16 +129,37 @@ function ChecklistTemplatesPage() {
     setText("## Seção\n### Grupo\n- Item exemplo\n");
   }
 
-  function duplicateTemplate(t: ChecklistTemplate) {
+  async function duplicateTemplate(t: ChecklistTemplate) {
+    const ok = await confirm({
+      title: "Duplicar template?",
+      description: `Uma cópia de “${t.name}” será criada como um novo template.`,
+      confirmLabel: "Duplicar",
+    });
+    if (!ok) return;
     const baseName = `${t.name} (cópia)`;
     const uniqueName = ensureUniqueName(baseName, templates, null);
-    setSelectedId(null);
-    setIsNew(true);
-    setEditMode(true);
-    setName(uniqueName);
-    setDescription(t.description || "");
-    setText(sectionsToText(t.sections));
-    toast.info("Cópia carregada. Ajuste e salve para criar o novo template.");
+    const newId = slugify(uniqueName) + "-" + Date.now().toString(36);
+    setDuplicatingId(t.id);
+    const tid = toast.loading("Duplicando template…");
+    try {
+      const tpl: ChecklistTemplate = {
+        id: newId,
+        name: uniqueName,
+        description: t.description,
+        sections: t.sections,
+      };
+      const res = await saveChecklistTemplate({ data: { template: tpl } });
+      setTemplates(res.templates);
+      setDefaultId(res.defaultId);
+      const created = res.templates.find((x) => x.id === newId);
+      if (created) selectTemplate(created);
+      await refreshAll(newId);
+      toast.success(`Template “${uniqueName}” criado`, { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao duplicar", { id: tid });
+    } finally {
+      setDuplicatingId(null);
+    }
   }
 
   function cancelEdit() {
