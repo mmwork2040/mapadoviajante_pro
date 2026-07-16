@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -38,7 +38,7 @@ function formatDue(iso?: string | null) {
 
 function TarefasPage() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
+  
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
@@ -185,13 +185,7 @@ function TarefasPage() {
             <TaskList
               tasks={pending}
               onToggle={(t) => toggle.mutate(t)}
-              onOpenTask={(t) => {
-                if (t.itinerary_id) {
-                  navigate({ to: "/roteiros/$id", params: { id: t.itinerary_id } });
-                } else if (t.lead_id) {
-                  setDetailTask(t);
-                }
-              }}
+              onOpenTask={setDetailTask}
               onEditTask={setEditTask}
               onDeleteTask={handleDelete}
             />
@@ -204,13 +198,7 @@ function TarefasPage() {
               <TaskList
                 tasks={done}
                 onToggle={(t) => toggle.mutate(t)}
-                onOpenTask={(t) => {
-                  if (t.itinerary_id) {
-                    navigate({ to: "/roteiros/$id", params: { id: t.itinerary_id } });
-                  } else if (t.lead_id) {
-                    setDetailTask(t);
-                  }
-                }}
+                onOpenTask={setDetailTask}
                 onEditTask={setEditTask}
                 onDeleteTask={handleDelete}
               />
@@ -255,7 +243,7 @@ function TaskList({
     <ul className="space-y-2">
       {tasks.map((t) => {
         const prio = PRIORITY_META[t.priority] ?? PRIORITY_META.normal;
-        const clickable = !!t.itinerary_id;
+        const clickable = !!t.lead_id;
         return (
           <li
             key={t.id}

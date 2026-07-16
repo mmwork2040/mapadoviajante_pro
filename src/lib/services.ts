@@ -819,6 +819,36 @@ export async function fetchTasks(filters: { completed?: boolean; assigned_to?: s
 }
 
 export async function createTask(taskData: Partial<Task>): Promise<Task | null> {
+  let description = taskData.description ?? null;
+  let linkedActivityId: string | null = null;
+
+  // Se a tarefa está vinculada a um lead, cria uma atividade correspondente
+  // para aparecer na aba "Atividades" do lead. As duas ficam ligadas por marca.
+  if (taskData.lead_id) {
+    const { data: act, error: actErr } = await supabase
+      .from("crm_lead_activities")
+      .insert({
+        agency_id: _agencyId,
+        lead_id: taskData.lead_id,
+        author_id: _memberId,
+        assigned_to_id: taskData.assigned_to || null,
+        type: "task",
+        title: taskData.title || "Tarefa",
+        details: cleanTaskDescription(description) || null,
+        mentions: [],
+      })
+      .select("id")
+      .single();
+    if (!actErr && act) {
+      linkedActivityId = (act as { id: string }).id;
+      description = [cleanTaskDescription(description), ACTIVITY_TASK_MARK(linkedActivityId)]
+        .filter(Boolean)
+        .join("\n\n");
+    } else if (actErr) {
+      console.error("createTask(activity):", actErr);
+    }
+  }
+
   const { data, error } = await supabase
     .from("crm_tasks")
     .insert({
@@ -830,17 +860,27 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
       title: taskData.title,
       priority: taskData.priority || "normal",
       due_date: taskData.due_date || null,
-      description: taskData.description ?? null,
+      description,
     })
     .select()
     .single();
   if (error) {
+    if (linkedActivityId) {
+      await supabase.from("crm_lead_activities").delete().eq("id", linkedActivityId);
+    }
     console.error("createTask:", error);
     return null;
   }
   return data as Task;
 }
 
+
+/** Extrai o ID da atividade vinculada (se houver) da descrição da tarefa. */
+function extractLinkedActivityId(desc?: string | null): string | null {
+  if (!desc) return null;
+  const m = desc.match(/\[atv:([0-9a-f-]+)\]/i);
+  return m ? m[1] : null;
+}
 
 export async function updateTask(taskId: string, updates: Partial<Task>): Promise<Task | null> {
   const patch = { ...updates };
@@ -857,14 +897,37 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
     console.error("updateTask:", error);
     return null;
   }
-  return data as Task;
+  const task = data as Task;
+  // Propaga alterações relevantes para a atividade vinculada (se houver).
+  const linkedId = extractLinkedActivityId(task.description);
+  if (linkedId) {
+    const actPatch: Record<string, unknown> = {};
+    if (updates.title !== undefined) actPatch.title = updates.title;
+    if (updates.description !== undefined)
+      actPatch.details = cleanTaskDescription(updates.description) || null;
+    if (updates.assigned_to !== undefined) actPatch.assigned_to_id = updates.assigned_to || null;
+    if (Object.keys(actPatch).length) {
+      await supabase.from("crm_lead_activities").update(actPatch).eq("id", linkedId);
+    }
+  }
+  return task;
 }
 
 export async function deleteTask(taskId: string): Promise<boolean> {
+  // Recupera a descrição para remover também a atividade vinculada, se houver.
+  const { data: existing } = await supabase
+    .from("crm_tasks")
+    .select("description")
+    .eq("id", taskId)
+    .maybeSingle();
+  const linkedId = extractLinkedActivityId((existing as { description?: string | null } | null)?.description);
   const { error } = await supabase.from("crm_tasks").delete().eq("id", taskId);
   if (error) {
     console.error("deleteTask:", error);
     return false;
+  }
+  if (linkedId) {
+    await supabase.from("crm_lead_activities").delete().eq("id", linkedId);
   }
   return true;
 }
