@@ -873,7 +873,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
         lead_id: taskData.lead_id,
         author_id: _memberId,
         assigned_to_id: taskData.assigned_to || null,
-        type: "outros",
+        type: (taskData as { activity_type?: string }).activity_type || "outros",
         title: taskData.title || "Tarefa",
         details: cleanTaskDescription(description) || null,
         mentions: [],
