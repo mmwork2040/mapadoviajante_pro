@@ -180,6 +180,33 @@ export function CreateTaskModal({
             />
           </div>
 
+          <div>
+            <FieldLabel>Tipo</FieldLabel>
+            <div className="flex flex-wrap gap-2">
+              {ACTIVITY_TYPES.map((t) => {
+                const Icon = t.icon;
+                const active = activityType === t.key;
+                return (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => setActivityType(t.key)}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background text-muted-foreground hover:border-primary hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+
+
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <FieldLabel>Cliente</FieldLabel>
