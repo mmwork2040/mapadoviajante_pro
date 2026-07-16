@@ -218,6 +218,7 @@ function ChecklistTemplatesPage() {
       setIsNew(false);
       setEditMode(false);
       toast.success("Template salvo", { id: tid });
+      await refreshAll(id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar", { id: tid });
     } finally {
