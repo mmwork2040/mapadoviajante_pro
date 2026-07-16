@@ -5,6 +5,7 @@ import {
   ChevronDown,
   Copy,
   ListChecks,
+  Loader2,
   Pencil,
   Plus,
   Save,
@@ -43,6 +44,8 @@ function ChecklistTemplatesPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loadingList, setLoadingList] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [busyDefaultId, setBusyDefaultId] = useState<string | null>(null);
+  const [busyDeleteId, setBusyDeleteId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -148,6 +151,7 @@ function ChecklistTemplatesPage() {
       return;
     }
     setSaving(true);
+    const tid = toast.loading("Salvando template…");
     try {
       const id = selectedId || slugify(trimmed) + "-" + Date.now().toString(36);
       const tpl: ChecklistTemplate = {
@@ -162,9 +166,9 @@ function ChecklistTemplatesPage() {
       setSelectedId(id);
       setIsNew(false);
       setEditMode(false);
-      toast.success("Template salvo");
+      toast.success("Template salvo", { id: tid });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar", { id: tid });
     } finally {
       setSaving(false);
     }
@@ -178,6 +182,8 @@ function ChecklistTemplatesPage() {
       destructive: true,
     });
     if (!ok) return;
+    setBusyDeleteId(id);
+    const tid = toast.loading("Excluindo template…");
     try {
       const res = await deleteChecklistTemplate({ data: { id } });
       setTemplates(res.templates);
@@ -190,19 +196,25 @@ function ChecklistTemplatesPage() {
         setDescription("");
         setText("");
       }
-      toast.success("Template excluído");
+      toast.success("Template excluído", { id: tid });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
+    } finally {
+      setBusyDeleteId(null);
     }
   }
 
   async function makeDefault(id: string) {
+    setBusyDefaultId(id);
+    const tid = toast.loading("Definindo como padrão…");
     try {
       const res = await setDefaultChecklistTemplate({ data: { id } });
       setDefaultId(res.defaultId);
-      toast.success("Template definido como padrão");
+      toast.success("Template definido como padrão", { id: tid });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro");
+      toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
+    } finally {
+      setBusyDefaultId(null);
     }
   }
 
@@ -299,21 +311,31 @@ function ChecklistTemplatesPage() {
                 </button>
                 <button
                   onClick={() => makeDefault(t.id)}
+                  disabled={busyDefaultId === t.id || busyDeleteId === t.id}
                   title="Definir como padrão"
-                  className={`p-1 ${
+                  className={`p-1 disabled:opacity-60 ${
                     t.id === defaultId
                       ? "text-amber-500"
                       : "text-muted-foreground hover:text-amber-500"
                   }`}
                 >
-                  <Star className="h-4 w-4" fill={t.id === defaultId ? "currentColor" : "none"} />
+                  {busyDefaultId === t.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Star className="h-4 w-4" fill={t.id === defaultId ? "currentColor" : "none"} />
+                  )}
                 </button>
                 <button
                   onClick={() => remove(t.id)}
+                  disabled={busyDeleteId === t.id || busyDefaultId === t.id}
                   title="Excluir"
-                  className="p-1 text-muted-foreground hover:text-destructive"
+                  className="p-1 text-muted-foreground hover:text-destructive disabled:opacity-60"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {busyDeleteId === t.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
                 </button>
               </li>
             ))}
@@ -426,7 +448,12 @@ function ChecklistTemplatesPage() {
                   disabled={saving || locked}
                   className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Save className="h-4 w-4" /> Salvar
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {saving ? "Salvando…" : "Salvar"}
                 </button>
               </div>
             </div>
