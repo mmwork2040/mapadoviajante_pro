@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ListPlus } from "lucide-react";
+import { ListPlus, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead } from "@/lib/services";
+import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead } from "@/lib/services";
+import type { Task } from "@/lib/types";
+
 
 const PRIORITIES = [
   { value: "low", label: "Baixa", dot: "bg-emerald-500" },
