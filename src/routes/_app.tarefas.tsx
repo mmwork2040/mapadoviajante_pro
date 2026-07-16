@@ -148,23 +148,28 @@ function TarefasPage() {
       ) : (
         <div className="space-y-6">
           {showPending && pending.length > 0 && (
-            <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} onOpenLead={setDetailLeadId} />
+            <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} onOpenTask={setDetailTask} />
           )}
           {showDone && done.length > 0 && (
             <div>
               <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
                 Concluídas ({done.length})
               </h2>
-              <TaskList tasks={done} onToggle={(t) => toggle.mutate(t)} onOpenLead={setDetailLeadId} />
+              <TaskList tasks={done} onToggle={(t) => toggle.mutate(t)} onOpenTask={setDetailTask} />
             </div>
           )}
         </div>
       )}
 
       <CreateTaskModal open={open} onOpenChange={setOpen} />
-      {detailLeadId && (
-        <LeadDetailDrawer leadId={detailLeadId} onClose={() => setDetailLeadId(null)} />
+      {detailTask?.lead_id && (
+        <LeadDetailDrawer
+          leadId={detailTask.lead_id}
+          highlightTask={detailTask}
+          onClose={() => setDetailTask(null)}
+        />
       )}
+
     </div>
   );
 }
