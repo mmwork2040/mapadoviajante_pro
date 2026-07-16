@@ -580,15 +580,6 @@ export function LeadDetailDrawer({
 
             </div>
 
-            {highlightTask && (
-              <TaskHighlightBanner
-                task={highlightTask}
-                onToggle={() => {
-                  qc.invalidateQueries({ queryKey: ["tasks"] });
-                  qc.invalidateQueries({ queryKey: ["dashboard"] });
-                }}
-              />
-            )}
 
             {/* Tabs */}
 
