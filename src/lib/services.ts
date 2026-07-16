@@ -359,8 +359,41 @@ export async function fetchLeadById(leadId: string): Promise<Lead | null> {
   return data ? normalizeLead(data as Lead) : null;
 }
 
+async function buildDefaultChecklistForNewLead(): Promise<Record<string, unknown> | null> {
+  try {
+    const { listChecklistTemplates } = await import("@/lib/checklist-templates.functions");
+    const res = await listChecklistTemplates();
+    const tpl = res.templates.find((t) => t.id === res.defaultId) ?? null;
+    if (!tpl) return null;
+    const items: Record<string, boolean> = {};
+    for (const s of tpl.sections)
+      for (const g of s.groups) for (const it of g.items) items[it.id] = false;
+    return {
+      templateId: tpl.id,
+      templateName: tpl.name,
+      sections: tpl.sections,
+      items,
+      extras: [],
+    };
+  } catch (e) {
+    console.warn("buildDefaultChecklistForNewLead:", e);
+    return null;
+  }
+}
+
+function isEmptyChecklist(v: unknown): boolean {
+  if (!v || typeof v !== "object") return true;
+  return Object.keys(v as Record<string, unknown>).length === 0;
+}
+
 export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> {
   if (!_agencyId) await loadAgencyContext();
+
+  let checklists: Record<string, unknown> = (leadData.checklists as Record<string, unknown>) || {};
+  if (isEmptyChecklist(checklists)) {
+    const def = await buildDefaultChecklistForNewLead();
+    if (def) checklists = def;
+  }
 
   const payload = {
     agency_id: _agencyId,
@@ -374,8 +407,9 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
     origin: leadData.origin || "direto",
     notes: leadData.notes || null,
     profile: leadData.profile || {},
-    checklists: leadData.checklists || {},
+    checklists,
   };
+
 
   const { data, error } = await supabase
     .from("crm_leads")
@@ -769,8 +803,9 @@ export async function fetchTasks(filters: { completed?: boolean; assigned_to?: s
   let query = supabase
     .from("crm_tasks")
     .select(
-      "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name)",
+      "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name), itinerary:crm_itineraries!crm_tasks_itinerary_id_fkey(title)",
     )
+
     .eq("agency_id", _agencyId)
     .order("due_date", { ascending: true });
   if (filters.completed !== undefined) query = query.eq("completed", filters.completed);
@@ -791,6 +826,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
       assigned_to: taskData.assigned_to || null,
       created_by: _memberId,
       lead_id: taskData.lead_id || null,
+      itinerary_id: taskData.itinerary_id || null,
       title: taskData.title,
       priority: taskData.priority || "normal",
       due_date: taskData.due_date || null,
@@ -804,6 +840,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
   }
   return data as Task;
 }
+
 
 export async function updateTask(taskId: string, updates: Partial<Task>): Promise<Task | null> {
   const patch = { ...updates };
