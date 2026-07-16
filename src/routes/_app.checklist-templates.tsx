@@ -358,10 +358,15 @@ function ChecklistTemplatesPage() {
                 </button>
                 <button
                   onClick={() => duplicateTemplate(t)}
+                  disabled={duplicatingId === t.id}
                   title="Duplicar"
-                  className="p-1 text-muted-foreground hover:text-primary"
+                  className="p-1 text-muted-foreground hover:text-primary disabled:opacity-60"
                 >
-                  <Copy className="h-4 w-4" />
+                  {duplicatingId === t.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </button>
                 <button
                   onClick={() => makeDefault(t.id)}
@@ -379,18 +384,29 @@ function ChecklistTemplatesPage() {
                     <Star className="h-4 w-4" fill={t.id === defaultId ? "currentColor" : "none"} />
                   )}
                 </button>
-                <button
-                  onClick={() => remove(t.id)}
-                  disabled={busyDeleteId === t.id || busyDefaultId === t.id}
-                  title="Excluir"
-                  className="p-1 text-muted-foreground hover:text-destructive disabled:opacity-60"
-                >
-                  {busyDeleteId === t.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </button>
+                {(() => {
+                  const used = usage[t.id] ?? 0;
+                  const disabled = used > 0 || busyDeleteId === t.id || busyDefaultId === t.id;
+                  const tip =
+                    used > 0
+                      ? `Não pode ser excluído: vinculado a ${used} lead${used > 1 ? "s" : ""}/cliente${used > 1 ? "s" : ""}.`
+                      : "Excluir";
+                  return (
+                    <button
+                      onClick={() => remove(t.id)}
+                      disabled={disabled}
+                      title={tip}
+                      aria-label={tip}
+                      className="p-1 text-muted-foreground hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
+                    >
+                      {busyDeleteId === t.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  );
+                })()}
               </li>
             ))}
           </ul>
