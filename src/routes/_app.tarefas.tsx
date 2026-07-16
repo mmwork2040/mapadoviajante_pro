@@ -38,8 +38,10 @@ function formatDue(iso?: string | null) {
 
 function TarefasPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
+  const [editTask, setEditTask] = useState<Task | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -56,6 +58,28 @@ function TarefasPage() {
     },
     onError: () => toast.error("Erro ao atualizar tarefa."),
   });
+
+  const removeTask = useMutation({
+    mutationFn: (id: string) => deleteTask(id),
+    onSuccess: (ok) => {
+      if (!ok) return toast.error("Erro ao excluir tarefa.");
+      toast.success("Tarefa excluída.");
+      qc.invalidateQueries({ queryKey: ["tasks"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: () => toast.error("Erro ao excluir tarefa."),
+  });
+
+  async function handleDelete(t: Task) {
+    const ok = await confirm({
+      title: "Excluir tarefa?",
+      description: `“${t.title}” será removida definitivamente.`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (ok === true) removeTask.mutate(t.id);
+  }
+
 
   const byDue = (a: Task, b: Task) => {
     const ta = a.due_date ? new Date(a.due_date).getTime() : Infinity;
