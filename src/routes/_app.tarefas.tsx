@@ -229,10 +229,14 @@ function TaskList({
   tasks,
   onToggle,
   onOpenTask,
+  onEditTask,
+  onDeleteTask,
 }: {
   tasks: Task[];
   onToggle: (t: Task) => void;
   onOpenTask: (t: Task) => void;
+  onEditTask: (t: Task) => void;
+  onDeleteTask: (t: Task) => void;
 }) {
   return (
     <ul className="space-y-2">
@@ -292,6 +296,45 @@ function TaskList({
               <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${prio.cls}`}>
                 {prio.label}
               </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    onClick={(e) => e.stopPropagation()}
+                    aria-label="Ações da tarefa"
+                    className="flex h-8 w-8 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  {clickable && (
+                    <DropdownMenuItem onSelect={() => onOpenTask(t)}>
+                      <ExternalLink className="mr-2 h-4 w-4" /> Abrir
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onSelect={() => onEditTask(t)}>
+                    <Pencil className="mr-2 h-4 w-4" /> Editar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => onToggle(t)}>
+                    {t.completed ? (
+                      <>
+                        <RotateCcw className="mr-2 h-4 w-4" /> Reabrir
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar como concluída
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onSelect={() => onDeleteTask(t)}
+                    className="text-red-600 focus:text-red-600"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </li>
         );
@@ -299,3 +342,4 @@ function TaskList({
     </ul>
   );
 }
+
