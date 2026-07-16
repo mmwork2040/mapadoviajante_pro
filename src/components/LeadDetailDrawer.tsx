@@ -61,13 +61,16 @@ import {
   updateItinerary,
   updateLead,
   updateLeadActivity,
+  updateTask,
+  cleanTaskDescription,
 } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, initials, maskPhone, maskCurrency, parseCurrency } from "@/lib/ui";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { useAuth, isAdminUser } from "@/lib/auth";
-import type { Itinerary, Lead, LeadStatus, TripBenefits, TripExpense } from "@/lib/types";
+import type { Itinerary, Lead, LeadStatus, Task, TripBenefits, TripExpense } from "@/lib/types";
+
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
   { key: "new", label: "Novo", dot: "bg-blue-500" },
@@ -103,7 +106,82 @@ function activityMeta(type?: string | null) {
   return ACTIVITY_TYPES.find((t) => t.key === type) ?? { label: "Atividade", icon: ClipboardList };
 }
 
-export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose: () => void }) {
+const PRIO_META: Record<string, { label: string; cls: string }> = {
+  low: { label: "Baixa", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
+  normal: { label: "Média", cls: "bg-amber-500/15 text-amber-600 dark:text-amber-400" },
+  high: { label: "Alta", cls: "bg-red-500/15 text-red-600 dark:text-red-400" },
+};
+
+function TaskHighlightBanner({ task, onToggle }: { task: Task; onToggle: () => void }) {
+  const [current, setCurrent] = useState<Task>(task);
+  useEffect(() => setCurrent(task), [task]);
+  const overdue = isOverdue(current.due_date, current.completed);
+  const prio = PRIO_META[current.priority] ?? PRIO_META.normal;
+  const desc = cleanTaskDescription(current.description);
+  const mutation = useMutation({
+    mutationFn: () => updateTask(current.id, { completed: !current.completed }),
+    onSuccess: (res) => {
+      if (res) setCurrent(res);
+      onToggle();
+    },
+    onError: () => toast.error("Erro ao atualizar tarefa."),
+  });
+  return (
+    <div className="mx-5 mt-3 rounded-xl border border-primary/40 bg-primary/5 p-3">
+      <div className="flex items-start gap-3">
+        <button
+          onClick={() => mutation.mutate()}
+          disabled={mutation.isPending}
+          aria-label={current.completed ? "Reabrir tarefa" : "Concluir tarefa"}
+          className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition ${
+            current.completed
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-muted-foreground/40 hover:border-primary"
+          }`}
+        >
+          {current.completed && <Check className="h-3.5 w-3.5" />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-primary">
+            Tarefa em foco
+          </p>
+          <p className={`text-sm font-semibold ${current.completed ? "text-muted-foreground line-through" : ""}`}>
+            {current.title}
+          </p>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+            {current.due_date && (
+              <span className={`inline-flex items-center gap-1 ${overdue ? "font-semibold text-red-600 dark:text-red-400" : ""}`}>
+                <CalendarClock className="h-3.5 w-3.5" />
+                {new Date(current.due_date).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+              </span>
+            )}
+            {overdue && (
+              <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                Atrasada
+              </span>
+            )}
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${prio.cls}`}>
+              {prio.label}
+            </span>
+          </div>
+          {desc && <p className="mt-1 text-xs text-muted-foreground">{desc}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+export function LeadDetailDrawer({
+  leadId,
+  onClose,
+  highlightTask,
+}: {
+  leadId: string;
+  onClose: () => void;
+  highlightTask?: Task | null;
+}) {
   useBackButtonClose(true, onClose);
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -483,9 +561,18 @@ export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose:
               )}
             </div>
 
-
+            {highlightTask && (
+              <TaskHighlightBanner
+                task={highlightTask}
+                onToggle={() => {
+                  qc.invalidateQueries({ queryKey: ["tasks"] });
+                  qc.invalidateQueries({ queryKey: ["dashboard"] });
+                }}
+              />
+            )}
 
             {/* Tabs */}
+
             <div
               ref={tabsRef}
               onWheel={(e) => {
@@ -1545,13 +1632,16 @@ function ChecklistTab({
     const ok = await confirm({
       title: "Trocar template?",
       description:
-        "Todas as marcações atuais deste checklist serão substituídas pelo template selecionado.",
+        "Os itens do template atual serão removidos imediatamente da listagem. Escolha o novo template em seguida.",
       confirmLabel: "Trocar",
       destructive: true,
     });
     if (!ok) return;
+    // Remove imediatamente os itens do template anterior da listagem
+    persist({ items: {}, extras: [] });
     setPickerOpen(true);
   }
+
 
   function toggle(id: string) {
     persist({ ...state, items: { ...state.items, [id]: !state.items[id] } });

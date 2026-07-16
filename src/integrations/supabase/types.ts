@@ -1212,6 +1212,7 @@ export type Database = {
           description: string | null
           due_date: string | null
           id: string
+          itinerary_id: string | null
           lead_id: string | null
           priority: string | null
           title: string
@@ -1227,6 +1228,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          itinerary_id?: string | null
           lead_id?: string | null
           priority?: string | null
           title: string
@@ -1242,6 +1244,7 @@ export type Database = {
           description?: string | null
           due_date?: string | null
           id?: string
+          itinerary_id?: string | null
           lead_id?: string | null
           priority?: string | null
           title?: string
@@ -1267,6 +1270,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "agency_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_tasks_itinerary_id_fkey"
+            columns: ["itinerary_id"]
+            isOneToOne: false
+            referencedRelation: "crm_itineraries"
             referencedColumns: ["id"]
           },
           {

@@ -30,7 +30,7 @@ function formatDue(iso?: string | null) {
 function TarefasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
@@ -148,23 +148,28 @@ function TarefasPage() {
       ) : (
         <div className="space-y-6">
           {showPending && pending.length > 0 && (
-            <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} onOpenLead={setDetailLeadId} />
+            <TaskList tasks={pending} onToggle={(t) => toggle.mutate(t)} onOpenTask={setDetailTask} />
           )}
           {showDone && done.length > 0 && (
             <div>
               <h2 className="mb-2 text-sm font-semibold text-muted-foreground">
                 Concluídas ({done.length})
               </h2>
-              <TaskList tasks={done} onToggle={(t) => toggle.mutate(t)} onOpenLead={setDetailLeadId} />
+              <TaskList tasks={done} onToggle={(t) => toggle.mutate(t)} onOpenTask={setDetailTask} />
             </div>
           )}
         </div>
       )}
 
       <CreateTaskModal open={open} onOpenChange={setOpen} />
-      {detailLeadId && (
-        <LeadDetailDrawer leadId={detailLeadId} onClose={() => setDetailLeadId(null)} />
+      {detailTask?.lead_id && (
+        <LeadDetailDrawer
+          leadId={detailTask.lead_id}
+          highlightTask={detailTask}
+          onClose={() => setDetailTask(null)}
+        />
       )}
+
     </div>
   );
 }
@@ -172,11 +177,11 @@ function TarefasPage() {
 function TaskList({
   tasks,
   onToggle,
-  onOpenLead,
+  onOpenTask,
 }: {
   tasks: Task[];
   onToggle: (t: Task) => void;
-  onOpenLead: (id: string) => void;
+  onOpenTask: (t: Task) => void;
 }) {
   return (
     <ul className="space-y-2">
@@ -186,15 +191,16 @@ function TaskList({
         return (
           <li
             key={t.id}
-            onClick={() => clickable && onOpenLead(t.lead_id!)}
+            onClick={() => clickable && onOpenTask(t)}
             role={clickable ? "button" : undefined}
             tabIndex={clickable ? 0 : undefined}
             onKeyDown={(e) => {
               if (clickable && (e.key === "Enter" || e.key === " ")) {
                 e.preventDefault();
-                onOpenLead(t.lead_id!);
+                onOpenTask(t);
               }
             }}
+
             className={`flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm ${
               clickable ? "cursor-pointer transition hover:border-primary hover:bg-muted/40" : ""
             }`}
