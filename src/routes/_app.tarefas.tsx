@@ -38,7 +38,7 @@ function formatDue(iso?: string | null) {
 
 function TarefasPage() {
   const qc = useQueryClient();
-  const navigate = useNavigate();
+  
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [detailTask, setDetailTask] = useState<Task | null>(null);
