@@ -30,7 +30,7 @@ function formatDue(iso?: string | null) {
 function TarefasPage() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
-  const [detailLeadId, setDetailLeadId] = useState<string | null>(null);
+  const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
