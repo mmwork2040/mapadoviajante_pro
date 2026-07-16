@@ -71,6 +71,7 @@ export function CreateTaskModal({
   const [dueDate, setDueDate] = useState<string>("");
   const [priority, setPriority] = useState("normal");
   const [description, setDescription] = useState("");
+  const [activityType, setActivityType] = useState<string>("outros");
 
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}), enabled: open });
   const membersQ = useQuery({ queryKey: ["team-members"], queryFn: fetchTeamMembers, enabled: open });
