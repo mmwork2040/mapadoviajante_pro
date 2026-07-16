@@ -106,7 +106,15 @@ function activityMeta(type?: string | null) {
   return ACTIVITY_TYPES.find((t) => t.key === type) ?? { label: "Atividade", icon: ClipboardList };
 }
 
-export function LeadDetailDrawer({ leadId, onClose }: { leadId: string; onClose: () => void }) {
+export function LeadDetailDrawer({
+  leadId,
+  onClose,
+  highlightTask,
+}: {
+  leadId: string;
+  onClose: () => void;
+  highlightTask?: Task | null;
+}) {
   useBackButtonClose(true, onClose);
   const qc = useQueryClient();
   const navigate = useNavigate();
