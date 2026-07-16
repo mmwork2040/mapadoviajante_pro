@@ -924,7 +924,8 @@ function extractLinkedActivityId(desc?: string | null): string | null {
 }
 
 export async function updateTask(taskId: string, updates: Partial<Task>): Promise<Task | null> {
-  const patch = { ...updates };
+  const patch = { ...updates } as Record<string, unknown>;
+  delete patch.activity_type;
   if (patch.completed === true && !patch.completed_at) {
     patch.completed_at = new Date().toISOString();
   }
