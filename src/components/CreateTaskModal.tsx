@@ -58,6 +58,7 @@ export function CreateTaskModal({
   function reset() {
     setTitle("");
     setLeadId("");
+    setItineraryId("");
     setAssignedTo("");
     setDueDate("");
     setPriority("normal");
@@ -69,11 +70,13 @@ export function CreateTaskModal({
       createTask({
         title: title.trim(),
         lead_id: leadId || null,
+        itinerary_id: itineraryId || null,
         assigned_to: assignedTo || null,
         priority,
         due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
         description: description.trim() || null,
       }),
+
     onSuccess: (res) => {
       if (!res) return toast.error("Erro ao criar tarefa.");
       toast.success("Tarefa criada!");
