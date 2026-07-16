@@ -1637,12 +1637,31 @@ function ChecklistTab({
             {doneItems}/{totalItems} concluídos
           </p>
         </div>
-        <button
-          onClick={changeTemplate}
-          className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
-        >
-          Trocar template
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={changeTemplate}
+            className="rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+          >
+            Trocar template
+          </button>
+          <button
+            onClick={async () => {
+              const ok = await confirm({
+                title: "Remover checklist?",
+                description:
+                  "O template e todas as marcações serão removidos deste cliente. Esta ação não pode ser desfeita.",
+                confirmLabel: "Remover",
+                destructive: true,
+              });
+              if (!ok) return;
+              persist({ items: {}, extras: [] });
+              setPickerOpen(false);
+            }}
+            className="rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+          >
+            Remover
+          </button>
+        </div>
       </div>
 
       {pickerOpen && (
