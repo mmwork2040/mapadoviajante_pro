@@ -151,6 +151,7 @@ function ChecklistTemplatesPage() {
       return;
     }
     setSaving(true);
+    const tid = toast.loading("Salvando template…");
     try {
       const id = selectedId || slugify(trimmed) + "-" + Date.now().toString(36);
       const tpl: ChecklistTemplate = {
@@ -165,9 +166,9 @@ function ChecklistTemplatesPage() {
       setSelectedId(id);
       setIsNew(false);
       setEditMode(false);
-      toast.success("Template salvo");
+      toast.success("Template salvo", { id: tid });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+      toast.error(e instanceof Error ? e.message : "Erro ao salvar", { id: tid });
     } finally {
       setSaving(false);
     }
