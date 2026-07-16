@@ -91,6 +91,20 @@ export function CreateTaskModal({
       setDueDate(task.due_date ? task.due_date.slice(0, 10) : "");
       setPriority(task.priority ?? "normal");
       setDescription(task.description ?? "");
+      setActivityType("outros");
+      // Se a tarefa está ligada a uma atividade, busca o tipo atual.
+      const m = (task.description ?? "").match(/\[atv:([0-9a-f-]+)\]/i);
+      if (m) {
+        supabase
+          .from("crm_lead_activities")
+          .select("type")
+          .eq("id", m[1])
+          .maybeSingle()
+          .then(({ data }) => {
+            const t = (data as { type?: string } | null)?.type;
+            if (t && ACTIVITY_TYPES.some((a) => a.key === t)) setActivityType(t);
+          });
+      }
     } else {
       reset();
     }
@@ -105,6 +119,7 @@ export function CreateTaskModal({
     setDueDate("");
     setPriority("normal");
     setDescription("");
+    setActivityType("outros");
   }
 
   const mutation = useMutation({
