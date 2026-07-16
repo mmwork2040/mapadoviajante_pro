@@ -311,21 +311,31 @@ function ChecklistTemplatesPage() {
                 </button>
                 <button
                   onClick={() => makeDefault(t.id)}
+                  disabled={busyDefaultId === t.id || busyDeleteId === t.id}
                   title="Definir como padrão"
-                  className={`p-1 ${
+                  className={`p-1 disabled:opacity-60 ${
                     t.id === defaultId
                       ? "text-amber-500"
                       : "text-muted-foreground hover:text-amber-500"
                   }`}
                 >
-                  <Star className="h-4 w-4" fill={t.id === defaultId ? "currentColor" : "none"} />
+                  {busyDefaultId === t.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Star className="h-4 w-4" fill={t.id === defaultId ? "currentColor" : "none"} />
+                  )}
                 </button>
                 <button
                   onClick={() => remove(t.id)}
+                  disabled={busyDeleteId === t.id || busyDefaultId === t.id}
                   title="Excluir"
-                  className="p-1 text-muted-foreground hover:text-destructive"
+                  className="p-1 text-muted-foreground hover:text-destructive disabled:opacity-60"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  {busyDeleteId === t.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
                 </button>
               </li>
             ))}
