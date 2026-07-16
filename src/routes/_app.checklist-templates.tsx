@@ -249,6 +249,7 @@ function ChecklistTemplatesPage() {
         setText("");
       }
       toast.success("Template excluído", { id: tid });
+      await refreshAll(null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
     } finally {
