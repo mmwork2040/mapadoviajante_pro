@@ -212,6 +212,27 @@ export const listChecklistTemplates = createServerFn({ method: "GET" })
     return await readValue(context.supabase, m.agencyId);
   });
 
+/** Contagem de leads que usam cada template (por templateId). */
+export const getChecklistTemplatesUsage = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<Record<string, number>> => {
+    const m = await resolveMember(context.supabase, context.userId);
+    if (!m) return {};
+    const { data, error } = await context.supabase
+      .from("crm_leads")
+      .select("checklists")
+      .eq("agency_id", m.agencyId)
+      .not("checklists", "is", null);
+    if (error) return {};
+    const counts: Record<string, number> = {};
+    for (const row of (data ?? []) as { checklists: unknown }[]) {
+      const c = row.checklists as { templateId?: string } | null;
+      const tid = c && typeof c.templateId === "string" ? c.templateId : null;
+      if (tid) counts[tid] = (counts[tid] ?? 0) + 1;
+    }
+    return counts;
+  });
+
 const templateSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),

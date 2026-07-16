@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import {
   deleteChecklistTemplate,
   generateChecklistStructureFn,
+  getChecklistTemplatesUsage,
   listChecklistTemplates,
   saveChecklistTemplate,
   setDefaultChecklistTemplate,
@@ -42,8 +43,10 @@ function ChecklistTemplatesPage() {
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
   const [defaultId, setDefaultId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [usage, setUsage] = useState<Record<string, number>>({});
   const [loadingList, setLoadingList] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [busyDefaultId, setBusyDefaultId] = useState<string | null>(null);
   const [busyDeleteId, setBusyDeleteId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
@@ -64,12 +67,14 @@ function ChecklistTemplatesPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [res, cfg] = await Promise.all([
+        const [res, cfg, u] = await Promise.all([
           listChecklistTemplates(),
           fetchAiConfig().catch(() => null),
+          getChecklistTemplatesUsage().catch(() => ({}) as Record<string, number>),
         ]);
         setTemplates(res.templates);
         setDefaultId(res.defaultId);
+        setUsage(u);
         const ks = (cfg?.knowledge_sources as { status?: string } | null) ?? null;
         setAiEnabled(!!cfg?.api_key_encrypted && ks?.status === "connected");
       } catch (e) {
@@ -80,6 +85,31 @@ function ChecklistTemplatesPage() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  async function refreshAll(preferId?: string | null) {
+    try {
+      const [res, u] = await Promise.all([
+        listChecklistTemplates(),
+        getChecklistTemplatesUsage().catch(() => ({}) as Record<string, number>),
+      ]);
+      setTemplates(res.templates);
+      setDefaultId(res.defaultId);
+      setUsage(u);
+      // Reflete o card selecionado com dados atualizados
+      const targetId = preferId ?? selectedId;
+      if (targetId) {
+        const t = res.templates.find((x) => x.id === targetId);
+        if (t && !editMode) {
+          setSelectedId(t.id);
+          setName(t.name);
+          setDescription(t.description || "");
+          setText(sectionsToText(t.sections));
+        }
+      }
+    } catch {
+      /* silencioso */
+    }
+  }
 
   function selectTemplate(t: ChecklistTemplate) {
     setSelectedId(t.id);
@@ -99,16 +129,37 @@ function ChecklistTemplatesPage() {
     setText("## Seção\n### Grupo\n- Item exemplo\n");
   }
 
-  function duplicateTemplate(t: ChecklistTemplate) {
+  async function duplicateTemplate(t: ChecklistTemplate) {
+    const ok = await confirm({
+      title: "Duplicar template?",
+      description: `Uma cópia de “${t.name}” será criada como um novo template.`,
+      confirmLabel: "Duplicar",
+    });
+    if (!ok) return;
     const baseName = `${t.name} (cópia)`;
     const uniqueName = ensureUniqueName(baseName, templates, null);
-    setSelectedId(null);
-    setIsNew(true);
-    setEditMode(true);
-    setName(uniqueName);
-    setDescription(t.description || "");
-    setText(sectionsToText(t.sections));
-    toast.info("Cópia carregada. Ajuste e salve para criar o novo template.");
+    const newId = slugify(uniqueName) + "-" + Date.now().toString(36);
+    setDuplicatingId(t.id);
+    const tid = toast.loading("Duplicando template…");
+    try {
+      const tpl: ChecklistTemplate = {
+        id: newId,
+        name: uniqueName,
+        description: t.description,
+        sections: t.sections,
+      };
+      const res = await saveChecklistTemplate({ data: { template: tpl } });
+      setTemplates(res.templates);
+      setDefaultId(res.defaultId);
+      const created = res.templates.find((x) => x.id === newId);
+      if (created) selectTemplate(created);
+      await refreshAll(newId);
+      toast.success(`Template “${uniqueName}” criado`, { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao duplicar", { id: tid });
+    } finally {
+      setDuplicatingId(null);
+    }
   }
 
   function cancelEdit() {
@@ -167,6 +218,7 @@ function ChecklistTemplatesPage() {
       setIsNew(false);
       setEditMode(false);
       toast.success("Template salvo", { id: tid });
+      await refreshAll(id);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro ao salvar", { id: tid });
     } finally {
@@ -197,6 +249,7 @@ function ChecklistTemplatesPage() {
         setText("");
       }
       toast.success("Template excluído", { id: tid });
+      await refreshAll(null);
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
     } finally {
@@ -211,6 +264,7 @@ function ChecklistTemplatesPage() {
       const res = await setDefaultChecklistTemplate({ data: { id } });
       setDefaultId(res.defaultId);
       toast.success("Template definido como padrão", { id: tid });
+      await refreshAll();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
     } finally {
@@ -304,10 +358,15 @@ function ChecklistTemplatesPage() {
                 </button>
                 <button
                   onClick={() => duplicateTemplate(t)}
+                  disabled={duplicatingId === t.id}
                   title="Duplicar"
-                  className="p-1 text-muted-foreground hover:text-primary"
+                  className="p-1 text-muted-foreground hover:text-primary disabled:opacity-60"
                 >
-                  <Copy className="h-4 w-4" />
+                  {duplicatingId === t.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </button>
                 <button
                   onClick={() => makeDefault(t.id)}
@@ -325,18 +384,29 @@ function ChecklistTemplatesPage() {
                     <Star className="h-4 w-4" fill={t.id === defaultId ? "currentColor" : "none"} />
                   )}
                 </button>
-                <button
-                  onClick={() => remove(t.id)}
-                  disabled={busyDeleteId === t.id || busyDefaultId === t.id}
-                  title="Excluir"
-                  className="p-1 text-muted-foreground hover:text-destructive disabled:opacity-60"
-                >
-                  {busyDeleteId === t.id ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                </button>
+                {(() => {
+                  const used = usage[t.id] ?? 0;
+                  const disabled = used > 0 || busyDeleteId === t.id || busyDefaultId === t.id;
+                  const tip =
+                    used > 0
+                      ? `Não pode ser excluído: vinculado a ${used} lead${used > 1 ? "s" : ""}/cliente${used > 1 ? "s" : ""}.`
+                      : "Excluir";
+                  return (
+                    <button
+                      onClick={() => remove(t.id)}
+                      disabled={disabled}
+                      title={tip}
+                      aria-label={tip}
+                      className="p-1 text-muted-foreground hover:text-destructive disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-muted-foreground"
+                    >
+                      {busyDeleteId === t.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  );
+                })()}
               </li>
             ))}
           </ul>
