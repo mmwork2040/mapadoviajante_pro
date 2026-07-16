@@ -100,11 +100,15 @@ const ACTIVITY_TYPES = [
   { key: "request", label: "Solicitação", icon: HandHelping },
   { key: "note", label: "Observação", icon: StickyNote },
   { key: "document", label: "Documento", icon: FileText },
+  { key: "outros", label: "Outros", icon: ClipboardList },
 ];
 
 function activityMeta(type?: string | null) {
-  return ACTIVITY_TYPES.find((t) => t.key === type) ?? { label: "Atividade", icon: ClipboardList };
+  // Tarefas antigas eram gravadas com o tipo "task"; tratamos como "Outros".
+  const key = type === "task" ? "outros" : type;
+  return ACTIVITY_TYPES.find((t) => t.key === key) ?? ACTIVITY_TYPES[ACTIVITY_TYPES.length - 1];
 }
+
 
 const PRIO_META: Record<string, { label: string; cls: string }> = {
   low: { label: "Baixa", cls: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" },
