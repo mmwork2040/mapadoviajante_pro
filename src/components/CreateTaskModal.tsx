@@ -40,6 +40,7 @@ export function CreateTaskModal({
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [leadId, setLeadId] = useState<string>("");
+  const [itineraryId, setItineraryId] = useState<string>("");
   const [assignedTo, setAssignedTo] = useState<string>("");
   const [dueDate, setDueDate] = useState<string>("");
   const [priority, setPriority] = useState("normal");
@@ -47,6 +48,12 @@ export function CreateTaskModal({
 
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}), enabled: open });
   const membersQ = useQuery({ queryKey: ["team-members"], queryFn: fetchTeamMembers, enabled: open });
+  const itinerariesQ = useQuery({
+    queryKey: ["itineraries-by-lead", leadId],
+    queryFn: () => fetchItinerariesByLead(leadId),
+    enabled: open && !!leadId,
+  });
+
 
   function reset() {
     setTitle("");
