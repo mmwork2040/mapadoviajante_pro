@@ -1646,16 +1646,31 @@ function ChecklistTab({
           </button>
           <button
             onClick={async () => {
+              const doneCount = Object.values(state.items).filter(Boolean).length;
+              const totalCount = Object.keys(state.items).length;
+              const extrasCount = (state.extras || []).length;
+              const tplName = state.templateName || "Checklist personalizado";
               const ok = await confirm({
-                title: "Remover checklist?",
+                title: "Remover checklist deste cliente?",
                 description:
-                  "O template e todas as marcações serão removidos deste cliente. Esta ação não pode ser desfeita.",
+                  `Serão apagados:\n• Template: ${tplName}\n• Marcações: ${doneCount} de ${totalCount} itens concluídos\n• Itens extras: ${extrasCount}\n\nVocê poderá desfazer por alguns segundos após remover.`,
                 confirmLabel: "Remover",
                 destructive: true,
               });
               if (!ok) return;
+              const snapshot = state;
               persist({ items: {}, extras: [] });
               setPickerOpen(false);
+              toast.success("Checklist removido", {
+                duration: 6000,
+                action: {
+                  label: "Desfazer",
+                  onClick: () => {
+                    persist(snapshot);
+                    toast.success("Checklist restaurado");
+                  },
+                },
+              });
             }}
             className="rounded-lg border border-destructive/40 px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
           >
