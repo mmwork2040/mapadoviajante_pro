@@ -1469,20 +1469,6 @@ export async function uploadImageToLibraryForDestination(
 
 
 
-export async function fetchItinerariesByLead(leadId: string): Promise<Itinerary[]> {
-  if (!leadId) return [];
-  const { data, error } = await supabase
-    .from("crm_itineraries")
-    .select("id, title, destination, start_date, end_date, lead_id")
-    .eq("lead_id", leadId)
-    .order("created_at", { ascending: false });
-  if (error) {
-    console.error("fetchItinerariesByLead:", error);
-    return [];
-  }
-  return (data as Itinerary[]) || [];
-}
-
 export async function fetchItineraries(): Promise<Itinerary[]> {
   if (!_agencyId) return [];
   const { data, error } = await supabase
