@@ -860,6 +860,17 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
   return data as Task;
 }
 
+export async function deleteTask(taskId: string): Promise<boolean> {
+  const { error } = await supabase.from("crm_tasks").delete().eq("id", taskId);
+  if (error) {
+    console.error("deleteTask:", error);
+    return false;
+  }
+  return true;
+}
+
+
+
 // ── Transactions ───────────────────────────────────────────────
 export async function fetchTransactions(filters: {
   type?: string;
