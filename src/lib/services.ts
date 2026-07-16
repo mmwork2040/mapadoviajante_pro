@@ -832,7 +832,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
         lead_id: taskData.lead_id,
         author_id: _memberId,
         assigned_to_id: taskData.assigned_to || null,
-        type: "task",
+        type: "outros",
         title: taskData.title || "Tarefa",
         details: cleanTaskDescription(description) || null,
         mentions: [],
