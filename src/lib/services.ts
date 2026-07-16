@@ -792,6 +792,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
       assigned_to: taskData.assigned_to || null,
       created_by: _memberId,
       lead_id: taskData.lead_id || null,
+      itinerary_id: taskData.itinerary_id || null,
       title: taskData.title,
       priority: taskData.priority || "normal",
       due_date: taskData.due_date || null,
@@ -805,6 +806,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
   }
   return data as Task;
 }
+
 
 export async function updateTask(taskId: string, updates: Partial<Task>): Promise<Task | null> {
   const patch = { ...updates };
