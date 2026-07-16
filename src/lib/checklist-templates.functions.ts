@@ -262,6 +262,18 @@ export const deleteChecklistTemplate = createServerFn({ method: "POST" })
     const m = await resolveMember(context.supabase, context.userId);
     if (!m) throw new Error("Agência não encontrada.");
     if (m.role !== "admin") throw new Error("Sem permissão.");
+    // Bloqueia exclusão se algum lead já usa este template
+    const { count, error: countErr } = await context.supabase
+      .from("crm_leads")
+      .select("id", { count: "exact", head: true })
+      .eq("agency_id", m.agencyId)
+      .filter("checklists->>templateId", "eq", data.id);
+    if (countErr) throw new Error("Não foi possível validar uso do template.");
+    if ((count ?? 0) > 0) {
+      throw new Error(
+        `Este template já foi aplicado em ${count} lead(s) e não pode ser excluído.`,
+      );
+    }
     const current = await readValue(context.supabase, m.agencyId);
     current.templates = current.templates.filter((t) => t.id !== data.id);
     if (current.defaultId === data.id) current.defaultId = current.templates[0]?.id ?? null;
