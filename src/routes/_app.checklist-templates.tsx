@@ -43,8 +43,10 @@ function ChecklistTemplatesPage() {
   const [templates, setTemplates] = useState<ChecklistTemplate[]>([]);
   const [defaultId, setDefaultId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [usage, setUsage] = useState<Record<string, number>>({});
   const [loadingList, setLoadingList] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [busyDefaultId, setBusyDefaultId] = useState<string | null>(null);
   const [busyDeleteId, setBusyDeleteId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
