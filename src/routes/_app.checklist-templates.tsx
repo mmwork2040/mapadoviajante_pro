@@ -448,7 +448,12 @@ function ChecklistTemplatesPage() {
                   disabled={saving || locked}
                   className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <Save className="h-4 w-4" /> Salvar
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4" />
+                  )}
+                  {saving ? "Salvando…" : "Salvar"}
                 </button>
               </div>
             </div>
