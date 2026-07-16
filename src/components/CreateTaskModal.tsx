@@ -132,7 +132,8 @@ export function CreateTaskModal({
         priority,
         due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
         description: description.trim() || null,
-      };
+        activity_type: activityType,
+      } as Partial<Task> & { activity_type: string };
       return isEdit ? updateTask(task!.id, payload) : createTask(payload);
     },
 
