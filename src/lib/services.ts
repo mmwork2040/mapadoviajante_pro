@@ -359,8 +359,41 @@ export async function fetchLeadById(leadId: string): Promise<Lead | null> {
   return data ? normalizeLead(data as Lead) : null;
 }
 
+async function buildDefaultChecklistForNewLead(): Promise<Record<string, unknown> | null> {
+  try {
+    const { listChecklistTemplates } = await import("@/lib/checklist-templates.functions");
+    const res = await listChecklistTemplates();
+    const tpl = res.templates.find((t) => t.id === res.defaultId) ?? null;
+    if (!tpl) return null;
+    const items: Record<string, boolean> = {};
+    for (const s of tpl.sections)
+      for (const g of s.groups) for (const it of g.items) items[it.id] = false;
+    return {
+      templateId: tpl.id,
+      templateName: tpl.name,
+      sections: tpl.sections,
+      items,
+      extras: [],
+    };
+  } catch (e) {
+    console.warn("buildDefaultChecklistForNewLead:", e);
+    return null;
+  }
+}
+
+function isEmptyChecklist(v: unknown): boolean {
+  if (!v || typeof v !== "object") return true;
+  return Object.keys(v as Record<string, unknown>).length === 0;
+}
+
 export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> {
   if (!_agencyId) await loadAgencyContext();
+
+  let checklists: Record<string, unknown> = (leadData.checklists as Record<string, unknown>) || {};
+  if (isEmptyChecklist(checklists)) {
+    const def = await buildDefaultChecklistForNewLead();
+    if (def) checklists = def;
+  }
 
   const payload = {
     agency_id: _agencyId,
@@ -374,8 +407,9 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
     origin: leadData.origin || "direto",
     notes: leadData.notes || null,
     profile: leadData.profile || {},
-    checklists: leadData.checklists || {},
+    checklists,
   };
+
 
   const { data, error } = await supabase
     .from("crm_leads")
