@@ -137,6 +137,7 @@ export interface Task {
   assigned_to?: string | null;
   created_by?: string | null;
   lead_id?: string | null;
+  itinerary_id?: string | null;
   title: string;
   priority: string;
   due_date?: string | null;
@@ -145,7 +146,9 @@ export interface Task {
   completed_at?: string | null;
   assigned?: { name: string; avatar_color?: string | null } | null;
   lead?: { name: string } | null;
+  itinerary?: { title: string } | null;
 }
+
 
 export type TxType = "income" | "expense";
 
