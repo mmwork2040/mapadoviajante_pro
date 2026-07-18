@@ -233,6 +233,21 @@ export function CreateTaskModal({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <FieldLabel>Cliente</FieldLabel>
+              <div className="mb-2 flex flex-col gap-2 sm:flex-row">
+                <SearchBar
+                  value={clientSearch}
+                  onChange={setClientSearch}
+                  placeholder="Buscar cliente…"
+                  className="flex-1"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewClient(true)}
+                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  <Plus className="h-4 w-4" /> Novo
+                </button>
+              </div>
               <Select
                 value={leadId}
                 onValueChange={(v) => {
@@ -244,14 +259,21 @@ export function CreateTaskModal({
                   <SelectValue placeholder="Selecione cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(leadsQ.data ?? []).map((l) => (
-                    <SelectItem key={l.id} value={l.id}>
-                      {l.name}
-                    </SelectItem>
-                  ))}
+                  {(leadsQ.data ?? [])
+                    .filter((l) =>
+                      !clientSearch.trim()
+                        ? true
+                        : (l.name || "").toLowerCase().includes(clientSearch.toLowerCase()),
+                    )
+                    .map((l) => (
+                      <SelectItem key={l.id} value={l.id}>
+                        {l.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
+
             <div>
               <FieldLabel hint="(opcional)">Atribuído a</FieldLabel>
               <Select value={assignedTo} onValueChange={setAssignedTo}>
