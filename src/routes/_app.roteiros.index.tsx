@@ -447,10 +447,25 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
         </div>
 
         <form onSubmit={submit} className="flex-1 space-y-3 overflow-y-auto px-6 py-5">
-          <label className="block">
+          <div className="block">
             <span className="mb-1 flex h-8 items-center text-sm font-semibold">
               Lead <span className="ml-1 text-primary">*</span>
             </span>
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row">
+              <SearchBar
+                value={clientSearch}
+                onChange={setClientSearch}
+                placeholder="Buscar cliente…"
+                className="flex-1"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNewClient(true)}
+                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
+                <Plus className="h-4 w-4" /> Novo
+              </button>
+            </div>
             <select
               required
               value={form.lead_id || ""}
@@ -458,11 +473,18 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
               className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
             >
               <option value="">Selecione um lead…</option>
-              {leads.map((l) => (
-                <option key={l.id} value={l.id}>{l.name}</option>
-              ))}
+              {leads
+                .filter((l) =>
+                  !clientSearch.trim()
+                    ? true
+                    : (l.name || "").toLowerCase().includes(clientSearch.toLowerCase()),
+                )
+                .map((l) => (
+                  <option key={l.id} value={l.id}>{l.name}</option>
+                ))}
             </select>
-          </label>
+          </div>
+
           <F label="Título" required value={form.title || ""} onChange={(v) => setForm({ ...form, title: v })} />
 
           <ModalField
