@@ -65,6 +65,28 @@ function ChecklistTemplatesPage() {
   const [description, setDescription] = useState("");
   const [text, setText] = useState("");
 
+  const [linkedOpen, setLinkedOpen] = useState(false);
+  const [linkedLoading, setLinkedLoading] = useState(false);
+  const [linkedTrips, setLinkedTrips] = useState<LeadByTemplate[]>([]);
+  const [linkedTemplateName, setLinkedTemplateName] = useState("");
+
+  async function openLinkedTrips(templateId: string) {
+    const tpl = templates.find((t) => t.id === templateId);
+    setLinkedTemplateName(tpl?.name ?? "");
+    setLinkedTrips([]);
+    setLinkedOpen(true);
+    setLinkedLoading(true);
+    try {
+      const rows = await listLeadsByChecklistTemplate({ data: { templateId } });
+      setLinkedTrips(rows);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao carregar viagens");
+      setLinkedOpen(false);
+    } finally {
+      setLinkedLoading(false);
+    }
+  }
+
   useEffect(() => {
     if (!loading && !isAdmin) navigate({ to: "/" });
   }, [loading, isAdmin, navigate]);
