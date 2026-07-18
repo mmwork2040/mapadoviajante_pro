@@ -550,9 +550,19 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
           </button>
         </form>
       </div>
+      {showNewClient && (
+        <NewLeadModal
+          onClose={() => setShowNewClient(false)}
+          onCreated={() => {
+            setShowNewClient(false);
+            qc.invalidateQueries({ queryKey: ["leads", {}] });
+          }}
+        />
+      )}
     </div>
   );
 }
+
 
 function F({
   label,
