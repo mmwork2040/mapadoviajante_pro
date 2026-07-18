@@ -1654,7 +1654,7 @@ function ChecklistTab({
               </select>
               <button
                 onClick={() => applyTemplate(defaultId || templates[0].id)}
-                className="mt-3 w-full rounded-lg bg-primary py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+                className="mt-3 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground hover:opacity-90"
               >
                 Aplicar
               </button>
