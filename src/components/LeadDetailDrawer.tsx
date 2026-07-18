@@ -2071,9 +2071,9 @@ function FinanceiroTab({
           <h4 className="text-sm font-semibold">Gastos ({expenses.length})</h4>
           <button
             onClick={() => { setEditing(null); setShowForm(true); }}
-            className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
-            <Plus className="h-3.5 w-3.5" /> Adicionar
+            <Plus className="h-4 w-4" /> Adicionar
           </button>
         </div>
         {showForm && (
