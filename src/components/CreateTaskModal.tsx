@@ -11,6 +11,7 @@ import {
   StickyNote,
   FileText,
   ClipboardList,
+  X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -159,14 +160,26 @@ export function CreateTaskModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+        <div className="flex items-start justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-foreground">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               {isEdit ? <Pencil className="h-5 w-5" /> : <ListPlus className="h-5 w-5" />}
             </div>
-            <DialogTitle className="text-lg font-bold">{isEdit ? "Editar Tarefa" : "Criar Tarefa"}</DialogTitle>
-
+            <div>
+              <DialogTitle className="text-lg font-bold">
+                {isEdit ? "Editar Tarefa" : "Nova Tarefa"}
+              </DialogTitle>
+              <p className="text-xs text-muted-foreground">
+                {isEdit ? "Atualize as informações da tarefa" : "Preencha todos os campos para criar a tarefa"}
+              </p>
+            </div>
           </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
 
         {/* Body */}
