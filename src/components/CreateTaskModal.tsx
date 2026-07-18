@@ -158,7 +158,7 @@ export function CreateTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl gap-0 overflow-hidden p-0">
+      <DialogContent className="flex max-h-[92vh] w-[calc(100vw-2rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
         {/* Header */}
         <div className="flex items-start justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
           <div className="flex items-center gap-3">
