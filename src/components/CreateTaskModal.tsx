@@ -12,8 +12,12 @@ import {
   FileText,
   ClipboardList,
   X,
+  Plus,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { SearchBar } from "@/components/SearchBar";
+import { NewLeadModal } from "@/routes/_app.leads";
+
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
