@@ -386,13 +386,48 @@ function ChecklistTemplatesPage() {
                     selectedId === t.id && !isNew
                       ? "bg-primary/10 text-primary"
                       : "hover:bg-muted"
-                  }`}
+                  } ${t.active === false ? "opacity-50" : ""}`}
                 >
                   {t.name}
                   {t.id === defaultId && (
                     <span className="ml-1 text-[10px] text-muted-foreground">(padrão)</span>
                   )}
+                  {t.active === false && (
+                    <span className="ml-1 text-[10px] text-muted-foreground">(inativo)</span>
+                  )}
                 </button>
+                {(() => {
+                  const isActive = t.active !== false;
+                  const used = usage[t.id] ?? 0;
+                  const disabled =
+                    busyActiveId === t.id ||
+                    busyDeleteId === t.id ||
+                    (isActive && used > 0);
+                  const tip = isActive
+                    ? used > 0
+                      ? `Não pode ser desativado: vinculado a ${used} viagem(ns).`
+                      : "Desativar"
+                    : "Ativar";
+                  return (
+                    <button
+                      onClick={() => toggleActive(t)}
+                      disabled={disabled}
+                      title={tip}
+                      aria-label={tip}
+                      className={`p-1 disabled:cursor-not-allowed disabled:opacity-40 ${
+                        isActive
+                          ? "text-emerald-600 hover:text-emerald-700"
+                          : "text-muted-foreground hover:text-emerald-600"
+                      }`}
+                    >
+                      {busyActiveId === t.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Power className="h-4 w-4" />
+                      )}
+                    </button>
+                  );
+                })()}
                 <button
                   onClick={() => duplicateTemplate(t)}
                   disabled={duplicatingId === t.id}
