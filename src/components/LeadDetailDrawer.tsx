@@ -1547,7 +1547,7 @@ function ChecklistTab({
         const { listChecklistTemplates } = await import("@/lib/checklist-templates.functions");
         const res = await listChecklistTemplates();
         if (!active) return;
-        setTemplates(res.templates);
+        setTemplates(res.templates.filter((t) => t.active !== false));
         setDefaultId(res.defaultId);
       } catch {
         // silently ignore — usuário pode continuar com checklist livre

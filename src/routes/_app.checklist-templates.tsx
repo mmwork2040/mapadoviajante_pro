@@ -8,6 +8,7 @@ import {
   Loader2,
   Pencil,
   Plus,
+  Power,
   Save,
   Sparkles,
   Star,
@@ -22,6 +23,7 @@ import {
   getChecklistTemplatesUsage,
   listChecklistTemplates,
   saveChecklistTemplate,
+  setChecklistTemplateActive,
   setDefaultChecklistTemplate,
   type ChecklistSection,
   type ChecklistTemplate,
@@ -49,6 +51,7 @@ function ChecklistTemplatesPage() {
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [busyDefaultId, setBusyDefaultId] = useState<string | null>(null);
   const [busyDeleteId, setBusyDeleteId] = useState<string | null>(null);
+  const [busyActiveId, setBusyActiveId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
@@ -272,6 +275,40 @@ function ChecklistTemplatesPage() {
     }
   }
 
+  async function toggleActive(t: ChecklistTemplate) {
+    const nextActive = t.active === false;
+    if (!nextActive) {
+      const used = usage[t.id] ?? 0;
+      if (used > 0) {
+        toast.error(
+          `Este template está aplicado em ${used} viagem(ns) e não pode ser desativado.`,
+        );
+        return;
+      }
+      const ok = await confirm({
+        title: "Desativar template?",
+        description: "Ele deixará de aparecer na seleção de checklist das viagens.",
+        confirmLabel: "Desativar",
+      });
+      if (!ok) return;
+    }
+    setBusyActiveId(t.id);
+    const tid = toast.loading(nextActive ? "Ativando…" : "Desativando…");
+    try {
+      const res = await setChecklistTemplateActive({
+        data: { id: t.id, active: nextActive },
+      });
+      setTemplates(res.templates);
+      setDefaultId(res.defaultId);
+      toast.success(nextActive ? "Template ativado" : "Template desativado", { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
+    } finally {
+      setBusyActiveId(null);
+    }
+  }
+
+
   async function runAiGenerate() {
     const ctx = aiContext.trim();
     if (!ctx) {
@@ -349,13 +386,48 @@ function ChecklistTemplatesPage() {
                     selectedId === t.id && !isNew
                       ? "bg-primary/10 text-primary"
                       : "hover:bg-muted"
-                  }`}
+                  } ${t.active === false ? "opacity-50" : ""}`}
                 >
                   {t.name}
                   {t.id === defaultId && (
                     <span className="ml-1 text-[10px] text-muted-foreground">(padrão)</span>
                   )}
+                  {t.active === false && (
+                    <span className="ml-1 text-[10px] text-muted-foreground">(inativo)</span>
+                  )}
                 </button>
+                {(() => {
+                  const isActive = t.active !== false;
+                  const used = usage[t.id] ?? 0;
+                  const disabled =
+                    busyActiveId === t.id ||
+                    busyDeleteId === t.id ||
+                    (isActive && used > 0);
+                  const tip = isActive
+                    ? used > 0
+                      ? `Não pode ser desativado: vinculado a ${used} viagem(ns).`
+                      : "Desativar"
+                    : "Ativar";
+                  return (
+                    <button
+                      onClick={() => toggleActive(t)}
+                      disabled={disabled}
+                      title={tip}
+                      aria-label={tip}
+                      className={`p-1 disabled:cursor-not-allowed disabled:opacity-40 ${
+                        isActive
+                          ? "text-emerald-600 hover:text-emerald-700"
+                          : "text-muted-foreground hover:text-emerald-600"
+                      }`}
+                    >
+                      {busyActiveId === t.id ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Power className="h-4 w-4" />
+                      )}
+                    </button>
+                  );
+                })()}
                 <button
                   onClick={() => duplicateTemplate(t)}
                   disabled={duplicatingId === t.id}
