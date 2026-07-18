@@ -71,6 +71,8 @@ function ChecklistTemplatesPage() {
   const [linkedLoading, setLinkedLoading] = useState(false);
   const [linkedTrips, setLinkedTrips] = useState<LeadByTemplate[]>([]);
   const [linkedTemplateName, setLinkedTemplateName] = useState("");
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+
 
   async function openLinkedTrips(templateId: string) {
     const tpl = templates.find((t) => t.id === templateId);
