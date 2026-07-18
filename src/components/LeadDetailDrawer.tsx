@@ -156,6 +156,11 @@ export function LeadDetailDrawer({
     queryFn: () => fetchLeadActivities(leadId),
   });
   const { data: team = [] } = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
+  const { data: leadItineraries = [] } = useQuery({
+    queryKey: ["lead-itineraries", leadId],
+    queryFn: () => fetchItinerariesByLead(leadId),
+  });
+  const existingItinerary = leadItineraries.find((it) => it.status !== "cancelled") ?? null;
 
   const update = useMutation({
     mutationFn: (updates: Partial<Lead>) => updateLead(leadId, updates),
@@ -621,14 +626,18 @@ export function LeadDetailDrawer({
               </button>
               {(() => {
                 const blocked = lead?.status === "closed" || lead?.status === "lost";
+                const hasItinerary = !!existingItinerary;
+                const onClick = hasItinerary
+                  ? () => navigate({ to: "/roteiros/$id", params: { id: existingItinerary!.id } })
+                  : handleCreateRoteiro;
                 return (
                   <button
-                    onClick={handleCreateRoteiro}
-                    disabled={createRoteiro.isPending || blocked}
-                    title={blocked ? "Não é possível criar roteiro para leads fechados ou perdidos" : undefined}
+                    onClick={onClick}
+                    disabled={createRoteiro.isPending || (blocked && !hasItinerary)}
+                    title={blocked && !hasItinerary ? "Não é possível criar roteiro para leads fechados ou perdidos" : undefined}
                     className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <MapIcon className="h-4 w-4" /> Criar Roteiro
+                    <MapIcon className="h-4 w-4" /> {hasItinerary ? "Salvar Roteiro" : "Criar Roteiro"}
                   </button>
                 );
               })()}
@@ -2061,7 +2070,7 @@ function FinanceiroTab({
           </p>
           <p className="mt-1 text-lg font-bold text-primary">{formatCurrency(consultancy)}</p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Editável na aba Perfil → Financeiro (admin).
+            Editável na aba Viagem → Financeiro (admin).
           </p>
         </div>
       )}
