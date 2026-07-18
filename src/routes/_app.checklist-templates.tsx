@@ -748,9 +748,13 @@ function ChecklistTemplatesPage() {
           </div>
         </div>
       )}
+      {openLeadId && (
+        <LeadDetailDrawer leadId={openLeadId} onClose={() => setOpenLeadId(null)} />
+      )}
     </div>
   );
 }
+
 
 function slugify(s: string) {
   return s
