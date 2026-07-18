@@ -341,8 +341,9 @@ export function CreateTaskModal({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={submit} disabled={mutation.isPending}>
-            {mutation.isPending ? "Salvando…" : isEdit ? "Salvar alterações" : "+ Criar Tarefa"}
+          <Button onClick={submit} disabled={mutation.isPending} className="gap-2">
+            <Save className="h-4 w-4" />
+            {mutation.isPending ? "Salvando…" : isEdit ? "Salvar alterações" : "Criar Tarefa"}
           </Button>
 
         </div>
