@@ -251,7 +251,7 @@ export const listLeadsByChecklistTemplate = createServerFn({ method: "POST" })
     if (!m) return [];
     const { data: rows, error } = await context.supabase
       .from("crm_leads")
-      .select("id, name, status, profile, updated_at, checklists")
+      .select("id, name, status, destination, profile, updated_at, checklists")
       .eq("agency_id", m.agencyId)
       .filter("checklists->>templateId", "eq", data.templateId)
       .order("updated_at", { ascending: false });
@@ -260,16 +260,18 @@ export const listLeadsByChecklistTemplate = createServerFn({ method: "POST" })
       id: string;
       name: string | null;
       status: string | null;
+      destination: string | null;
       profile: { destination?: string } | null;
       updated_at: string | null;
     }>).map((r) => ({
       id: r.id,
       name: r.name ?? "(sem nome)",
       status: r.status,
-      destination: r.profile?.destination ?? null,
+      destination: r.destination ?? r.profile?.destination ?? null,
       updatedAt: r.updated_at,
     }));
   });
+
 
 
 const templateSchema = z.object({

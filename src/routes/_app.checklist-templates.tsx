@@ -33,6 +33,8 @@ import {
 import { fetchAiConfig } from "@/lib/services";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
+
 
 export const Route = createFileRoute("/_app/checklist-templates")({
   component: ChecklistTemplatesPage,
@@ -69,6 +71,8 @@ function ChecklistTemplatesPage() {
   const [linkedLoading, setLinkedLoading] = useState(false);
   const [linkedTrips, setLinkedTrips] = useState<LeadByTemplate[]>([]);
   const [linkedTemplateName, setLinkedTemplateName] = useState("");
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null);
+
 
   async function openLinkedTrips(templateId: string) {
     const tpl = templates.find((t) => t.id === templateId);
@@ -674,11 +678,13 @@ function ChecklistTemplatesPage() {
               <ul className="max-h-[60vh] space-y-1 overflow-y-auto">
                 {linkedTrips.map((t) => (
                   <li key={t.id}>
-                    <Link
-                      to="/leads"
-                      search={{ lead: t.id }}
-                      onClick={() => setLinkedOpen(false)}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLinkedOpen(false);
+                        setOpenLeadId(t.id);
+                      }}
+                      className="flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-left text-sm hover:bg-muted"
                     >
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-medium">{t.name}</p>
@@ -688,7 +694,8 @@ function ChecklistTemplatesPage() {
                         </p>
                       </div>
                       <ArrowLeft className="h-3.5 w-3.5 rotate-180 text-muted-foreground" />
-                    </Link>
+                    </button>
+
                   </li>
                 ))}
               </ul>
@@ -741,9 +748,13 @@ function ChecklistTemplatesPage() {
           </div>
         </div>
       )}
+      {openLeadId && (
+        <LeadDetailDrawer leadId={openLeadId} onClose={() => setOpenLeadId(null)} />
+      )}
     </div>
   );
 }
+
 
 function slugify(s: string) {
   return s
