@@ -541,13 +541,22 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
             <F label="Passageiros" type="number" required value={String(form.passengers ?? "")} onChange={(v) => setForm({ ...form, passengers: Number(v) })} />
             <F label="Orçamento" format="currency" required value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
           </div>
-          <button
-            type="submit"
-            disabled={saving || !isComplete}
-            className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {saving ? "Salvando…" : "Criar Roteiro"}
-          </button>
+          <div className="flex gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 rounded-lg border border-input bg-background py-2.5 font-semibold hover:bg-muted"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving || !isComplete}
+              className="flex-1 rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {saving ? "Salvando…" : "Criar Roteiro"}
+            </button>
+          </div>
         </form>
       </div>
     </div>
