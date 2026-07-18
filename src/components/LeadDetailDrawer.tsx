@@ -1102,13 +1102,13 @@ function FinanceiroSection({
             />
             <button
               onClick={save}
-              className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
             >
               Salvar
             </button>
             <button
               onClick={() => setEditing(false)}
-              className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-muted"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted"
             >
               Cancelar
             </button>
@@ -1350,7 +1350,7 @@ function AtividadesTab({
             {editingId && (
               <button
                 onClick={resetForm}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted"
+                className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 text-sm font-semibold text-muted-foreground hover:bg-muted"
               >
                 <X className="h-4 w-4" /> Cancelar
               </button>
@@ -1358,7 +1358,7 @@ function AtividadesTab({
             <button
               onClick={() => register.mutate()}
               disabled={register.isPending || !dueDate}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               <Send className="h-4 w-4" /> {editingId ? "Salvar" : "Registrar"}
             </button>
@@ -1884,7 +1884,7 @@ function ChecklistTab({
           <button
             onClick={addExtra}
             disabled={!newItem.trim()}
-            className="rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+            className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             Adicionar
           </button>
@@ -2071,9 +2071,9 @@ function FinanceiroTab({
           <h4 className="text-sm font-semibold">Gastos ({expenses.length})</h4>
           <button
             onClick={() => { setEditing(null); setShowForm(true); }}
-            className="inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
+            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
-            <Plus className="h-3.5 w-3.5" /> Adicionar
+            <Plus className="h-4 w-4" /> Adicionar
           </button>
         </div>
         {showForm && (
@@ -2215,7 +2215,7 @@ function BudgetsForm({
               budget_osv: parseCurrency(osv) || null,
             })
           }
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
         >
           Salvar
         </button>
@@ -2348,14 +2348,14 @@ function ExpenseForm({
       <div className="flex justify-end gap-2">
         <button
           onClick={onClose}
-          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
+          className="inline-flex h-9 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted"
         >
           Cancelar
         </button>
         <button
           onClick={submit}
           disabled={saving}
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+          className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
         >
           {isEdit ? "Salvar" : "Registrar"}
         </button>
@@ -2461,7 +2461,7 @@ function BeneficiosTab({
             <button
               onClick={addMile}
               disabled={!newProgram.trim()}
-              className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               Adicionar
             </button>
@@ -2525,7 +2525,7 @@ function BeneficiosTab({
             <button
               onClick={addPerk}
               disabled={!newPerkType.trim()}
-              className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               Adicionar
             </button>
