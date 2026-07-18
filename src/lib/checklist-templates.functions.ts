@@ -253,6 +253,7 @@ const templateSchema = z.object({
       ),
     }),
   ),
+  active: z.boolean().optional(),
   createdAt: z.string().optional(),
   updatedAt: z.string().optional(),
 });
