@@ -1350,7 +1350,7 @@ function AtividadesTab({
             {editingId && (
               <button
                 onClick={resetForm}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-semibold text-muted-foreground hover:bg-muted"
+                className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-border px-4 text-sm font-semibold text-muted-foreground hover:bg-muted"
               >
                 <X className="h-4 w-4" /> Cancelar
               </button>
@@ -1358,7 +1358,7 @@ function AtividadesTab({
             <button
               onClick={() => register.mutate()}
               disabled={register.isPending || !dueDate}
-              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-60"
+              className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-60"
             >
               <Send className="h-4 w-4" /> {editingId ? "Salvar" : "Registrar"}
             </button>
