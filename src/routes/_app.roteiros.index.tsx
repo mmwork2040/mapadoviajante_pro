@@ -150,12 +150,20 @@ function ItinerariesPage() {
         title="Roteiros"
         subtitle="Planejamento dia a dia das viagens."
         actions={
-          <button
-            onClick={() => setOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-          >
-            <Plus className="h-4 w-4" /> Novo Roteiro
-          </button>
+          <>
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar roteiro…"
+              className="w-full sm:w-64"
+            />
+            <button
+              onClick={() => setOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+            >
+              <Plus className="h-4 w-4" /> Novo Roteiro
+            </button>
+          </>
         }
       />
 
@@ -165,9 +173,11 @@ function ItinerariesPage() {
         <p className="text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <p className="text-muted-foreground">Nenhum roteiro ainda. Crie o primeiro!</p>
+      ) : filteredItems.length === 0 ? (
+        <p className="text-muted-foreground">Nenhum roteiro encontrado para “{search}”.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((it) => (
+          {filteredItems.map((it) => (
             <div key={it.id} className="group relative">
               <Link
                 to="/roteiros/$id"
