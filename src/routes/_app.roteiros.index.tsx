@@ -267,8 +267,6 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
   const [form, setForm] = useState<Partial<Itinerary>>({ status: "draft", passengers: 1, budget: 0 });
   const [coverImage, setCoverImage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [clientSearch, setClientSearch] = useState("");
-  const [showNewClient, setShowNewClient] = useState(false);
   const qc = useQueryClient();
   const { data: leads = [] } = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
 
@@ -529,15 +527,6 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
           </button>
         </form>
       </div>
-      {showNewClient && (
-        <NewLeadModal
-          onClose={() => setShowNewClient(false)}
-          onCreated={() => {
-            setShowNewClient(false);
-            qc.invalidateQueries({ queryKey: ["leads", {}] });
-          }}
-        />
-      )}
     </div>
   );
 }
