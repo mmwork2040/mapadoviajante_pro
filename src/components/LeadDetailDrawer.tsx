@@ -2215,7 +2215,7 @@ function BudgetsForm({
               budget_osv: parseCurrency(osv) || null,
             })
           }
-          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
         >
           Salvar
         </button>
