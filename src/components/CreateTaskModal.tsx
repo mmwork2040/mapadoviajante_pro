@@ -372,6 +372,16 @@ export function CreateTaskModal({
 
         </div>
       </DialogContent>
+      {showNewClient && (
+        <NewLeadModal
+          onClose={() => setShowNewClient(false)}
+          onCreated={() => {
+            setShowNewClient(false);
+            qc.invalidateQueries({ queryKey: ["leads", {}] });
+          }}
+        />
+      )}
     </Dialog>
+
   );
 }
