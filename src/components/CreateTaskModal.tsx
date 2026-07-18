@@ -78,7 +78,11 @@ export function CreateTaskModal({
   const [description, setDescription] = useState("");
   const [activityType, setActivityType] = useState<string>("outros");
 
+  const [clientSearch, setClientSearch] = useState("");
+  const [showNewClient, setShowNewClient] = useState(false);
+
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}), enabled: open });
+
   const membersQ = useQuery({ queryKey: ["team-members"], queryFn: fetchTeamMembers, enabled: open });
   const itinerariesQ = useQuery({
     queryKey: ["itineraries-by-lead", leadId],
