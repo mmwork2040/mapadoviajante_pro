@@ -22,11 +22,13 @@ import {
   generateChecklistStructureFn,
   getChecklistTemplatesUsage,
   listChecklistTemplates,
+  listLeadsByChecklistTemplate,
   saveChecklistTemplate,
   setChecklistTemplateActive,
   setDefaultChecklistTemplate,
   type ChecklistSection,
   type ChecklistTemplate,
+  type LeadByTemplate,
 } from "@/lib/checklist-templates.functions";
 import { fetchAiConfig } from "@/lib/services";
 import { useAuth, isAdminUser } from "@/lib/auth";
