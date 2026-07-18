@@ -642,6 +642,61 @@ function ChecklistTemplatesPage() {
         </div>
       </div>
 
+      {/* Modal Viagens vinculadas */}
+      {linkedOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl border border-border bg-background p-4 shadow-xl">
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <h3 className="flex items-center gap-2 text-base font-semibold">
+                  <ListChecks className="h-4 w-4 text-primary" /> Viagens vinculadas
+                </h3>
+                {linkedTemplateName && (
+                  <p className="text-xs text-muted-foreground">Template: {linkedTemplateName}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setLinkedOpen(false)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {linkedLoading ? (
+              <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando…
+              </div>
+            ) : linkedTrips.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Nenhuma viagem vinculada a este template.
+              </p>
+            ) : (
+              <ul className="max-h-[60vh] space-y-1 overflow-y-auto">
+                {linkedTrips.map((t) => (
+                  <li key={t.id}>
+                    <Link
+                      to="/leads"
+                      search={{ lead: t.id }}
+                      onClick={() => setLinkedOpen(false)}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{t.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {t.destination || "Sem destino"}
+                          {t.status ? ` · ${t.status}` : ""}
+                        </p>
+                      </div>
+                      <ArrowLeft className="h-3.5 w-3.5 rotate-180 text-muted-foreground" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Modal IA */}
       {aiOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
