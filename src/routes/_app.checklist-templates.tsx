@@ -36,7 +36,16 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 
 
+const STATUS_LABEL: Record<string, string> = {
+  new: "Novo",
+  contacted: "Contatado",
+  negotiating: "Negociando",
+  closed: "Fechado",
+  lost: "Perdido",
+};
+
 export const Route = createFileRoute("/_app/checklist-templates")({
+
   component: ChecklistTemplatesPage,
 });
 
@@ -690,7 +699,7 @@ function ChecklistTemplatesPage() {
                         <p className="truncate font-medium">{t.name}</p>
                         <p className="truncate text-xs text-muted-foreground">
                           {t.destination || "Sem destino"}
-                          {t.status ? ` · ${t.status}` : ""}
+                          {t.status ? ` · ${STATUS_LABEL[t.status] || t.status}` : ""}
                         </p>
                       </div>
                       <ArrowLeft className="h-3.5 w-3.5 rotate-180 text-muted-foreground" />
