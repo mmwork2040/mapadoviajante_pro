@@ -988,13 +988,24 @@ function LibraryModal({
             )}
           </label>
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-          >
-            {saving ? "Salvando…" : item ? "Salvar" : "Adicionar"}
-          </button>
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-input px-4 py-2.5 text-sm font-semibold hover:bg-muted"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={saving}
+              className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Salvando…" : item ? "Salvar" : "Adicionar"}
+            </button>
+          </div>
+
         </form>
       </div>
     </div>
