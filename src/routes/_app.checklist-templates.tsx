@@ -33,6 +33,8 @@ import {
 import { fetchAiConfig } from "@/lib/services";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
+
 
 export const Route = createFileRoute("/_app/checklist-templates")({
   component: ChecklistTemplatesPage,
