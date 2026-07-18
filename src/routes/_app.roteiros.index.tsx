@@ -27,7 +27,7 @@ import type { Itinerary } from "@/lib/types";
 import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { ModalField, LibraryImagePicker, NewLeadModal } from "./_app.leads";
+import { ModalField, LibraryImagePicker } from "./_app.leads";
 import { SearchBar } from "@/components/SearchBar";
 
 import {
@@ -83,10 +83,23 @@ function ItinerariesPage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
+
+  const filteredItems = search.trim()
+    ? items.filter((it) => {
+        const q = search.toLowerCase();
+        return (
+          (it.title || "").toLowerCase().includes(q) ||
+          (it.destination || "").toLowerCase().includes(q) ||
+          (it.client_name || "").toLowerCase().includes(q)
+        );
+      })
+    : items;
+
 
   const remove = useMutation({
     mutationFn: (it: Itinerary) => deleteItinerary(it.id),
@@ -137,12 +150,20 @@ function ItinerariesPage() {
         title="Roteiros"
         subtitle="Planejamento dia a dia das viagens."
         actions={
-          <button
-            onClick={() => setOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-          >
-            <Plus className="h-4 w-4" /> Novo Roteiro
-          </button>
+          <>
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar roteiro…"
+              className="w-full sm:w-64"
+            />
+            <button
+              onClick={() => setOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
+            >
+              <Plus className="h-4 w-4" /> Novo Roteiro
+            </button>
+          </>
         }
       />
 
@@ -152,9 +173,11 @@ function ItinerariesPage() {
         <p className="text-muted-foreground">Carregando…</p>
       ) : items.length === 0 ? (
         <p className="text-muted-foreground">Nenhum roteiro ainda. Crie o primeiro!</p>
+      ) : filteredItems.length === 0 ? (
+        <p className="text-muted-foreground">Nenhum roteiro encontrado para “{search}”.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((it) => (
+          {filteredItems.map((it) => (
             <div key={it.id} className="group relative">
               <Link
                 to="/roteiros/$id"
@@ -267,8 +290,6 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
   const [form, setForm] = useState<Partial<Itinerary>>({ status: "draft", passengers: 1, budget: 0 });
   const [coverImage, setCoverImage] = useState("");
   const [saving, setSaving] = useState(false);
-  const [clientSearch, setClientSearch] = useState("");
-  const [showNewClient, setShowNewClient] = useState(false);
   const qc = useQueryClient();
   const { data: leads = [] } = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
 
@@ -451,21 +472,6 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
             <span className="mb-1 flex h-8 items-center text-sm font-semibold">
               Lead <span className="ml-1 text-primary">*</span>
             </span>
-            <div className="mb-2 flex flex-col gap-2 sm:flex-row">
-              <SearchBar
-                value={clientSearch}
-                onChange={setClientSearch}
-                placeholder="Buscar cliente…"
-                className="flex-1"
-              />
-              <button
-                type="button"
-                onClick={() => setShowNewClient(true)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-              >
-                <Plus className="h-4 w-4" /> Novo
-              </button>
-            </div>
             <select
               required
               value={form.lead_id || ""}
@@ -473,15 +479,9 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
               className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 text-sm outline-none focus:border-primary focus:bg-background"
             >
               <option value="">Selecione um lead…</option>
-              {leads
-                .filter((l) =>
-                  !clientSearch.trim()
-                    ? true
-                    : (l.name || "").toLowerCase().includes(clientSearch.toLowerCase()),
-                )
-                .map((l) => (
-                  <option key={l.id} value={l.id}>{l.name}</option>
-                ))}
+              {leads.map((l) => (
+                <option key={l.id} value={l.id}>{l.name}</option>
+              ))}
             </select>
           </div>
 
@@ -550,15 +550,6 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
           </button>
         </form>
       </div>
-      {showNewClient && (
-        <NewLeadModal
-          onClose={() => setShowNewClient(false)}
-          onCreated={() => {
-            setShowNewClient(false);
-            qc.invalidateQueries({ queryKey: ["leads", {}] });
-          }}
-        />
-      )}
     </div>
   );
 }

@@ -12,11 +12,8 @@ import {
   FileText,
   ClipboardList,
   X,
-  Plus,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { SearchBar } from "@/components/SearchBar";
-import { NewLeadModal } from "@/routes/_app.leads";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -78,8 +75,6 @@ export function CreateTaskModal({
   const [description, setDescription] = useState("");
   const [activityType, setActivityType] = useState<string>("outros");
 
-  const [clientSearch, setClientSearch] = useState("");
-  const [showNewClient, setShowNewClient] = useState(false);
 
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}), enabled: open });
 
@@ -233,21 +228,6 @@ export function CreateTaskModal({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <FieldLabel>Cliente</FieldLabel>
-              <div className="mb-2 flex flex-col gap-2 sm:flex-row">
-                <SearchBar
-                  value={clientSearch}
-                  onChange={setClientSearch}
-                  placeholder="Buscar cliente…"
-                  className="flex-1"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNewClient(true)}
-                  className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                >
-                  <Plus className="h-4 w-4" /> Novo
-                </button>
-              </div>
               <Select
                 value={leadId}
                 onValueChange={(v) => {
@@ -259,17 +239,11 @@ export function CreateTaskModal({
                   <SelectValue placeholder="Selecione cliente" />
                 </SelectTrigger>
                 <SelectContent>
-                  {(leadsQ.data ?? [])
-                    .filter((l) =>
-                      !clientSearch.trim()
-                        ? true
-                        : (l.name || "").toLowerCase().includes(clientSearch.toLowerCase()),
-                    )
-                    .map((l) => (
-                      <SelectItem key={l.id} value={l.id}>
-                        {l.name}
-                      </SelectItem>
-                    ))}
+                  {(leadsQ.data ?? []).map((l) => (
+                    <SelectItem key={l.id} value={l.id}>
+                      {l.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -372,15 +346,6 @@ export function CreateTaskModal({
 
         </div>
       </DialogContent>
-      {showNewClient && (
-        <NewLeadModal
-          onClose={() => setShowNewClient(false)}
-          onCreated={() => {
-            setShowNewClient(false);
-            qc.invalidateQueries({ queryKey: ["leads", {}] });
-          }}
-        />
-      )}
     </Dialog>
 
   );

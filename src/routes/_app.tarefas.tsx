@@ -9,6 +9,7 @@ import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchBar } from "@/components/SearchBar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +45,7 @@ function TarefasPage() {
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
+  const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const { data, isLoading, isError, refetch } = useQuery({
@@ -97,12 +99,23 @@ function TarefasPage() {
     return true;
   };
 
-  const allTasks = (data ?? []).filter(inDateRange);
-  const hasFilters = statusFilter !== "all" || fromDate !== "" || toDate !== "";
+  const matchesSearch = (t: Task) => {
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (t.title || "").toLowerCase().includes(q) ||
+      (t.lead?.name || "").toLowerCase().includes(q) ||
+      (t.description || "").toLowerCase().includes(q)
+    );
+  };
+
+  const allTasks = (data ?? []).filter(inDateRange).filter(matchesSearch);
+  const hasFilters = statusFilter !== "all" || fromDate !== "" || toDate !== "" || search !== "";
   const clearFilters = () => {
     setStatusFilter("all");
     setFromDate("");
     setToDate("");
+    setSearch("");
   };
 
   const pending = allTasks.filter((t) => !t.completed).sort(byDue);
@@ -117,9 +130,17 @@ function TarefasPage() {
         title="Tarefas"
         subtitle={`${pending.length} pendente${pending.length !== 1 ? "s" : ""}`}
         actions={
-          <Button onClick={() => setOpen(true)}>
-            <Plus className="mr-1 h-4 w-4" /> Criar Tarefa
-          </Button>
+          <>
+            <SearchBar
+              value={search}
+              onChange={setSearch}
+              placeholder="Buscar tarefa…"
+              className="w-full sm:w-64"
+            />
+            <Button onClick={() => setOpen(true)} className="w-full sm:w-auto">
+              <Plus className="mr-1 h-4 w-4" /> Criar Tarefa
+            </Button>
+          </>
         }
       />
 
