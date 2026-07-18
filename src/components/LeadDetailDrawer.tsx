@@ -1610,6 +1610,14 @@ function ChecklistTab({
   }
 
   async function changeTemplate() {
+    const hasChecked = Object.values(state.items || {}).some((v) => v === true);
+    if (hasChecked) {
+      toast.error("Não é possível trocar o template", {
+        description:
+          "Desmarque todos os itens do template atual antes de trocar por outro.",
+      });
+      return;
+    }
     const ok = await confirm({
       title: "Trocar template?",
       description:
@@ -1622,6 +1630,7 @@ function ChecklistTab({
     persist({ items: {}, extras: [] });
     setPickerOpen(true);
   }
+
 
 
   function toggle(id: string) {
