@@ -494,13 +494,19 @@ function ChecklistTemplatesPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Badge contador de viagens vinculadas */}
+              {/* Badge contador de viagens vinculadas (clicável) */}
               {!isNew && selectedId && (
                 <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                  <button
+                    type="button"
+                    onClick={() => openLinkedTrips(selectedId)}
+                    disabled={(usage[selectedId] ?? 0) === 0}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-primary/10"
+                    title={(usage[selectedId] ?? 0) > 0 ? "Ver viagens vinculadas" : "Nenhuma viagem vinculada"}
+                  >
                     <ListChecks className="h-3.5 w-3.5" />
                     {(usage[selectedId] ?? 0)} viagem{(usage[selectedId] ?? 0) === 1 ? "" : "s"} vinculada{(usage[selectedId] ?? 0) === 1 ? "" : "s"}
-                  </span>
+                  </button>
                 </div>
               )}
               {/* Barra de ações */}
