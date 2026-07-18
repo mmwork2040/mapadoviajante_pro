@@ -3,7 +3,7 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon } from "lucide-react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon, Save } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
@@ -541,19 +541,20 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
             <F label="Passageiros" type="number" required value={String(form.passengers ?? "")} onChange={(v) => setForm({ ...form, passengers: Number(v) })} />
             <F label="Orçamento" format="currency" required value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
           </div>
-          <div className="flex gap-2 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-input bg-background py-2.5 font-semibold hover:bg-muted"
+              className="rounded-lg border border-input px-4 py-2.5 text-sm font-semibold hover:bg-muted"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={saving || !isComplete}
-              className="flex-1 rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
+              <Save className="h-4 w-4" />
               {saving ? "Salvando…" : "Criar Roteiro"}
             </button>
           </div>
