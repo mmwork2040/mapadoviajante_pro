@@ -51,6 +51,7 @@ function ChecklistTemplatesPage() {
   const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
   const [busyDefaultId, setBusyDefaultId] = useState<string | null>(null);
   const [busyDeleteId, setBusyDeleteId] = useState<string | null>(null);
+  const [busyActiveId, setBusyActiveId] = useState<string | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [isNew, setIsNew] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(false);
