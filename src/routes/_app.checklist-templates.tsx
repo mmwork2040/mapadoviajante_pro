@@ -494,6 +494,15 @@ function ChecklistTemplatesPage() {
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Badge contador de viagens vinculadas */}
+              {!isNew && selectedId && (
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                    <ListChecks className="h-3.5 w-3.5" />
+                    {(usage[selectedId] ?? 0)} viagem{(usage[selectedId] ?? 0) === 1 ? "" : "s"} vinculada{(usage[selectedId] ?? 0) === 1 ? "" : "s"}
+                  </span>
+                </div>
+              )}
               {/* Barra de ações */}
               <div className="flex items-center justify-between gap-2">
                 <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
