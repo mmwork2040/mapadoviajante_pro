@@ -22,11 +22,13 @@ import {
   generateChecklistStructureFn,
   getChecklistTemplatesUsage,
   listChecklistTemplates,
+  listLeadsByChecklistTemplate,
   saveChecklistTemplate,
   setChecklistTemplateActive,
   setDefaultChecklistTemplate,
   type ChecklistSection,
   type ChecklistTemplate,
+  type LeadByTemplate,
 } from "@/lib/checklist-templates.functions";
 import { fetchAiConfig } from "@/lib/services";
 import { useAuth, isAdminUser } from "@/lib/auth";
@@ -62,6 +64,28 @@ function ChecklistTemplatesPage() {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [text, setText] = useState("");
+
+  const [linkedOpen, setLinkedOpen] = useState(false);
+  const [linkedLoading, setLinkedLoading] = useState(false);
+  const [linkedTrips, setLinkedTrips] = useState<LeadByTemplate[]>([]);
+  const [linkedTemplateName, setLinkedTemplateName] = useState("");
+
+  async function openLinkedTrips(templateId: string) {
+    const tpl = templates.find((t) => t.id === templateId);
+    setLinkedTemplateName(tpl?.name ?? "");
+    setLinkedTrips([]);
+    setLinkedOpen(true);
+    setLinkedLoading(true);
+    try {
+      const rows = await listLeadsByChecklistTemplate({ data: { templateId } });
+      setLinkedTrips(rows);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao carregar viagens");
+      setLinkedOpen(false);
+    } finally {
+      setLinkedLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (!loading && !isAdmin) navigate({ to: "/" });
@@ -494,13 +518,19 @@ function ChecklistTemplatesPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {/* Badge contador de viagens vinculadas */}
+              {/* Badge contador de viagens vinculadas (clicável) */}
               {!isNew && selectedId && (
                 <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">
+                  <button
+                    type="button"
+                    onClick={() => openLinkedTrips(selectedId)}
+                    disabled={(usage[selectedId] ?? 0) === 0}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-primary/10"
+                    title={(usage[selectedId] ?? 0) > 0 ? "Ver viagens vinculadas" : "Nenhuma viagem vinculada"}
+                  >
                     <ListChecks className="h-3.5 w-3.5" />
                     {(usage[selectedId] ?? 0)} viagem{(usage[selectedId] ?? 0) === 1 ? "" : "s"} vinculada{(usage[selectedId] ?? 0) === 1 ? "" : "s"}
-                  </span>
+                  </button>
                 </div>
               )}
               {/* Barra de ações */}
@@ -611,6 +641,61 @@ function ChecklistTemplatesPage() {
           )}
         </div>
       </div>
+
+      {/* Modal Viagens vinculadas */}
+      {linkedOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-lg rounded-xl border border-border bg-background p-4 shadow-xl">
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <h3 className="flex items-center gap-2 text-base font-semibold">
+                  <ListChecks className="h-4 w-4 text-primary" /> Viagens vinculadas
+                </h3>
+                {linkedTemplateName && (
+                  <p className="text-xs text-muted-foreground">Template: {linkedTemplateName}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setLinkedOpen(false)}
+                className="rounded-md p-1 text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            {linkedLoading ? (
+              <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Carregando…
+              </div>
+            ) : linkedTrips.length === 0 ? (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Nenhuma viagem vinculada a este template.
+              </p>
+            ) : (
+              <ul className="max-h-[60vh] space-y-1 overflow-y-auto">
+                {linkedTrips.map((t) => (
+                  <li key={t.id}>
+                    <Link
+                      to="/leads"
+                      search={{ lead: t.id }}
+                      onClick={() => setLinkedOpen(false)}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm hover:bg-muted"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">{t.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {t.destination || "Sem destino"}
+                          {t.status ? ` · ${t.status}` : ""}
+                        </p>
+                      </div>
+                      <ArrowLeft className="h-3.5 w-3.5 rotate-180 text-muted-foreground" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Modal IA */}
       {aiOpen && (
