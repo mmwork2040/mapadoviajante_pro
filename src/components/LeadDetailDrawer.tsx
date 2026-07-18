@@ -156,6 +156,11 @@ export function LeadDetailDrawer({
     queryFn: () => fetchLeadActivities(leadId),
   });
   const { data: team = [] } = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
+  const { data: leadItineraries = [] } = useQuery({
+    queryKey: ["lead-itineraries", leadId],
+    queryFn: () => fetchItinerariesByLead(leadId),
+  });
+  const existingItinerary = leadItineraries.find((it) => it.status !== "cancelled") ?? null;
 
   const update = useMutation({
     mutationFn: (updates: Partial<Lead>) => updateLead(leadId, updates),
