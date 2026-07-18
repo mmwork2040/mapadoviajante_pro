@@ -11,6 +11,7 @@ import {
   StickyNote,
   FileText,
   ClipboardList,
+  X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
