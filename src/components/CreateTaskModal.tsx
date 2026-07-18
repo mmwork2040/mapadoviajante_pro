@@ -158,7 +158,7 @@ export function CreateTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92vh] w-[calc(100vw-2rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:max-w-lg">
+      <DialogContent className="flex max-h-[92vh] w-[calc(100vw-2rem)] max-w-md flex-col gap-0 overflow-hidden rounded-3xl p-0 sm:max-w-lg sm:rounded-3xl">
         {/* Header */}
         <div className="flex items-start justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
           <div className="flex items-center gap-3">
@@ -174,13 +174,8 @@ export function CreateTaskModal({
               </p>
             </div>
           </div>
-          <button
-            onClick={() => onOpenChange(false)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
+
 
         {/* Body */}
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
