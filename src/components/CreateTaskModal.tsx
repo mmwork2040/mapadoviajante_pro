@@ -183,7 +183,7 @@ export function CreateTaskModal({
         </div>
 
         {/* Body */}
-        <div className="space-y-4 px-6 py-5">
+        <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
           <div>
             <FieldLabel>Título *</FieldLabel>
             <Input
