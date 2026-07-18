@@ -36,7 +36,16 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 
 
+const STATUS_LABEL: Record<string, string> = {
+  new: "Novo",
+  contacted: "Contatado",
+  negotiating: "Negociando",
+  closed: "Fechado",
+  lost: "Perdido",
+};
+
 export const Route = createFileRoute("/_app/checklist-templates")({
+
   component: ChecklistTemplatesPage,
 });
 
