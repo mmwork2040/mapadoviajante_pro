@@ -1642,8 +1642,8 @@ function ChecklistTab({
             <div className="mt-3">
               <label className="text-xs text-muted-foreground">Aplicar template</label>
               <select
-                defaultValue={defaultId || templates[0]?.id}
-                onChange={(e) => applyTemplate(e.target.value)}
+                value={selectedTemplateId || defaultId || templates[0]?.id}
+                onChange={(e) => setSelectedTemplateId(e.target.value)}
                 className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
               >
                 {templates.map((t) => (
@@ -1653,7 +1653,7 @@ function ChecklistTab({
                 ))}
               </select>
               <button
-                onClick={() => applyTemplate(defaultId || templates[0].id)}
+                onClick={() => applyTemplate(selectedTemplateId || defaultId || templates[0].id)}
                 className="mt-3 inline-flex h-10 items-center justify-center rounded-lg bg-primary px-6 text-sm font-semibold text-primary-foreground hover:opacity-90"
               >
                 Aplicar
