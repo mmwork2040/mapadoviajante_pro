@@ -14,6 +14,7 @@ export type ChecklistTemplate = {
   name: string;
   description?: string;
   sections: ChecklistSection[];
+  active?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
