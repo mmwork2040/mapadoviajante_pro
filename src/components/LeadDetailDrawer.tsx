@@ -1531,6 +1531,7 @@ function ChecklistTab({
   >([]);
   const [defaultId, setDefaultId] = useState<string | null>(null);
   const [loadingTpl, setLoadingTpl] = useState(true);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [newItem, setNewItem] = useState("");
   const confirm = useConfirm();
