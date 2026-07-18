@@ -99,8 +99,7 @@ function ItinerariesPage() {
         );
       })
     : items;
-    queryFn: fetchItineraries,
-  });
+
 
   const remove = useMutation({
     mutationFn: (it: Itinerary) => deleteItinerary(it.id),
