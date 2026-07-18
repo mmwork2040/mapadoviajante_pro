@@ -2461,7 +2461,7 @@ function BeneficiosTab({
             <button
               onClick={addMile}
               disabled={!newProgram.trim()}
-              className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
             >
               Adicionar
             </button>
