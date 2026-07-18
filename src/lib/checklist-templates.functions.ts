@@ -234,6 +234,44 @@ export const getChecklistTemplatesUsage = createServerFn({ method: "GET" })
     return counts;
   });
 
+export type LeadByTemplate = {
+  id: string;
+  name: string;
+  status: string | null;
+  destination: string | null;
+  updatedAt: string | null;
+};
+
+/** Lista leads/viagens que aplicaram um determinado template. */
+export const listLeadsByChecklistTemplate = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ templateId: z.string().min(1) }).parse(d))
+  .handler(async ({ data, context }): Promise<LeadByTemplate[]> => {
+    const m = await resolveMember(context.supabase, context.userId);
+    if (!m) return [];
+    const { data: rows, error } = await context.supabase
+      .from("crm_leads")
+      .select("id, name, status, profile, updated_at, checklists")
+      .eq("agency_id", m.agencyId)
+      .filter("checklists->>templateId", "eq", data.templateId)
+      .order("updated_at", { ascending: false });
+    if (error) return [];
+    return ((rows ?? []) as Array<{
+      id: string;
+      name: string | null;
+      status: string | null;
+      profile: { destination?: string } | null;
+      updated_at: string | null;
+    }>).map((r) => ({
+      id: r.id,
+      name: r.name ?? "(sem nome)",
+      status: r.status,
+      destination: r.profile?.destination ?? null,
+      updatedAt: r.updated_at,
+    }));
+  });
+
+
 const templateSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1),
