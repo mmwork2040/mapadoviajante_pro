@@ -267,7 +267,12 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
   const [form, setForm] = useState<Partial<Itinerary>>({ status: "draft", passengers: 1, budget: 0 });
   const [coverImage, setCoverImage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [clientSearch, setClientSearch] = useState("");
+  const [showNewClient, setShowNewClient] = useState(false);
+  const qc = useQueryClient();
   const { data: leads = [] } = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
+
+
 
   const { data: aiConfig } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
   const aiActive = aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
