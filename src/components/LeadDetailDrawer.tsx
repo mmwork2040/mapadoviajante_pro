@@ -167,6 +167,7 @@ export function LeadDetailDrawer({
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["lead", leadId] });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      toast.success("Viagem atualizada!");
     },
     onError: () => toast.error("Erro ao atualizar lead."),
   });
