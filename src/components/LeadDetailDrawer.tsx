@@ -289,9 +289,10 @@ export function LeadDetailDrawer({
     onSuccess: (res) => {
       if (!res) return toast.error("Erro ao salvar roteiro.");
       toast.success("Roteiro atualizado!");
+      qc.invalidateQueries({ queryKey: ["lead", leadId] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
       qc.invalidateQueries({ queryKey: ["lead-itineraries", leadId] });
       qc.invalidateQueries({ queryKey: ["itineraries"] });
-      onClose();
     },
     onError: () => toast.error("Erro ao salvar roteiro."),
   });
