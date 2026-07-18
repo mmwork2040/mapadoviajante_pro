@@ -1102,13 +1102,13 @@ function FinanceiroSection({
             />
             <button
               onClick={save}
-              className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+              className="inline-flex h-9 items-center justify-center rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
             >
               Salvar
             </button>
             <button
               onClick={() => setEditing(false)}
-              className="rounded-lg border border-border px-3 py-2 text-xs font-semibold hover:bg-muted"
+              className="inline-flex h-9 items-center justify-center rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted"
             >
               Cancelar
             </button>
