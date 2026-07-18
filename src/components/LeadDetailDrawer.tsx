@@ -612,10 +612,10 @@ export function LeadDetailDrawer({
 
 
             {/* Footer */}
-            <div className="flex gap-2 border-t border-border p-4">
+            <div className="flex flex-wrap justify-end gap-2 border-t border-border p-4">
               <button
                 onClick={onClose}
-                className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border py-2.5 text-sm font-semibold hover:bg-muted"
+                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg border border-border px-5 text-sm font-semibold hover:bg-muted"
               >
                 <X className="h-4 w-4" /> Fechar
               </button>
@@ -626,7 +626,7 @@ export function LeadDetailDrawer({
                     onClick={handleCreateRoteiro}
                     disabled={createRoteiro.isPending || blocked}
                     title={blocked ? "Não é possível criar roteiro para leads fechados ou perdidos" : undefined}
-                    className="flex flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <MapIcon className="h-4 w-4" /> Criar Roteiro
                   </button>
