@@ -626,14 +626,18 @@ export function LeadDetailDrawer({
               </button>
               {(() => {
                 const blocked = lead?.status === "closed" || lead?.status === "lost";
+                const hasItinerary = !!existingItinerary;
+                const onClick = hasItinerary
+                  ? () => navigate({ to: "/roteiros/$id", params: { id: existingItinerary!.id } })
+                  : handleCreateRoteiro;
                 return (
                   <button
-                    onClick={handleCreateRoteiro}
-                    disabled={createRoteiro.isPending || blocked}
-                    title={blocked ? "Não é possível criar roteiro para leads fechados ou perdidos" : undefined}
+                    onClick={onClick}
+                    disabled={createRoteiro.isPending || (blocked && !hasItinerary)}
+                    title={blocked && !hasItinerary ? "Não é possível criar roteiro para leads fechados ou perdidos" : undefined}
                     className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <MapIcon className="h-4 w-4" /> Criar Roteiro
+                    <MapIcon className="h-4 w-4" /> {hasItinerary ? "Salvar Roteiro" : "Criar Roteiro"}
                   </button>
                 );
               })()}
