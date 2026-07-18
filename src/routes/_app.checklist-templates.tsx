@@ -272,7 +272,41 @@ function ChecklistTemplatesPage() {
       toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
     } finally {
       setBusyDefaultId(null);
+  }
+
+  async function toggleActive(t: ChecklistTemplate) {
+    const nextActive = t.active === false;
+    if (!nextActive) {
+      const used = usage[t.id] ?? 0;
+      if (used > 0) {
+        toast.error(
+          `Este template está aplicado em ${used} viagem(ns) e não pode ser desativado.`,
+        );
+        return;
+      }
+      const ok = await confirm({
+        title: "Desativar template?",
+        description: "Ele deixará de aparecer na seleção de checklist das viagens.",
+        confirmLabel: "Desativar",
+      });
+      if (!ok) return;
     }
+    setBusyActiveId(t.id);
+    const tid = toast.loading(nextActive ? "Ativando…" : "Desativando…");
+    try {
+      const res = await setChecklistTemplateActive({
+        data: { id: t.id, active: nextActive },
+      });
+      setTemplates(res.templates);
+      setDefaultId(res.defaultId);
+      toast.success(nextActive ? "Template ativado" : "Template desativado", { id: tid });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
+    } finally {
+      setBusyActiveId(null);
+    }
+  }
+
   }
 
   async function runAiGenerate() {
