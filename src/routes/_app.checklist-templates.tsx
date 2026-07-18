@@ -690,7 +690,7 @@ function ChecklistTemplatesPage() {
                         <p className="truncate font-medium">{t.name}</p>
                         <p className="truncate text-xs text-muted-foreground">
                           {t.destination || "Sem destino"}
-                          {t.status ? ` · ${t.status}` : ""}
+                          {t.status ? ` · ${STATUS_LABEL[t.status] || t.status}` : ""}
                         </p>
                       </div>
                       <ArrowLeft className="h-3.5 w-3.5 rotate-180 text-muted-foreground" />
