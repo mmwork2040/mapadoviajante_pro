@@ -9,6 +9,7 @@ import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { PageHeader } from "@/components/PageHeader";
+import { SearchBar } from "@/components/SearchBar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +45,7 @@ function TarefasPage() {
   const [detailTask, setDetailTask] = useState<Task | null>(null);
   const [editTask, setEditTask] = useState<Task | null>(null);
   const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "done">("all");
+  const [search, setSearch] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const { data, isLoading, isError, refetch } = useQuery({
