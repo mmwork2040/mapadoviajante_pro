@@ -325,6 +325,38 @@ export const setDefaultChecklistTemplate = createServerFn({ method: "POST" })
     return current;
   });
 
+/** Ativa/desativa um template. Bloqueia desativação se estiver em uso. Apenas admin. */
+export const setChecklistTemplateActive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ id: z.string().min(1), active: z.boolean() }).parse(data),
+  )
+  .handler(async ({ data, context }): Promise<StoredValue> => {
+    const m = await resolveMember(context.supabase, context.userId);
+    if (!m) throw new Error("Agência não encontrada.");
+    if (m.role !== "admin") throw new Error("Sem permissão.");
+    if (!data.active) {
+      const { count, error: countErr } = await context.supabase
+        .from("crm_leads")
+        .select("id", { count: "exact", head: true })
+        .eq("agency_id", m.agencyId)
+        .filter("checklists->>templateId", "eq", data.id);
+      if (countErr) throw new Error("Não foi possível validar uso do template.");
+      if ((count ?? 0) > 0) {
+        throw new Error(
+          `Este template está aplicado em ${count} viagem(ns) e não pode ser desativado.`,
+        );
+      }
+    }
+    const current = await readValue(context.supabase, m.agencyId);
+    const idx = current.templates.findIndex((t) => t.id === data.id);
+    if (idx < 0) throw new Error("Template não encontrado.");
+    current.templates[idx] = { ...current.templates[idx], active: data.active };
+    await writeValue(context.supabase, m.agencyId, current);
+    return current;
+  });
+
+
 /** Gera estrutura de checklist (formato Markdown ##/###/-) via IA. */
 export const generateChecklistStructureFn = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
