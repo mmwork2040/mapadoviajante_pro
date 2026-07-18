@@ -158,9 +158,9 @@ export function CreateTaskModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[92vh] w-[calc(100vw-2rem)] max-w-md flex-col gap-0 overflow-hidden rounded-3xl p-0 sm:max-w-lg sm:rounded-3xl">
+      <DialogContent className="flex max-h-[92vh] w-[calc(100vw-2rem)] max-w-md flex-col gap-0 overflow-hidden rounded-3xl p-0 sm:max-w-lg sm:rounded-3xl [&>button.absolute]:hidden">
         {/* Header */}
-        <div className="flex items-start justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
+        <div className="flex items-center justify-between bg-[var(--accent)] px-6 pb-5 pt-6">
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
               {isEdit ? <Pencil className="h-5 w-5" /> : <ListPlus className="h-5 w-5" />}
@@ -174,7 +174,14 @@ export function CreateTaskModal({
               </p>
             </div>
           </div>
+          <button
+            onClick={() => onOpenChange(false)}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-card text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
         </div>
+
 
 
         {/* Body */}
