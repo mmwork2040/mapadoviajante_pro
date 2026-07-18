@@ -83,8 +83,22 @@ function ItinerariesPage() {
   const qc = useQueryClient();
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["itineraries"],
+    queryFn: fetchItineraries,
+  });
+
+  const filteredItems = search.trim()
+    ? items.filter((it) => {
+        const q = search.toLowerCase();
+        return (
+          (it.title || "").toLowerCase().includes(q) ||
+          (it.destination || "").toLowerCase().includes(q) ||
+          (it.client_name || "").toLowerCase().includes(q)
+        );
+      })
+    : items;
     queryFn: fetchItineraries,
   });
 
