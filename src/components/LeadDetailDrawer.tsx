@@ -251,32 +251,48 @@ export function LeadDetailDrawer({
     }
   }
 
+  function buildItineraryPayload() {
+    const p = (lead?.profile || {}) as Record<string, unknown>;
+    const pax = Number(p.passengers);
+    const dates = /^(\d{4}-\d{2}-\d{2})\s*a\s*(\d{4}-\d{2}-\d{2})$/.exec(
+      String(p.travel_dates || "").trim(),
+    );
+    return {
+      client_name: lead?.name,
+      destination: lead?.destination || "",
+      budget: Number(lead?.value) || 0,
+      passengers: Number.isFinite(pax) && pax > 0 ? pax : 1,
+      start_date: dates?.[1] || null,
+      end_date: dates?.[2] || null,
+    };
+  }
+
   const createRoteiro = useMutation({
-    mutationFn: () => {
-      const p = (lead?.profile || {}) as Record<string, unknown>;
-      const pax = Number(p.passengers);
-      const dates = /^(\d{4}-\d{2}-\d{2})\s*a\s*(\d{4}-\d{2}-\d{2})$/.exec(
-        String(p.travel_dates || "").trim(),
-      );
-      return createItinerary({
+    mutationFn: () =>
+      createItinerary({
         lead_id: leadId,
         title: `Roteiro - ${lead?.name}`,
-        client_name: lead?.name,
-        destination: lead?.destination || "",
-        budget: Number(lead?.value) || 0,
-        passengers: Number.isFinite(pax) && pax > 0 ? pax : 1,
-        start_date: dates?.[1] || null,
-        end_date: dates?.[2] || null,
         status: "draft",
-      });
-    },
-
+        ...buildItineraryPayload(),
+      }),
     onSuccess: (res) => {
       if (!res) return toast.error("Erro ao criar roteiro.");
       toast.success("Roteiro criado!");
       navigate({ to: "/roteiros/$id", params: { id: res.id } });
     },
     onError: () => toast.error("Erro ao criar roteiro."),
+  });
+
+  const saveRoteiro = useMutation({
+    mutationFn: (id: string) => updateItinerary(id, buildItineraryPayload()),
+    onSuccess: (res) => {
+      if (!res) return toast.error("Erro ao salvar roteiro.");
+      toast.success("Roteiro atualizado!");
+      qc.invalidateQueries({ queryKey: ["lead-itineraries", leadId] });
+      qc.invalidateQueries({ queryKey: ["itineraries"] });
+      onClose();
+    },
+    onError: () => toast.error("Erro ao salvar roteiro."),
   });
 
   async function handleCreateRoteiro() {
