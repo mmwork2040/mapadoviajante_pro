@@ -272,6 +272,7 @@ function ChecklistTemplatesPage() {
       toast.error(e instanceof Error ? e.message : "Erro", { id: tid });
     } finally {
       setBusyDefaultId(null);
+    }
   }
 
   async function toggleActive(t: ChecklistTemplate) {
@@ -307,7 +308,6 @@ function ChecklistTemplatesPage() {
     }
   }
 
-  }
 
   async function runAiGenerate() {
     const ctx = aiContext.trim();
