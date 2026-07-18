@@ -2070,7 +2070,7 @@ function FinanceiroTab({
           </p>
           <p className="mt-1 text-lg font-bold text-primary">{formatCurrency(consultancy)}</p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Editável na aba Perfil → Financeiro (admin).
+            Editável na aba Viagem → Financeiro (admin).
           </p>
         </div>
       )}
