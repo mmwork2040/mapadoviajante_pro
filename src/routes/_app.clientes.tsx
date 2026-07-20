@@ -434,11 +434,14 @@ function ClientFormDrawer({
 }) {
   const [form, setForm] = useState<Partial<Client>>(initial);
   const [tab, setTab] = useState<Tab>("contato");
-  const [prefText, setPrefText] = useState<string>(
-    typeof initial.preferences === "object" && initial.preferences
-      ? JSON.stringify(initial.preferences, null, 2)
-      : "{}",
-  );
+  const [members, setMembers] = useState<ClientMember[]>(() => extractMembers(initial.preferences));
+  const [prefText, setPrefText] = useState<string>(() => {
+    const src = (initial.preferences && typeof initial.preferences === "object")
+      ? (initial.preferences as Record<string, unknown>)
+      : {};
+    const { members: _m, ...rest } = src;
+    return JSON.stringify(rest, null, 2);
+  });
   const [cepLoading, setCepLoading] = useState(false);
 
   const { data: ibgeCities = [] } = useQuery({
