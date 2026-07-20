@@ -285,49 +285,55 @@ function ClientCard({
   onEdit,
   onDelete,
   onCreateTrip,
-  onOpenTrip,
   creating,
 }: {
   client: Client;
   onEdit: () => void;
   onDelete: () => void;
   onCreateTrip: () => void;
-  onOpenTrip: (leadId: string) => void;
+  onOpenTrip?: (leadId: string) => void;
   creating: boolean;
 }) {
+  const navigate = useNavigate();
   const tripsQ = useQuery({
     queryKey: ["client-trips", client.id],
     queryFn: () => fetchLeadsByClient(client.id),
   });
   const tripCount = tripsQ.data?.length ?? 0;
-  const [tripsOpen, setTripsOpen] = useState(false);
+  const memberCount = extractMembers(client.preferences).length;
+
+  const openProfile = () => navigate({ to: "/clientes/$id", params: { id: client.id } });
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
-        <button onClick={onEdit} className="flex flex-1 items-center gap-3 text-left">
+        <button onClick={openProfile} className="flex flex-1 items-center gap-3 text-left">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
             <User className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <span className="truncate font-semibold">{client.name}</span>
-              {(() => {
-                const count = extractMembers(client.preferences).length;
-                if (!count) return null;
-                return (
-                  <span
-                    title={`${count} ${count === 1 ? "membro cadastrado" : "membros cadastrados"}`}
-                    className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
-                  >
-                    <Users className="h-3 w-3" />+{count}
-                  </span>
-                );
-              })()}
+              {memberCount > 0 && (
+                <span
+                  title={`${memberCount} ${memberCount === 1 ? "membro cadastrado" : "membros cadastrados"}`}
+                  className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+                >
+                  <Users className="h-3 w-3" />+{memberCount}
+                </span>
+              )}
+              {tripCount > 0 && (
+                <span
+                  title={`${tripCount} ${tripCount === 1 ? "viagem" : "viagens"}`}
+                  className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-300"
+                >
+                  <Plane className="h-3 w-3" />
+                  {tripCount}
+                </span>
+              )}
             </div>
             {client.cpf && <div className="truncate text-xs text-muted-foreground">CPF {client.cpf}</div>}
           </div>
-
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -338,12 +344,15 @@ function ClientCard({
               <MoreVertical className="h-4 w-4" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem onSelect={openProfile}>
+              <ExternalLink className="mr-2 h-4 w-4" /> Abrir perfil
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={onCreateTrip} disabled={creating}>
               <Plane className="mr-2 h-4 w-4" /> Nova proposta
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onEdit}>
-              <Pencil className="mr-2 h-4 w-4" /> Editar
+              <Pencil className="mr-2 h-4 w-4" /> Editar cadastro
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -383,56 +392,22 @@ function ClientCard({
         })()}
       </div>
 
-      <div className="mt-3 border-t border-border pt-3">
+      <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+        <span className="text-xs text-muted-foreground">
+          {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
+        </span>
         <button
           type="button"
-          onClick={() => setTripsOpen((v) => !v)}
-          disabled={tripCount === 0}
-          className="flex w-full items-center justify-between gap-2 text-xs font-medium text-muted-foreground disabled:cursor-default"
-          aria-expanded={tripsOpen}
+          onClick={openProfile}
+          className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
         >
-          <span>
-            {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
-          </span>
-          {tripCount > 0 && (
-            <ChevronDown
-              className={`h-4 w-4 transition-transform ${tripsOpen ? "rotate-180" : ""}`}
-            />
-          )}
+          Abrir perfil <ExternalLink className="h-3 w-3" />
         </button>
-        {tripCount > 0 && (
-          <div
-            className={`grid transition-[grid-template-rows,margin] duration-300 ease-out ${
-              tripsOpen ? "mt-2 grid-rows-[1fr]" : "grid-rows-[0fr]"
-            }`}
-          >
-            <div className="overflow-hidden">
-              <ul className="space-y-1">
-                {(tripsQ.data ?? []).map((t) => {
-                  const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted text-foreground" };
-                  return (
-                    <li key={t.id}>
-                      <button
-                        type="button"
-                        onClick={() => onOpenTrip(t.id)}
-                        className="flex w-full items-center justify-between gap-2 rounded-md border border-border bg-background px-2 py-1.5 text-left text-xs hover:bg-muted"
-                      >
-                        <span className="min-w-0 truncate">{t.name || "Viagem sem título"}</span>
-                        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
-                          {meta.label}
-                        </span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 }
+
 
 function ClientFormDrawer({
   initial,
