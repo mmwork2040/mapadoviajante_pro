@@ -307,7 +307,9 @@ function ClientCard({
   const tripCount = tripsQ.data?.length ?? 0;
   const memberCount = extractMembers(client.preferences).length;
 
-  const openProfile = () => navigate({ to: "/clientes/$id", params: { id: client.id } });
+  void navigate;
+
+
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow-md">
