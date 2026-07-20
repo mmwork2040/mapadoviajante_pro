@@ -1893,9 +1893,11 @@ function ChecklistTab({
         const sectionDone = sectionItemIds.filter((id) => state.items[id]).length;
         const sectionTotal = sectionItemIds.length;
         const pct = sectionTotal > 0 ? Math.round((sectionDone / sectionTotal) * 100) : 0;
+        const containsHighlight = !!highlightItemId && sectionItemIds.includes(highlightItemId);
         return (
           <details
             key={section.id}
+            open={containsHighlight || undefined}
             className="group rounded-xl border border-border [&_summary::-webkit-details-marker]:hidden"
           >
             <summary className="flex cursor-pointer list-none flex-col gap-1.5 border-b border-border px-3 py-2 text-sm font-semibold">
