@@ -223,7 +223,14 @@ export function CreateTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Emitir bilhete, Enviar voucher, Confirmar reserva…"
+              disabled={fromChecklist}
+              readOnly={fromChecklist}
             />
+            {fromChecklist && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Item do checklist: {title || "—"} — título não pode ser alterado.
+              </p>
+            )}
           </div>
 
           <div>
