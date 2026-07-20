@@ -62,6 +62,9 @@ function waLink(phone: string | null | undefined, name: string | null | undefine
 
 export const Route = createFileRoute("/_app/clientes")({
   component: ClientesPage,
+  validateSearch: (s: Record<string, unknown>) => ({
+    edit: typeof s.edit === "string" ? s.edit : undefined,
+  }),
 });
 
 const LEAD_STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
