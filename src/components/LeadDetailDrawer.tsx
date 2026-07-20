@@ -2004,7 +2004,7 @@ function ChecklistTab({
                 title: taskModal.label,
                 description: `Item do checklist: ${taskModal.label}`,
                 leadId,
-                activityType: "outros",
+                activityType: inferActivityType(taskModal.label),
                 checklistItemId: taskModal.itemId,
               }
             : null
