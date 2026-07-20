@@ -1991,7 +1991,76 @@ function ChecklistTab({
           </button>
         </div>
       </section>
+
+      <CreateTaskModal
+        open={!!taskModal}
+        onOpenChange={(v) => {
+          if (!v) setTaskModal(null);
+        }}
+        task={taskModal?.mode === "edit" ? taskModal.task : null}
+        initial={
+          taskModal?.mode === "create"
+            ? {
+                title: taskModal.label,
+                description: `Item do checklist: ${taskModal.label}`,
+                leadId,
+                activityType: "outros",
+                checklistItemId: taskModal.itemId,
+              }
+            : null
+        }
+      />
     </div>
+  );
+}
+
+function ChecklistItemTaskAction({
+  task,
+  onCreate,
+  onEdit,
+  onRemove,
+}: {
+  task?: Task;
+  onCreate: () => void;
+  onEdit: (t: Task) => void;
+  onRemove: (t: Task) => void;
+}) {
+  if (!task) {
+    return (
+      <button
+        onClick={onCreate}
+        title="Transformar em tarefa"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-primary"
+      >
+        <ListPlus className="h-4 w-4" />
+      </button>
+    );
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          title="Tarefa vinculada"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary hover:bg-primary/20"
+        >
+          <ClipboardList className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onClick={() => onEdit(task)}>
+          <Eye className="mr-2 h-4 w-4" /> Ver detalhes
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onEdit(task)}>
+          <Pencil className="mr-2 h-4 w-4" /> Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onRemove(task)}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="mr-2 h-4 w-4" /> Remover
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
