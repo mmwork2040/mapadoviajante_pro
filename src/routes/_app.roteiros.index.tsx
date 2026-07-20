@@ -44,12 +44,6 @@ export const Route = createFileRoute("/_app/roteiros/")({
   component: ItinerariesPage,
 });
 
-const STATUS_LABELS: Record<string, string> = {
-  draft: "Rascunho",
-  active: "Em andamento",
-  completed: "Concluído",
-  cancelled: "Cancelado",
-};
 
 const STATUS_COLUMNS: { key: string; label: string; dot: string }[] = [
   { key: "draft", label: "Rascunho", dot: "bg-slate-400" },
