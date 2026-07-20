@@ -135,10 +135,14 @@ export function LeadDetailDrawer({
   leadId,
   onClose,
   highlightTask,
+  highlightChecklistItemId,
+  initialTab,
 }: {
   leadId: string;
   onClose: () => void;
   highlightTask?: Task | null;
+  highlightChecklistItemId?: string;
+  initialTab?: TabKey;
 }) {
   useBackButtonClose(true, onClose);
   const qc = useQueryClient();
@@ -146,7 +150,9 @@ export function LeadDetailDrawer({
   const confirm = useConfirm();
   const { member, session } = useAuth();
   const isAdmin = isAdminUser(member, session?.user?.email);
-  const [tab, setTab] = useState<TabKey>(highlightTask ? "atividades" : "checklist");
+  const [tab, setTab] = useState<TabKey>(
+    initialTab ?? (highlightTask && !highlightChecklistItemId ? "atividades" : "checklist"),
+  );
   const [editOpen, setEditOpen] = useState(false);
   const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
   const [fullscreen, setFullscreen] = useState<boolean>(() => {
