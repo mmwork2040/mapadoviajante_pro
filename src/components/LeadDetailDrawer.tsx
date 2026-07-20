@@ -36,7 +36,9 @@ import {
   Maximize2,
   Minimize2,
   CircleDollarSign,
-
+  ListPlus,
+  MoreVertical,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
