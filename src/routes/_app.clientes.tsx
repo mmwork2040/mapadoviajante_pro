@@ -350,8 +350,10 @@ function ClientCard({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onSelect={openProfile}>
-              <ExternalLink className="mr-2 h-4 w-4" /> Abrir perfil
+            <DropdownMenuItem asChild>
+              <Link to="/clientes/$id" params={{ id: client.id }}>
+                <ExternalLink className="mr-2 h-4 w-4" /> Abrir perfil
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onCreateTrip} disabled={creating}>
               <Plane className="mr-2 h-4 w-4" /> Nova proposta
