@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, Link2, Heart, ExternalLink } from "lucide-react";
@@ -299,7 +299,6 @@ function ClientCard({
   onOpenTrip?: (leadId: string) => void;
   creating: boolean;
 }) {
-  const navigate = useNavigate();
   const tripsQ = useQuery({
     queryKey: ["client-trips", client.id],
     queryFn: () => fetchLeadsByClient(client.id),
@@ -307,12 +306,13 @@ function ClientCard({
   const tripCount = tripsQ.data?.length ?? 0;
   const memberCount = extractMembers(client.preferences).length;
 
-  const openProfile = () => navigate({ to: "/clientes/$id", params: { id: client.id } });
+
+
 
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
-        <button onClick={openProfile} className="flex flex-1 items-center gap-3 text-left">
+        <Link to="/clientes/$id" params={{ id: client.id }} className="flex flex-1 items-center gap-3 text-left">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
             <User className="h-5 w-5" />
           </div>
@@ -339,7 +339,7 @@ function ClientCard({
             </div>
             {client.cpf && <div className="truncate text-xs text-muted-foreground">CPF {client.cpf}</div>}
           </div>
-        </button>
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -350,8 +350,10 @@ function ClientCard({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onSelect={openProfile}>
-              <ExternalLink className="mr-2 h-4 w-4" /> Abrir perfil
+            <DropdownMenuItem asChild>
+              <Link to="/clientes/$id" params={{ id: client.id }}>
+                <ExternalLink className="mr-2 h-4 w-4" /> Abrir perfil
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={onCreateTrip} disabled={creating}>
               <Plane className="mr-2 h-4 w-4" /> Nova proposta
@@ -401,13 +403,13 @@ function ClientCard({
         <span className="text-xs text-muted-foreground">
           {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
         </span>
-        <button
-          type="button"
-          onClick={openProfile}
+        <Link
+          to="/clientes/$id"
+          params={{ id: client.id }}
           className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
         >
           Abrir perfil <ExternalLink className="h-3 w-3" />
-        </button>
+        </Link>
       </div>
     </div>
   );
