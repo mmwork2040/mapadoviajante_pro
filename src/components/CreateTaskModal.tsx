@@ -269,6 +269,7 @@ export function CreateTaskModal({
                   setLeadId(v);
                   setItineraryId("");
                 }}
+                disabled={fromChecklist}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione cliente" />
