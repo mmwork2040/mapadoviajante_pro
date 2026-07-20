@@ -203,7 +203,7 @@ function ItinerariesPage() {
       <PageHeader
         icon={RouteIcon}
         title="Viagens"
-        subtitle="Planejamento dia a dia das viagens."
+        subtitle="Planejamento das viagens (arraste para mover)."
         actions={
           <>
             <SearchBar
