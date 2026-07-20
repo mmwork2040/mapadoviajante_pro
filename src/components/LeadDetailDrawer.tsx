@@ -1941,7 +1941,7 @@ function ChecklistTab({
           {(state.extras || []).map((e) => {
             const done = !!state.items[e.id];
             return (
-              <li key={e.id} className="flex items-center gap-2">
+              <li key={e.id} className="flex items-center gap-1">
                 <button
                   onClick={() => toggle(e.id)}
                   className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
@@ -1957,9 +1957,16 @@ function ChecklistTab({
                     {e.label}
                   </span>
                 </button>
+                <ChecklistItemTaskAction
+                  task={taskByItem.get(e.id)}
+                  onCreate={() => setTaskModal({ mode: "create", itemId: e.id, label: e.label })}
+                  onEdit={(t) => setTaskModal({ mode: "edit", task: t })}
+                  onRemove={(t) => removeTaskForItem(t)}
+                />
                 <button
                   onClick={() => removeExtra(e.id)}
                   className="text-muted-foreground hover:text-destructive"
+                  title="Remover item extra"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
