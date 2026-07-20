@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import {
   fetchClientById,
   fetchLeadsByClient,
-  updateClient,
+  updateClient as _updateClient,
   deleteClient,
 } from "@/lib/services";
 import type { Client, Lead, LeadStatus } from "@/lib/types";
