@@ -1978,6 +1978,7 @@ function ChecklistTab({
         <ul className="space-y-1.5">
           {(state.extras || []).map((e) => {
             const done = !!state.items[e.id];
+            const linkedTask = taskByItem.get(e.id);
             return (
               <li key={e.id} data-checklist-item={e.id} className="flex items-center gap-1">
                 <button
@@ -1994,13 +1995,19 @@ function ChecklistTab({
                   <span className={done ? "text-muted-foreground line-through" : ""}>
                     {e.label}
                   </span>
+                  {linkedTask && (
+                    <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                      <ClipboardList className="h-3 w-3" /> Tarefa
+                    </span>
+                  )}
                 </button>
                 <ChecklistItemTaskAction
-                  task={taskByItem.get(e.id)}
+                  task={linkedTask}
                   onCreate={() => setTaskModal({ mode: "create", itemId: e.id, label: e.label })}
                   onEdit={(t) => setTaskModal({ mode: "edit", task: t })}
                   onRemove={(t) => removeTaskForItem(t)}
                 />
+
                 <button
                   onClick={() => removeExtra(e.id)}
                   className="text-muted-foreground hover:text-destructive"
