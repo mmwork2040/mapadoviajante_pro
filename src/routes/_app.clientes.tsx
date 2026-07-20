@@ -310,9 +310,24 @@ function ClientCard({
             <User className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <div className="truncate font-semibold">{client.name}</div>
+            <div className="flex items-center gap-1.5">
+              <span className="truncate font-semibold">{client.name}</span>
+              {(() => {
+                const count = extractMembers(client.preferences).length;
+                if (!count) return null;
+                return (
+                  <span
+                    title={`${count} ${count === 1 ? "membro cadastrado" : "membros cadastrados"}`}
+                    className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
+                  >
+                    <Users className="h-3 w-3" />+{count}
+                  </span>
+                );
+              })()}
+            </div>
             {client.cpf && <div className="truncate text-xs text-muted-foreground">CPF {client.cpf}</div>}
           </div>
+
         </button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
