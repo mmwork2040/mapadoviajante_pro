@@ -51,6 +51,13 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: "Cancelado",
 };
 
+const STATUS_COLUMNS: { key: string; label: string; dot: string }[] = [
+  { key: "draft", label: "Rascunho", dot: "bg-slate-400" },
+  { key: "active", label: "Em andamento", dot: "bg-blue-500" },
+  { key: "completed", label: "Concluído", dot: "bg-emerald-500" },
+  { key: "cancelled", label: "Cancelado", dot: "bg-red-500" },
+];
+
 function initials(name?: string | null) {
   const parts = (name || "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
