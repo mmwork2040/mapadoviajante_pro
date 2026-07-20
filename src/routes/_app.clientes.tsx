@@ -312,7 +312,7 @@ function ClientCard({
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
-        <button onClick={openProfile} className="flex flex-1 items-center gap-3 text-left">
+        <Link to="/clientes/$id" params={{ id: client.id }} className="flex flex-1 items-center gap-3 text-left">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
             <User className="h-5 w-5" />
           </div>
