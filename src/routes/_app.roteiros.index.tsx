@@ -247,100 +247,155 @@ function ItinerariesPage() {
       ) : filteredItems.length === 0 ? (
         <p className="text-muted-foreground">Nenhuma viagem encontrada para “{search}”.</p>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((it) => (
-            <div key={it.id} className="group relative">
-              <Link
-                to="/roteiros/$id"
-                params={{ id: it.id }}
-                className="flex overflow-hidden rounded-xl border border-border bg-card transition hover:shadow-md"
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {STATUS_COLUMNS.map((col) => {
+            const colItems = filteredItems.filter((it) => it.status === col.key);
+            return (
+              <div
+                key={col.key}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = "move";
+                  if (overCol !== col.key) setOverCol(col.key);
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverCol(null);
+                }}
+                onDrop={(e) => onDrop(e, col.key)}
+                className="flex flex-col"
               >
-                {/* Left panel — destination */}
-                <div className="relative flex w-32 shrink-0 flex-col justify-end overflow-hidden bg-muted/60 p-4">
-                  {it.cover_image ? (
-                    <CoverImage
-                      value={it.cover_image}
-                      alt={it.destination || "Destino"}
-                    />
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="flex items-center gap-2 text-sm font-semibold">
+                    <span className={`h-2.5 w-2.5 rounded-full ${col.dot}`} />
+                    {col.label}
+                  </span>
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                    {colItems.length}
+                  </span>
+                </div>
+                <div className="mb-3 h-px bg-border" />
+                <div
+                  className={`flex-1 space-y-2 rounded-2xl p-1 transition ${
+                    overCol === col.key ? "bg-primary/10 ring-2 ring-primary/40" : ""
+                  }`}
+                >
+                  {colItems.length === 0 ? (
+                    <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-primary/40 bg-primary/5 p-4 text-center text-sm font-medium text-primary">
+                      {overCol === col.key ? "Solte aqui" : "Sem viagens"}
+                    </div>
                   ) : (
-                    <img
-                      src={itineraryPlaceholder}
-                      alt="Destino sem imagem"
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
+                    colItems.map((it) => (
+                      <div
+                        key={it.id}
+                        draggable
+                        onDragStart={(e) => {
+                          setDragId(it.id);
+                          e.dataTransfer.setData("text/plain", it.id);
+                          e.dataTransfer.effectAllowed = "move";
+                        }}
+                        onDragEnd={() => {
+                          setDragId(null);
+                          setOverCol(null);
+                        }}
+                        className={`group relative rounded-xl border border-border bg-card transition hover:shadow-md ${
+                          dragId === it.id ? "opacity-50 ring-2 ring-primary" : ""
+                        }`}
+                      >
+                        <Link
+                          to="/roteiros/$id"
+                          params={{ id: it.id }}
+                          draggable={false}
+                          className="flex overflow-hidden rounded-xl"
+                        >
+                          <div className="relative flex w-24 shrink-0 flex-col justify-end overflow-hidden bg-muted/60 p-3">
+                            {it.cover_image ? (
+                              <CoverImage value={it.cover_image} alt={it.destination || "Destino"} />
+                            ) : (
+                              <img
+                                src={itineraryPlaceholder}
+                                alt="Destino sem imagem"
+                                loading="lazy"
+                                className="absolute inset-0 h-full w-full object-cover"
+                              />
+                            )}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                            <div className="relative flex items-center gap-1 text-xs font-bold text-white">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{it.destination || "—"}</span>
+                            </div>
+                          </div>
+                          <div className="min-w-0 flex-1 p-3 pr-9">
+                            {/(cópia)/i.test(it.title) && (
+                              <span className="mb-1 inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                <Copy className="h-3 w-3" /> Cópia
+                              </span>
+                            )}
+                            <div className="flex items-center gap-2">
+                              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground">
+                                {initials(it.client_name || it.title)}
+                              </span>
+                              <span className="truncate text-sm font-semibold">
+                                {it.client_name || it.title}
+                              </span>
+                            </div>
+                            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                              <p className="flex items-center gap-1.5">
+                                <Calendar className="h-3.5 w-3.5 shrink-0" />
+                                <span className="truncate">
+                                  {formatDate(it.start_date)}
+                                  {it.end_date ? ` – ${formatDate(it.end_date)}` : ""}
+                                </span>
+                              </p>
+                              <p className="flex items-center gap-1.5">
+                                <Users className="h-3.5 w-3.5 shrink-0" />
+                                {it.passengers || 1}{" "}
+                                {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
+                              </p>
+                            </div>
+                          </div>
+                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              title="Mais opções"
+                              className="absolute right-1.5 top-1.5 rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            {STATUS_COLUMNS.filter((s) => s.key !== it.status).map((s) => (
+                              <DropdownMenuItem
+                                key={s.key}
+                                onSelect={() => move.mutate({ id: it.id, status: s.key })}
+                              >
+                                <span className={`mr-2 h-2 w-2 rounded-full ${s.dot}`} /> Mover para {s.label}
+                              </DropdownMenuItem>
+                            ))}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => handleDuplicate(it)}
+                              disabled={duplicate.isPending}
+                            >
+                              <Copy className="mr-2 h-4 w-4" /> Duplicar viagem
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onSelect={() => handleDelete(it)}
+                              disabled={remove.isPending}
+                              className="text-destructive focus:text-destructive"
+                            >
+                              <Trash2 className="text-destructive mr-2 h-4 w-4" /> Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))
                   )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                  <div className="relative flex items-center gap-1.5 text-sm font-bold text-white">
-                    <MapPin className="h-4 w-4 shrink-0 text-white" />
-                    <span className="truncate">{it.destination || "—"}</span>
-                  </div>
                 </div>
-
-
-
-                {/* Right panel — details */}
-                <div className="min-w-0 flex-1 p-4 pr-10">
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
-                      {STATUS_LABELS[it.status] || it.status}
-                    </span>
-                    {/(cópia)/i.test(it.title) && (
-                      <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                        <Copy className="h-3 w-3" /> Cópia
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-bold text-foreground">
-                      {initials(it.client_name || it.title)}
-                    </span>
-                    <span className="truncate font-semibold">{it.client_name || it.title}</span>
-                  </div>
-                  <div className="mt-2 space-y-1 text-sm text-muted-foreground">
-                    <p className="flex items-center gap-1.5">
-                      <Calendar className="h-4 w-4 shrink-0" />
-                      <span className="truncate">
-                        {formatDate(it.start_date)}
-                        {it.end_date ? ` – ${formatDate(it.end_date)}` : ""}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-1.5">
-                      <Users className="h-4 w-4 shrink-0" />
-                      {it.passengers || 1} {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    title="Mais opções"
-                    className="absolute right-2 top-2 rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem
-                    onSelect={() => handleDuplicate(it)}
-                    disabled={duplicate.isPending}
-                  >
-                    <Copy className="mr-2 h-4 w-4" /> Duplicar viagem
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={() => handleDelete(it)}
-                    disabled={remove.isPending}
-                    className="text-destructive focus:text-destructive"
-                  >
-                    <Trash2 className="text-destructive mr-2 h-4 w-4" /> Excluir
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          ))}
+              </div>
+            );
+          })}
         </div>
       )}
 
