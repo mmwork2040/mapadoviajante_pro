@@ -799,3 +799,161 @@ function ClientFormDrawer({
   );
 }
 
+function MembersTab({
+  currentClientId,
+  members,
+  onChange,
+}: {
+  currentClientId?: string;
+  members: ClientMember[];
+  onChange: (m: ClientMember[]) => void;
+}) {
+  const { data: allClients = [] } = useQuery({
+    queryKey: ["clients", ""],
+    queryFn: () => fetchClients(""),
+  });
+  const [mode, setMode] = useState<"existing" | "new">("existing");
+  const [selectedClientId, setSelectedClientId] = useState<string>("");
+  const [newName, setNewName] = useState("");
+  const [relationship, setRelationship] = useState("");
+
+  const excludedIds = new Set<string>();
+  if (currentClientId) excludedIds.add(currentClientId);
+  members.forEach((m) => m.client_id && excludedIds.add(m.client_id));
+  const availableClients = allClients.filter((c) => !excludedIds.has(c.id));
+
+  const addMember = () => {
+    const rel = relationship.trim();
+    if (!rel) return toast.error("Informe o grau de parentesco");
+    const id = globalThis.crypto?.randomUUID?.() ?? String(Math.random());
+    if (mode === "existing") {
+      if (!selectedClientId) return toast.error("Selecione um cliente");
+      const c = allClients.find((x) => x.id === selectedClientId);
+      if (!c) return;
+      onChange([...members, { id, name: c.name, relationship: rel, client_id: c.id }]);
+      setSelectedClientId("");
+    } else {
+      const nm = newName.trim();
+      if (!nm) return toast.error("Informe o nome");
+      onChange([...members, { id, name: nm, relationship: rel, client_id: null }]);
+      setNewName("");
+    }
+    setRelationship("");
+  };
+
+  const remove = (id: string) => onChange(members.filter((m) => m.id !== id));
+
+  return (
+    <Section icon={Users} title="Membros da viagem">
+      <div className="sm:col-span-2 space-y-4">
+        <p className="text-xs text-muted-foreground">
+          Adicione familiares ou acompanhantes. Podem ser clientes já cadastrados ou nomes livres com o grau de parentesco.
+        </p>
+
+        {members.length > 0 && (
+          <ul className="space-y-2">
+            {members.map((m) => (
+              <li
+                key={m.id}
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2"
+              >
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    {m.client_id ? <Link2 className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{m.name}</div>
+                    <div className="truncate text-xs text-muted-foreground">
+                      {m.relationship}
+                      {m.client_id && <span className="ml-1 text-primary">· cliente vinculado</span>}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => remove(m.id)}
+                  className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                  title="Remover membro"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <div className="rounded-xl border border-dashed border-border p-3 space-y-3">
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setMode("existing")}
+              className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                mode === "existing" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Link2 className="mr-1 inline h-3.5 w-3.5" /> Cliente existente
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("new")}
+              className={`flex-1 rounded-lg border px-3 py-2 text-xs font-semibold transition ${
+                mode === "new" ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <UserPlus className="mr-1 inline h-3.5 w-3.5" /> Nome livre
+            </button>
+          </div>
+
+          {mode === "existing" ? (
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold">Selecionar cliente</span>
+              <select
+                value={selectedClientId}
+                onChange={(e) => setSelectedClientId(e.target.value)}
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              >
+                <option value="">— escolha —</option>
+                {availableClients.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+              {availableClients.length === 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">Nenhum cliente disponível para vincular.</p>
+              )}
+            </label>
+          ) : (
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold">Nome</span>
+              <input
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                placeholder="Ex.: João Silva"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              />
+            </label>
+          )}
+
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold">Grau de parentesco</span>
+            <input
+              value={relationship}
+              onChange={(e) => setRelationship(e.target.value)}
+              placeholder="Ex.: Cônjuge, Filho(a), Pai, Mãe, Amigo(a)"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+          </label>
+
+          <button
+            type="button"
+            onClick={addMember}
+            className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> Adicionar membro
+          </button>
+        </div>
+      </div>
+    </Section>
+  );
+}
+
+
