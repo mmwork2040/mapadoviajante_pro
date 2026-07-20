@@ -158,21 +158,33 @@ function ItinerariesPage() {
     <div className="space-y-6">
       <PageHeader
         icon={RouteIcon}
-        title="Roteiros"
+        title="Viagens"
         subtitle="Planejamento dia a dia das viagens."
         actions={
           <>
             <SearchBar
               value={search}
               onChange={setSearch}
-              placeholder="Buscar roteiro…"
+              placeholder="Buscar viagem…"
               className="w-full sm:w-64"
             />
+            {isManager && (
+              <button
+                onClick={() => setOnlyMine((v) => !v)}
+                className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+                  onlyMine
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-input hover:bg-muted"
+                }`}
+              >
+                <User className="h-4 w-4" /> {onlyMine ? "Minhas viagens" : "Todas as viagens"}
+              </button>
+            )}
             <button
               onClick={() => setOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
             >
-              <Plus className="h-4 w-4" /> Novo Roteiro
+              <Plus className="h-4 w-4" /> Nova Viagem
             </button>
           </>
         }
