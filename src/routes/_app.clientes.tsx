@@ -225,23 +225,13 @@ function ClientesPage() {
                 if (ok) deleteMut.mutate(c.id);
               }}
               onCreateTrip={() => setNewProposalClient(c)}
-              onOpenTrip={(id) => setOpenLeadId(id)}
               creating={false}
             />
           ))}
         </div>
       )}
 
-      {openLeadId && (
-        <LeadDetailDrawer
-          leadId={openLeadId}
-          onClose={() => {
-            setOpenLeadId(null);
-            qc.invalidateQueries({ queryKey: ["client-trips"] });
-            qc.invalidateQueries({ queryKey: ["clients"] });
-          }}
-        />
-      )}
+
 
       {newProposalClient && (
         <NewLeadModal
