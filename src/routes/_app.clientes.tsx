@@ -299,7 +299,6 @@ function ClientCard({
   onOpenTrip?: (leadId: string) => void;
   creating: boolean;
 }) {
-  const navigate = useNavigate();
   const tripsQ = useQuery({
     queryKey: ["client-trips", client.id],
     queryFn: () => fetchLeadsByClient(client.id),
@@ -307,7 +306,6 @@ function ClientCard({
   const tripCount = tripsQ.data?.length ?? 0;
   const memberCount = extractMembers(client.preferences).length;
 
-  void navigate;
 
 
 
