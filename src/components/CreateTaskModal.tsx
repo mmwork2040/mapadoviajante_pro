@@ -103,7 +103,7 @@ export function CreateTaskModal({
       setAssignedTo(task.assigned_to ?? "");
       setDueDate(task.due_date ? task.due_date.slice(0, 10) : "");
       setPriority(task.priority ?? "normal");
-      setDescription(task.description ?? "");
+      setDescription(cleanTaskDescription(task.description) ?? "");
       setActivityType("outros");
       // Se a tarefa está ligada a uma atividade, busca o tipo atual.
       const m = (task.description ?? "").match(/\[atv:([0-9a-f-]+)\]/i);
@@ -120,6 +120,12 @@ export function CreateTaskModal({
       }
     } else {
       reset();
+      if (initial) {
+        if (initial.title) setTitle(initial.title);
+        if (initial.description) setDescription(initial.description);
+        if (initial.leadId) setLeadId(initial.leadId);
+        if (initial.activityType) setActivityType(initial.activityType);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, task?.id]);
