@@ -1711,8 +1711,16 @@ function ChecklistTab({
 
 
   function toggle(id: string) {
-    persist({ ...state, items: { ...state.items, [id]: !state.items[id] } });
+    const next = !state.items[id];
+    persist({ ...state, items: { ...state.items, [id]: next } });
+    const linked = taskByItem.get(id);
+    if (linked && !!linked.completed !== next) {
+      updateTask(linked.id, { completed: next }).then((ok) => {
+        if (ok) qc.invalidateQueries({ queryKey: ["tasks"] });
+      });
+    }
   }
+
 
   function addExtra() {
     const label = newItem.trim();
