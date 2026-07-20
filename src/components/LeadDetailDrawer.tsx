@@ -1596,7 +1596,7 @@ function ChecklistTab({
 
   // Tarefas do lead, para vincular aos itens do checklist
   const tasksQ = useQuery({
-    queryKey: ["tasks-by-lead", leadId],
+    queryKey: ["tasks", "by-lead", leadId],
     queryFn: () => fetchTasks({}).then((rows) => rows.filter((t) => t.lead_id === leadId)),
     enabled: !!leadId,
   });
@@ -1617,9 +1617,9 @@ function ChecklistTab({
     const okDel = await deleteTask(task.id);
     if (!okDel) return toast.error("Não foi possível remover a tarefa.");
     toast.success("Tarefa removida.");
-    qc.invalidateQueries({ queryKey: ["tasks-by-lead", leadId] });
     qc.invalidateQueries({ queryKey: ["tasks"] });
   }
+
 
   useEffect(() => {
     setState(normalizeChecklist(checklists));
