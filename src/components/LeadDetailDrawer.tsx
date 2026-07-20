@@ -1925,37 +1925,44 @@ function ChecklistTab({
                   </p>
                   <ul className="space-y-1.5">
                     {group.items.map((it) => {
-                      const done = !!state.items[it.id];
-                      return (
-                        <li key={it.id} data-checklist-item={it.id} className="flex items-center gap-1">
-                          <button
-                            onClick={() => toggle(it.id)}
-                            className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
-                          >
-                            <span
-                              className={`flex h-4 w-4 items-center justify-center rounded border ${
-                                done
-                                  ? "border-primary bg-primary text-primary-foreground"
-                                  : "border-input"
-                              }`}
-                            >
-                              {done && <Check className="h-3 w-3" />}
-                            </span>
-                            <span className={done ? "text-muted-foreground line-through" : ""}>
-                              {it.label}
-                            </span>
-                          </button>
-                          <ChecklistItemTaskAction
-                            task={taskByItem.get(it.id)}
-                            onCreate={() =>
-                              setTaskModal({ mode: "create", itemId: it.id, label: it.label })
-                            }
-                            onEdit={(t) => setTaskModal({ mode: "edit", task: t })}
-                            onRemove={(t) => removeTaskForItem(t)}
-                          />
-                        </li>
-                      );
-                    })}
+                       const done = !!state.items[it.id];
+                       const linkedTask = taskByItem.get(it.id);
+                       return (
+                         <li key={it.id} data-checklist-item={it.id} className="flex items-center gap-1">
+                           <button
+                             onClick={() => toggle(it.id)}
+                             className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
+                           >
+                             <span
+                               className={`flex h-4 w-4 items-center justify-center rounded border ${
+                                 done
+                                   ? "border-primary bg-primary text-primary-foreground"
+                                   : "border-input"
+                               }`}
+                             >
+                               {done && <Check className="h-3 w-3" />}
+                             </span>
+                             <span className={done ? "text-muted-foreground line-through" : ""}>
+                               {it.label}
+                             </span>
+                             {linkedTask && (
+                               <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                                 <ClipboardList className="h-3 w-3" /> Tarefa
+                               </span>
+                             )}
+                           </button>
+                           <ChecklistItemTaskAction
+                             task={linkedTask}
+                             onCreate={() =>
+                               setTaskModal({ mode: "create", itemId: it.id, label: it.label })
+                             }
+                             onEdit={(t) => setTaskModal({ mode: "edit", task: t })}
+                             onRemove={(t) => removeTaskForItem(t)}
+                           />
+                         </li>
+                       );
+                     })}
+
                   </ul>
                 </div>
               ))}
@@ -1971,6 +1978,7 @@ function ChecklistTab({
         <ul className="space-y-1.5">
           {(state.extras || []).map((e) => {
             const done = !!state.items[e.id];
+            const linkedTask = taskByItem.get(e.id);
             return (
               <li key={e.id} data-checklist-item={e.id} className="flex items-center gap-1">
                 <button
@@ -1987,13 +1995,19 @@ function ChecklistTab({
                   <span className={done ? "text-muted-foreground line-through" : ""}>
                     {e.label}
                   </span>
+                  {linkedTask && (
+                    <span className="ml-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary">
+                      <ClipboardList className="h-3 w-3" /> Tarefa
+                    </span>
+                  )}
                 </button>
                 <ChecklistItemTaskAction
-                  task={taskByItem.get(e.id)}
+                  task={linkedTask}
                   onCreate={() => setTaskModal({ mode: "create", itemId: e.id, label: e.label })}
                   onEdit={(t) => setTaskModal({ mode: "edit", task: t })}
                   onRemove={(t) => removeTaskForItem(t)}
                 />
+
                 <button
                   onClick={() => removeExtra(e.id)}
                   className="text-muted-foreground hover:text-destructive"
