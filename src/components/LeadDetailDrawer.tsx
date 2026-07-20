@@ -1645,6 +1645,26 @@ function ChecklistTab({
     };
   }, []);
 
+  // Realce/scroll ao abrir a partir de uma tarefa vinculada
+  useEffect(() => {
+    if (!highlightItemId) return;
+    const t = setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(
+        `[data-checklist-item="${highlightItemId}"]`,
+      );
+      if (!el) return;
+      const details = el.closest("details");
+      if (details && !details.open) details.open = true;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary", "bg-primary/5", "rounded-lg");
+      setTimeout(() => {
+        el.classList.remove("ring-2", "ring-primary", "bg-primary/5", "rounded-lg");
+      }, 2500);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [highlightItemId, state.sections, state.extras]);
+
+
   function persist(next: LeadChecklistState) {
     setState(next);
     onSave(next);
