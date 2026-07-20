@@ -309,6 +309,12 @@ function TaskList({
                     Atrasada
                   </span>
                 )}
+                {extractChecklistItemId(t.description) && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                    <ClipboardList className="h-3 w-3" />
+                    Checklist
+                  </span>
+                )}
                 {t.lead?.name && <span>👤 {t.lead.name}</span>}
                 {t.assigned?.name && <span>• {t.assigned.name}</span>}
               </div>
