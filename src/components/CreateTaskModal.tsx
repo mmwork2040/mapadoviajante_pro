@@ -60,10 +60,18 @@ export function CreateTaskModal({
   open,
   onOpenChange,
   task,
+  initial,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   task?: Task | null;
+  initial?: {
+    title?: string;
+    description?: string;
+    leadId?: string;
+    activityType?: string;
+    checklistItemId?: string;
+  } | null;
 }) {
   const qc = useQueryClient();
   const isEdit = !!task;
