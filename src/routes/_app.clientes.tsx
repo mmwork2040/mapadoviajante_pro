@@ -808,6 +808,7 @@ function MembersTab({
   members: ClientMember[];
   onChange: (m: ClientMember[]) => void;
 }) {
+  const confirm = useConfirm();
   const { data: allClients = [] } = useQuery({
     queryKey: ["clients", ""],
     queryFn: () => fetchClients(""),
@@ -816,6 +817,11 @@ function MembersTab({
   const [selectedClientId, setSelectedClientId] = useState<string>("");
   const [newName, setNewName] = useState("");
   const [relationship, setRelationship] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editRel, setEditRel] = useState("");
+
+  const norm = (s: string) => s.trim().toLowerCase();
 
   const excludedIds = new Set<string>();
   if (currentClientId) excludedIds.add(currentClientId);
@@ -828,6 +834,10 @@ function MembersTab({
     const id = globalThis.crypto?.randomUUID?.() ?? String(Math.random());
     if (mode === "existing") {
       if (!selectedClientId) return toast.error("Selecione um cliente");
+      if (currentClientId && selectedClientId === currentClientId)
+        return toast.error("O cliente principal não pode ser adicionado como membro");
+      if (members.some((m) => m.client_id === selectedClientId))
+        return toast.error("Este cliente já é um membro");
       const c = allClients.find((x) => x.id === selectedClientId);
       if (!c) return;
       onChange([...members, { id, name: c.name, relationship: rel, client_id: c.id }]);
@@ -835,13 +845,50 @@ function MembersTab({
     } else {
       const nm = newName.trim();
       if (!nm) return toast.error("Informe o nome");
+      if (members.some((m) => !m.client_id && norm(m.name) === norm(nm)))
+        return toast.error("Já existe um membro com esse nome");
       onChange([...members, { id, name: nm, relationship: rel, client_id: null }]);
       setNewName("");
     }
     setRelationship("");
   };
 
-  const remove = (id: string) => onChange(members.filter((m) => m.id !== id));
+  const startEdit = (m: ClientMember) => {
+    setEditingId(m.id);
+    setEditName(m.name);
+    setEditRel(m.relationship);
+  };
+
+  const saveEdit = (id: string) => {
+    const rel = editRel.trim();
+    if (!rel) return toast.error("Informe o grau de parentesco");
+    const target = members.find((m) => m.id === id);
+    if (!target) return;
+    let nextName = target.name;
+    if (!target.client_id) {
+      const nm = editName.trim();
+      if (!nm) return toast.error("Informe o nome");
+      if (members.some((m) => m.id !== id && !m.client_id && norm(m.name) === norm(nm)))
+        return toast.error("Já existe um membro com esse nome");
+      nextName = nm;
+    }
+    onChange(members.map((m) => (m.id === id ? { ...m, name: nextName, relationship: rel } : m)));
+    setEditingId(null);
+    toast.success("Membro atualizado");
+  };
+
+  const remove = async (m: ClientMember) => {
+    const ok = await confirm({
+      title: "Remover membro?",
+      description: `${m.name} será removido da lista de membros.`,
+      confirmLabel: "Remover",
+      destructive: true,
+    });
+    if (!ok) return;
+    onChange(members.filter((x) => x.id !== m.id));
+    if (editingId === m.id) setEditingId(null);
+    toast.success("Membro removido");
+  };
 
   return (
     <Section icon={Users} title="Membros da viagem">
@@ -852,33 +899,83 @@ function MembersTab({
 
         {members.length > 0 && (
           <ul className="space-y-2">
-            {members.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-background px-3 py-2"
-              >
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    {m.client_id ? <Link2 className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium">{m.name}</div>
-                    <div className="truncate text-xs text-muted-foreground">
-                      {m.relationship}
-                      {m.client_id && <span className="ml-1 text-primary">· cliente vinculado</span>}
-                    </div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => remove(m.id)}
-                  className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
-                  title="Remover membro"
+            {members.map((m) => {
+              const isEditing = editingId === m.id;
+              return (
+                <li
+                  key={m.id}
+                  className="rounded-xl border border-border bg-background px-3 py-2"
                 >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </li>
-            ))}
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      {!m.client_id && (
+                        <input
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          placeholder="Nome"
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                        />
+                      )}
+                      <input
+                        value={editRel}
+                        onChange={(e) => setEditRel(e.target.value)}
+                        placeholder="Grau de parentesco"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => saveEdit(m.id)}
+                          className="flex-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                        >
+                          Salvar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditingId(null)}
+                          className="flex-1 rounded-lg border border-border px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-muted"
+                        >
+                          Cancelar
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                          {m.client_id ? <Link2 className="h-4 w-4" /> : <Heart className="h-4 w-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-medium">{m.name}</div>
+                          <div className="truncate text-xs text-muted-foreground">
+                            {m.relationship}
+                            {m.client_id && <span className="ml-1 text-primary">· cliente vinculado</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => startEdit(m)}
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
+                          title="Editar membro"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(m)}
+                          className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-destructive"
+                          title="Remover membro"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
 
