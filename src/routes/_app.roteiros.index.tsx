@@ -86,13 +86,22 @@ function ItinerariesPage() {
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [onlyMine, setOnlyMine] = useState(false);
+  const memberRole = getMemberRole();
+  const isManager = memberRole === "admin" || memberRole === "gerente";
+  const myId = getMemberId();
+  const effectiveOnlyMine = isManager ? onlyMine : true;
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
 
+  const scopedItems = effectiveOnlyMine
+    ? items.filter((it) => it.lead?.assigned_to === myId)
+    : items;
+
   const filteredItems = search.trim()
-    ? items.filter((it) => {
+    ? scopedItems.filter((it) => {
         const q = search.toLowerCase();
         return (
           (it.title || "").toLowerCase().includes(q) ||
@@ -100,7 +109,7 @@ function ItinerariesPage() {
           (it.client_name || "").toLowerCase().includes(q)
         );
       })
-    : items;
+    : scopedItems;
 
 
   const remove = useMutation({
