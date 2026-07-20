@@ -94,6 +94,8 @@ function ItinerariesPage() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [onlyMine, setOnlyMine] = useState(false);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [overCol, setOverCol] = useState<string | null>(null);
   const memberRole = getMemberRole();
   const isManager = memberRole === "admin" || memberRole === "gerente";
   const myId = getMemberId();
@@ -102,6 +104,41 @@ function ItinerariesPage() {
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
+
+  const move = useMutation({
+    mutationFn: async ({ id, status }: { id: string; status: string }) => {
+      const updated = await updateItinerary(id, { status });
+      if (!updated) throw new Error("Não foi possível mover a viagem.");
+      return updated;
+    },
+    onMutate: async ({ id, status }) => {
+      await qc.cancelQueries({ queryKey: ["itineraries"] });
+      const prev = qc.getQueryData<Itinerary[]>(["itineraries"]);
+      qc.setQueryData<Itinerary[]>(["itineraries"], (old) =>
+        (old ?? []).map((it) => (it.id === id ? { ...it, status } : it)),
+      );
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["itineraries"], ctx.prev);
+      toast.error("Não foi possível mover a viagem.");
+    },
+    onSuccess: (_r, vars) => {
+      dispatchWebhook("itinerary.status_changed", { id: vars.id, status: vars.status });
+    },
+    onSettled: () => qc.invalidateQueries({ queryKey: ["itineraries"] }),
+  });
+
+  function onDrop(e: React.DragEvent, status: string) {
+    e.preventDefault();
+    setOverCol(null);
+    setDragId(null);
+    const id = e.dataTransfer.getData("text/plain") || dragId;
+    if (!id) return;
+    const current = items.find((it) => it.id === id);
+    if (current && current.status !== status) move.mutate({ id, status });
+  }
+
 
   const scopedItems = effectiveOnlyMine
     ? items.filter((it) => it.lead?.assigned_to === myId)
