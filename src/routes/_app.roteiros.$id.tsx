@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Upload } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -32,11 +32,9 @@ import { toast } from "sonner";
 import {
   createItineraryActivity,
   createItineraryDay,
-  createVoucher,
   deleteItineraryActivity,
   deleteItineraryDay,
   duplicateItineraryDay,
-  deleteVoucher,
   deleteLibraryItem,
   fetchLibraryItems,
   fetchItineraryById,
@@ -76,6 +74,7 @@ import {
   deleteItineraryDocuments,
   attachLibraryDocumentToActivity,
   downloadDocument,
+  getDocumentUrl,
   uploadLeadDocument,
   addLinkDocument,
   isLinkDoc,
@@ -95,7 +94,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { Itinerary, ItineraryDay, Voucher, ExtractedDocData, HotelOption, PassengerCost, ActivityImage, LibraryItem } from "@/lib/types";
+import type { Itinerary, ItineraryDay, ExtractedDocData, HotelOption, PassengerCost, ActivityImage, LibraryItem } from "@/lib/types";
 import roteiroFallback from "@/assets/roteiro-fallback.jpg";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 
@@ -433,6 +432,7 @@ function ItineraryDetailPage() {
     sheets: string[];
     previews: { sheet: string; preview: string }[];
   } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
   const driveEnabled = !!gdriveCfg?.enabled;
@@ -538,6 +538,27 @@ function ItineraryDetailPage() {
     if (!file || !targetDayId) return;
     await runDocImport({ kind: "file", file }, targetDayId);
   }
+
+  async function handleLibraryImport(doc: LeadDocument) {
+    setImportOpen(false);
+    setPendingDayId("__lib__");
+    try {
+      const url = await getDocumentUrl(doc.file_path);
+      if (!url) throw new Error("Não foi possível baixar o documento.");
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Falha ao ler o documento.");
+      const blob = await res.blob();
+      const file = new File([blob], doc.name, {
+        type: doc.mime_type || blob.type || "application/octet-stream",
+      });
+      setPendingDayId(null);
+      await runDocImport({ kind: "file", file }, "__new__");
+    } catch (err) {
+      setPendingDayId(null);
+      toast.error(err instanceof Error ? err.message : "Erro ao importar da biblioteca.");
+    }
+  }
+
 
 
   // Monta um resumo dos dias/itens já no roteiro para a IA evitar conflitos/duplicidades.
@@ -1420,11 +1441,21 @@ function ItineraryDetailPage() {
         }}
         onDragEnd={handleDragEnd}
       >
-        <div className="mb-3">
-          <h2 className="text-base font-semibold">Blocos do roteiro</h2>
-          <p className="text-sm text-muted-foreground">
-            Arraste os blocos abaixo para os dias do roteiro para montar o itinerário.
-          </p>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold">Blocos do roteiro</h2>
+            <p className="text-sm text-muted-foreground">
+              Arraste os blocos abaixo para os dias do roteiro para montar o itinerário.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
+            title="Envie um documento (do dispositivo ou da biblioteca) e a IA extrai as atividades para o roteiro."
+          >
+            <Upload className="h-4 w-4" /> Enviar documento
+          </button>
         </div>
         <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1433,7 +1464,6 @@ function ItineraryDetailPage() {
           {ACTIVITY_TYPES.map((t) => (
             <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} hint={t.hint} />
           ))}
-          <PaletteItem type="document" label="Documento (IA)" icon={FileUp} hint="Importa um documento (voucher, itinerário, cartão de embarque) e a IA extrai várias atividades, distribuindo-as nos dias certos." />
 
           {driveEnabled && (
             <button
@@ -1525,7 +1555,19 @@ function ItineraryDetailPage() {
       </DndContext>
 
 
-      <VouchersCard itineraryId={id} vouchers={it.vouchers || []} onChange={refresh} />
+      {importOpen && (
+        <AttachSourceModal
+          onClose={() => setImportOpen(false)}
+          onDevice={() => {
+            setImportOpen(false);
+            docTargetDayRef.current = "__new__";
+            docInputRef.current?.click();
+          }}
+          onLibrary={(doc) => {
+            void handleLibraryImport(doc);
+          }}
+        />
+      )}
 
       <ItineraryChat it={it} onChange={refresh} />
     </div>
@@ -4454,166 +4496,6 @@ function AttachSourceModal({
 
 
 
-function VouchersCard({
-  itineraryId,
-  vouchers,
-  onChange,
-}: {
-  itineraryId: string;
-  vouchers: Voucher[];
-  onChange: () => void;
-}) {
-  const [form, setForm] = useState<Partial<Voucher>>({ type: "hotel" });
-  const [extracting, setExtracting] = useState(false);
-  const fileRef = useRef<HTMLInputElement>(null);
-  const extract = useServerFn(extractDocumentData);
-  const confirm = useConfirm();
-
-  const VOUCHER_TYPES = ["hotel", "voo", "transfer", "passeio", "ingresso", "carro", "seguro", "outro"];
-
-  function mapType(t?: string): string {
-    const v = (t || "").toLowerCase();
-    if (VOUCHER_TYPES.includes(v)) return v;
-    if (v === "voos") return "voo";
-    return "outro";
-  }
-
-  async function add() {
-    if (!form.title?.trim()) {
-      toast.error("Informe um título para o voucher.");
-      return;
-    }
-    const res = await createVoucher({ ...form, itinerary_id: itineraryId });
-    if (res) {
-      setForm({ type: "hotel" });
-      onChange();
-    } else toast.error("Erro ao criar voucher.");
-  }
-
-  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setExtracting(true);
-    try {
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-      const data = await extract({ data: { fileBase64: base64, mime: file.type } });
-      const notes = [
-        data.hotel_name,
-        data.room && `Quarto ${data.room}`,
-        data.flight_number && `Voo ${data.flight_number}`,
-        data.location,
-        data.date,
-        data.time,
-        data.people ? `${data.people} pessoa(s)` : "",
-        data.cost ? `Valor ${formatCurrency(Number(data.cost))}` : "",
-        data.description,
-      ]
-        .filter(Boolean)
-        .join(" · ");
-      setForm({
-        type: mapType(data.type),
-        title: data.title || data.hotel_name || data.flight_number || "Voucher importado",
-        provider: data.provider || "",
-        code: data.code || "",
-        notes,
-      });
-      toast.success("Documento lido — revise e adicione o voucher.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao ler documento.");
-    } finally {
-      setExtracting(false);
-    }
-  }
-
-  async function removeVoucher(v: Voucher) {
-    const ok = await confirm({
-      title: "Excluir voucher?",
-      description: `"${v.title || "Voucher"}" será removido permanentemente.`,
-      confirmLabel: "Excluir",
-      destructive: true,
-    });
-    if (!ok) return;
-    await deleteVoucher(v.id);
-    onChange();
-  }
-
-  return (
-    <div className="rounded-2xl border border-border bg-card p-5">
-      <div className="mb-4 flex items-center justify-between gap-2">
-        <h2 className="flex items-center gap-2 font-semibold">
-          <Ticket className="h-4 w-4" /> Vouchers
-        </h2>
-        <input ref={fileRef} type="file" accept="image/*,application/pdf" onChange={handleFile} className="hidden" />
-        <button
-          onClick={() => fileRef.current?.click()}
-          disabled={extracting}
-          title="Enviar PDF/imagem (ingresso, passagem, hospedagem, reserva de carro) para a IA preencher"
-          className="flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted disabled:opacity-60"
-        >
-          {extracting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileUp className="h-3.5 w-3.5" />}
-          Importar com IA
-        </button>
-      </div>
-      {vouchers.length === 0 && <p className="text-sm text-muted-foreground">Nenhum voucher.</p>}
-      <div className="space-y-4">
-        {Object.entries(
-          vouchers.reduce<Record<string, Voucher[]>>((acc, v) => {
-            const key = (v.type || "outro").toLowerCase();
-            (acc[key] ||= []).push(v);
-            return acc;
-          }, {}),
-        ).map(([type, items]) => (
-          <div key={type}>
-            <h3 className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              <span className="capitalize">{type}</span>
-              <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px]">{items.length}</span>
-            </h3>
-            <ul className="space-y-2">
-              {items.map((v) => (
-                <li key={v.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm">
-                  <div>
-                    <p className="font-medium">{v.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {[v.provider, v.code, v.notes || v.details].filter(Boolean).join(" · ") || "—"}
-                    </p>
-                  </div>
-                  <button onClick={() => removeVoucher(v)} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="text-destructive h-4 w-4" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-
-      <div className="mt-3 grid gap-2 sm:grid-cols-2">
-        <select
-          value={form.type || ""}
-          onChange={(e) => setForm({ ...form, type: e.target.value })}
-          className="rounded-lg border border-input bg-background px-3 py-2 text-sm capitalize outline-none focus:border-primary"
-        >
-          {VOUCHER_TYPES.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-        <input value={form.title || ""} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="Título" className="rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
-        <input value={form.provider || ""} onChange={(e) => setForm({ ...form, provider: e.target.value })} placeholder="Fornecedor" className="rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
-        <input value={form.code || ""} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Código/Localizador" className="rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
-        <input value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Observações" className="rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary sm:col-span-2" />
-      </div>
-      <button onClick={add} className="mt-3 flex items-center gap-1 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90">
-        <Plus className="h-4 w-4" /> Adicionar voucher
-      </button>
-    </div>
-  );
-}
 
 
 type ChatMsg = { role: "user" | "assistant"; text: string; files?: string[] };
