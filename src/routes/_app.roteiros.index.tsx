@@ -116,25 +116,25 @@ function ItinerariesPage() {
     mutationFn: (it: Itinerary) => deleteItinerary(it.id),
     onSuccess: (_d, it) => {
       dispatchWebhook("itinerary.deleted", it);
-      toast.success("Roteiro excluído.");
+      toast.success("Viagem excluída.");
       qc.invalidateQueries({ queryKey: ["itineraries"] });
     },
-    onError: () => toast.error("Erro ao excluir roteiro."),
+    onError: () => toast.error("Erro ao excluir viagem."),
   });
 
   const duplicate = useMutation({
     mutationFn: (it: Itinerary) => duplicateItinerary(it.id),
     onSuccess: (res) => {
-      if (!res) return toast.error("Erro ao duplicar roteiro.");
-      toast.success("Roteiro duplicado.");
+      if (!res) return toast.error("Erro ao duplicar viagem.");
+      toast.success("Viagem duplicada.");
       qc.invalidateQueries({ queryKey: ["itineraries"] });
     },
-    onError: () => toast.error("Erro ao duplicar roteiro."),
+    onError: () => toast.error("Erro ao duplicar viagem."),
   });
 
   async function handleDelete(it: Itinerary) {
     const ok = await confirm({
-      title: "Excluir roteiro",
+      title: "Excluir viagem",
       description: `Tem certeza que deseja excluir "${it.title}"? Esta ação não pode ser desfeita.`,
       confirmLabel: "Excluir",
       destructive: true,
@@ -144,7 +144,7 @@ function ItinerariesPage() {
 
   async function handleDuplicate(it: Itinerary) {
     const ok = await confirm({
-      title: "Duplicar roteiro",
+      title: "Duplicar viagem",
       description: `Deseja criar uma cópia de "${it.title}"?`,
       confirmLabel: "Duplicar",
     });
@@ -467,9 +467,9 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
     setSaving(false);
     if (res) {
       dispatchWebhook("itinerary.created", res);
-      toast.success("Roteiro criado!");
+      toast.success("Viagem criada!");
       onCreated();
-    } else toast.error("Erro ao criar roteiro.");
+    } else toast.error("Erro ao criar viagem.");
   }
 
   return (
@@ -482,8 +482,8 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
               <Map className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Novo Roteiro</h2>
-              <p className="text-xs text-muted-foreground">Preencha todos os campos para criar o roteiro</p>
+              <h2 className="text-lg font-bold">Nova Viagem</h2>
+              <p className="text-xs text-muted-foreground">Preencha todos os campos para criar a viagem</p>
             </div>
           </div>
           <button
@@ -582,7 +582,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
               className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save className="h-4 w-4" />
-              {saving ? "Salvando…" : "Criar Roteiro"}
+              {saving ? "Salvando…" : "Criar Viagem"}
             </button>
           </div>
         </form>
