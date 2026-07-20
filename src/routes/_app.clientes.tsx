@@ -140,6 +140,18 @@ function ClientesPage() {
     queryFn: () => fetchClients(search),
   });
 
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!editParam) return;
+    const c = clients.find((x) => x.id === editParam);
+    if (c) {
+      setEditing(c);
+      setOpenForm(true);
+      navigate({ to: "/clientes", search: {}, replace: true });
+    }
+  }, [editParam, clients, navigate]);
+
+
   const createMut = useMutation({
     mutationFn: (payload: Partial<Client>) => createClientSvc(payload),
     onSuccess: (c) => {
