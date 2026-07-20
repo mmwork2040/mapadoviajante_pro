@@ -36,7 +36,9 @@ import {
   Maximize2,
   Minimize2,
   CircleDollarSign,
-
+  ListPlus,
+  MoreVertical,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -50,10 +52,13 @@ import {
   getMemberId,
   deleteLead,
   deleteLeadActivity,
+  deleteTask,
+  extractChecklistItemId,
   fetchItinerariesByLead,
   fetchClientTripHistory,
   fetchLeadActivities,
   fetchLeadById,
+  fetchTasks,
   fetchTeamMembers,
   resolveDisplayImageUrl,
   isOverdue,
@@ -70,6 +75,13 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import type { Itinerary, Lead, LeadStatus, Task, TripBenefits, TripExpense } from "@/lib/types";
+import { CreateTaskModal } from "@/components/CreateTaskModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
@@ -606,6 +618,7 @@ export function LeadDetailDrawer({
               )}
               {tab === "checklist" && (
                 <ChecklistTab
+                  leadId={leadId}
                   checklists={lead.checklists as unknown}
                   onSave={(c) => update.mutate({ checklists: c as unknown as Record<string, unknown> })}
                 />
@@ -1547,9 +1560,11 @@ function normalizeChecklist(raw: unknown): LeadChecklistState {
 }
 
 function ChecklistTab({
+  leadId,
   checklists,
   onSave,
 }: {
+  leadId: string;
   checklists: unknown;
   onSave: (c: LeadChecklistState) => void;
 }) {
@@ -1562,7 +1577,40 @@ function ChecklistTab({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [newItem, setNewItem] = useState("");
+  const [taskModal, setTaskModal] = useState<
+    | { mode: "create"; itemId: string; label: string }
+    | { mode: "edit"; task: Task }
+    | null
+  >(null);
   const confirm = useConfirm();
+  const qc = useQueryClient();
+
+  // Tarefas do lead, para vincular aos itens do checklist
+  const tasksQ = useQuery({
+    queryKey: ["tasks-by-lead", leadId],
+    queryFn: () => fetchTasks({}).then((rows) => rows.filter((t) => t.lead_id === leadId)),
+    enabled: !!leadId,
+  });
+  const taskByItem = new Map<string, Task>();
+  for (const t of tasksQ.data ?? []) {
+    const cid = extractChecklistItemId(t.description);
+    if (cid) taskByItem.set(cid, t);
+  }
+
+  async function removeTaskForItem(task: Task) {
+    const ok = await confirm({
+      title: "Remover tarefa vinculada?",
+      description: "A tarefa criada a partir deste item será excluída. O item do checklist permanece.",
+      confirmLabel: "Remover",
+      destructive: true,
+    });
+    if (!ok) return;
+    const okDel = await deleteTask(task.id);
+    if (!okDel) return toast.error("Não foi possível remover a tarefa.");
+    toast.success("Tarefa removida.");
+    qc.invalidateQueries({ queryKey: ["tasks-by-lead", leadId] });
+    qc.invalidateQueries({ queryKey: ["tasks"] });
+  }
 
   useEffect(() => {
     setState(normalizeChecklist(checklists));
@@ -1848,10 +1896,10 @@ function ChecklistTab({
                     {group.items.map((it) => {
                       const done = !!state.items[it.id];
                       return (
-                        <li key={it.id}>
+                        <li key={it.id} className="flex items-center gap-1">
                           <button
                             onClick={() => toggle(it.id)}
-                            className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
+                            className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
                           >
                             <span
                               className={`flex h-4 w-4 items-center justify-center rounded border ${
@@ -1866,6 +1914,14 @@ function ChecklistTab({
                               {it.label}
                             </span>
                           </button>
+                          <ChecklistItemTaskAction
+                            task={taskByItem.get(it.id)}
+                            onCreate={() =>
+                              setTaskModal({ mode: "create", itemId: it.id, label: it.label })
+                            }
+                            onEdit={(t) => setTaskModal({ mode: "edit", task: t })}
+                            onRemove={(t) => removeTaskForItem(t)}
+                          />
                         </li>
                       );
                     })}
@@ -1885,7 +1941,7 @@ function ChecklistTab({
           {(state.extras || []).map((e) => {
             const done = !!state.items[e.id];
             return (
-              <li key={e.id} className="flex items-center gap-2">
+              <li key={e.id} className="flex items-center gap-1">
                 <button
                   onClick={() => toggle(e.id)}
                   className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
@@ -1901,9 +1957,16 @@ function ChecklistTab({
                     {e.label}
                   </span>
                 </button>
+                <ChecklistItemTaskAction
+                  task={taskByItem.get(e.id)}
+                  onCreate={() => setTaskModal({ mode: "create", itemId: e.id, label: e.label })}
+                  onEdit={(t) => setTaskModal({ mode: "edit", task: t })}
+                  onRemove={(t) => removeTaskForItem(t)}
+                />
                 <button
                   onClick={() => removeExtra(e.id)}
                   className="text-muted-foreground hover:text-destructive"
+                  title="Remover item extra"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -1928,7 +1991,76 @@ function ChecklistTab({
           </button>
         </div>
       </section>
+
+      <CreateTaskModal
+        open={!!taskModal}
+        onOpenChange={(v) => {
+          if (!v) setTaskModal(null);
+        }}
+        task={taskModal?.mode === "edit" ? taskModal.task : null}
+        initial={
+          taskModal?.mode === "create"
+            ? {
+                title: taskModal.label,
+                description: `Item do checklist: ${taskModal.label}`,
+                leadId,
+                activityType: "outros",
+                checklistItemId: taskModal.itemId,
+              }
+            : null
+        }
+      />
     </div>
+  );
+}
+
+function ChecklistItemTaskAction({
+  task,
+  onCreate,
+  onEdit,
+  onRemove,
+}: {
+  task?: Task;
+  onCreate: () => void;
+  onEdit: (t: Task) => void;
+  onRemove: (t: Task) => void;
+}) {
+  if (!task) {
+    return (
+      <button
+        onClick={onCreate}
+        title="Transformar em tarefa"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-primary"
+      >
+        <ListPlus className="h-4 w-4" />
+      </button>
+    );
+  }
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          title="Tarefa vinculada"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary hover:bg-primary/20"
+        >
+          <ClipboardList className="h-4 w-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        <DropdownMenuItem onClick={() => onEdit(task)}>
+          <Eye className="mr-2 h-4 w-4" /> Ver detalhes
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onEdit(task)}>
+          <Pencil className="mr-2 h-4 w-4" /> Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => onRemove(task)}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="mr-2 h-4 w-4" /> Remover
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

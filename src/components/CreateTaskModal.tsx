@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead } from "@/lib/services";
+import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead, cleanTaskDescription, CHECKLIST_ITEM_MARK } from "@/lib/services";
 import type { Task } from "@/lib/types";
 
 
@@ -60,10 +60,18 @@ export function CreateTaskModal({
   open,
   onOpenChange,
   task,
+  initial,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   task?: Task | null;
+  initial?: {
+    title?: string;
+    description?: string;
+    leadId?: string;
+    activityType?: string;
+    checklistItemId?: string;
+  } | null;
 }) {
   const qc = useQueryClient();
   const isEdit = !!task;
@@ -95,7 +103,7 @@ export function CreateTaskModal({
       setAssignedTo(task.assigned_to ?? "");
       setDueDate(task.due_date ? task.due_date.slice(0, 10) : "");
       setPriority(task.priority ?? "normal");
-      setDescription(task.description ?? "");
+      setDescription(cleanTaskDescription(task.description) ?? "");
       setActivityType("outros");
       // Se a tarefa está ligada a uma atividade, busca o tipo atual.
       const m = (task.description ?? "").match(/\[atv:([0-9a-f-]+)\]/i);
@@ -112,6 +120,12 @@ export function CreateTaskModal({
       }
     } else {
       reset();
+      if (initial) {
+        if (initial.title) setTitle(initial.title);
+        if (initial.description) setDescription(initial.description);
+        if (initial.leadId) setLeadId(initial.leadId);
+        if (initial.activityType) setActivityType(initial.activityType);
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, task?.id]);
@@ -129,6 +143,15 @@ export function CreateTaskModal({
 
   const mutation = useMutation({
     mutationFn: () => {
+      // Preserva a marca do item de checklist na descrição (quando existir),
+      // seja em criação (via initial) ou em edição (marca já presente).
+      const existingMark =
+        (task?.description?.match(/\[chk:[^\]]+\]/) ?? [])[0] ||
+        (initial?.checklistItemId ? CHECKLIST_ITEM_MARK(initial.checklistItemId) : "");
+      const baseDesc = description.trim();
+      const finalDesc = existingMark
+        ? [baseDesc, existingMark].filter(Boolean).join("\n\n")
+        : baseDesc || null;
       const payload = {
         title: title.trim(),
         lead_id: leadId || null,
@@ -136,7 +159,7 @@ export function CreateTaskModal({
         assigned_to: assignedTo || null,
         priority,
         due_date: dueDate ? new Date(`${dueDate}T09:00:00`).toISOString() : null,
-        description: description.trim() || null,
+        description: finalDesc,
         activity_type: activityType,
       } as Partial<Task> & { activity_type: string };
       return isEdit ? updateTask(task!.id, payload) : createTask(payload);
