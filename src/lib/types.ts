@@ -217,7 +217,7 @@ export interface Itinerary {
   status: string;
   created_at?: string;
   cover_image?: string | null;
-  lead?: { name: string } | null;
+  lead?: { name: string; assigned_to?: string | null } | null;
   days?: ItineraryDay[];
   vouchers?: Voucher[];
 }
