@@ -123,8 +123,8 @@ function ItinerariesPage() {
       if (ctx?.prev) qc.setQueryData(["itineraries"], ctx.prev);
       toast.error("Não foi possível mover a viagem.");
     },
-    onSuccess: (_r, vars) => {
-      dispatchWebhook("itinerary.status_changed", { id: vars.id, status: vars.status });
+    onSuccess: () => {
+      toast.success("Viagem movida.");
     },
     onSettled: () => qc.invalidateQueries({ queryKey: ["itineraries"] }),
   });
