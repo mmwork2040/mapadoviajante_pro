@@ -1570,10 +1570,12 @@ function ChecklistTab({
   leadId,
   checklists,
   onSave,
+  highlightItemId,
 }: {
   leadId: string;
   checklists: unknown;
   onSave: (c: LeadChecklistState) => void;
+  highlightItemId?: string;
 }) {
   const [state, setState] = useState<LeadChecklistState>(() => normalizeChecklist(checklists));
   const [templates, setTemplates] = useState<
