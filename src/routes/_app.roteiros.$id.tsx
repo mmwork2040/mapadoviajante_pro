@@ -1418,11 +1418,21 @@ function ItineraryDetailPage() {
         }}
         onDragEnd={handleDragEnd}
       >
-        <div className="mb-3">
-          <h2 className="text-base font-semibold">Blocos do roteiro</h2>
-          <p className="text-sm text-muted-foreground">
-            Arraste os blocos abaixo para os dias do roteiro para montar o itinerário.
-          </p>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold">Blocos do roteiro</h2>
+            <p className="text-sm text-muted-foreground">
+              Arraste os blocos abaixo para os dias do roteiro para montar o itinerário.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setImportOpen(true)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-primary bg-primary/10 px-3 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/20"
+            title="Envie um documento (do dispositivo ou da biblioteca) e a IA extrai as atividades para o roteiro."
+          >
+            <Upload className="h-4 w-4" /> Enviar documento
+          </button>
         </div>
         <div className="sticky top-0 z-10 -mx-1 flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-muted/40 p-3 backdrop-blur">
           <span className="mr-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1431,7 +1441,6 @@ function ItineraryDetailPage() {
           {ACTIVITY_TYPES.map((t) => (
             <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} hint={t.hint} />
           ))}
-          <PaletteItem type="document" label="Documento (IA)" icon={FileUp} hint="Importa um documento (voucher, itinerário, cartão de embarque) e a IA extrai várias atividades, distribuindo-as nos dias certos." />
 
           {driveEnabled && (
             <button
