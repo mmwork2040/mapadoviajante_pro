@@ -238,6 +238,8 @@ function TarefasPage() {
         <LeadDetailDrawer
           leadId={detailTask.lead_id}
           highlightTask={detailTask}
+          highlightChecklistItemId={extractChecklistItemId(detailTask.description) ?? undefined}
+          initialTab={extractChecklistItemId(detailTask.description) ? "checklist" : undefined}
           onClose={() => setDetailTask(null)}
         />
       )}
