@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, ListChecks, Check, CalendarClock, MoreVertical, ExternalLink, Pencil, Trash2, RotateCcw, CheckCircle2 } from "lucide-react";
-import { fetchTasks, updateTask, deleteTask, cleanTaskDescription, isOverdue } from "@/lib/services";
+import { Plus, ListChecks, Check, CalendarClock, MoreVertical, ExternalLink, Pencil, Trash2, RotateCcw, CheckCircle2, ClipboardList } from "lucide-react";
+import { fetchTasks, updateTask, deleteTask, cleanTaskDescription, isOverdue, extractChecklistItemId } from "@/lib/services";
 import { Button } from "@/components/ui/button";
 import { QueryError } from "@/components/QueryError";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
@@ -238,6 +238,8 @@ function TarefasPage() {
         <LeadDetailDrawer
           leadId={detailTask.lead_id}
           highlightTask={detailTask}
+          highlightChecklistItemId={extractChecklistItemId(detailTask.description) ?? undefined}
+          initialTab={extractChecklistItemId(detailTask.description) ? "checklist" : undefined}
           onClose={() => setDetailTask(null)}
         />
       )}
@@ -305,6 +307,12 @@ function TaskList({
                 {isOverdue(t.due_date, t.completed) && (
                   <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
                     Atrasada
+                  </span>
+                )}
+                {extractChecklistItemId(t.description) && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                    <ClipboardList className="h-3 w-3" />
+                    Checklist
                   </span>
                 )}
                 {t.lead?.name && <span>👤 {t.lead.name}</span>}

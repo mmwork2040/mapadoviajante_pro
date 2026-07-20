@@ -135,10 +135,14 @@ export function LeadDetailDrawer({
   leadId,
   onClose,
   highlightTask,
+  highlightChecklistItemId,
+  initialTab,
 }: {
   leadId: string;
   onClose: () => void;
   highlightTask?: Task | null;
+  highlightChecklistItemId?: string;
+  initialTab?: TabKey;
 }) {
   useBackButtonClose(true, onClose);
   const qc = useQueryClient();
@@ -146,7 +150,9 @@ export function LeadDetailDrawer({
   const confirm = useConfirm();
   const { member, session } = useAuth();
   const isAdmin = isAdminUser(member, session?.user?.email);
-  const [tab, setTab] = useState<TabKey>(highlightTask ? "atividades" : "checklist");
+  const [tab, setTab] = useState<TabKey>(
+    initialTab ?? (highlightTask && !highlightChecklistItemId ? "atividades" : "checklist"),
+  );
   const [editOpen, setEditOpen] = useState(false);
   const [linkedItinerary, setLinkedItinerary] = useState<Itinerary | null>(null);
   const [fullscreen, setFullscreen] = useState<boolean>(() => {
@@ -620,6 +626,7 @@ export function LeadDetailDrawer({
                 <ChecklistTab
                   leadId={leadId}
                   checklists={lead.checklists as unknown}
+                  highlightItemId={highlightChecklistItemId}
                   onSave={(c) => update.mutate({ checklists: c as unknown as Record<string, unknown> })}
                 />
               )}
@@ -1563,10 +1570,12 @@ function ChecklistTab({
   leadId,
   checklists,
   onSave,
+  highlightItemId,
 }: {
   leadId: string;
   checklists: unknown;
   onSave: (c: LeadChecklistState) => void;
+  highlightItemId?: string;
 }) {
   const [state, setState] = useState<LeadChecklistState>(() => normalizeChecklist(checklists));
   const [templates, setTemplates] = useState<
@@ -1635,6 +1644,26 @@ function ChecklistTab({
       active = false;
     };
   }, []);
+
+  // Realce/scroll ao abrir a partir de uma tarefa vinculada
+  useEffect(() => {
+    if (!highlightItemId) return;
+    const t = setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(
+        `[data-checklist-item="${highlightItemId}"]`,
+      );
+      if (!el) return;
+      const details = el.closest("details");
+      if (details && !details.open) details.open = true;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("ring-2", "ring-primary", "bg-primary/5", "rounded-lg");
+      setTimeout(() => {
+        el.classList.remove("ring-2", "ring-primary", "bg-primary/5", "rounded-lg");
+      }, 2500);
+    }, 200);
+    return () => clearTimeout(t);
+  }, [highlightItemId, state.sections, state.extras]);
+
 
   function persist(next: LeadChecklistState) {
     setState(next);
@@ -1864,9 +1893,11 @@ function ChecklistTab({
         const sectionDone = sectionItemIds.filter((id) => state.items[id]).length;
         const sectionTotal = sectionItemIds.length;
         const pct = sectionTotal > 0 ? Math.round((sectionDone / sectionTotal) * 100) : 0;
+        const containsHighlight = !!highlightItemId && sectionItemIds.includes(highlightItemId);
         return (
           <details
             key={section.id}
+            open={containsHighlight || undefined}
             className="group rounded-xl border border-border [&_summary::-webkit-details-marker]:hidden"
           >
             <summary className="flex cursor-pointer list-none flex-col gap-1.5 border-b border-border px-3 py-2 text-sm font-semibold">
@@ -1896,7 +1927,7 @@ function ChecklistTab({
                     {group.items.map((it) => {
                       const done = !!state.items[it.id];
                       return (
-                        <li key={it.id} className="flex items-center gap-1">
+                        <li key={it.id} data-checklist-item={it.id} className="flex items-center gap-1">
                           <button
                             onClick={() => toggle(it.id)}
                             className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
@@ -1941,7 +1972,7 @@ function ChecklistTab({
           {(state.extras || []).map((e) => {
             const done = !!state.items[e.id];
             return (
-              <li key={e.id} className="flex items-center gap-1">
+              <li key={e.id} data-checklist-item={e.id} className="flex items-center gap-1">
                 <button
                   onClick={() => toggle(e.id)}
                   className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
