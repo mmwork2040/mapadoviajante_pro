@@ -527,6 +527,8 @@ function ClientFormDrawer({
       toast.error("Preferências: JSON inválido");
       return;
     }
+    // Membros são gerenciados pela aba dedicada; salvos dentro de preferences.
+    preferences.members = members;
     // Normaliza datas vazias para null
     const clean: Partial<Client> = { ...form, preferences };
     (["birth_date", "passport_expiry"] as const).forEach((k) => {
@@ -539,6 +541,7 @@ function ClientFormDrawer({
     { key: "contato", label: "Contato", icon: User },
     { key: "documentos", label: "Documentos", icon: IdCard },
     { key: "endereco", label: "Endereço", icon: MapPin },
+    { key: "membros", label: "Membros", icon: Users },
     { key: "preferencias", label: "Preferências", icon: Sparkles },
     { key: "notas", label: "Observações", icon: StickyNote },
   ];
