@@ -339,7 +339,7 @@ function ClientCard({
             </div>
             {client.cpf && <div className="truncate text-xs text-muted-foreground">CPF {client.cpf}</div>}
           </div>
-        </button>
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
