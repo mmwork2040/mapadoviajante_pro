@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
 import { ModalField, ModalTextarea, Section, NewLeadModal } from "@/routes/_app.leads";
-import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
