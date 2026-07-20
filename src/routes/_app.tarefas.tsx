@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Plus, ListChecks, Check, CalendarClock, MoreVertical, ExternalLink, Pencil, Trash2, RotateCcw, CheckCircle2 } from "lucide-react";
+import { Plus, ListChecks, Check, CalendarClock, MoreVertical, ExternalLink, Pencil, Trash2, RotateCcw, CheckCircle2, ClipboardList } from "lucide-react";
 import { fetchTasks, updateTask, deleteTask, cleanTaskDescription, isOverdue, extractChecklistItemId } from "@/lib/services";
 import { Button } from "@/components/ui/button";
 import { QueryError } from "@/components/QueryError";
