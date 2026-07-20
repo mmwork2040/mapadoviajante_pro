@@ -1596,7 +1596,7 @@ function ChecklistTab({
 
   // Tarefas do lead, para vincular aos itens do checklist
   const tasksQ = useQuery({
-    queryKey: ["tasks-by-lead", leadId],
+    queryKey: ["tasks", "by-lead", leadId],
     queryFn: () => fetchTasks({}).then((rows) => rows.filter((t) => t.lead_id === leadId)),
     enabled: !!leadId,
   });
@@ -1617,9 +1617,9 @@ function ChecklistTab({
     const okDel = await deleteTask(task.id);
     if (!okDel) return toast.error("Não foi possível remover a tarefa.");
     toast.success("Tarefa removida.");
-    qc.invalidateQueries({ queryKey: ["tasks-by-lead", leadId] });
     qc.invalidateQueries({ queryKey: ["tasks"] });
   }
+
 
   useEffect(() => {
     setState(normalizeChecklist(checklists));
@@ -1711,8 +1711,16 @@ function ChecklistTab({
 
 
   function toggle(id: string) {
-    persist({ ...state, items: { ...state.items, [id]: !state.items[id] } });
+    const next = !state.items[id];
+    persist({ ...state, items: { ...state.items, [id]: next } });
+    const linked = taskByItem.get(id);
+    if (linked && !!linked.completed !== next) {
+      updateTask(linked.id, { completed: next }).then((ok) => {
+        if (ok) qc.invalidateQueries({ queryKey: ["tasks"] });
+      });
+    }
   }
+
 
   function addExtra() {
     const label = newItem.trim();
@@ -2181,11 +2189,9 @@ function ChecklistItemTaskAction({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuItem onClick={() => onEdit(task)}>
-          <Eye className="mr-2 h-4 w-4" /> Ver detalhes
+          <Eye className="mr-2 h-4 w-4" /> Visualizar
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onEdit(task)}>
-          <Pencil className="mr-2 h-4 w-4" /> Editar
-        </DropdownMenuItem>
+
         <DropdownMenuItem
           onClick={() => onRemove(task)}
           className="text-destructive focus:text-destructive"
