@@ -3,7 +3,7 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon, Save } from "lucide-react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon, Save, User } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
@@ -18,6 +18,8 @@ import {
   searchLibraryImageForDestination,
   saveExternalImageToLibrary,
   uploadImageToLibraryForDestination,
+  getMemberId,
+  getMemberRole,
 } from "@/lib/services";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
@@ -84,13 +86,22 @@ function ItinerariesPage() {
   const confirm = useConfirm();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [onlyMine, setOnlyMine] = useState(false);
+  const memberRole = getMemberRole();
+  const isManager = memberRole === "admin" || memberRole === "gerente";
+  const myId = getMemberId();
+  const effectiveOnlyMine = isManager ? onlyMine : true;
   const { data: items = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
 
+  const scopedItems = effectiveOnlyMine
+    ? items.filter((it) => it.lead?.assigned_to === myId)
+    : items;
+
   const filteredItems = search.trim()
-    ? items.filter((it) => {
+    ? scopedItems.filter((it) => {
         const q = search.toLowerCase();
         return (
           (it.title || "").toLowerCase().includes(q) ||
@@ -98,32 +109,32 @@ function ItinerariesPage() {
           (it.client_name || "").toLowerCase().includes(q)
         );
       })
-    : items;
+    : scopedItems;
 
 
   const remove = useMutation({
     mutationFn: (it: Itinerary) => deleteItinerary(it.id),
     onSuccess: (_d, it) => {
       dispatchWebhook("itinerary.deleted", it);
-      toast.success("Roteiro excluído.");
+      toast.success("Viagem excluída.");
       qc.invalidateQueries({ queryKey: ["itineraries"] });
     },
-    onError: () => toast.error("Erro ao excluir roteiro."),
+    onError: () => toast.error("Erro ao excluir viagem."),
   });
 
   const duplicate = useMutation({
     mutationFn: (it: Itinerary) => duplicateItinerary(it.id),
     onSuccess: (res) => {
-      if (!res) return toast.error("Erro ao duplicar roteiro.");
-      toast.success("Roteiro duplicado.");
+      if (!res) return toast.error("Erro ao duplicar viagem.");
+      toast.success("Viagem duplicada.");
       qc.invalidateQueries({ queryKey: ["itineraries"] });
     },
-    onError: () => toast.error("Erro ao duplicar roteiro."),
+    onError: () => toast.error("Erro ao duplicar viagem."),
   });
 
   async function handleDelete(it: Itinerary) {
     const ok = await confirm({
-      title: "Excluir roteiro",
+      title: "Excluir viagem",
       description: `Tem certeza que deseja excluir "${it.title}"? Esta ação não pode ser desfeita.`,
       confirmLabel: "Excluir",
       destructive: true,
@@ -133,7 +144,7 @@ function ItinerariesPage() {
 
   async function handleDuplicate(it: Itinerary) {
     const ok = await confirm({
-      title: "Duplicar roteiro",
+      title: "Duplicar viagem",
       description: `Deseja criar uma cópia de "${it.title}"?`,
       confirmLabel: "Duplicar",
     });
@@ -147,34 +158,50 @@ function ItinerariesPage() {
     <div className="space-y-6">
       <PageHeader
         icon={RouteIcon}
-        title="Roteiros"
+        title="Viagens"
         subtitle="Planejamento dia a dia das viagens."
         actions={
           <>
             <SearchBar
               value={search}
               onChange={setSearch}
-              placeholder="Buscar roteiro…"
+              placeholder="Buscar viagem…"
               className="w-full sm:w-64"
             />
+            {isManager && (
+              <button
+                onClick={() => setOnlyMine((v) => !v)}
+                className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+                  onlyMine
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-input hover:bg-muted"
+                }`}
+              >
+                <User className="h-4 w-4" /> {onlyMine ? "Minhas viagens" : "Todas as viagens"}
+              </button>
+            )}
             <button
               onClick={() => setOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
             >
-              <Plus className="h-4 w-4" /> Novo Roteiro
+              <Plus className="h-4 w-4" /> Nova Viagem
             </button>
           </>
         }
       />
 
       {isError ? (
-        <QueryError message="Não foi possível carregar os roteiros." onRetry={() => refetch()} />
+        <QueryError message="Não foi possível carregar as viagens." onRetry={() => refetch()} />
       ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
-      ) : items.length === 0 ? (
-        <p className="text-muted-foreground">Nenhum roteiro ainda. Crie o primeiro!</p>
+      ) : scopedItems.length === 0 ? (
+        <p className="text-muted-foreground">
+          {effectiveOnlyMine && items.length > 0
+            ? "Nenhuma viagem atribuída a você."
+            : "Nenhuma viagem ainda. Crie a primeira!"}
+        </p>
       ) : filteredItems.length === 0 ? (
-        <p className="text-muted-foreground">Nenhum roteiro encontrado para “{search}”.</p>
+        <p className="text-muted-foreground">Nenhuma viagem encontrada para “{search}”.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredItems.map((it) => (
@@ -440,9 +467,9 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
     setSaving(false);
     if (res) {
       dispatchWebhook("itinerary.created", res);
-      toast.success("Roteiro criado!");
+      toast.success("Viagem criada!");
       onCreated();
-    } else toast.error("Erro ao criar roteiro.");
+    } else toast.error("Erro ao criar viagem.");
   }
 
   return (
@@ -455,8 +482,8 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
               <Map className="h-5 w-5" />
             </div>
             <div>
-              <h2 className="text-lg font-bold">Novo Roteiro</h2>
-              <p className="text-xs text-muted-foreground">Preencha todos os campos para criar o roteiro</p>
+              <h2 className="text-lg font-bold">Nova Viagem</h2>
+              <p className="text-xs text-muted-foreground">Preencha todos os campos para criar a viagem</p>
             </div>
           </div>
           <button
@@ -555,7 +582,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
               className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Save className="h-4 w-4" />
-              {saving ? "Salvando…" : "Criar Roteiro"}
+              {saving ? "Salvando…" : "Criar Viagem"}
             </button>
           </div>
         </form>

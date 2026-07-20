@@ -1,71 +1,39 @@
 ## Objetivo
 
-Reorganizar o CRM em torno do **Cliente**, com **Viagens** aninhadas (cada lead vira uma viagem), checklist ligado a atividades, benefícios e painel financeiro por viagem.
+Renomear rótulos e restringir visibilidade por papel:
 
-## 1. Modelo de dados
+- Página atual **"Viagens"** (rota `/leads`) → **"Vendas"**.
+- Página atual **"Roteiros"** (rota `/roteiros`) → **"Viagens"**.
+- **Vendas**: apenas o gestor (`role = admin` ou `gerente`) vê todas; demais membros veem apenas as vendas atribuídas a eles.
+- **Viagens (ex-Roteiros)**: gestor vê todas; demais membros veem apenas as viagens cujo lead está atribuído a eles, com um filtro/toggle "Minhas / Todas" análogo ao já existente em `/leads`.
 
-Aproveitar `crm_leads` como a tabela de viagens (rename lógico, sem quebrar dados):
+Rotas e nomes de arquivos permanecem (`/leads`, `/roteiros`) para evitar quebra de links salvos, roteiros existentes e imports do `routeTree.gen.ts`. Alteração é apenas de rótulos visíveis + filtro de dados.
 
-- `crm_leads.client_id` já existe → passa a ser **obrigatório na UI** (leads antigos sem cliente ganham botão "vincular/criar cliente").
-- Adicionar em `crm_leads`:
-  - `budget_total numeric` (Valor total planejado)
-  - `budget_client numeric` (Valor trazido pelo cliente, opcional)
-  - `budget_osv numeric` (Valor OSV, opcional)
-  - `benefits jsonb` — `{ miles: [{program, amount, notes}], perks: [{type, description}] }`
+## Mudanças
 
-- Nova tabela `crm_trip_expenses` (gastos reais por viagem):
-  `id, lead_id, activity_id (nullable), category (passagem/hospedagem/seguro/extra/outro), description, amount, paid_with (dinheiro/milhas/benefício), savings numeric, occurred_at, created_by, created_at`.
-  RLS por agência via `lead_id → agency_id`.
+### 1. Rótulos (UI apenas)
+- `src/components/layout/AppLayout.tsx`: item de menu `/leads` label `"Vendas"`; `/roteiros` label `"Viagens"`.
+- `src/routes/_app.leads.tsx`: `PageHeader` title `"Vendas"` + subtítulo/ícone coerente; textos internos ("Nova Viagem" etc.) → "Nova Venda"/equivalentes onde referem-se à entidade.
+- `src/routes/_app.roteiros.index.tsx`: `PageHeader` title `"Viagens"`; "Novo Roteiro" → "Nova Viagem"; textos correlatos (toasts, placeholders, modal `NewItineraryModal`).
+- `src/routes/_app.roteiros.$id.tsx`: títulos/breadcrumb.
+- Ajustes menores de texto em `_app.index.tsx` (dashboard), `_app.admin.tsx`, `_app.checklist-templates.tsx`, `_app.biblioteca.tsx`, `auth.tsx`, `__root.tsx` (head/meta) onde aparecem "Roteiros"/"Viagens" com a semântica antiga.
 
-- Ligação checklist ↔ atividades: adicionar coluna `checklist_item_key text` em `crm_itinerary_activities` (ou tabela equivalente de atividades usada hoje). Marcar item do checklist:
-  - se o item tem `activity_id` vinculado → marca a atividade como concluída e registra log
-  - se não tem → cria atividade automática do tipo `checklist` com o título do item
-  - No template de checklist, cada item ganha campo opcional `default_activity_type` para pré-configurar essa vinculação.
+Nenhuma rota, tabela ou chave de query renomeada.
 
-## 2. Navegação / UI
+### 2. Filtro por papel em Vendas (`/leads`)
+Hoje `_app.leads.tsx` já tem toggle `onlyMine`. Ajuste:
+- Se o membro atual **não é gestor** (`role !== 'admin' && role !== 'gerente'`), forçar `onlyMine = true` e ocultar o toggle.
+- Gestor mantém toggle "Minhas / Todas" como hoje.
 
-- **Aba Clientes** vira ponto de entrada principal:
-  - Lista de clientes (já existe)
-  - Detalhe do cliente com abas: **Perfil**, **Viagens**, **Preferências**, **Notas**
-  - Aba Viagens lista os leads/viagens do cliente + botão **"Nova viagem"** (usa `createLeadFromClient` já existente)
+### 3. Filtro por papel em Viagens (`/roteiros`)
+- Em `fetchItineraries` (`src/lib/services.ts`), quando o membro atual não é gestor, filtrar via join no lead: `crm_leads.assigned_to = <memberId>`. Alternativa: buscar todos e filtrar no cliente por `it.lead?.assigned_to` — para isso incluir `assigned_to` no `select` do relacionamento (`lead:crm_leads!...(name, profile, assigned_to)`) e filtrar em memória.
+- Adicionar toggle "Minhas / Todas" em `_app.roteiros.index.tsx` (apenas visível para gestor), padrão "Todas" para gestor e "Minhas" fixo para demais.
+- Ajustar tipo `Itinerary["lead"]` (ou tipo local) para incluir `assigned_to`.
 
-- **Aba Leads** continua existindo como funil de vendas (kanban), mas cada card mostra chip do cliente vinculado; abrir uma viagem leva ao mesmo drawer atual + nova aba **Financeiro**.
+### 4. Sem migração de banco
+Papéis já existem em `agency_members.role`. Nenhuma coluna nova. RLS existente segue válida.
 
-- **Drawer da Viagem** (LeadDetailDrawer) ganha abas reorganizadas:
-  `Resumo | Roteiro/Atividades | Checklist | Financeiro | Benefícios | Notas`
-
-## 3. Painel Financeiro da viagem
-
-Dentro do drawer, aba **Financeiro**:
-
-- Cards no topo: **Orçamento total**, **Gasto até agora**, **Saldo restante**, **Economia gerada** (soma de `savings` + diferença `budget_client − budget_osv` quando ambos preenchidos).
-- Tabela de `crm_trip_expenses` com filtro por categoria, botão **"Adicionar gasto"** (form: categoria, descrição, valor, forma de pagamento, atividade vinculada opcional, economia gerada).
-- Barra de progresso orçamento vs gasto.
-- Comparativo "Valor trazido pelo cliente" × "Valor OSV" quando ambos existirem.
-
-## 4. Benefícios
-
-Aba **Benefícios** no drawer:
-
-- Seção **Milhas & Pontos**: lista de programas (Smiles, Latam Pass, Livelo…) com saldo disponível e usado nessa viagem.
-- Seção **Cortesias & Sala VIP**: lista de perks (ex.: "Sala VIP GRU via Mastercard Black", "Upgrade Latam"), cada um com descrição e status (planejado/utilizado). Ao marcar utilizado, opção de registrar como economia no financeiro.
-
-## 5. Checklist ↔ Atividades
-
-- Ao marcar item do checklist:
-  1. Se item tem `activity_id` → toggle conclusão na atividade + entrada na timeline.
-  2. Se não tem → cria atividade nova (`type=checklist`, `title=item`, `completed=true`) e vincula o `activity_id` no item para próximos toggles.
-- Desmarcar → reverte conclusão.
-- Editor de template de checklist (admin) ganha campo opcional "Tipo de atividade padrão" por item.
-
-## 6. Fora do escopo desta rodada
-
-- Import em massa de gastos, integração com contas financeiras da agência, relatório consolidado multi-viagem.
-
-## Ordem de implementação
-
-1. Migration: colunas em `crm_leads`, tabela `crm_trip_expenses`, coluna `checklist_item_key`/`activity_id` em itens.
-2. Services + server fns: gastos, benefícios, toggle checklist↔atividade.
-3. UI: aba Financeiro, aba Benefícios, reorganização do drawer.
-4. Cliente → aba Viagens com "Nova viagem".
-5. Editor de template: campo de atividade padrão.
+## Verificação
+- Logar como membro comum: `/leads` mostra só atribuídas, sem toggle; `/roteiros` mostra só viagens de leads dele.
+- Logar como admin/gerente: ambos toggles disponíveis, "Todas" lista tudo.
+- Menu lateral mostra "Vendas" e "Viagens" nos lugares corretos.

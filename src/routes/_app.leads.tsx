@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, fetchTeamMembers } from "@/lib/services";
+import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles, initials } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
@@ -99,7 +99,10 @@ function LeadsPage() {
     refetchOnWindowFocus: true,
   });
   const myId = getMemberId();
-  const leads = onlyMine ? allLeads.filter((l) => l.assigned_to === myId) : allLeads;
+  const memberRole = getMemberRole();
+  const isManager = memberRole === "admin" || memberRole === "gerente";
+  const effectiveOnlyMine = isManager ? onlyMine : true;
+  const leads = effectiveOnlyMine ? allLeads.filter((l) => l.assigned_to === myId) : allLeads;
 
   const { data: team = [] } = useQuery({
     queryKey: ["team-members"],
@@ -172,7 +175,7 @@ function LeadsPage() {
     <div className="space-y-6">
       <PageHeader
         icon={Plane}
-        title="Viagens"
+        title="Vendas"
         subtitle="Funil de vendas (arraste para mover)."
         actions={
           <>
@@ -184,16 +187,18 @@ function LeadsPage() {
             />
 
 
-            <button
-              onClick={toggleOnlyMine}
-              className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
-                onlyMine
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-input hover:bg-muted"
-              }`}
-            >
-              <User className="h-4 w-4" /> {onlyMine ? "Meus leads" : "Todos os leads"}
-            </button>
+            {isManager && (
+              <button
+                onClick={toggleOnlyMine}
+                className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+                  onlyMine
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-input hover:bg-muted"
+                }`}
+              >
+                <User className="h-4 w-4" /> {onlyMine ? "Minhas vendas" : "Todas as vendas"}
+              </button>
+            )}
             <button
               onClick={() => setOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
@@ -203,6 +208,7 @@ function LeadsPage() {
           </>
         }
       />
+
 
 
       {isError ? (
