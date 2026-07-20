@@ -12,7 +12,7 @@ import {
   duplicateItinerary,
   fetchItineraries,
   fetchLeads,
-  
+  updateItinerary,
   updateLead,
   fetchAiConfig,
   searchLibraryImageForDestination,
