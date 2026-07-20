@@ -695,7 +695,18 @@ export function isOverdue(due_date?: string | null, completed?: boolean | null):
 /** Remove a marca de vínculo interna da descrição de uma tarefa. */
 export function cleanTaskDescription(desc?: string | null): string {
   if (!desc) return "";
-  return desc.replace(/\s*\[atv:[0-9a-f-]+\]\s*/gi, "").trim();
+  return desc
+    .replace(/\s*\[atv:[0-9a-f-]+\]\s*/gi, "")
+    .replace(/\s*\[chk:[^\]]+\]\s*/gi, "")
+    .trim();
+}
+
+/** Marca interna para vincular uma tarefa a um item do checklist. */
+export const CHECKLIST_ITEM_MARK = (id: string) => `[chk:${id}]`;
+export function extractChecklistItemId(desc?: string | null): string | null {
+  if (!desc) return null;
+  const m = desc.match(/\[chk:([^\]]+)\]/);
+  return m ? m[1] : null;
 }
 
 export async function deleteLeadActivity(id: string): Promise<boolean> {
