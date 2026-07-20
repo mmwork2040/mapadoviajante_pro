@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, Ticket, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Upload } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
