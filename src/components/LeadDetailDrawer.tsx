@@ -2189,11 +2189,9 @@ function ChecklistItemTaskAction({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
         <DropdownMenuItem onClick={() => onEdit(task)}>
-          <Eye className="mr-2 h-4 w-4" /> Ver detalhes
+          <Eye className="mr-2 h-4 w-4" /> Visualizar
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onEdit(task)}>
-          <Pencil className="mr-2 h-4 w-4" /> Editar
-        </DropdownMenuItem>
+
         <DropdownMenuItem
           onClick={() => onRemove(task)}
           className="text-destructive focus:text-destructive"
