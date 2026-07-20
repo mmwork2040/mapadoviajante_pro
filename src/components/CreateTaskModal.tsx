@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead } from "@/lib/services";
+import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead, cleanTaskDescription, CHECKLIST_ITEM_MARK } from "@/lib/services";
 import type { Task } from "@/lib/types";
 
 
