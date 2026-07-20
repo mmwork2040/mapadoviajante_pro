@@ -735,6 +735,15 @@ function ClientFormDrawer({
             </Section>
           )}
 
+          {tab === "membros" && (
+            <MembersTab
+              currentClientId={(initial as Client).id}
+              members={members}
+              onChange={setMembers}
+            />
+          )}
+
+
           {tab === "preferencias" && (
             <Section icon={Sparkles} title="Preferências">
               <div className="sm:col-span-2">
