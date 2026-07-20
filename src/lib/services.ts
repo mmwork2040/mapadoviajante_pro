@@ -873,6 +873,8 @@ export async function fetchTasks(filters: { completed?: boolean; assigned_to?: s
 export async function createTask(taskData: Partial<Task>): Promise<Task | null> {
   let description = taskData.description ?? null;
   let linkedActivityId: string | null = null;
+  // Preserva a marca de vínculo com item de checklist (se veio na descrição).
+  const chkMark = (description?.match(/\[chk:[^\]]+\]/) ?? [])[0] || "";
 
   // Se a tarefa está vinculada a um lead, cria uma atividade correspondente
   // para aparecer na aba "Atividades" do lead. As duas ficam ligadas por marca.
@@ -893,13 +895,18 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
       .single();
     if (!actErr && act) {
       linkedActivityId = (act as { id: string }).id;
-      description = [cleanTaskDescription(description), ACTIVITY_TASK_MARK(linkedActivityId)]
+      description = [
+        cleanTaskDescription(description),
+        ACTIVITY_TASK_MARK(linkedActivityId),
+        chkMark,
+      ]
         .filter(Boolean)
         .join("\n\n");
     } else if (actErr) {
       console.error("createTask(activity):", actErr);
     }
   }
+
 
   const { data, error } = await supabase
     .from("crm_tasks")
