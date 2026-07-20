@@ -1896,10 +1896,10 @@ function ChecklistTab({
                     {group.items.map((it) => {
                       const done = !!state.items[it.id];
                       return (
-                        <li key={it.id}>
+                        <li key={it.id} className="flex items-center gap-1">
                           <button
                             onClick={() => toggle(it.id)}
-                            className="flex w-full items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
+                            className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
                           >
                             <span
                               className={`flex h-4 w-4 items-center justify-center rounded border ${
@@ -1914,6 +1914,14 @@ function ChecklistTab({
                               {it.label}
                             </span>
                           </button>
+                          <ChecklistItemTaskAction
+                            task={taskByItem.get(it.id)}
+                            onCreate={() =>
+                              setTaskModal({ mode: "create", itemId: it.id, label: it.label })
+                            }
+                            onEdit={(t) => setTaskModal({ mode: "edit", task: t })}
+                            onRemove={(t) => removeTaskForItem(t)}
+                          />
                         </li>
                       );
                     })}
