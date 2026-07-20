@@ -1927,7 +1927,7 @@ function ChecklistTab({
                     {group.items.map((it) => {
                       const done = !!state.items[it.id];
                       return (
-                        <li key={it.id} className="flex items-center gap-1">
+                        <li key={it.id} data-checklist-item={it.id} className="flex items-center gap-1">
                           <button
                             onClick={() => toggle(it.id)}
                             className="flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left text-sm hover:bg-muted"
