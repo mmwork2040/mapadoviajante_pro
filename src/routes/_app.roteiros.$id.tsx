@@ -74,6 +74,7 @@ import {
   deleteItineraryDocuments,
   attachLibraryDocumentToActivity,
   downloadDocument,
+  getDocumentUrl,
   uploadLeadDocument,
   addLinkDocument,
   isLinkDoc,
