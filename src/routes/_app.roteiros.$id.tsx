@@ -539,6 +539,27 @@ function ItineraryDetailPage() {
     await runDocImport({ kind: "file", file }, targetDayId);
   }
 
+  async function handleLibraryImport(doc: LeadDocument) {
+    setImportOpen(false);
+    setPendingDayId("__lib__");
+    try {
+      const url = await getDocumentUrl(doc.file_path);
+      if (!url) throw new Error("Não foi possível baixar o documento.");
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("Falha ao ler o documento.");
+      const blob = await res.blob();
+      const file = new File([blob], doc.name, {
+        type: doc.mime_type || blob.type || "application/octet-stream",
+      });
+      setPendingDayId(null);
+      await runDocImport({ kind: "file", file }, "__new__");
+    } catch (err) {
+      setPendingDayId(null);
+      toast.error(err instanceof Error ? err.message : "Erro ao importar da biblioteca.");
+    }
+  }
+
+
 
   // Monta um resumo dos dias/itens já no roteiro para a IA evitar conflitos/duplicidades.
   function buildExistingContext(): string {
