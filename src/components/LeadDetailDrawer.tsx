@@ -75,6 +75,13 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { useAuth, isAdminUser } from "@/lib/auth";
 import type { Itinerary, Lead, LeadStatus, Task, TripBenefits, TripExpense } from "@/lib/types";
+import { CreateTaskModal } from "@/components/CreateTaskModal";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 const STATUSES: { key: LeadStatus; label: string; dot: string }[] = [
