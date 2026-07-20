@@ -401,13 +401,13 @@ function ClientCard({
         <span className="text-xs text-muted-foreground">
           {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
         </span>
-        <button
-          type="button"
-          onClick={openProfile}
+        <Link
+          to="/clientes/$id"
+          params={{ id: client.id }}
           className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
         >
           Abrir perfil <ExternalLink className="h-3 w-3" />
-        </button>
+        </Link>
       </div>
     </div>
   );
