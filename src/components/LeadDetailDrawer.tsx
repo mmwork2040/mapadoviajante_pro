@@ -2014,42 +2014,93 @@ function ChecklistTab({
   );
 }
 
-function inferActivityType(label: string): string {
-  const s = label
+function normalizeText(s: string): string {
+  return s
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-  const rules: Array<{ type: string; kws: string[] }> = [
-    { type: "whatsapp", kws: ["whatsapp", "whats", "wpp", "zap"] },
-    { type: "call", kws: ["ligar", "ligacao", "telefonar", "telefone", "call "] },
-    { type: "email", kws: ["email", "e-mail", "enviar e-mail", "enviar email"] },
+    .replace(/[\u0300-\u036f]/g, "") // remove acentos
+    .replace(/[^a-z0-9]+/g, " ") // pontuação/hífens viram espaço
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function inferActivityType(label: string): string {
+  const tokens = normalizeText(label).split(" ").filter(Boolean);
+  if (tokens.length === 0) return "outros";
+  const tokenSet = new Set(tokens);
+  const text = ` ${tokens.join(" ")} `;
+
+  // Radicais/palavras (após normalização). Uso includes em token para pegar variações
+  // (ligar/ligacao/ligou, reuniao/reunioes, documento/documentos, etc.).
+  const rules: Array<{ type: string; stems: string[]; phrases?: string[] }> = [
+    {
+      type: "whatsapp",
+      stems: ["whatsapp", "whats", "wpp", "zap", "zapzap"],
+    },
+    {
+      type: "call",
+      stems: ["lig", "telefon", "chamad", "ramal"],
+      phrases: ["fazer call", "dar call"],
+    },
+    {
+      type: "email",
+      stems: ["email", "emails", "mail", "gmail", "outlook"],
+      phrases: ["enviar e mail", "responder e mail"],
+    },
     {
       type: "meeting",
-      kws: ["reuniao", "reuniao ", "meeting", "encontro", "visita", "apresentacao"],
+      stems: [
+        "reuni",
+        "meeting",
+        "meet",
+        "encontr",
+        "visit",
+        "apresenta",
+        "call",
+        "conferenc",
+        "videochamad",
+        "videoconferenc",
+      ],
     },
     {
       type: "document",
-      kws: [
-        "documento",
-        "contrato",
+      stems: [
+        "document",
+        "contrat",
         "voucher",
-        "comprovante",
-        "passaporte",
-        "visto",
-        "bilhete",
-        "ficha",
+        "comprovant",
+        "passaport",
+        "vist",
+        "bilhet",
+        "fich",
         "pdf",
         "assinar",
-        "anexar",
+        "assinatur",
+        "anex",
         "upload",
-        "enviar arquivo",
+        "arquivo",
+        "arquivos",
+        "boleto",
+        "recibo",
+        "nota fiscal",
+        "certidao",
       ],
     },
-    { type: "note", kws: ["observacao", "nota", "anotar", "registrar"] },
+    {
+      type: "note",
+      stems: ["observ", "nota", "notas", "anot", "registr", "coment"],
+    },
   ];
-  for (const r of rules) if (r.kws.some((k) => s.includes(k))) return r.type;
+
+  for (const r of rules) {
+    if (r.phrases?.some((p) => text.includes(` ${p} `))) return r.type;
+    if (r.stems.some((stem) => tokenSet.has(stem) || tokens.some((t) => t.startsWith(stem))))
+      return r.type;
+  }
   return "outros";
 }
+
+
 
 function ChecklistItemTaskAction({
   task,
