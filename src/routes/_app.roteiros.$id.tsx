@@ -431,6 +431,7 @@ function ItineraryDetailPage() {
     sheets: string[];
     previews: { sheet: string; preview: string }[];
   } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: gdriveCfg } = useQuery({ queryKey: ["gdrive-config"], queryFn: getGDriveConfig });
   const driveEnabled = !!gdriveCfg?.enabled;
