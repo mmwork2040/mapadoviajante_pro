@@ -30,6 +30,7 @@ import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/p
 import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
 import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
+import { Route as AppClientesIdRouteImport } from './routes/_app.clientes.$id'
 
 const IntakeRoute = IntakeRouteImport.update({
   id: '/intake',
@@ -135,6 +136,11 @@ const AppRoteirosIdRoute = AppRoteirosIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AppRoteirosRoute,
 } as any)
+const AppClientesIdRoute = AppClientesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppClientesRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -144,7 +150,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
   '/checklist-templates': typeof AppChecklistTemplatesRoute
-  '/clientes': typeof AppClientesRoute
+  '/clientes': typeof AppClientesRouteWithChildren
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/roteiros': typeof AppRoteirosRouteWithChildren
   '/tarefas': typeof AppTarefasRoute
   '/viajante/$id': typeof ViajanteIdRoute
+  '/clientes/$id': typeof AppClientesIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
@@ -165,7 +172,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
   '/checklist-templates': typeof AppChecklistTemplatesRoute
-  '/clientes': typeof AppClientesRoute
+  '/clientes': typeof AppClientesRouteWithChildren
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -173,6 +180,7 @@ export interface FileRoutesByTo {
   '/tarefas': typeof AppTarefasRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/': typeof AppIndexRoute
+  '/clientes/$id': typeof AppClientesIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
@@ -188,7 +196,7 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRoute
   '/_app/biblioteca': typeof AppBibliotecaRoute
   '/_app/checklist-templates': typeof AppChecklistTemplatesRoute
-  '/_app/clientes': typeof AppClientesRoute
+  '/_app/clientes': typeof AppClientesRouteWithChildren
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/leads': typeof AppLeadsRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
@@ -197,6 +205,7 @@ export interface FileRoutesById {
   '/_app/tarefas': typeof AppTarefasRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/clientes/$id': typeof AppClientesIdRoute
   '/_app/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
@@ -221,6 +230,7 @@ export interface FileRouteTypes {
     | '/roteiros'
     | '/tarefas'
     | '/viajante/$id'
+    | '/clientes/$id'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
@@ -242,6 +252,7 @@ export interface FileRouteTypes {
     | '/tarefas'
     | '/viajante/$id'
     | '/'
+    | '/clientes/$id'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
@@ -265,6 +276,7 @@ export interface FileRouteTypes {
     | '/_app/tarefas'
     | '/viajante/$id'
     | '/_app/'
+    | '/_app/clientes/$id'
     | '/_app/roteiros/$id'
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
@@ -432,8 +444,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRoteirosIdRouteImport
       parentRoute: typeof AppRoteirosRoute
     }
+    '/_app/clientes/$id': {
+      id: '/_app/clientes/$id'
+      path: '/$id'
+      fullPath: '/clientes/$id'
+      preLoaderRoute: typeof AppClientesIdRouteImport
+      parentRoute: typeof AppClientesRoute
+    }
   }
 }
+
+interface AppClientesRouteChildren {
+  AppClientesIdRoute: typeof AppClientesIdRoute
+}
+
+const AppClientesRouteChildren: AppClientesRouteChildren = {
+  AppClientesIdRoute: AppClientesIdRoute,
+}
+
+const AppClientesRouteWithChildren = AppClientesRoute._addFileChildren(
+  AppClientesRouteChildren,
+)
 
 interface AppRoteirosRouteChildren {
   AppRoteirosIdRoute: typeof AppRoteirosIdRoute
@@ -453,7 +484,7 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppBibliotecaRoute: typeof AppBibliotecaRoute
   AppChecklistTemplatesRoute: typeof AppChecklistTemplatesRoute
-  AppClientesRoute: typeof AppClientesRoute
+  AppClientesRoute: typeof AppClientesRouteWithChildren
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppLeadsRoute: typeof AppLeadsRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
@@ -467,7 +498,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppBibliotecaRoute: AppBibliotecaRoute,
   AppChecklistTemplatesRoute: AppChecklistTemplatesRoute,
-  AppClientesRoute: AppClientesRoute,
+  AppClientesRoute: AppClientesRouteWithChildren,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppLeadsRoute: AppLeadsRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,

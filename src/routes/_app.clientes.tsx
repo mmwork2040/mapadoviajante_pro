@@ -103,7 +103,7 @@ export interface ClientMember {
   client_id?: string | null;
 }
 
-function extractMembers(prefs: unknown): ClientMember[] {
+export function extractMembers(prefs: unknown): ClientMember[] {
   if (!prefs || typeof prefs !== "object") return [];
   const raw = (prefs as Record<string, unknown>).members;
   if (!Array.isArray(raw)) return [];
