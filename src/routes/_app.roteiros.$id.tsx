@@ -1532,7 +1532,19 @@ function ItineraryDetailPage() {
       </DndContext>
 
 
-      <VouchersCard itineraryId={id} vouchers={it.vouchers || []} onChange={refresh} />
+      {importOpen && (
+        <AttachSourceModal
+          onClose={() => setImportOpen(false)}
+          onDevice={() => {
+            setImportOpen(false);
+            docTargetDayRef.current = "__new__";
+            docInputRef.current?.click();
+          }}
+          onLibrary={(doc) => {
+            void handleLibraryImport(doc);
+          }}
+        />
+      )}
 
       <ItineraryChat it={it} onChange={refresh} />
     </div>
