@@ -358,6 +358,12 @@ function ItinerariesPage() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem asChild>
+                              <Link to="/roteiros/$id" params={{ id: it.id }}>
+                                <RouteIcon className="mr-2 h-4 w-4" /> Abrir
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             {STATUS_COLUMNS.filter((s) => s.key !== it.status).map((s) => (
                               <DropdownMenuItem
                                 key={s.key}
@@ -367,6 +373,7 @@ function ItinerariesPage() {
                               </DropdownMenuItem>
                             ))}
                             <DropdownMenuSeparator />
+
                             <DropdownMenuItem
                               onSelect={() => handleDuplicate(it)}
                               disabled={duplicate.isPending}
