@@ -1548,9 +1548,11 @@ function normalizeChecklist(raw: unknown): LeadChecklistState {
 }
 
 function ChecklistTab({
+  leadId,
   checklists,
   onSave,
 }: {
+  leadId: string;
   checklists: unknown;
   onSave: (c: LeadChecklistState) => void;
 }) {
@@ -1563,7 +1565,40 @@ function ChecklistTab({
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
   const [pickerOpen, setPickerOpen] = useState(false);
   const [newItem, setNewItem] = useState("");
+  const [taskModal, setTaskModal] = useState<
+    | { mode: "create"; itemId: string; label: string }
+    | { mode: "edit"; task: Task }
+    | null
+  >(null);
   const confirm = useConfirm();
+  const qc = useQueryClient();
+
+  // Tarefas do lead, para vincular aos itens do checklist
+  const tasksQ = useQuery({
+    queryKey: ["tasks-by-lead", leadId],
+    queryFn: () => fetchTasks({}).then((rows) => rows.filter((t) => t.lead_id === leadId)),
+    enabled: !!leadId,
+  });
+  const taskByItem = new Map<string, Task>();
+  for (const t of tasksQ.data ?? []) {
+    const cid = extractChecklistItemId(t.description);
+    if (cid) taskByItem.set(cid, t);
+  }
+
+  async function removeTaskForItem(task: Task) {
+    const ok = await confirm({
+      title: "Remover tarefa vinculada?",
+      description: "A tarefa criada a partir deste item será excluída. O item do checklist permanece.",
+      confirmLabel: "Remover",
+      destructive: true,
+    });
+    if (!ok) return;
+    const okDel = await deleteTask(task.id);
+    if (!okDel) return toast.error("Não foi possível remover a tarefa.");
+    toast.success("Tarefa removida.");
+    qc.invalidateQueries({ queryKey: ["tasks-by-lead", leadId] });
+    qc.invalidateQueries({ queryKey: ["tasks"] });
+  }
 
   useEffect(() => {
     setState(normalizeChecklist(checklists));
