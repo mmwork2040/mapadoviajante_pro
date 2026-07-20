@@ -84,6 +84,10 @@ export function CreateTaskModal({
   const [description, setDescription] = useState("");
   const [activityType, setActivityType] = useState<string>("outros");
 
+  const fromChecklist = isEdit
+    ? /\[chk:[^\]]+\]/.test(task?.description ?? "")
+    : !!initial?.checklistItemId;
+
 
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}), enabled: open });
 
