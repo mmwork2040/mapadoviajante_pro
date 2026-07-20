@@ -2004,7 +2004,7 @@ function ChecklistTab({
                 title: taskModal.label,
                 description: `Item do checklist: ${taskModal.label}`,
                 leadId,
-                activityType: "outros",
+                activityType: inferActivityType(taskModal.label),
                 checklistItemId: taskModal.itemId,
               }
             : null
@@ -2012,6 +2012,43 @@ function ChecklistTab({
       />
     </div>
   );
+}
+
+function inferActivityType(label: string): string {
+  const s = label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  const rules: Array<{ type: string; kws: string[] }> = [
+    { type: "whatsapp", kws: ["whatsapp", "whats", "wpp", "zap"] },
+    { type: "call", kws: ["ligar", "ligacao", "telefonar", "telefone", "call "] },
+    { type: "email", kws: ["email", "e-mail", "enviar e-mail", "enviar email"] },
+    {
+      type: "meeting",
+      kws: ["reuniao", "reuniao ", "meeting", "encontro", "visita", "apresentacao"],
+    },
+    {
+      type: "document",
+      kws: [
+        "documento",
+        "contrato",
+        "voucher",
+        "comprovante",
+        "passaporte",
+        "visto",
+        "bilhete",
+        "ficha",
+        "pdf",
+        "assinar",
+        "anexar",
+        "upload",
+        "enviar arquivo",
+      ],
+    },
+    { type: "note", kws: ["observacao", "nota", "anotar", "registrar"] },
+  ];
+  for (const r of rules) if (r.kws.some((k) => s.includes(k))) return r.type;
+  return "outros";
 }
 
 function ChecklistItemTaskAction({
