@@ -191,13 +191,17 @@ function ItinerariesPage() {
       />
 
       {isError ? (
-        <QueryError message="Não foi possível carregar os roteiros." onRetry={() => refetch()} />
+        <QueryError message="Não foi possível carregar as viagens." onRetry={() => refetch()} />
       ) : isLoading ? (
         <p className="text-muted-foreground">Carregando…</p>
-      ) : items.length === 0 ? (
-        <p className="text-muted-foreground">Nenhum roteiro ainda. Crie o primeiro!</p>
+      ) : scopedItems.length === 0 ? (
+        <p className="text-muted-foreground">
+          {effectiveOnlyMine && items.length > 0
+            ? "Nenhuma viagem atribuída a você."
+            : "Nenhuma viagem ainda. Crie a primeira!"}
+        </p>
       ) : filteredItems.length === 0 ? (
-        <p className="text-muted-foreground">Nenhum roteiro encontrado para “{search}”.</p>
+        <p className="text-muted-foreground">Nenhuma viagem encontrada para “{search}”.</p>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredItems.map((it) => (
