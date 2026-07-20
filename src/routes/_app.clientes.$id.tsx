@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import {
   fetchClientById,
   fetchLeadsByClient,
-  updateClient as _updateClient,
+  
   deleteClient,
 } from "@/lib/services";
 import type { Client, Lead, LeadStatus } from "@/lib/types";
@@ -384,8 +384,6 @@ function ClientProfilePage() {
         />
       )}
 
-      {/* Silence unused import in strict builds */}
-      {false && <span>{typeof updateClient}</span>}
     </div>
   );
 }
