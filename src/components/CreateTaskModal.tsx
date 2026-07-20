@@ -84,6 +84,10 @@ export function CreateTaskModal({
   const [description, setDescription] = useState("");
   const [activityType, setActivityType] = useState<string>("outros");
 
+  const fromChecklist = isEdit
+    ? /\[chk:[^\]]+\]/.test(task?.description ?? "")
+    : !!initial?.checklistItemId;
+
 
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}), enabled: open });
 
@@ -219,7 +223,14 @@ export function CreateTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Emitir bilhete, Enviar voucher, Confirmar reserva…"
+              disabled={fromChecklist}
+              readOnly={fromChecklist}
             />
+            {fromChecklist && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Item do checklist: {title || "—"} — título não pode ser alterado.
+              </p>
+            )}
           </div>
 
           <div>
@@ -258,6 +269,7 @@ export function CreateTaskModal({
                   setLeadId(v);
                   setItineraryId("");
                 }}
+                disabled={fromChecklist}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione cliente" />
