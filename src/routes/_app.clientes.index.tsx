@@ -422,10 +422,7 @@ function ClientCard({
         })()}
       </div>
 
-      <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-        <span className="text-xs text-muted-foreground">
-          {tripCount} {tripCount === 1 ? "viagem" : "viagens"}
-        </span>
+      <div className="mt-3 flex items-center justify-end border-t border-border pt-3">
         <Link
           to="/clientes/$id"
           params={{ id: client.id }}
@@ -434,6 +431,7 @@ function ClientCard({
           Abrir perfil <ExternalLink className="h-3 w-3" />
         </Link>
       </div>
+
     </div>
   );
 }
