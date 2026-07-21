@@ -1559,6 +1559,14 @@ function ItineraryDetailPage() {
           onLibrary={(doc) => {
             void handleLibraryImport(doc);
           }}
+          onDrive={
+            driveEnabled
+              ? () => {
+                  setImportOpen(false);
+                  setDriveOpen(true);
+                }
+              : undefined
+          }
         />
       )}
 
