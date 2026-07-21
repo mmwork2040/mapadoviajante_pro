@@ -1142,6 +1142,7 @@ function TimelineTab({
         );
       })}
     </ol>
+    </div>
   );
 }
 
