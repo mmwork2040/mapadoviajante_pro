@@ -386,32 +386,42 @@ function ClientProfilePage() {
             Nenhum membro cadastrado.
           </p>
         ) : (
-          <ul className="grid gap-2 sm:grid-cols-2">
+          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
             {members.map((m: ClientMember) => (
-              <li
+              <div
                 key={m.id}
-                className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                className="flex w-[220px] shrink-0 snap-start flex-col gap-2 rounded-xl border border-border bg-background p-3 shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[240px]"
               >
-                <div className="min-w-0">
-                  <div className="truncate font-medium">{m.name}</div>
-                  {m.relationship && (
-                    <div className="truncate text-xs text-muted-foreground">{m.relationship}</div>
-                  )}
+                <div className="flex items-center gap-2">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                    {initials(m.name)}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{m.name}</div>
+                    {m.relationship && (
+                      <div className="truncate text-xs text-muted-foreground">{m.relationship}</div>
+                    )}
+                  </div>
                 </div>
-                {m.client_id && (
+                {m.client_id ? (
                   <Link
                     to="/clientes/$id"
                     params={{ id: m.client_id }}
-                    className="shrink-0 text-xs font-semibold text-primary hover:underline"
+                    className="mt-auto inline-flex items-center justify-center gap-1 rounded-md border border-input px-2 py-1 text-xs font-semibold text-primary hover:bg-muted"
                   >
-                    Abrir
+                    Abrir perfil
                   </Link>
+                ) : (
+                  <span className="mt-auto inline-flex items-center justify-center rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                    Sem cadastro
+                  </span>
                 )}
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
       </section>
+
 
       {/* Preferências */}
       <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
