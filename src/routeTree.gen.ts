@@ -26,6 +26,7 @@ import { Route as AppChecklistTemplatesRouteImport } from './routes/_app.checkli
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
+import { Route as AppClientesIndexRouteImport } from './routes/_app.clientes.index'
 import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
 import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
@@ -116,6 +117,11 @@ const AppRoteirosIndexRoute = AppRoteirosIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoteirosRoute,
 } as any)
+const AppClientesIndexRoute = AppClientesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppClientesRoute,
+} as any)
 const ApiPublicPushDeliveryRoute = ApiPublicPushDeliveryRouteImport.update({
   id: '/api/public/push-delivery',
   path: '/api/public/push-delivery',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/clientes/': typeof AppClientesIndexRoute
   '/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -172,7 +179,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
   '/checklist-templates': typeof AppChecklistTemplatesRoute
-  '/clientes': typeof AppClientesRouteWithChildren
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -185,6 +191,7 @@ export interface FileRoutesByTo {
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/clientes': typeof AppClientesIndexRoute
   '/roteiros': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesById {
@@ -210,6 +217,7 @@ export interface FileRoutesById {
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/_app/clientes/': typeof AppClientesIndexRoute
   '/_app/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRouteTypes {
@@ -235,6 +243,7 @@ export interface FileRouteTypes {
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/clientes/'
     | '/roteiros/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -244,7 +253,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/biblioteca'
     | '/checklist-templates'
-    | '/clientes'
     | '/financeiro'
     | '/leads'
     | '/notificacoes'
@@ -257,6 +265,7 @@ export interface FileRouteTypes {
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/clientes'
     | '/roteiros'
   id:
     | '__root__'
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/_app/clientes/'
     | '/_app/roteiros/'
   fileRoutesById: FileRoutesById
 }
@@ -416,6 +426,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRoteirosIndexRouteImport
       parentRoute: typeof AppRoteirosRoute
     }
+    '/_app/clientes/': {
+      id: '/_app/clientes/'
+      path: '/'
+      fullPath: '/clientes/'
+      preLoaderRoute: typeof AppClientesIndexRouteImport
+      parentRoute: typeof AppClientesRoute
+    }
     '/api/public/push-delivery': {
       id: '/api/public/push-delivery'
       path: '/api/public/push-delivery'
@@ -456,10 +473,12 @@ declare module '@tanstack/react-router' {
 
 interface AppClientesRouteChildren {
   AppClientesIdRoute: typeof AppClientesIdRoute
+  AppClientesIndexRoute: typeof AppClientesIndexRoute
 }
 
 const AppClientesRouteChildren: AppClientesRouteChildren = {
   AppClientesIdRoute: AppClientesIdRoute,
+  AppClientesIndexRoute: AppClientesIndexRoute,
 }
 
 const AppClientesRouteWithChildren = AppClientesRoute._addFileChildren(
@@ -523,13 +542,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
