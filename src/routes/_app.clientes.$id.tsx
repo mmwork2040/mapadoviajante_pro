@@ -371,7 +371,7 @@ function ClientProfilePage() {
             Nenhum membro cadastrado.
           </p>
         ) : (
-          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+          <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
             {members.map((m: ClientMember) => (
               <div
                 key={m.id}
@@ -583,7 +583,7 @@ function TripsCarousel({
   }
   if (itineraries.length > 0) {
     return (
-      <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+      <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
         {itineraries.map((it) => (
           <Link
             key={it.id}
@@ -636,7 +636,7 @@ function TripsCarousel({
     );
   }
   return (
-    <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+    <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
       {trips.map((t) => {
         const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
         return (
@@ -732,7 +732,7 @@ function DocumentsCarousel({
           Nenhum documento anexado ainda.
         </p>
       ) : (
-        <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+        <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
           {documents.map((d) => {
             const link = isLinkDoc(d);
             const img = isImageDoc(d);
