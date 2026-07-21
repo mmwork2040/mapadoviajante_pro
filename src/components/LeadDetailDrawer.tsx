@@ -641,12 +641,12 @@ export function LeadDetailDrawer({
               }}
             >
               {(lead.status === "closed" || lead.status === "lost") && (
-                <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-amber-500/10 px-5 py-2 text-xs font-medium text-amber-800 dark:text-amber-300">
-                  <Lock className="h-3.5 w-3.5" />
-                  Viagem {lead.status === "closed" ? "fechada" : "perdida"} — somente leitura. Altere o status no topo para editar.
+                <div className="sr-only" aria-live="polite">
+                  Viagem {lead.status === "closed" ? "fechada" : "perdida"} — somente leitura.
                 </div>
               )}
               <fieldset
+
                 disabled={lead.status === "closed" || lead.status === "lost"}
                 className="min-w-0 border-0 p-5 disabled:opacity-95"
               >
