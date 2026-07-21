@@ -123,6 +123,60 @@ function fmtDate(v?: string | null) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  secondaryLabel,
+  onSecondary,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center">
+      <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+        <Icon className="h-6 w-6" />
+      </div>
+      <div className="space-y-1">
+        <div className="text-sm font-semibold text-foreground">{title}</div>
+        {description && (
+          <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
+        )}
+      </div>
+      {(actionLabel || secondaryLabel) && (
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+          {actionLabel && onAction && (
+            <button
+              type="button"
+              onClick={onAction}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" /> {actionLabel}
+            </button>
+          )}
+          {secondaryLabel && onSecondary && (
+            <button
+              type="button"
+              onClick={onSecondary}
+              className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+            >
+              {secondaryLabel}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ClientProfilePage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
@@ -253,6 +307,8 @@ function ClientProfilePage() {
 
   const members = extractMembers(client.preferences);
   const wa = waLink(client.whatsapp, client.name);
+  const openEdit = () => navigate({ to: "/clientes", search: { edit: client.id } as never });
+  const openNew = () => setOpenNewProposal(true);
 
   return (
     <div className="space-y-4">
@@ -367,9 +423,13 @@ function ClientProfilePage() {
 
       <Collapsible icon={Users} title="Membros da viagem" badge={members.length}>
         {members.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            Nenhum membro cadastrado.
-          </p>
+          <EmptyState
+            icon={Users}
+            title="Nenhum membro cadastrado"
+            description="Adicione familiares ou companheiros de viagem no cadastro do cliente."
+            actionLabel="Adicionar membros"
+            onAction={openEdit}
+          />
         ) : (
           <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
             {members.map((m: ClientMember) => (
@@ -430,17 +490,23 @@ function ClientProfilePage() {
         {tab === "documentos" && (
           <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
         )}
-        {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} />}
+        {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} onNew={openNew} />}
         {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} />}
-        {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} />}
-        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} />}
-        {tab === "datas" && <DatasTab client={client} />}
-        {tab === "preferencias" && <PreferencesView prefs={client.preferences} />}
+        {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={openNew} />}
+        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} />}
+        {tab === "datas" && <DatasTab client={client} onEdit={openEdit} />}
+        {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={openEdit} />}
         {tab === "anotacoes" && (
           client.notes?.trim() ? (
             <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
           ) : (
-            <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma anotação registrada.</p>
+            <EmptyState
+              icon={StickyNote}
+              title="Nenhuma anotação registrada"
+              description="Anote preferências, restrições ou observações importantes sobre o cliente."
+              actionLabel="Adicionar anotação"
+              onAction={openEdit}
+            />
           )
         )}
       </Collapsible>
@@ -570,15 +636,13 @@ function TripsCarousel({
 }) {
   if (itineraries.length === 0 && trips.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-6">
-        <p className="text-sm text-muted-foreground">Nenhuma viagem registrada.</p>
-        <button
-          onClick={onNew}
-          className="flex items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-xs font-semibold hover:bg-muted"
-        >
-          <Plus className="h-3.5 w-3.5" /> Nova proposta
-        </button>
-      </div>
+      <EmptyState
+        icon={Plane}
+        title="Nenhuma viagem registrada"
+        description="Comece uma nova proposta para este cliente e acompanhe todo o pipeline por aqui."
+        actionLabel="Nova proposta"
+        onAction={onNew}
+      />
     );
   }
   if (itineraries.length > 0) {
@@ -728,9 +792,13 @@ function DocumentsCarousel({
         </button>
       </div>
       {documents.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          Nenhum documento anexado ainda.
-        </p>
+        <EmptyState
+          icon={FolderOpen}
+          title="Nenhum documento anexado"
+          description="Anexe passaporte, vouchers, contratos ou qualquer arquivo enviado pelo cliente."
+          actionLabel={uploading ? "Enviando..." : "Anexar arquivo"}
+          onAction={() => inputRef.current?.click()}
+        />
       ) : (
         <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
           {documents.map((d) => {
@@ -787,15 +855,24 @@ function InfoRow({
   );
 }
 
-function PreferencesView({ prefs }: { prefs: unknown }) {
+function PreferencesView({ prefs, onEdit }: { prefs: unknown; onEdit?: () => void }) {
+  const empty = (
+    <EmptyState
+      icon={Sparkles}
+      title="Nenhuma preferência cadastrada"
+      description="Registre companhia aérea preferida, tipo de hospedagem, restrições alimentares e mais."
+      actionLabel={onEdit ? "Adicionar preferências" : undefined}
+      onAction={onEdit}
+    />
+  );
   if (!prefs || typeof prefs !== "object") {
-    return <p className="text-sm text-muted-foreground">Nenhuma preferência cadastrada.</p>;
+    return empty;
   }
   const src = prefs as Record<string, unknown>;
   const { members: _m, ...rest } = src;
   const entries = Object.entries(rest);
   if (entries.length === 0) {
-    return <p className="text-sm text-muted-foreground">Nenhuma preferência cadastrada.</p>;
+    return empty;
   }
   return (
     <dl className="grid gap-2 sm:grid-cols-2">
@@ -843,7 +920,7 @@ function fmtCurrency(n: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
 }
 
-function FinanceiroTab({ trips, expenses }: { trips: Lead[]; expenses: TripExpense[] }) {
+function FinanceiroTab({ trips, expenses, onNew }: { trips: Lead[]; expenses: TripExpense[]; onNew: () => void }) {
   const totals = useMemo(() => {
     const totalOrcado = trips.reduce((s, t) => s + (t.budget_total || t.value || 0), 0);
     const totalGasto = expenses.reduce((s, e) => s + (e.amount || 0), 0);
@@ -857,7 +934,15 @@ function FinanceiroTab({ trips, expenses }: { trips: Lead[]; expenses: TripExpen
   }, [trips, expenses]);
 
   if (trips.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Sem dados financeiros ainda.</p>;
+    return (
+      <EmptyState
+        icon={DollarSign}
+        title="Sem dados financeiros"
+        description="Vincule orçamentos e despesas a uma viagem para ver o resumo financeiro do cliente."
+        actionLabel="Nova proposta"
+        onAction={onNew}
+      />
+    );
   }
   return (
     <div className="space-y-3">
@@ -894,7 +979,15 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 function TarefasTab({ tasks, onOpenLead }: { tasks: Task[]; onOpenLead: (id: string) => void }) {
   if (tasks.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma tarefa vinculada.</p>;
+    return (
+      <EmptyState
+        icon={ListChecks}
+        title="Nenhuma tarefa vinculada"
+        description="Crie tarefas nas viagens do cliente ou na página de Tarefas para acompanhá-las aqui."
+        secondaryLabel="Abrir tarefas"
+        onSecondary={() => { window.location.assign("/tarefas"); }}
+      />
+    );
   }
   return (
     <ul className="space-y-2">
@@ -931,10 +1024,12 @@ function TimelineTab({
   activities,
   trips,
   onOpenLead,
+  onNew,
 }: {
   activities: LeadActivity[];
   trips: Lead[];
   onOpenLead: (id: string) => void;
+  onNew: () => void;
 }) {
   const tripMap = useMemo(() => {
     const m = new Map<string, Lead>();
@@ -942,7 +1037,15 @@ function TimelineTab({
     return m;
   }, [trips]);
   if (activities.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Sem atividades registradas.</p>;
+    return (
+      <EmptyState
+        icon={ActivityIcon}
+        title="Sem atividades registradas"
+        description="Cada contato, e-mail ou mudança de status nas viagens do cliente aparece aqui."
+        actionLabel="Nova proposta"
+        onAction={onNew}
+      />
+    );
   }
   return (
     <ol className="space-y-2">
@@ -973,7 +1076,7 @@ function TimelineTab({
   );
 }
 
-function DestinosTab({ trips, itineraries }: { trips: Lead[]; itineraries: Itinerary[] }) {
+function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries: Itinerary[]; onNew: () => void }) {
   const list = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of trips) if (t.destination) map.set(t.destination, (map.get(t.destination) || 0) + 1);
@@ -981,7 +1084,15 @@ function DestinosTab({ trips, itineraries }: { trips: Lead[]; itineraries: Itine
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [trips, itineraries]);
   if (list.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhum destino registrado.</p>;
+    return (
+      <EmptyState
+        icon={MapIcon}
+        title="Nenhum destino registrado"
+        description="Assim que houver propostas ou roteiros, os destinos aparecem aqui."
+        actionLabel="Nova proposta"
+        onAction={onNew}
+      />
+    );
   }
   return (
     <div className="flex flex-wrap gap-2">
@@ -1005,14 +1116,22 @@ function daysUntil(dateStr?: string | null): number | null {
   return diff;
 }
 
-function DatasTab({ client }: { client: Client }) {
+function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
   const items: { label: string; date?: string | null; hint?: string }[] = [
     { label: "Aniversário", date: client.birth_date, hint: "Data de nascimento" },
     { label: "Validade do passaporte", date: client.passport_expiry, hint: "Renovação" },
   ];
   const visible = items.filter((i) => i.date);
   if (visible.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma data importante cadastrada.</p>;
+    return (
+      <EmptyState
+        icon={CalendarClock}
+        title="Nenhuma data importante"
+        description="Cadastre data de nascimento e validade do passaporte para receber lembretes."
+        actionLabel="Editar cadastro"
+        onAction={onEdit}
+      />
+    );
   }
   return (
     <ul className="space-y-2">
