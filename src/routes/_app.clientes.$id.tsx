@@ -979,7 +979,15 @@ function StatCard({ label, value }: { label: string; value: string }) {
 
 function TarefasTab({ tasks, onOpenLead }: { tasks: Task[]; onOpenLead: (id: string) => void }) {
   if (tasks.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma tarefa vinculada.</p>;
+    return (
+      <EmptyState
+        icon={ListChecks}
+        title="Nenhuma tarefa vinculada"
+        description="Crie tarefas nas viagens do cliente ou na página de Tarefas para acompanhá-las aqui."
+        secondaryLabel="Abrir tarefas"
+        onSecondary={() => { window.location.assign("/tarefas"); }}
+      />
+    );
   }
   return (
     <ul className="space-y-2">
