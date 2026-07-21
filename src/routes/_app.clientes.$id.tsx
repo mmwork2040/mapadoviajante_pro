@@ -530,7 +530,7 @@ function TabPill({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex min-w-[84px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
+      className={`relative flex min-w-[84px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-md px-4 py-2.5 text-xs font-semibold transition ${
         active
           ? "bg-primary text-primary-foreground shadow-sm"
           : "text-muted-foreground hover:bg-background hover:text-foreground"
@@ -540,9 +540,12 @@ function TabPill({
       <span className="leading-none">{children}</span>
       {typeof count === "number" && count > 0 && (
         <span
-          className={`absolute -right-1 -top-1 min-w-[18px] rounded-full px-1 py-0.5 text-[10px] font-bold leading-none ${
-            active ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"
+          className={`absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-md border px-1 text-[10px] font-bold leading-none shadow-sm ${
+            active
+              ? "border-primary/30 bg-background text-primary"
+              : "border-border bg-primary text-primary-foreground"
           }`}
+
         >
           {count}
         </span>
