@@ -505,7 +505,10 @@ function ClientProfilePage() {
         {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={() => openEdit("preferencias")} />}
         {tab === "anotacoes" && (
           client.notes?.trim() ? (
-            <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
+            <div>
+              <TabActionBar description="Anotações do cliente." actionLabel="Editar anotação" onAction={() => openEdit("notas")} />
+              <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
+            </div>
           ) : (
             <EmptyState
               icon={StickyNote}
