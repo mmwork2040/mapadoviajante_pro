@@ -419,34 +419,41 @@ function ClientProfilePage() {
         )}
       </Collapsible>
 
-      {/* Última sessão: Viagens + Documentos em abas */}
+      {/* Histórico do cliente com múltiplas abas */}
       <Collapsible icon={FolderOpen} title="Histórico do cliente" defaultOpen>
-        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-2xl border border-border bg-muted/40 p-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
-          <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>
-            Viagens
-          </TabPill>
-          <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>
-            Documentos
-          </TabPill>
+        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-lg border border-border bg-muted/40 p-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+          <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>Viagens</TabPill>
+          <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>Documentos</TabPill>
+          <TabPill active={tab === "financeiro"} onClick={() => setTab("financeiro")} icon={DollarSign} count={expenses.length}>Financeiro</TabPill>
+          <TabPill active={tab === "tarefas"} onClick={() => setTab("tarefas")} icon={ListChecks} count={tasks.length}>Tarefas</TabPill>
+          <TabPill active={tab === "timeline"} onClick={() => setTab("timeline")} icon={ActivityIcon} count={activities.length}>Timeline</TabPill>
+          <TabPill active={tab === "destinos"} onClick={() => setTab("destinos")} icon={MapIcon}>Destinos</TabPill>
+          <TabPill active={tab === "datas"} onClick={() => setTab("datas")} icon={CalendarClock}>Datas</TabPill>
+          <TabPill active={tab === "preferencias"} onClick={() => setTab("preferencias")} icon={Sparkles}>Preferências</TabPill>
+          <TabPill active={tab === "anotacoes"} onClick={() => setTab("anotacoes")} icon={StickyNote}>Anotações</TabPill>
         </div>
 
-        {tab === "viagens" ? (
-          <TripsCarousel
-            itineraries={itineraries}
-            trips={trips}
-            clientId={client.id}
-            onOpenLead={(lid) => setOpenLeadId(lid)}
-            onNew={() => setOpenNewProposal(true)}
-          />
-        ) : (
-          <DocumentsCarousel
-            documents={documents}
-            onPreview={setPreviewDoc}
-            clientId={client.id}
-            onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })}
-          />
+        {tab === "viagens" && (
+          <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
+        )}
+        {tab === "documentos" && (
+          <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
+        )}
+        {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} />}
+        {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} />}
+        {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} />}
+        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} />}
+        {tab === "datas" && <DatasTab client={client} />}
+        {tab === "preferencias" && <PreferencesView prefs={client.preferences} />}
+        {tab === "anotacoes" && (
+          client.notes?.trim() ? (
+            <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma anotação registrada.</p>
+          )
         )}
       </Collapsible>
+
 
 
 
