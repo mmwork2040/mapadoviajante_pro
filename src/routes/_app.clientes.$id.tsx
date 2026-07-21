@@ -102,6 +102,17 @@ function ClientProfilePage() {
     queryFn: () => fetchLeadsByClient(id),
   });
 
+  const tripIds = trips.map((t) => t.id);
+  const { data: itineraries = [] } = useQuery({
+    queryKey: ["client-itineraries", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const all = await fetchItineraries();
+      const set = new Set(tripIds);
+      return all.filter((it) => it.lead_id && set.has(it.lead_id));
+    },
+  });
+
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openNewProposal, setOpenNewProposal] = useState(false);
 
