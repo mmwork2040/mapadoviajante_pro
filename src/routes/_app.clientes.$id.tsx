@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   Mail,
@@ -20,6 +20,9 @@ import {
   Trash2,
   MoreVertical,
   Calendar,
+  ChevronDown,
+  FileText,
+  FolderOpen,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
@@ -37,6 +40,9 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate, initials } from "@/lib/ui";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
+import { supabase } from "@/integrations/supabase/client";
+import { isImageDoc, isLinkDoc, type LeadDocument } from "@/lib/lead-documents";
+import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -113,8 +119,26 @@ function ClientProfilePage() {
     },
   });
 
+  const { data: documents = [] } = useQuery({
+    queryKey: ["client-documents", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await (
+        supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }
+      )
+        .from("crm_lead_documents")
+        .select("*")
+        .in("lead_id", tripIds)
+        .order("created_at", { ascending: false });
+      if (error) return [] as LeadDocument[];
+      return (data as unknown as LeadDocument[]) || [];
+    },
+  });
+
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openNewProposal, setOpenNewProposal] = useState(false);
+  const [tab, setTab] = useState<"viagens" | "documentos">("viagens");
+  const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
 
   const delMut = useMutation({
     mutationFn: () => deleteClient(id),
@@ -143,7 +167,7 @@ function ClientProfilePage() {
   const wa = waLink(client.whatsapp, client.name);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <PageHeader
         icon={UserIcon}
         title={client.name}
@@ -200,9 +224,8 @@ function ClientProfilePage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Contato */}
-        <Card icon={UserIcon} title="Contato">
+      <Collapsible icon={UserIcon} title="Contato">
+        <div className="space-y-2">
           <InfoRow icon={Mail} label="E-mail">
             {client.email ? (
               <a href={`mailto:${client.email}`} className="text-primary hover:underline">
@@ -221,166 +244,40 @@ function ClientProfilePage() {
             ) : "—"}
           </InfoRow>
           <InfoRow icon={Cake} label="Nascimento">{fmtDate(client.birth_date)}</InfoRow>
-        </Card>
+        </div>
+      </Collapsible>
 
-        {/* Documentos */}
-        <Card icon={IdCard} title="Documentos">
+      <Collapsible icon={IdCard} title="Documentos pessoais">
+        <div className="space-y-2">
           <InfoRow label="CPF">{client.cpf || "—"}</InfoRow>
           <InfoRow label="Passaporte">{client.passport_number || "—"}</InfoRow>
           <InfoRow icon={Globe2} label="País emissor">{client.passport_country || "—"}</InfoRow>
           <InfoRow label="Validade">{fmtDate(client.passport_expiry)}</InfoRow>
-        </Card>
-
-        {/* Endereço */}
-        <Card icon={MapPin} title="Endereço">
-          {(() => {
-            const line1 = [client.address_street, client.address_number]
-              .filter(Boolean)
-              .join(", ");
-            const line2 = [client.address_neighborhood, client.address_complement]
-              .filter(Boolean)
-              .join(" • ");
-            const line3 = [
-              [client.address_city, client.address_state].filter(Boolean).join(" - "),
-              client.address_zip,
-            ]
-              .filter(Boolean)
-              .join(" · ");
-            const hasAny = line1 || line2 || line3 || client.address_country;
-            if (!hasAny) return <p className="text-sm text-muted-foreground">Endereço não cadastrado.</p>;
-            return (
-              <div className="space-y-1 text-sm">
-                {line1 && <div>{line1}</div>}
-                {line2 && <div className="text-muted-foreground">{line2}</div>}
-                {line3 && <div className="text-muted-foreground">{line3}</div>}
-                {client.address_country && <div className="text-muted-foreground">{client.address_country}</div>}
-              </div>
-            );
-          })()}
-        </Card>
-      </div>
-
-      {/* Viagens */}
-      <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Plane className="h-4 w-4 text-primary" />
-            <h2 className="text-sm font-semibold">Viagens</h2>
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-              {itineraries.length || trips.length}
-            </span>
-          </div>
-          <button
-            onClick={() => setOpenNewProposal(true)}
-            className="flex items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-xs font-semibold hover:bg-muted"
-          >
-            <Plus className="h-3.5 w-3.5" /> Nova
-          </button>
         </div>
-        {itineraries.length === 0 && trips.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            Nenhuma viagem registrada.
-          </p>
-        ) : itineraries.length > 0 ? (
-          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
-            {itineraries.map((it: Itinerary) => (
-              <Link
-                key={it.id}
-                to="/roteiros/$id"
-                params={{ id: it.id }}
-                className="group flex w-[280px] shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-background shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[300px]"
-              >
-                <div className="relative flex w-24 shrink-0 flex-col justify-end overflow-hidden bg-muted/60 p-3">
-                  {it.cover_image ? (
-                    <CoverImage value={it.cover_image} alt={it.destination || "Destino"} />
-                  ) : (
-                    <img
-                      src={itineraryPlaceholder}
-                      alt="Destino sem imagem"
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-                  <div className="relative flex items-center gap-1 text-xs font-bold text-white">
-                    <MapPin className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{it.destination || "—"}</span>
-                  </div>
-                </div>
-                <div className="min-w-0 flex-1 p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground">
-                      {initials(it.client_name || it.title)}
-                    </span>
-                    <span className="truncate text-sm font-semibold">
-                      {it.client_name || it.title}
-                    </span>
-                  </div>
-                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                    <p className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 shrink-0" />
-                      <span className="truncate">
-                        {it.start_date ? formatDate(it.start_date) : "—"}
-                        {it.end_date ? ` – ${formatDate(it.end_date)}` : ""}
-                      </span>
-                    </p>
-                    <p className="flex items-center gap-1.5">
-                      <Users className="h-3.5 w-3.5 shrink-0" />
-                      {it.passengers || 1}{" "}
-                      {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
-            {trips.map((t: Lead) => {
-              const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setOpenLeadId(t.id)}
-                  className="group flex min-h-[120px] w-[240px] shrink-0 snap-start flex-col justify-between gap-2 rounded-xl border border-border bg-background p-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[260px]"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Plane className="h-4 w-4" />
-                    </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
-                      {meta.label}
-                    </span>
-                  </div>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold">{t.name || "Viagem sem título"}</div>
-                    {t.destination && (
-                      <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{t.destination}</span>
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      </Collapsible>
 
-      {/* CoverImage helper */}
+      <Collapsible icon={MapPin} title="Endereço">
+        {(() => {
+          const line1 = [client.address_street, client.address_number].filter(Boolean).join(", ");
+          const line2 = [client.address_neighborhood, client.address_complement].filter(Boolean).join(" • ");
+          const line3 = [
+            [client.address_city, client.address_state].filter(Boolean).join(" - "),
+            client.address_zip,
+          ].filter(Boolean).join(" · ");
+          const hasAny = line1 || line2 || line3 || client.address_country;
+          if (!hasAny) return <p className="text-sm text-muted-foreground">Endereço não cadastrado.</p>;
+          return (
+            <div className="space-y-1 text-sm">
+              {line1 && <div>{line1}</div>}
+              {line2 && <div className="text-muted-foreground">{line2}</div>}
+              {line3 && <div className="text-muted-foreground">{line3}</div>}
+              {client.address_country && <div className="text-muted-foreground">{client.address_country}</div>}
+            </div>
+          );
+        })()}
+      </Collapsible>
 
-
-      {/* Membros */}
-      <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2">
-          <Users className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold">Membros da viagem</h2>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-            {members.length}
-          </span>
-        </div>
+      <Collapsible icon={Users} title="Membros da viagem" badge={members.length}>
         {members.length === 0 ? (
           <p className="py-4 text-center text-sm text-muted-foreground">
             Nenhum membro cadastrado.
@@ -420,30 +317,48 @@ function ClientProfilePage() {
             ))}
           </div>
         )}
-      </section>
+      </Collapsible>
 
-
-      {/* Preferências */}
-      <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold">Preferências base</h2>
-        </div>
+      <Collapsible icon={Sparkles} title="Preferências base">
         <PreferencesView prefs={client.preferences} />
-      </section>
+      </Collapsible>
 
-      {/* Notas */}
-      <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <div className="mb-3 flex items-center gap-2">
-          <StickyNote className="h-4 w-4 text-primary" />
-          <h2 className="text-sm font-semibold">Observações</h2>
-        </div>
+      <Collapsible icon={StickyNote} title="Observações">
         {client.notes?.trim() ? (
           <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
         ) : (
           <p className="text-sm text-muted-foreground">Nenhuma observação registrada.</p>
         )}
-      </section>
+      </Collapsible>
+
+      {/* Última sessão: Viagens + Documentos em abas */}
+      <Collapsible icon={FolderOpen} title="Histórico do cliente" defaultOpen>
+        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1">
+          <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane}>
+            Viagens
+            <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              {itineraries.length || trips.length}
+            </span>
+          </TabPill>
+          <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText}>
+            Documentos
+            <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+              {documents.length}
+            </span>
+          </TabPill>
+        </div>
+
+        {tab === "viagens" ? (
+          <TripsCarousel
+            itineraries={itineraries}
+            trips={trips}
+            onOpenLead={(lid) => setOpenLeadId(lid)}
+            onNew={() => setOpenNewProposal(true)}
+          />
+        ) : (
+          <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} />
+        )}
+      </Collapsible>
 
       {openLeadId && (
         <LeadDetailDrawer
@@ -472,26 +387,227 @@ function ClientProfilePage() {
         />
       )}
 
+      <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
   );
 }
 
-function Card({
+function Collapsible({
   icon: Icon,
   title,
+  badge,
+  defaultOpen = false,
   children,
 }: {
   icon: React.ComponentType<{ className?: string }>;
   title: string;
-  children: React.ReactNode;
+  badge?: number;
+  defaultOpen?: boolean;
+  children: ReactNode;
 }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-      <div className="mb-3 flex items-center gap-2">
+    <section className="rounded-xl border border-border bg-card shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 p-4 text-left"
+      >
         <Icon className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-semibold">{title}</h2>
+        {typeof badge === "number" && (
+          <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">{badge}</span>
+        )}
+        <ChevronDown className={`ml-auto h-4 w-4 text-muted-foreground transition-transform ${open ? "" : "-rotate-90"}`} />
+      </button>
+      {open && <div className="px-4 pb-4">{children}</div>}
+    </section>
+  );
+}
+
+function TabPill({
+  active,
+  onClick,
+  icon: Icon,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ComponentType<{ className?: string }>;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+        active
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-input bg-background text-foreground hover:bg-muted"
+      }`}
+    >
+      <Icon className="h-3.5 w-3.5" />
+      {children}
+    </button>
+  );
+}
+
+function TripsCarousel({
+  itineraries,
+  trips,
+  onOpenLead,
+  onNew,
+}: {
+  itineraries: Itinerary[];
+  trips: Lead[];
+  onOpenLead: (id: string) => void;
+  onNew: () => void;
+}) {
+  if (itineraries.length === 0 && trips.length === 0) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-6">
+        <p className="text-sm text-muted-foreground">Nenhuma viagem registrada.</p>
+        <button
+          onClick={onNew}
+          className="flex items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+        >
+          <Plus className="h-3.5 w-3.5" /> Nova proposta
+        </button>
       </div>
-      <div className="space-y-2">{children}</div>
+    );
+  }
+  if (itineraries.length > 0) {
+    return (
+      <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+        {itineraries.map((it) => (
+          <Link
+            key={it.id}
+            to="/roteiros/$id"
+            params={{ id: it.id }}
+            className="group flex w-[280px] shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-background shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[300px]"
+          >
+            <div className="relative flex w-24 shrink-0 flex-col justify-end overflow-hidden bg-muted/60 p-3">
+              {it.cover_image ? (
+                <CoverImage value={it.cover_image} alt={it.destination || "Destino"} />
+              ) : (
+                <img
+                  src={itineraryPlaceholder}
+                  alt="Destino sem imagem"
+                  loading="lazy"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+              <div className="relative flex items-center gap-1 text-xs font-bold text-white">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">{it.destination || "—"}</span>
+              </div>
+            </div>
+            <div className="min-w-0 flex-1 p-3">
+              <div className="flex items-center gap-2">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground">
+                  {initials(it.client_name || it.title)}
+                </span>
+                <span className="truncate text-sm font-semibold">{it.client_name || it.title}</span>
+              </div>
+              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                <p className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate">
+                    {it.start_date ? formatDate(it.start_date) : "—"}
+                    {it.end_date ? ` – ${formatDate(it.end_date)}` : ""}
+                  </span>
+                </p>
+                <p className="flex items-center gap-1.5">
+                  <Users className="h-3.5 w-3.5 shrink-0" />
+                  {it.passengers || 1} {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
+                </p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    );
+  }
+  return (
+    <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+      {trips.map((t) => {
+        const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
+        return (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => onOpenLead(t.id)}
+            className="group flex min-h-[120px] w-[240px] shrink-0 snap-start flex-col justify-between gap-2 rounded-xl border border-border bg-background p-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[260px]"
+          >
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Plane className="h-4 w-4" />
+              </div>
+              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
+                {meta.label}
+              </span>
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold">{t.name || "Viagem sem título"}</div>
+              {t.destination && (
+                <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{t.destination}</span>
+                </div>
+              )}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function DocumentsCarousel({
+  documents,
+  onPreview,
+}: {
+  documents: LeadDocument[];
+  onPreview: (d: LeadDocument) => void;
+}) {
+  if (documents.length === 0) {
+    return (
+      <p className="py-6 text-center text-sm text-muted-foreground">
+        Nenhum documento anexado às viagens deste cliente.
+      </p>
+    );
+  }
+  return (
+    <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+      {documents.map((d) => {
+        const link = isLinkDoc(d);
+        const img = isImageDoc(d);
+        const Icon = link ? Globe2 : img ? FileText : FileText;
+        const handleClick = () => {
+          if (link) window.open(d.file_path, "_blank", "noopener,noreferrer");
+          else onPreview(d);
+        };
+        return (
+          <button
+            key={d.id}
+            type="button"
+            onClick={handleClick}
+            className="group flex w-[220px] shrink-0 snap-start flex-col gap-2 rounded-xl border border-border bg-background p-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[240px]"
+          >
+            <div className="flex h-24 items-center justify-center rounded-lg bg-muted">
+              <Icon className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <div className="min-w-0">
+              <div className="truncate text-sm font-semibold" title={d.name}>{d.name}</div>
+              <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                {d.category && <span className="rounded bg-muted px-1.5 py-0.5">{d.category}</span>}
+                {d.created_at && <span>{fmtDate(d.created_at)}</span>}
+              </div>
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -567,3 +683,6 @@ function CoverImage({ value, alt }: { value: string; alt?: string }) {
     </>
   );
 }
+
+// keep Client type referenced for TS consumers of this file
+export type { Client };
