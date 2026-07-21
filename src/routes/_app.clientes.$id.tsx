@@ -596,47 +596,96 @@ function TripsCarousel({
 function DocumentsCarousel({
   documents,
   onPreview,
+  clientId,
+  onUploaded,
 }: {
   documents: LeadDocument[];
   onPreview: (d: LeadDocument) => void;
+  clientId: string;
+  onUploaded: () => void;
 }) {
-  if (documents.length === 0) {
-    return (
-      <p className="py-6 text-center text-sm text-muted-foreground">
-        Nenhum documento anexado às viagens deste cliente.
-      </p>
-    );
-  }
+  const [uploading, setUploading] = useState(false);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleFiles = async (files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    setUploading(true);
+    try {
+      const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
+      if (!agencyId) throw new Error("Sem agência ativa.");
+      const { uploadLeadDocument } = await import("@/lib/lead-documents");
+      for (const file of Array.from(files)) {
+        await uploadLeadDocument({ file, agencyId, clientId });
+      }
+      toast.success(files.length === 1 ? "Arquivo enviado." : `${files.length} arquivos enviados.`);
+      onUploaded();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Falha ao enviar arquivo.");
+    } finally {
+      setUploading(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
+  };
+
   return (
-    <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
-      {documents.map((d) => {
-        const link = isLinkDoc(d);
-        const img = isImageDoc(d);
-        const Icon = link ? Globe2 : img ? FileText : FileText;
-        const handleClick = () => {
-          if (link) window.open(d.file_path, "_blank", "noopener,noreferrer");
-          else onPreview(d);
-        };
-        return (
-          <button
-            key={d.id}
-            type="button"
-            onClick={handleClick}
-            className="group flex w-[220px] shrink-0 snap-start flex-col gap-2 rounded-xl border border-border bg-background p-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[240px]"
-          >
-            <div className="flex h-24 items-center justify-center rounded-lg bg-muted">
-              <Icon className="h-8 w-8 text-muted-foreground" />
-            </div>
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold" title={d.name}>{d.name}</div>
-              <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
-                {d.category && <span className="rounded bg-muted px-1.5 py-0.5">{d.category}</span>}
-                {d.created_at && <span>{fmtDate(d.created_at)}</span>}
-              </div>
-            </div>
-          </button>
-        );
-      })}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground">
+          Documentos das viagens e arquivos anexados diretamente ao cliente.
+        </p>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          className="hidden"
+          onChange={(e) => handleFiles(e.target.files)}
+        />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => inputRef.current?.click()}
+          className="inline-flex items-center gap-1.5 rounded-full border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-muted disabled:opacity-60"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          {uploading ? "Enviando..." : "Anexar"}
+        </button>
+      </div>
+      {documents.length === 0 ? (
+        <p className="py-6 text-center text-sm text-muted-foreground">
+          Nenhum documento anexado ainda.
+        </p>
+      ) : (
+        <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+          {documents.map((d) => {
+            const link = isLinkDoc(d);
+            const img = isImageDoc(d);
+            const Icon = link ? Globe2 : img ? FileText : FileText;
+            const handleClick = () => {
+              if (link) window.open(d.file_path, "_blank", "noopener,noreferrer");
+              else onPreview(d);
+            };
+            return (
+              <button
+                key={d.id}
+                type="button"
+                onClick={handleClick}
+                className="group flex w-[220px] shrink-0 snap-start flex-col gap-2 rounded-xl border border-border bg-background p-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[240px]"
+              >
+                <div className="flex h-24 items-center justify-center rounded-lg bg-muted">
+                  <Icon className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-semibold" title={d.name}>{d.name}</div>
+                  <div className="mt-0.5 flex items-center gap-1 text-[11px] text-muted-foreground">
+                    {d.category && <span className="rounded bg-muted px-1.5 py-0.5">{d.category}</span>}
+                    {d.created_at && <span>{fmtDate(d.created_at)}</span>}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
