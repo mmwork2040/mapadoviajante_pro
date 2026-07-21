@@ -792,9 +792,13 @@ function DocumentsCarousel({
         </button>
       </div>
       {documents.length === 0 ? (
-        <p className="py-6 text-center text-sm text-muted-foreground">
-          Nenhum documento anexado ainda.
-        </p>
+        <EmptyState
+          icon={FolderOpen}
+          title="Nenhum documento anexado"
+          description="Anexe passaporte, vouchers, contratos ou qualquer arquivo enviado pelo cliente."
+          actionLabel={uploading ? "Enviando..." : "Anexar arquivo"}
+          onAction={() => inputRef.current?.click()}
+        />
       ) : (
         <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
           {documents.map((d) => {
