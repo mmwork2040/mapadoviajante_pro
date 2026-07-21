@@ -419,8 +419,17 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
   const [form, setForm] = useState<Partial<Itinerary>>({ status: "draft", passengers: 1, budget: 0 });
   const [coverImage, setCoverImage] = useState("");
   const [saving, setSaving] = useState(false);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const qc = useQueryClient();
   const { data: leads = [] } = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
+  const selectedLead = leads.find((l) => l.id === form.lead_id) || null;
+  const clientId = selectedLead?.client_id || null;
+  const { data: leadClient } = useQuery({
+    queryKey: ["client", clientId],
+    queryFn: () => (clientId ? fetchClientById(clientId) : null),
+    enabled: !!clientId,
+  });
+  const clientMembers = leadClient ? extractMembers(leadClient.preferences) : [];
 
 
 
