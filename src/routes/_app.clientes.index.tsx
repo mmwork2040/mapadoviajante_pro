@@ -1199,9 +1199,17 @@ function MembersTab({
             className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             <Plus className="h-4 w-4" /> Adicionar membro
-          </button>
         </div>
       </div>
+      {converting && (
+        <ClientFormDrawer
+          initial={{ ...EMPTY, name: converting.name }}
+          isEdit={false}
+          saving={convertSaving}
+          onClose={() => setConverting(null)}
+          onSubmit={convertToClient}
+        />
+      )}
     </Section>
   );
 }
