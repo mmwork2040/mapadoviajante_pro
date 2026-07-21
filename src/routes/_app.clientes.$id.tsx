@@ -636,15 +636,13 @@ function TripsCarousel({
 }) {
   if (itineraries.length === 0 && trips.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-3 py-6">
-        <p className="text-sm text-muted-foreground">Nenhuma viagem registrada.</p>
-        <button
-          onClick={onNew}
-          className="flex items-center gap-1.5 rounded-md border border-input px-3 py-1.5 text-xs font-semibold hover:bg-muted"
-        >
-          <Plus className="h-3.5 w-3.5" /> Nova proposta
-        </button>
-      </div>
+      <EmptyState
+        icon={Plane}
+        title="Nenhuma viagem registrada"
+        description="Comece uma nova proposta para este cliente e acompanhe todo o pipeline por aqui."
+        actionLabel="Nova proposta"
+        onAction={onNew}
+      />
     );
   }
   if (itineraries.length > 0) {
