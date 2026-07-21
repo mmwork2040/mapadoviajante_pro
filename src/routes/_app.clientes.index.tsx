@@ -685,6 +685,7 @@ export function ClientFormDrawer({
               <ModalField
                 label="Validade do passaporte"
                 type="date"
+                required={!!form.passport_number?.trim()}
                 value={form.passport_expiry ?? ""}
                 onChange={(v) => set("passport_expiry", v)}
               />
