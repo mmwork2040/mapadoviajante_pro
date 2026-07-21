@@ -839,5 +839,207 @@ function CoverImage({ value, alt }: { value: string; alt?: string }) {
   );
 }
 
+function fmtCurrency(n: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
+}
+
+function FinanceiroTab({ trips, expenses }: { trips: Lead[]; expenses: TripExpense[] }) {
+  const totals = useMemo(() => {
+    const totalOrcado = trips.reduce((s, t) => s + (t.budget_total || t.value || 0), 0);
+    const totalGasto = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const totalEconomia = expenses.reduce((s, e) => s + (e.savings || 0), 0);
+    const closed = trips.filter((t) => t.status === "closed");
+    const totalFechado = closed.reduce((s, t) => s + (t.budget_total || t.value || 0), 0);
+    const ticket = closed.length > 0 ? totalFechado / closed.length : 0;
+    const byMethod: Record<string, number> = {};
+    for (const e of expenses) byMethod[e.paid_with] = (byMethod[e.paid_with] || 0) + (e.amount || 0);
+    return { totalOrcado, totalGasto, totalEconomia, ticket, closedCount: closed.length, byMethod };
+  }, [trips, expenses]);
+
+  if (trips.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Sem dados financeiros ainda.</p>;
+  }
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <StatCard label="Orçado total" value={fmtCurrency(totals.totalOrcado)} />
+        <StatCard label="Gasto (viagens)" value={fmtCurrency(totals.totalGasto)} />
+        <StatCard label="Economia" value={fmtCurrency(totals.totalEconomia)} />
+        <StatCard label={`Ticket médio (${totals.closedCount} fech.)`} value={fmtCurrency(totals.ticket)} />
+      </div>
+      {Object.keys(totals.byMethod).length > 0 && (
+        <div className="rounded-lg border border-border bg-background p-3">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Por forma de pagamento</div>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(totals.byMethod).map(([k, v]) => (
+              <span key={k} className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs">
+                <span className="font-semibold capitalize">{k}</span> · {fmtCurrency(v)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-3">
+      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm font-bold">{value}</div>
+    </div>
+  );
+}
+
+function TarefasTab({ tasks, onOpenLead }: { tasks: Task[]; onOpenLead: (id: string) => void }) {
+  if (tasks.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma tarefa vinculada.</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {tasks.map((t) => (
+        <li key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
+          {t.completed ? (
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          ) : (
+            <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className={`truncate text-sm font-semibold ${t.completed ? "text-muted-foreground line-through" : ""}`}>{t.title}</div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+              {t.due_date && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{fmtDate(t.due_date)}</span>}
+              {t.priority && <span className="rounded bg-muted px-1.5 py-0.5">{t.priority}</span>}
+              {t.lead_id && (
+                <button
+                  type="button"
+                  onClick={() => onOpenLead(t.lead_id as string)}
+                  className="text-primary hover:underline"
+                >
+                  {t.lead?.name || "Abrir viagem"}
+                </button>
+              )}
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TimelineTab({
+  activities,
+  trips,
+  onOpenLead,
+}: {
+  activities: LeadActivity[];
+  trips: Lead[];
+  onOpenLead: (id: string) => void;
+}) {
+  const tripMap = useMemo(() => {
+    const m = new Map<string, Lead>();
+    for (const t of trips) m.set(t.id, t);
+    return m;
+  }, [trips]);
+  if (activities.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Sem atividades registradas.</p>;
+  }
+  return (
+    <ol className="space-y-2">
+      {activities.slice(0, 50).map((a) => {
+        const trip = a.lead_id ? tripMap.get(a.lead_id) : null;
+        return (
+          <li key={a.id} className="rounded-lg border border-border bg-background p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{a.title}</div>
+                {a.details && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{a.details}</div>}
+              </div>
+              <span className="shrink-0 text-[11px] text-muted-foreground">{fmtDate(a.created_at)}</span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="rounded bg-muted px-1.5 py-0.5 capitalize">{a.type}</span>
+              {a.author?.name && <span>por {a.author.name}</span>}
+              {trip && (
+                <button type="button" onClick={() => onOpenLead(trip.id)} className="text-primary hover:underline">
+                  {trip.name}
+                </button>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function DestinosTab({ trips, itineraries }: { trips: Lead[]; itineraries: Itinerary[] }) {
+  const list = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of trips) if (t.destination) map.set(t.destination, (map.get(t.destination) || 0) + 1);
+    for (const it of itineraries) if (it.destination) map.set(it.destination, (map.get(it.destination) || 0) + 1);
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [trips, itineraries]);
+  if (list.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhum destino registrado.</p>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {list.map(([dest, count]) => (
+        <span key={dest} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs">
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          <span className="font-semibold">{dest}</span>
+          {count > 1 && <span className="rounded bg-muted px-1 text-[10px] font-bold text-muted-foreground">×{count}</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function daysUntil(dateStr?: string | null): number | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
+function DatasTab({ client }: { client: Client }) {
+  const items: { label: string; date?: string | null; hint?: string }[] = [
+    { label: "Aniversário", date: client.birth_date, hint: "Data de nascimento" },
+    { label: "Validade do passaporte", date: client.passport_expiry, hint: "Renovação" },
+  ];
+  const visible = items.filter((i) => i.date);
+  if (visible.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma data importante cadastrada.</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {visible.map((i) => {
+        const d = daysUntil(i.date);
+        return (
+          <li key={i.label} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background p-3">
+            <div>
+              <div className="text-sm font-semibold">{i.label}</div>
+              <div className="text-xs text-muted-foreground">{fmtDate(i.date)} · {i.hint}</div>
+            </div>
+            {typeof d === "number" && (
+              <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${
+                d < 0 ? "border-red-300 bg-red-50 text-red-700 dark:bg-red-950/40"
+                : d <= 30 ? "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40"
+                : "border-border bg-muted/40 text-muted-foreground"
+              }`}>
+                {d < 0 ? `há ${Math.abs(d)}d` : d === 0 ? "hoje" : `em ${d}d`}
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 // keep Client type referenced for TS consumers of this file
 export type { Client };
+
