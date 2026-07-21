@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   Mail,
@@ -23,6 +23,13 @@ import {
   ChevronDown,
   FileText,
   FolderOpen,
+  DollarSign,
+  ListChecks,
+  Activity as ActivityIcon,
+  CalendarClock,
+  Map as MapIcon,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
@@ -30,11 +37,21 @@ import {
   fetchClientById,
   fetchLeadsByClient,
   fetchItineraries,
+  fetchTripExpenses,
+  fetchLeadActivities,
   deleteClient,
   getAgencyId,
   loadAgencyContext,
 } from "@/lib/services";
-import type { Client, Itinerary, Lead, LeadStatus } from "@/lib/types";
+import type {
+  Client,
+  Itinerary,
+  Lead,
+  LeadStatus,
+  LeadActivity,
+  Task,
+  TripExpense,
+} from "@/lib/types";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { extractMembers, type ClientMember } from "@/routes/_app.clientes";
@@ -62,6 +79,18 @@ export const Route = createFileRoute("/_app/clientes/$id")({
     ],
   }),
 });
+
+type HistoryTab =
+  | "viagens"
+  | "documentos"
+  | "financeiro"
+  | "tarefas"
+  | "timeline"
+  | "preferencias"
+  | "datas"
+  | "destinos"
+  | "anotacoes";
+
 
 const LEAD_STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
   new: { label: "Novo", cls: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
