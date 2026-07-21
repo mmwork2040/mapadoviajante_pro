@@ -935,7 +935,9 @@ function PreferencesView({ prefs, onEdit }: { prefs: unknown; onEdit?: () => voi
     return empty;
   }
   return (
-    <dl className="grid gap-2 sm:grid-cols-2">
+    <div>
+      {onEdit && <TabActionBar description="Preferências registradas no cadastro do cliente." actionLabel="Editar preferências" onAction={onEdit} />}
+      <dl className="grid gap-2 sm:grid-cols-2">
       {entries.map(([k, v]) => (
         <div key={k} className="rounded-lg border border-border bg-background px-3 py-2">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{k}</dt>
@@ -948,7 +950,8 @@ function PreferencesView({ prefs, onEdit }: { prefs: unknown; onEdit?: () => voi
           </dd>
         </div>
       ))}
-    </dl>
+      </dl>
+    </div>
   );
 }
 
