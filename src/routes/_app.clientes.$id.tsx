@@ -15,6 +15,7 @@ import {
   Plane,
   Pencil,
   Plus,
+  UserPlus,
   Cake,
   Globe2,
   Trash2,
