@@ -1024,10 +1024,12 @@ function TimelineTab({
   activities,
   trips,
   onOpenLead,
+  onNew,
 }: {
   activities: LeadActivity[];
   trips: Lead[];
   onOpenLead: (id: string) => void;
+  onNew: () => void;
 }) {
   const tripMap = useMemo(() => {
     const m = new Map<string, Lead>();
@@ -1035,7 +1037,15 @@ function TimelineTab({
     return m;
   }, [trips]);
   if (activities.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Sem atividades registradas.</p>;
+    return (
+      <EmptyState
+        icon={ActivityIcon}
+        title="Sem atividades registradas"
+        description="Cada contato, e-mail ou mudança de status nas viagens do cliente aparece aqui."
+        actionLabel="Nova proposta"
+        onAction={onNew}
+      />
+    );
   }
   return (
     <ol className="space-y-2">
