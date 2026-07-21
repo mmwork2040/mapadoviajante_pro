@@ -1012,7 +1012,7 @@ export function NewLeadModal({
                 <UserPlus className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold">{editing ? "Editar Viajante" : "Novo Viajante"}</h2>
+                <h2 className="text-lg font-bold">{editing ? "Editar Proposta" : "Nova Proposta"}</h2>
                 <p className="text-xs text-muted-foreground">
                   {editing
                     ? "Revise e atualize todos os dados do cliente"
