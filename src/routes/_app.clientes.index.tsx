@@ -923,6 +923,7 @@ function MembersTab({
   onChange: (m: ClientMember[]) => void;
 }) {
   const confirm = useConfirm();
+  const qc = useQueryClient();
   const { data: allClients = [] } = useQuery({
     queryKey: ["clients", ""],
     queryFn: () => fetchClients(""),
@@ -934,6 +935,8 @@ function MembersTab({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editRel, setEditRel] = useState("");
+  const [converting, setConverting] = useState<ClientMember | null>(null);
+  const [convertSaving, setConvertSaving] = useState(false);
 
   const norm = (s: string) => s.trim().toLowerCase();
 
@@ -1002,6 +1005,32 @@ function MembersTab({
     onChange(members.filter((x) => x.id !== m.id));
     if (editingId === m.id) setEditingId(null);
     toast.success("Membro removido");
+  };
+
+  const convertToClient = async (payload: Partial<Client>) => {
+    if (!converting) return;
+    setConvertSaving(true);
+    try {
+      const created = await createClientSvc(payload);
+      if (!created) {
+        toast.error("Erro ao criar cliente");
+        return;
+      }
+      onChange(
+        members.map((m) =>
+          m.id === converting.id
+            ? { ...m, name: created.name, client_id: created.id }
+            : m,
+        ),
+      );
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Cliente criado e vinculado como membro");
+      setConverting(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao criar cliente");
+    } finally {
+      setConvertSaving(false);
+    }
   };
 
   return (
