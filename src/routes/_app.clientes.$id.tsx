@@ -121,19 +121,36 @@ function ClientProfilePage() {
 
   const { data: documents = [] } = useQuery({
     queryKey: ["client-documents", id, tripIds.join(",")],
-    enabled: tripIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await (
+      const ctx = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
+      const client = (
         supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }
-      )
-        .from("crm_lead_documents")
-        .select("*")
-        .in("lead_id", tripIds)
-        .order("created_at", { ascending: false });
-      if (error) return [] as LeadDocument[];
-      return (data as unknown as LeadDocument[]) || [];
+      ).from("crm_lead_documents");
+      const results: LeadDocument[] = [];
+      if (tripIds.length > 0) {
+        const { data } = await client
+          .select("*")
+          .in("lead_id", tripIds)
+          .order("created_at", { ascending: false });
+        if (data) results.push(...(data as unknown as LeadDocument[]));
+      }
+      if (ctx) {
+        const prefix = `${ctx}/client/${id}/`;
+        const { data } = await (
+          supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }
+        )
+          .from("crm_lead_documents")
+          .select("*")
+          .is("lead_id", null)
+          .eq("agency_id", ctx)
+          .like("file_path", `${prefix}%`)
+          .order("created_at", { ascending: false });
+        if (data) results.push(...(data as unknown as LeadDocument[]));
+      }
+      return results;
     },
   });
+
 
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openNewProposal, setOpenNewProposal] = useState(false);
