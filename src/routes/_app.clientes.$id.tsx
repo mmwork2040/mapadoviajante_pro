@@ -57,7 +57,7 @@ import { NewLeadModal } from "@/routes/_app.leads";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { extractMembers, type ClientMember } from "@/routes/_app.clientes";
 import { ClientFormDrawer, type Tab as ClientTab } from "@/routes/_app.clientes.index";
-import { updateClient } from "@/lib/services";
+import { createClient as createClientSvc, updateClient } from "@/lib/services";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate, initials } from "@/lib/ui";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
