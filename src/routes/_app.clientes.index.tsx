@@ -519,6 +519,9 @@ export function ClientFormDrawer({
 
   const submit = () => {
     if (!form.name?.trim()) return toast.error("Informe o nome");
+    const email = form.email?.trim() ?? "";
+    if (!email) return toast.error("Informe o e-mail");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("E-mail inválido");
     let preferences: Record<string, unknown> = {};
     try {
       preferences = prefText.trim() ? JSON.parse(prefText) : {};
@@ -626,17 +629,11 @@ export function ClientFormDrawer({
               />
               <ModalField
                 label="E-mail"
+                required
                 type="email"
                 placeholder="email@exemplo.com"
                 value={form.email ?? ""}
                 onChange={(v) => set("email", v)}
-              />
-              <ModalField
-                label="Telefone"
-                format="phone"
-                placeholder="(11) 99999-9999"
-                value={form.phone ?? ""}
-                onChange={(v) => set("phone", v)}
               />
               <ModalField
                 label="WhatsApp"
@@ -644,6 +641,13 @@ export function ClientFormDrawer({
                 placeholder="(11) 99999-9999"
                 value={form.whatsapp ?? ""}
                 onChange={(v) => set("whatsapp", v)}
+              />
+              <ModalField
+                label="Telefone"
+                format="phone"
+                placeholder="(11) 99999-9999"
+                value={form.phone ?? ""}
+                onChange={(v) => set("phone", v)}
               />
               <ModalField
                 label="Data de nascimento"
