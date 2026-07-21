@@ -701,7 +701,9 @@ function TripsCarousel({
   }
   if (itineraries.length > 0) {
     return (
-      <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+      <div>
+        <TabActionBar description="Roteiros e propostas vinculadas ao cliente." actionLabel="Nova proposta" onAction={onNew} />
+        <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
         {itineraries.map((it) => (
           <Link
             key={it.id}
@@ -750,6 +752,7 @@ function TripsCarousel({
             </div>
           </Link>
         ))}
+        </div>
       </div>
     );
   }
