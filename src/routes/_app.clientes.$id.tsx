@@ -1114,6 +1114,9 @@ function TimelineTab({
     );
   }
   return (
+  return (
+    <div>
+      <TabActionBar description="Atividades registradas nas viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
     <ol className="space-y-2">
       {activities.slice(0, 50).map((a) => {
         const trip = a.lead_id ? tripMap.get(a.lead_id) : null;
