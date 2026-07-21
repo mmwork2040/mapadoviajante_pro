@@ -123,6 +123,60 @@ function fmtDate(v?: string | null) {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
+function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  actionLabel,
+  onAction,
+  secondaryLabel,
+  onSecondary,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+  secondaryLabel?: string;
+  onSecondary?: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border bg-muted/20 px-4 py-8 text-center">
+      <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-primary">
+        <Icon className="h-6 w-6" />
+      </div>
+      <div className="space-y-1">
+        <div className="text-sm font-semibold text-foreground">{title}</div>
+        {description && (
+          <p className="max-w-sm text-xs text-muted-foreground">{description}</p>
+        )}
+      </div>
+      {(actionLabel || secondaryLabel) && (
+        <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+          {actionLabel && onAction && (
+            <button
+              type="button"
+              onClick={onAction}
+              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+            >
+              <Plus className="h-3.5 w-3.5" /> {actionLabel}
+            </button>
+          )}
+          {secondaryLabel && onSecondary && (
+            <button
+              type="button"
+              onClick={onSecondary}
+              className="inline-flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+            >
+              {secondaryLabel}
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ClientProfilePage() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
