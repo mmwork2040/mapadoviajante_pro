@@ -709,6 +709,65 @@ export function NewLeadModal({
   const [showLibraryPicker, setShowLibraryPicker] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Membros do cliente já cadastrado (busca por e-mail) para incluir como passageiros.
+  const [clientMembers, setClientMembers] = useState<{ id: string; name: string; relationship: string }[]>([]);
+  const [selectedMemberIds, setSelectedMemberIds] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    const email = form.email.trim().toLowerCase();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setClientMembers([]);
+      setSelectedMemberIds(new Set());
+      return;
+    }
+    let active = true;
+    (async () => {
+      const { data } = await supabase
+        .from("crm_clients")
+        .select("preferences")
+        .ilike("email", email)
+        .limit(1)
+        .maybeSingle();
+      if (!active) return;
+      const prefs = data?.preferences;
+      const raw = prefs && typeof prefs === "object" ? (prefs as Record<string, unknown>).members : null;
+      const list = Array.isArray(raw)
+        ? raw
+            .map((m) => {
+              if (!m || typeof m !== "object") return null;
+              const o = m as Record<string, unknown>;
+              const name = typeof o.name === "string" ? o.name.trim() : "";
+              if (!name) return null;
+              return {
+                id: typeof o.id === "string" && o.id ? o.id : name,
+                name,
+                relationship: typeof o.relationship === "string" ? o.relationship : "",
+              };
+            })
+            .filter((m): m is { id: string; name: string; relationship: string } => !!m)
+        : [];
+      setClientMembers(list);
+      setSelectedMemberIds(new Set());
+    })();
+    return () => {
+      active = false;
+    };
+  }, [form.email]);
+
+  function toggleMember(id: string) {
+    setSelectedMemberIds((prev) => {
+      const next = new Set(prev);
+      const curr = Math.max(0, parseInt(form.passengers || "0", 10) || 0);
+      if (next.has(id)) {
+        next.delete(id);
+        set({ passengers: String(Math.max(0, curr - 1)) });
+      } else {
+        next.add(id);
+        set({ passengers: String(curr + 1) });
+      }
+      return next;
+    });
+  }
+
   // Busca inteligente de destino (país, estado ou cidade) enquanto digita.
   const [destSuggestions, setDestSuggestions] = useState<string[]>([]);
   const [customTripTypes, setCustomTripTypes] = useState<string[]>([]);
