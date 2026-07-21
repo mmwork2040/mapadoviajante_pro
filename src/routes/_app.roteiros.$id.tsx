@@ -389,6 +389,7 @@ function PaletteItem({ type, label, icon: Icon, hint }: { type: string; label: s
 
 function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
+  const { from: backTo } = Route.useSearch();
   const qc = useQueryClient();
   
   const [pendingDayId, setPendingDayId] = useState<string | null>(null);
