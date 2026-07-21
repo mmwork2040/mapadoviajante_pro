@@ -1362,8 +1362,20 @@ function ItineraryDetailPage() {
 
         </div>
         <div className="flex flex-1 flex-wrap items-start justify-between gap-4 bg-card p-5">
-        <div>
-          <h1 className="text-2xl font-bold">{it.title}</h1>
+        <div className="min-w-0">
+          <div className="flex items-start gap-2">
+            <h1 className="text-2xl font-bold">{it.title}</h1>
+            {clientForEdit && (
+              <button
+                type="button"
+                onClick={() => setClientEditOpen(true)}
+                title="Editar cadastro do cliente"
+                className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-input text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">
             {it.client_name} · {formatCurrency(it.budget)} · <span>{STATUS_LABELS[it.status || "draft"] || it.status}</span>
           </p>
