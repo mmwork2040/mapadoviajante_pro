@@ -1006,6 +1006,7 @@ function FinanceiroTab({ trips, expenses, onNew }: { trips: Lead[]; expenses: Tr
   }
   return (
     <div className="space-y-3">
+      <TabActionBar description="Resumo financeiro das viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatCard label="Orçado total" value={fmtCurrency(totals.totalOrcado)} />
         <StatCard label="Gasto (viagens)" value={fmtCurrency(totals.totalGasto)} />
