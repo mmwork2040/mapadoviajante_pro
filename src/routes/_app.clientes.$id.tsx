@@ -288,6 +288,8 @@ function ClientProfilePage() {
   const [editSaving, setEditSaving] = useState(false);
   const [tab, setTab] = useState<HistoryTab>("viagens");
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
+  const [convertingMember, setConvertingMember] = useState<ClientMember | null>(null);
+  const [convertSaving, setConvertSaving] = useState(false);
 
 
   const delMut = useMutation({
