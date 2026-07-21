@@ -416,21 +416,23 @@ function ClientCard({
 }
 
 
-function ClientFormDrawer({
+export function ClientFormDrawer({
   initial,
   isEdit,
   saving,
   onClose,
   onSubmit,
+  initialTab,
 }: {
   initial: Partial<Client>;
   isEdit: boolean;
   saving: boolean;
   onClose: () => void;
   onSubmit: (payload: Partial<Client>) => void;
+  initialTab?: Tab;
 }) {
   const [form, setForm] = useState<Partial<Client>>(initial);
-  const [tab, setTab] = useState<Tab>("contato");
+  const [tab, setTab] = useState<Tab>(initialTab ?? "contato");
   const [members, setMembers] = useState<ClientMember[]>(() => extractMembers(initial.preferences));
   const [prefText, setPrefText] = useState<string>(() => {
     const src = (initial.preferences && typeof initial.preferences === "object")
