@@ -446,6 +446,7 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function selectLead(leadId: string) {
+    setSelectedMemberIds([]);
     const lead = leads.find((l) => l.id === leadId);
     if (!lead) {
       setForm((f) => ({ ...f, lead_id: null }));
