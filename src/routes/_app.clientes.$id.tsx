@@ -54,6 +54,7 @@ import type {
 } from "@/lib/types";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { NewLeadModal } from "@/routes/_app.leads";
+import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { extractMembers, type ClientMember } from "@/routes/_app.clientes";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate, initials } from "@/lib/ui";
@@ -278,6 +279,7 @@ function ClientProfilePage() {
 
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openNewProposal, setOpenNewProposal] = useState(false);
+  const [openNewTask, setOpenNewTask] = useState(false);
   const [tab, setTab] = useState<HistoryTab>("viagens");
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
 
@@ -491,7 +493,7 @@ function ClientProfilePage() {
           <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
         )}
         {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} onNew={openNew} />}
-        {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} />}
+        {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} onNewTask={() => setOpenNewTask(true)} />}
         {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={openNew} />}
         {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} />}
         {tab === "datas" && <DatasTab client={client} onEdit={openEdit} />}
@@ -540,6 +542,12 @@ function ClientProfilePage() {
           }}
         />
       )}
+      <CreateTaskModal
+        open={openNewTask}
+        onOpenChange={setOpenNewTask}
+        initial={trips[0] ? { leadId: trips[0].id } : null}
+      />
+
 
       <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
@@ -977,13 +985,15 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TarefasTab({ tasks, onOpenLead }: { tasks: Task[]; onOpenLead: (id: string) => void }) {
+function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLead: (id: string) => void; onNewTask: () => void }) {
   if (tasks.length === 0) {
     return (
       <EmptyState
         icon={ListChecks}
         title="Nenhuma tarefa vinculada"
         description="Crie tarefas nas viagens do cliente ou na página de Tarefas para acompanhá-las aqui."
+        actionLabel="Nova tarefa"
+        onAction={onNewTask}
         secondaryLabel="Abrir tarefas"
         onSecondary={() => { window.location.assign("/tarefas"); }}
       />
