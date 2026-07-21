@@ -512,7 +512,7 @@ export function LeadDetailDrawer({
                 )}
               </div>
 
-              <details className="group relative mt-3 rounded-xl border border-border bg-muted/30 open:bg-muted/40">
+              <details className="group relative mt-3 rounded-xl border border-border bg-muted/30 open:bg-muted/40 @container">
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs font-semibold hover:bg-muted/60">
                   <span className="flex min-w-0 flex-1 items-center gap-2 text-muted-foreground">
                     <User className="h-3.5 w-3.5 shrink-0 text-primary" />
