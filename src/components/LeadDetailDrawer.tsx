@@ -229,18 +229,32 @@ export function LeadDetailDrawer({
 
   async function handleStatusChange(status: LeadStatus) {
     if (status === lead?.status) return;
+    const wasLocked = lead?.status === "closed" || lead?.status === "lost";
+    const willLock = status === "closed" || status === "lost";
+    const nextLabel = STATUSES.find((s) => s.key === status)?.label || status;
+    const currentLabel = STATUSES.find((s) => s.key === lead?.status)?.label || lead?.status;
+    const ok = await confirm({
+      title: wasLocked ? "Reabrir viagem?" : "Alterar status da viagem?",
+      description: wasLocked
+        ? `Esta viagem está marcada como "${currentLabel}" e está bloqueada para edição. Ao alterar para "${nextLabel}", a viagem voltará a ser editável.`
+        : willLock
+          ? `Ao alterar o status para "${nextLabel}", a viagem ficará bloqueada para edição em todas as abas. Deseja continuar?`
+          : `Deseja alterar o status de "${currentLabel}" para "${nextLabel}"?`,
+      confirmLabel: wasLocked ? "Reabrir" : "Alterar",
+      cancelLabel: "Cancelar",
+    });
+    if (!ok) return;
     update.mutate(
       { status },
       {
         onSuccess: async () => {
           const responsible = lead?.assigned_to;
           if (responsible && responsible !== getMemberId()) {
-            const label = STATUSES.find((s) => s.key === status)?.label || status;
             await createNotification({
               recipientId: responsible,
               type: "lead_status",
               title: "Status de lead atualizado",
-              body: `${lead?.name || "Lead"} — ${label}`,
+              body: `${lead?.name || "Lead"} — ${nextLabel}`,
               link: `/leads?lead=${leadId}`,
               leadId,
             });
