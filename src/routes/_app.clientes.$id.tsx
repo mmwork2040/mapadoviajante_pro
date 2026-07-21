@@ -977,13 +977,15 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TarefasTab({ tasks, onOpenLead }: { tasks: Task[]; onOpenLead: (id: string) => void }) {
+function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLead: (id: string) => void; onNewTask: () => void }) {
   if (tasks.length === 0) {
     return (
       <EmptyState
         icon={ListChecks}
         title="Nenhuma tarefa vinculada"
         description="Crie tarefas nas viagens do cliente ou na página de Tarefas para acompanhá-las aqui."
+        actionLabel="Nova tarefa"
+        onAction={onNewTask}
         secondaryLabel="Abrir tarefas"
         onSecondary={() => { window.location.assign("/tarefas"); }}
       />
