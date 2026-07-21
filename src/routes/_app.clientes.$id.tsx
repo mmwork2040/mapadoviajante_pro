@@ -282,6 +282,9 @@ function ClientProfilePage() {
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openNewProposal, setOpenNewProposal] = useState(false);
   const [openNewTask, setOpenNewTask] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTab, setEditTab] = useState<ClientTab | undefined>(undefined);
+  const [editSaving, setEditSaving] = useState(false);
   const [tab, setTab] = useState<HistoryTab>("viagens");
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
 
