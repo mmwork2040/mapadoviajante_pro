@@ -309,7 +309,10 @@ function ClientProfilePage() {
 
   const members = extractMembers(client.preferences);
   const wa = waLink(client.whatsapp, client.name);
-  const openEdit = () => navigate({ to: "/clientes", search: { edit: client.id } as never });
+  const openEdit = (initialTab?: ClientTab) => {
+    setEditTab(initialTab);
+    setEditOpen(true);
+  };
   const openNew = () => setOpenNewProposal(true);
 
   return (
