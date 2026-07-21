@@ -534,15 +534,11 @@ export function ClientFormDrawer({
       setTab("documentos");
       return toast.error("Informe a validade do passaporte");
     }
-    let preferences: Record<string, unknown> = {};
-    try {
-      preferences = prefText.trim() ? JSON.parse(prefText) : {};
-    } catch {
-      toast.error("Preferências: JSON inválido");
-      return;
-    }
-    // Membros são gerenciados pela aba dedicada; salvos dentro de preferences.
-    preferences.members = members;
+    const preferences: Record<string, unknown> = {
+      ...extraPrefs,
+      tags: prefTags,
+      members,
+    };
     // Normaliza datas vazias para null
     const clean: Partial<Client> = { ...form, preferences };
     (["birth_date", "passport_expiry"] as const).forEach((k) => {
