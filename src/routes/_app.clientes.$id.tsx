@@ -658,6 +658,22 @@ function TabPill({
   );
 }
 
+function TabActionBar({ description, actionLabel, onAction }: { description?: string; actionLabel: string; onAction: () => void }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <p className="text-xs text-muted-foreground">{description}</p>
+      <button
+        type="button"
+        onClick={onAction}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        {actionLabel}
+      </button>
+    </div>
+  );
+}
+
 
 function TripsCarousel({
   itineraries,
