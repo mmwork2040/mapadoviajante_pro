@@ -352,18 +352,12 @@ function ClientProfilePage() {
 
       {/* Última sessão: Viagens + Documentos em abas */}
       <Collapsible icon={FolderOpen} title="Histórico do cliente" defaultOpen>
-        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto px-1">
-          <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane}>
+        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-2xl border border-border bg-muted/40 p-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+          <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>
             Viagens
-            <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              {itineraries.length || trips.length}
-            </span>
           </TabPill>
-          <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText}>
+          <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>
             Documentos
-            <span className="ml-1 rounded-full bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
-              {documents.length}
-            </span>
           </TabPill>
         </div>
 
@@ -384,6 +378,7 @@ function ClientProfilePage() {
           />
         )}
       </Collapsible>
+
 
 
       {openLeadId && (
@@ -455,28 +450,40 @@ function TabPill({
   active,
   onClick,
   icon: Icon,
+  count,
   children,
 }: {
   active: boolean;
   onClick: () => void;
   icon: React.ComponentType<{ className?: string }>;
+  count?: number;
   children: ReactNode;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex shrink-0 snap-start items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+      className={`relative flex min-w-[84px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
         active
-          ? "border-primary bg-primary text-primary-foreground"
-          : "border-input bg-background text-foreground hover:bg-muted"
+          ? "bg-primary text-primary-foreground shadow-sm"
+          : "text-muted-foreground hover:bg-background hover:text-foreground"
       }`}
     >
-      <Icon className="h-3.5 w-3.5" />
-      {children}
+      <Icon className="h-5 w-5" />
+      <span className="leading-none">{children}</span>
+      {typeof count === "number" && count > 0 && (
+        <span
+          className={`absolute -right-1 -top-1 min-w-[18px] rounded-full px-1 py-0.5 text-[10px] font-bold leading-none ${
+            active ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"
+          }`}
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }
+
 
 function TripsCarousel({
   itineraries,
