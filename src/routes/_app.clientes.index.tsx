@@ -923,6 +923,7 @@ function MembersTab({
   onChange: (m: ClientMember[]) => void;
 }) {
   const confirm = useConfirm();
+  const qc = useQueryClient();
   const { data: allClients = [] } = useQuery({
     queryKey: ["clients", ""],
     queryFn: () => fetchClients(""),
@@ -934,6 +935,8 @@ function MembersTab({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editRel, setEditRel] = useState("");
+  const [converting, setConverting] = useState<ClientMember | null>(null);
+  const [convertSaving, setConvertSaving] = useState(false);
 
   const norm = (s: string) => s.trim().toLowerCase();
 
@@ -1004,6 +1007,32 @@ function MembersTab({
     toast.success("Membro removido");
   };
 
+  const convertToClient = async (payload: Partial<Client>) => {
+    if (!converting) return;
+    setConvertSaving(true);
+    try {
+      const created = await createClientSvc(payload);
+      if (!created) {
+        toast.error("Erro ao criar cliente");
+        return;
+      }
+      onChange(
+        members.map((m) =>
+          m.id === converting.id
+            ? { ...m, name: created.name, client_id: created.id }
+            : m,
+        ),
+      );
+      qc.invalidateQueries({ queryKey: ["clients"] });
+      toast.success("Cliente criado e vinculado como membro");
+      setConverting(null);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erro ao criar cliente");
+    } finally {
+      setConvertSaving(false);
+    }
+  };
+
   return (
     <Section icon={Users} title="Membros da viagem">
       <div className="sm:col-span-2 space-y-4">
@@ -1068,6 +1097,16 @@ function MembersTab({
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
+                        {!m.client_id && (
+                          <button
+                            type="button"
+                            onClick={() => setConverting(m)}
+                            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
+                            title="Transformar em cliente"
+                          >
+                            <UserPlus className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => startEdit(m)}
@@ -1163,6 +1202,15 @@ function MembersTab({
           </button>
         </div>
       </div>
+      {converting && (
+        <ClientFormDrawer
+          initial={{ ...EMPTY, name: converting.name }}
+          isEdit={false}
+          saving={convertSaving}
+          onClose={() => setConverting(null)}
+          onSubmit={convertToClient}
+        />
+      )}
     </Section>
   );
 }

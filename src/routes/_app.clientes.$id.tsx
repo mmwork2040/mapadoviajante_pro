@@ -15,6 +15,7 @@ import {
   Plane,
   Pencil,
   Plus,
+  UserPlus,
   Cake,
   Globe2,
   Trash2,
@@ -57,7 +58,7 @@ import { NewLeadModal } from "@/routes/_app.leads";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { extractMembers, type ClientMember } from "@/routes/_app.clientes";
 import { ClientFormDrawer, type Tab as ClientTab } from "@/routes/_app.clientes.index";
-import { updateClient } from "@/lib/services";
+import { createClient as createClientSvc, updateClient } from "@/lib/services";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate, initials } from "@/lib/ui";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
@@ -287,6 +288,8 @@ function ClientProfilePage() {
   const [editSaving, setEditSaving] = useState(false);
   const [tab, setTab] = useState<HistoryTab>("viagens");
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
+  const [convertingMember, setConvertingMember] = useState<ClientMember | null>(null);
+  const [convertSaving, setConvertSaving] = useState(false);
 
 
   const delMut = useMutation({
@@ -463,9 +466,19 @@ function ClientProfilePage() {
                     Abrir perfil
                   </Link>
                 ) : (
-                  <span className="mt-auto inline-flex items-center justify-center rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                    Sem cadastro
-                  </span>
+                  <div className="mt-auto flex flex-col gap-1">
+                    <span className="inline-flex items-center justify-center rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                      Sem cadastro
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setConvertingMember(m)}
+                      className="inline-flex items-center justify-center gap-1 rounded-md border border-input px-2 py-1 text-xs font-semibold text-primary hover:bg-muted"
+                      title="Transformar em cliente"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" /> Transformar em cliente
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -581,6 +594,45 @@ function ClientProfilePage() {
         />
       )}
 
+
+      {convertingMember && (
+        <ClientFormDrawer
+          initial={{ name: convertingMember.name, preferences: {} }}
+          isEdit={false}
+          saving={convertSaving}
+          onClose={() => setConvertingMember(null)}
+          onSubmit={async (payload) => {
+            if (!convertingMember) return;
+            setConvertSaving(true);
+            try {
+              const created = await createClientSvc(payload);
+              if (!created) {
+                toast.error("Erro ao criar cliente");
+                return;
+              }
+              const prefs =
+                client.preferences && typeof client.preferences === "object"
+                  ? { ...(client.preferences as Record<string, unknown>) }
+                  : {};
+              const updatedMembers = members.map((m) =>
+                m.id === convertingMember.id
+                  ? { ...m, name: created.name, client_id: created.id }
+                  : m,
+              );
+              prefs.members = updatedMembers;
+              await updateClient(client.id, { preferences: prefs });
+              await qc.invalidateQueries({ queryKey: ["client", id] });
+              await qc.invalidateQueries({ queryKey: ["clients"] });
+              toast.success("Cliente criado e vinculado como membro");
+              setConvertingMember(null);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro ao criar cliente");
+            } finally {
+              setConvertSaving(false);
+            }
+          }}
+        />
+      )}
 
       <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
