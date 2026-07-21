@@ -1469,17 +1469,6 @@ function ItineraryDetailPage() {
             <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} hint={t.hint} />
           ))}
 
-          {driveEnabled && (
-            <button
-              type="button"
-              onClick={() => setDriveOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
-              title="Importar um documento direto do Google Drive da agência para a IA interpretar."
-            >
-              <HardDrive className="h-3.5 w-3.5" /> Importar do Drive
-            </button>
-          )}
-
           <input
             ref={docInputRef}
             type="file"
@@ -1570,6 +1559,14 @@ function ItineraryDetailPage() {
           onLibrary={(doc) => {
             void handleLibraryImport(doc);
           }}
+          onDrive={
+            driveEnabled
+              ? () => {
+                  setImportOpen(false);
+                  setDriveOpen(true);
+                }
+              : undefined
+          }
         />
       )}
 
@@ -4395,10 +4392,12 @@ function AttachSourceModal({
   onClose,
   onDevice,
   onLibrary,
+  onDrive,
 }: {
   onClose: () => void;
   onDevice: () => void;
   onLibrary: (doc: LeadDocument) => void;
+  onDrive?: () => void;
 }) {
   const [view, setView] = useState<"choose" | "library">("choose");
   const [search, setSearch] = useState("");
@@ -4447,6 +4446,16 @@ function AttachSourceModal({
               <span className="text-sm font-semibold">Da biblioteca</span>
               <span className="text-xs text-muted-foreground">Reutilizar arquivo existente</span>
             </button>
+            {onDrive && (
+              <button
+                onClick={onDrive}
+                className="flex flex-col items-center gap-2 rounded-xl border border-border p-5 text-center hover:border-primary hover:bg-muted/40 sm:col-span-2"
+              >
+                <HardDrive className="h-7 w-7 text-primary" />
+                <span className="text-sm font-semibold">Do Google Drive</span>
+                <span className="text-xs text-muted-foreground">Importar do Drive da agência</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
