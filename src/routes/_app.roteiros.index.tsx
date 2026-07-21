@@ -679,6 +679,42 @@ function NewItineraryModal({ onClose, onCreated }: { onClose: () => void; onCrea
             <F label="Passageiros" type="number" required value={String(form.passengers ?? "")} onChange={(v) => setForm({ ...form, passengers: Number(v) })} />
             <F label="Orçamento" format="currency" required value={String(form.budget ?? "")} onChange={(v) => setForm({ ...form, budget: Number(v) })} />
           </div>
+          {clientMembers.length > 0 && (
+            <div className="rounded-xl border border-input bg-muted/30 p-3">
+              <p className="mb-2 text-xs font-semibold text-foreground">
+                Adicionar membros como passageiros
+              </p>
+              <p className="mb-2 text-[11px] text-muted-foreground">
+                O cliente principal já conta como 1 passageiro. Selecione membros para somar automaticamente.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {clientMembers.map((m) => {
+                  const checked = selectedMemberIds.includes(m.id);
+                  return (
+                    <button
+                      key={m.id}
+                      type="button"
+                      onClick={() => {
+                        const next = checked
+                          ? selectedMemberIds.filter((x) => x !== m.id)
+                          : [...selectedMemberIds, m.id];
+                        setSelectedMemberIds(next);
+                        setForm((f) => ({ ...f, passengers: 1 + next.length }));
+                      }}
+                      className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                        checked
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-input bg-background text-foreground hover:bg-muted"
+                      }`}
+                    >
+                      {m.name}
+                      {m.relationship ? ` · ${m.relationship}` : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-end gap-2 pt-2">
             <button
               type="button"
