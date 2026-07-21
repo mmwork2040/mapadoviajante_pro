@@ -412,7 +412,7 @@ function ClientProfilePage() {
 
       {/* Histórico do cliente com múltiplas abas */}
       <Collapsible icon={FolderOpen} title="Histórico do cliente" defaultOpen>
-        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-lg border border-border bg-muted/40 p-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+        <div className="mb-3 -mx-1 flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain scroll-smooth rounded-lg border border-border bg-muted/40 p-2 pr-3 pt-3 scrollbar-thin [-webkit-overflow-scrolling:touch]">
           <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>Viagens</TabPill>
           <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>Documentos</TabPill>
           <TabPill active={tab === "financeiro"} onClick={() => setTab("financeiro")} icon={DollarSign} count={expenses.length}>Financeiro</TabPill>
