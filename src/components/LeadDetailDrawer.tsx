@@ -614,60 +614,71 @@ export function LeadDetailDrawer({
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto scrollbar-thin p-5">
-              {tab === "perfil" && (
-                <PerfilTab
-                  lead={lead}
-                  team={team}
-                  activities={activities}
-                  onUpdate={(u) => update.mutate(u)}
-                  onOpenActivities={() => setTab("atividades")}
-                />
+            <div className="flex-1 overflow-y-auto scrollbar-thin">
+              {(lead.status === "closed" || lead.status === "lost") && (
+                <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-amber-500/10 px-5 py-2 text-xs font-medium text-amber-800 dark:text-amber-300">
+                  <Lock className="h-3.5 w-3.5" />
+                  Viagem {lead.status === "closed" ? "fechada" : "perdida"} — somente leitura. Altere o status no topo para editar.
+                </div>
               )}
-              {tab === "viagem" && (
-                <ViagemTab
-                  lead={lead}
-                  p={p}
-                  isAdmin={isAdmin}
-                  onUpdateProfile={(patch) =>
-                    update.mutate({
-                      profile: { ...((lead.profile as Record<string, unknown>) || {}), ...patch },
-                    })
-                  }
-                />
-              )}
-              {tab === "atividades" && (
-                <AtividadesTab leadId={leadId} team={team} activities={activities} />
-              )}
-              {tab === "checklist" && (
-                <ChecklistTab
-                  leadId={leadId}
-                  checklists={lead.checklists as unknown}
-                  highlightItemId={highlightChecklistItemId}
-                  onSave={(c) => update.mutate({ checklists: c as unknown as Record<string, unknown> })}
-                />
-              )}
-              {tab === "financeiro" && (
-                <FinanceiroTab
-                  lead={lead}
-                  isAdmin={isAdmin}
-                  onUpdate={(u) => update.mutate(u)}
-                />
-              )}
-              {tab === "beneficios" && (
-                <BeneficiosTab
-                  lead={lead}
-                  onUpdate={(b) => update.mutate({ benefits: b as unknown as Record<string, unknown> })}
-                />
-              )}
+              <fieldset
+                disabled={lead.status === "closed" || lead.status === "lost"}
+                className="min-w-0 border-0 p-5 disabled:opacity-95"
+              >
+                {tab === "perfil" && (
+                  <PerfilTab
+                    lead={lead}
+                    team={team}
+                    activities={activities}
+                    onUpdate={(u) => update.mutate(u)}
+                    onOpenActivities={() => setTab("atividades")}
+                  />
+                )}
+                {tab === "viagem" && (
+                  <ViagemTab
+                    lead={lead}
+                    p={p}
+                    isAdmin={isAdmin}
+                    onUpdateProfile={(patch) =>
+                      update.mutate({
+                        profile: { ...((lead.profile as Record<string, unknown>) || {}), ...patch },
+                      })
+                    }
+                  />
+                )}
+                {tab === "atividades" && (
+                  <AtividadesTab leadId={leadId} team={team} activities={activities} />
+                )}
+                {tab === "checklist" && (
+                  <ChecklistTab
+                    leadId={leadId}
+                    checklists={lead.checklists as unknown}
+                    highlightItemId={highlightChecklistItemId}
+                    onSave={(c) => update.mutate({ checklists: c as unknown as Record<string, unknown> })}
+                  />
+                )}
+                {tab === "financeiro" && (
+                  <FinanceiroTab
+                    lead={lead}
+                    isAdmin={isAdmin}
+                    onUpdate={(u) => update.mutate(u)}
+                  />
+                )}
+                {tab === "beneficios" && (
+                  <BeneficiosTab
+                    lead={lead}
+                    onUpdate={(b) => update.mutate({ benefits: b as unknown as Record<string, unknown> })}
+                  />
+                )}
 
-              {tab === "notas" && (
-                <NotasTab
-                  notes={lead.notes || ""}
-                  activities={activities}
-                  onSave={(notes) => update.mutate({ notes })}
-                />
-              )}
+                {tab === "notas" && (
+                  <NotasTab
+                    notes={lead.notes || ""}
+                    activities={activities}
+                    onSave={(notes) => update.mutate({ notes })}
+                  />
+                )}
+              </fieldset>
             </div>
 
 
