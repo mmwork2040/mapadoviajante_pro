@@ -1206,7 +1206,9 @@ function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
     );
   }
   return (
-    <ul className="space-y-2">
+    <div>
+      <TabActionBar description="Datas importantes registradas no cadastro." actionLabel="Editar cadastro" onAction={onEdit} />
+      <ul className="space-y-2">
       {visible.map((i) => {
         const d = daysUntil(i.date);
         return (
@@ -1227,7 +1229,8 @@ function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
           </li>
         );
       })}
-    </ul>
+      </ul>
+    </div>
   );
 }
 
