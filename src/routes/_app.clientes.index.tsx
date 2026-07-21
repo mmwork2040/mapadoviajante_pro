@@ -522,6 +522,10 @@ export function ClientFormDrawer({
     const email = form.email?.trim() ?? "";
     if (!email) return toast.error("Informe o e-mail");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("E-mail inválido");
+    if (form.passport_number?.trim() && !form.passport_expiry?.trim()) {
+      setTab("documentos");
+      return toast.error("Informe a validade do passaporte");
+    }
     let preferences: Record<string, unknown> = {};
     try {
       preferences = prefText.trim() ? JSON.parse(prefText) : {};
@@ -681,6 +685,7 @@ export function ClientFormDrawer({
               <ModalField
                 label="Validade do passaporte"
                 type="date"
+                required={!!form.passport_number?.trim()}
                 value={form.passport_expiry ?? ""}
                 onChange={(v) => set("passport_expiry", v)}
               />
