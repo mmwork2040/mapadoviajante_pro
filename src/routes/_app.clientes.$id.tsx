@@ -505,7 +505,10 @@ function ClientProfilePage() {
         {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={() => openEdit("preferencias")} />}
         {tab === "anotacoes" && (
           client.notes?.trim() ? (
-            <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
+            <div>
+              <TabActionBar description="Anotações do cliente." actionLabel="Editar anotação" onAction={() => openEdit("notas")} />
+              <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
+            </div>
           ) : (
             <EmptyState
               icon={StickyNote}
@@ -658,6 +661,22 @@ function TabPill({
   );
 }
 
+function TabActionBar({ description, actionLabel, onAction }: { description?: string; actionLabel: string; onAction: () => void }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <p className="text-xs text-muted-foreground">{description}</p>
+      <button
+        type="button"
+        onClick={onAction}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-input bg-background px-3 py-1.5 text-xs font-semibold hover:bg-muted"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        {actionLabel}
+      </button>
+    </div>
+  );
+}
+
 
 function TripsCarousel({
   itineraries,
@@ -685,7 +704,9 @@ function TripsCarousel({
   }
   if (itineraries.length > 0) {
     return (
-      <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+      <div>
+        <TabActionBar description="Roteiros e propostas vinculadas ao cliente." actionLabel="Nova proposta" onAction={onNew} />
+        <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
         {itineraries.map((it) => (
           <Link
             key={it.id}
@@ -734,11 +755,14 @@ function TripsCarousel({
             </div>
           </Link>
         ))}
+        </div>
       </div>
     );
   }
   return (
-    <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+    <div>
+      <TabActionBar description="Propostas e viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
       {trips.map((t) => {
         const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
         return (
@@ -768,6 +792,7 @@ function TripsCarousel({
           </button>
         );
       })}
+      </div>
     </div>
   );
 }
@@ -913,7 +938,9 @@ function PreferencesView({ prefs, onEdit }: { prefs: unknown; onEdit?: () => voi
     return empty;
   }
   return (
-    <dl className="grid gap-2 sm:grid-cols-2">
+    <div>
+      {onEdit && <TabActionBar description="Preferências registradas no cadastro do cliente." actionLabel="Editar preferências" onAction={onEdit} />}
+      <dl className="grid gap-2 sm:grid-cols-2">
       {entries.map(([k, v]) => (
         <div key={k} className="rounded-lg border border-border bg-background px-3 py-2">
           <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{k}</dt>
@@ -926,7 +953,8 @@ function PreferencesView({ prefs, onEdit }: { prefs: unknown; onEdit?: () => voi
           </dd>
         </div>
       ))}
-    </dl>
+      </dl>
+    </div>
   );
 }
 
@@ -984,6 +1012,7 @@ function FinanceiroTab({ trips, expenses, onNew }: { trips: Lead[]; expenses: Tr
   }
   return (
     <div className="space-y-3">
+      <TabActionBar description="Resumo financeiro das viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatCard label="Orçado total" value={fmtCurrency(totals.totalOrcado)} />
         <StatCard label="Gasto (viagens)" value={fmtCurrency(totals.totalGasto)} />
@@ -1030,7 +1059,9 @@ function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLea
     );
   }
   return (
-    <ul className="space-y-2">
+    <div>
+      <TabActionBar description="Tarefas vinculadas às viagens do cliente." actionLabel="Nova tarefa" onAction={onNewTask} />
+      <ul className="space-y-2">
       {tasks.map((t) => (
         <li key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
           {t.completed ? (
@@ -1056,7 +1087,8 @@ function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLea
           </div>
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
   );
 }
 
@@ -1088,6 +1120,8 @@ function TimelineTab({
     );
   }
   return (
+    <div>
+      <TabActionBar description="Atividades registradas nas viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
     <ol className="space-y-2">
       {activities.slice(0, 50).map((a) => {
         const trip = a.lead_id ? tripMap.get(a.lead_id) : null;
@@ -1113,6 +1147,7 @@ function TimelineTab({
         );
       })}
     </ol>
+    </div>
   );
 }
 
@@ -1135,7 +1170,9 @@ function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries
     );
   }
   return (
-    <div className="flex flex-wrap gap-2">
+    <div>
+      <TabActionBar description="Destinos das propostas e roteiros do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <div className="flex flex-wrap gap-2">
       {list.map(([dest, count]) => (
         <span key={dest} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs">
           <MapPin className="h-3.5 w-3.5 text-primary" />
@@ -1143,6 +1180,7 @@ function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries
           {count > 1 && <span className="rounded bg-muted px-1 text-[10px] font-bold text-muted-foreground">×{count}</span>}
         </span>
       ))}
+      </div>
     </div>
   );
 }
@@ -1174,7 +1212,9 @@ function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
     );
   }
   return (
-    <ul className="space-y-2">
+    <div>
+      <TabActionBar description="Datas importantes registradas no cadastro." actionLabel="Editar cadastro" onAction={onEdit} />
+      <ul className="space-y-2">
       {visible.map((i) => {
         const d = daysUntil(i.date);
         return (
@@ -1195,7 +1235,8 @@ function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
           </li>
         );
       })}
-    </ul>
+      </ul>
+    </div>
   );
 }
 
