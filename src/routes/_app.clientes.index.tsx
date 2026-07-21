@@ -97,6 +97,29 @@ const EMPTY: Partial<Client> = {
   preferences: {},
 };
 
+const PREF_PRESETS: { label: string; options: string[] }[] = [
+  {
+    label: "Estilo de viagem",
+    options: ["Aventura", "Romântica", "Família", "Lua de mel", "Cultural", "Praia", "Neve", "Gastronômica", "Compras", "Luxo", "Econômica"],
+  },
+  {
+    label: "Hospedagem",
+    options: ["Hotel 5★", "Hotel 4★", "Resort", "All Inclusive", "Boutique", "Airbnb", "Pousada"],
+  },
+  {
+    label: "Voo",
+    options: ["Executiva", "Primeira classe", "Econômica premium", "Voo direto", "Assento janela", "Assento corredor"],
+  },
+  {
+    label: "Alimentação",
+    options: ["Vegetariano", "Vegano", "Sem glúten", "Sem lactose", "Kosher", "Halal"],
+  },
+  {
+    label: "Acessibilidade",
+    options: ["Mobilidade reduzida", "Cadeirante", "Acompanhante"],
+  },
+];
+
 export type Tab = "contato" | "documentos" | "endereco" | "membros" | "preferencias" | "notas";
 
 export interface ClientMember {
