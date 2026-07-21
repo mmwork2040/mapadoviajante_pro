@@ -1114,7 +1114,6 @@ function TimelineTab({
     );
   }
   return (
-  return (
     <div>
       <TabActionBar description="Atividades registradas nas viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
     <ol className="space-y-2">
