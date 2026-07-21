@@ -42,11 +42,17 @@ export async function uploadLeadDocument(params: {
   leadId?: string | null;
   itineraryId?: string | null;
   activityId?: string | null;
+  clientId?: string | null;
   category?: string | null;
 }): Promise<LeadDocument | null> {
-  const { file, agencyId, leadId, itineraryId, activityId, category } = params;
+  const { file, agencyId, leadId, itineraryId, activityId, clientId, category } = params;
   const id = crypto.randomUUID();
-  const path = `${agencyId}/${leadId || "geral"}/${id}-${sanitize(file.name)}`;
+  const scope = leadId
+    ? leadId
+    : clientId
+      ? `client/${clientId}`
+      : "geral";
+  const path = `${agencyId}/${scope}/${id}-${sanitize(file.name)}`;
 
   const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, {
     contentType: file.type || undefined,
@@ -155,6 +161,21 @@ export async function fetchItineraryDocuments(itineraryId: string): Promise<Lead
   if (error) return [];
   return (data as unknown as LeadDocument[]) || [];
 }
+
+/** Documents attached directly to a client (uploaded from the client profile). */
+export async function fetchClientDocuments(clientId: string, agencyId: string): Promise<LeadDocument[]> {
+  const prefix = `${agencyId}/client/${clientId}/`;
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .select("*")
+    .is("lead_id", null)
+    .eq("agency_id", agencyId)
+    .like("file_path", `${prefix}%`)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return (data as unknown as LeadDocument[]) || [];
+}
+
 
 
 
