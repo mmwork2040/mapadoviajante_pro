@@ -934,7 +934,15 @@ function FinanceiroTab({ trips, expenses, onNew }: { trips: Lead[]; expenses: Tr
   }, [trips, expenses]);
 
   if (trips.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Sem dados financeiros ainda.</p>;
+    return (
+      <EmptyState
+        icon={DollarSign}
+        title="Sem dados financeiros"
+        description="Vincule orçamentos e despesas a uma viagem para ver o resumo financeiro do cliente."
+        actionLabel="Nova proposta"
+        onAction={onNew}
+      />
+    );
   }
   return (
     <div className="space-y-3">
