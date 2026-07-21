@@ -31,7 +31,7 @@ import type { Itinerary } from "@/lib/types";
 import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
 import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
-import { ModalField, LibraryImagePicker } from "./_app.leads";
+import { ModalField, LibraryImagePicker, NewLeadModal } from "./_app.leads";
 import { SearchBar } from "@/components/SearchBar";
 
 import {
