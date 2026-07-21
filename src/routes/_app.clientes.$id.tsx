@@ -1164,7 +1164,9 @@ function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries
     );
   }
   return (
-    <div className="flex flex-wrap gap-2">
+    <div>
+      <TabActionBar description="Destinos das propostas e roteiros do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <div className="flex flex-wrap gap-2">
       {list.map(([dest, count]) => (
         <span key={dest} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs">
           <MapPin className="h-3.5 w-3.5 text-primary" />
@@ -1172,6 +1174,7 @@ function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries
           {count > 1 && <span className="rounded bg-muted px-1 text-[10px] font-bold text-muted-foreground">×{count}</span>}
         </span>
       ))}
+      </div>
     </div>
   );
 }
