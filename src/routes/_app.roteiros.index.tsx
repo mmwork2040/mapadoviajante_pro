@@ -403,10 +403,11 @@ function ItinerariesPage() {
       )}
 
       {open && (
-        <NewItineraryModal
+        <NewLeadModal
           onClose={() => setOpen(false)}
           onCreated={() => {
             setOpen(false);
+            qc.invalidateQueries({ queryKey: ["leads"] });
             qc.invalidateQueries({ queryKey: ["itineraries"] });
           }}
         />
