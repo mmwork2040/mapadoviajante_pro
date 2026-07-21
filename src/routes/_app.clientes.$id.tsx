@@ -56,6 +56,8 @@ import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { CreateTaskModal } from "@/components/CreateTaskModal";
 import { extractMembers, type ClientMember } from "@/routes/_app.clientes";
+import { ClientFormDrawer, type Tab as ClientTab } from "@/routes/_app.clientes.index";
+import { updateClient } from "@/lib/services";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate, initials } from "@/lib/ui";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
@@ -280,6 +282,9 @@ function ClientProfilePage() {
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openNewProposal, setOpenNewProposal] = useState(false);
   const [openNewTask, setOpenNewTask] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editTab, setEditTab] = useState<ClientTab | undefined>(undefined);
+  const [editSaving, setEditSaving] = useState(false);
   const [tab, setTab] = useState<HistoryTab>("viagens");
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
 
@@ -309,7 +314,10 @@ function ClientProfilePage() {
 
   const members = extractMembers(client.preferences);
   const wa = waLink(client.whatsapp, client.name);
-  const openEdit = () => navigate({ to: "/clientes", search: { edit: client.id } as never });
+  const openEdit = (initialTab?: ClientTab) => {
+    setEditTab(initialTab);
+    setEditOpen(true);
+  };
   const openNew = () => setOpenNewProposal(true);
 
   return (
@@ -342,11 +350,7 @@ function ClientProfilePage() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  onSelect={() =>
-                    navigate({ to: "/clientes", search: { edit: client.id } as never })
-                  }
-                >
+                <DropdownMenuItem onSelect={() => openEdit()}>
                   <Pencil className="mr-2 h-4 w-4" /> Editar cadastro
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -430,7 +434,7 @@ function ClientProfilePage() {
             title="Nenhum membro cadastrado"
             description="Adicione familiares ou companheiros de viagem no cadastro do cliente."
             actionLabel="Adicionar membros"
-            onAction={openEdit}
+            onAction={() => openEdit("membros")}
           />
         ) : (
           <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
@@ -496,8 +500,8 @@ function ClientProfilePage() {
         {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} onNewTask={() => setOpenNewTask(true)} />}
         {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={openNew} />}
         {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} />}
-        {tab === "datas" && <DatasTab client={client} onEdit={openEdit} />}
-        {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={openEdit} />}
+        {tab === "datas" && <DatasTab client={client} onEdit={() => openEdit("contato")} />}
+        {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={() => openEdit("preferencias")} />}
         {tab === "anotacoes" && (
           client.notes?.trim() ? (
             <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
@@ -507,7 +511,7 @@ function ClientProfilePage() {
               title="Nenhuma anotação registrada"
               description="Anote preferências, restrições ou observações importantes sobre o cliente."
               actionLabel="Adicionar anotação"
-              onAction={openEdit}
+              onAction={() => openEdit("notas")}
             />
           )
         )}
@@ -547,6 +551,30 @@ function ClientProfilePage() {
         onOpenChange={setOpenNewTask}
         initial={trips[0] ? { leadId: trips[0].id } : null}
       />
+
+      {editOpen && (
+        <ClientFormDrawer
+          initial={client}
+          isEdit
+          saving={editSaving}
+          initialTab={editTab}
+          onClose={() => setEditOpen(false)}
+          onSubmit={async (payload) => {
+            try {
+              setEditSaving(true);
+              await updateClient(client.id, payload);
+              await qc.invalidateQueries({ queryKey: ["client", id] });
+              await qc.invalidateQueries({ queryKey: ["clients"] });
+              toast.success("Cliente atualizado");
+              setEditOpen(false);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+            } finally {
+              setEditSaving(false);
+            }
+          }}
+        />
+      )}
 
 
       <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
