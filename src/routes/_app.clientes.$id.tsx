@@ -1076,7 +1076,7 @@ function TimelineTab({
   );
 }
 
-function DestinosTab({ trips, itineraries }: { trips: Lead[]; itineraries: Itinerary[] }) {
+function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries: Itinerary[]; onNew: () => void }) {
   const list = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of trips) if (t.destination) map.set(t.destination, (map.get(t.destination) || 0) + 1);
