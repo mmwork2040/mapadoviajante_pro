@@ -162,6 +162,21 @@ export async function fetchItineraryDocuments(itineraryId: string): Promise<Lead
   return (data as unknown as LeadDocument[]) || [];
 }
 
+/** Documents attached directly to a client (uploaded from the client profile). */
+export async function fetchClientDocuments(clientId: string, agencyId: string): Promise<LeadDocument[]> {
+  const prefix = `${agencyId}/client/${clientId}/`;
+  const { data, error } = await db()
+    .from("crm_lead_documents")
+    .select("*")
+    .is("lead_id", null)
+    .eq("agency_id", agencyId)
+    .like("file_path", `${prefix}%`)
+    .order("created_at", { ascending: false });
+  if (error) return [];
+  return (data as unknown as LeadDocument[]) || [];
+}
+
+
 
 
 /** MIME marker used to store an external link instead of an uploaded file. */
