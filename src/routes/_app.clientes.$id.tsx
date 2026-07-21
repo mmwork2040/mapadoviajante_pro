@@ -407,17 +407,8 @@ function ClientProfilePage() {
         )}
       </Collapsible>
 
-      <Collapsible icon={Sparkles} title="Preferências base">
-        <PreferencesView prefs={client.preferences} />
-      </Collapsible>
 
-      <Collapsible icon={StickyNote} title="Observações">
-        {client.notes?.trim() ? (
-          <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
-        ) : (
-          <p className="text-sm text-muted-foreground">Nenhuma observação registrada.</p>
-        )}
-      </Collapsible>
+
 
       {/* Histórico do cliente com múltiplas abas */}
       <Collapsible icon={FolderOpen} title="Histórico do cliente" defaultOpen>
