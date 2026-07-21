@@ -434,13 +434,21 @@ export function ClientFormDrawer({
   const [form, setForm] = useState<Partial<Client>>(initial);
   const [tab, setTab] = useState<Tab>(initialTab ?? "contato");
   const [members, setMembers] = useState<ClientMember[]>(() => extractMembers(initial.preferences));
-  const [prefText, setPrefText] = useState<string>(() => {
+  const [extraPrefs, setExtraPrefs] = useState<Record<string, unknown>>(() => {
     const src = (initial.preferences && typeof initial.preferences === "object")
       ? (initial.preferences as Record<string, unknown>)
       : {};
-    const { members: _m, ...rest } = src;
-    return JSON.stringify(rest, null, 2);
+    const { members: _m, tags: _t, ...rest } = src;
+    return rest;
   });
+  const [prefTags, setPrefTags] = useState<string[]>(() => {
+    const src = (initial.preferences && typeof initial.preferences === "object")
+      ? (initial.preferences as Record<string, unknown>)
+      : {};
+    const raw = (src as { tags?: unknown }).tags;
+    return Array.isArray(raw) ? raw.filter((t): t is string => typeof t === "string") : [];
+  });
+  const [prefInput, setPrefInput] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
 
   const { data: ibgeCities = [] } = useQuery({
