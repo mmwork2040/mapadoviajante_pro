@@ -542,6 +542,12 @@ function ClientProfilePage() {
           }}
         />
       )}
+      <CreateTaskModal
+        open={openNewTask}
+        onOpenChange={setOpenNewTask}
+        initial={trips[0] ? { leadId: trips[0].id } : null}
+      />
+
 
       <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
