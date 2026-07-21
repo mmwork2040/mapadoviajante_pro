@@ -1097,6 +1097,16 @@ function MembersTab({
                         </div>
                       </div>
                       <div className="flex items-center gap-1">
+                        {!m.client_id && (
+                          <button
+                            type="button"
+                            onClick={() => setConverting(m)}
+                            className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
+                            title="Transformar em cliente"
+                          >
+                            <UserPlus className="h-4 w-4" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => startEdit(m)}
