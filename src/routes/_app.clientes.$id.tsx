@@ -595,6 +595,45 @@ function ClientProfilePage() {
       )}
 
 
+      {convertingMember && (
+        <ClientFormDrawer
+          initial={{ name: convertingMember.name, preferences: {} }}
+          isEdit={false}
+          saving={convertSaving}
+          onClose={() => setConvertingMember(null)}
+          onSubmit={async (payload) => {
+            if (!convertingMember) return;
+            setConvertSaving(true);
+            try {
+              const created = await createClientSvc(payload);
+              if (!created) {
+                toast.error("Erro ao criar cliente");
+                return;
+              }
+              const prefs =
+                client.preferences && typeof client.preferences === "object"
+                  ? { ...(client.preferences as Record<string, unknown>) }
+                  : {};
+              const updatedMembers = members.map((m) =>
+                m.id === convertingMember.id
+                  ? { ...m, name: created.name, client_id: created.id }
+                  : m,
+              );
+              prefs.members = updatedMembers;
+              await updateClient(client.id, { preferences: prefs });
+              await qc.invalidateQueries({ queryKey: ["client", id] });
+              await qc.invalidateQueries({ queryKey: ["clients"] });
+              toast.success("Cliente criado e vinculado como membro");
+              setConvertingMember(null);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro ao criar cliente");
+            } finally {
+              setConvertSaving(false);
+            }
+          }}
+        />
+      )}
+
       <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
   );
