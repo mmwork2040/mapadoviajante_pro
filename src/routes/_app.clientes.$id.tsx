@@ -490,17 +490,23 @@ function ClientProfilePage() {
         {tab === "documentos" && (
           <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
         )}
-        {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} />}
+        {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} onNew={openNew} />}
         {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} />}
-        {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} />}
-        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} />}
-        {tab === "datas" && <DatasTab client={client} />}
-        {tab === "preferencias" && <PreferencesView prefs={client.preferences} />}
+        {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={openNew} />}
+        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} />}
+        {tab === "datas" && <DatasTab client={client} onEdit={openEdit} />}
+        {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={openEdit} />}
         {tab === "anotacoes" && (
           client.notes?.trim() ? (
             <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
           ) : (
-            <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma anotação registrada.</p>
+            <EmptyState
+              icon={StickyNote}
+              title="Nenhuma anotação registrada"
+              description="Anote preferências, restrições ou observações importantes sobre o cliente."
+              actionLabel="Adicionar anotação"
+              onAction={openEdit}
+            />
           )
         )}
       </Collapsible>
