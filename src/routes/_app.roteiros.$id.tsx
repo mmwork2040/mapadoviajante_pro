@@ -410,6 +410,22 @@ function ItineraryDetailPage() {
     setCoverLoaded(false);
   }, [coverUrl]);
 
+  // Cliente vinculado à viagem (via lead) para edição rápida no cabeçalho.
+  const leadIdForClient = it?.lead_id ?? null;
+  const { data: leadForClient } = useQuery({
+    queryKey: ["itinerary-lead", leadIdForClient],
+    queryFn: () => (leadIdForClient ? fetchLeadById(leadIdForClient) : null),
+    enabled: !!leadIdForClient,
+  });
+  const clientIdForEdit = leadForClient?.client_id ?? null;
+  const { data: clientForEdit } = useQuery({
+    queryKey: ["itinerary-client", clientIdForEdit],
+    queryFn: () => (clientIdForEdit ? fetchClientById(clientIdForEdit) : null),
+    enabled: !!clientIdForEdit,
+  });
+  const [clientEditOpen, setClientEditOpen] = useState(false);
+  const [clientEditSaving, setClientEditSaving] = useState(false);
+
 
 
 
