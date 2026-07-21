@@ -542,7 +542,7 @@ export function ClientFormDrawer({
     { key: "endereco", label: "Endereço", icon: MapPin },
     { key: "membros", label: "Membros", icon: Users },
     { key: "preferencias", label: "Preferências", icon: Sparkles },
-    { key: "notas", label: "Observações", icon: StickyNote },
+    { key: "notas", label: "Anotações", icon: StickyNote },
   ];
 
   return (
