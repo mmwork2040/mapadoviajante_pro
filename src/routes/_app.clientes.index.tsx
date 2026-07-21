@@ -97,7 +97,7 @@ const EMPTY: Partial<Client> = {
   preferences: {},
 };
 
-type Tab = "contato" | "documentos" | "endereco" | "membros" | "preferencias" | "notas";
+export type Tab = "contato" | "documentos" | "endereco" | "membros" | "preferencias" | "notas";
 
 export interface ClientMember {
   id: string;
