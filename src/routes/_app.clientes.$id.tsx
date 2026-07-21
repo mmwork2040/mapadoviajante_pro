@@ -434,7 +434,7 @@ function ClientProfilePage() {
             title="Nenhum membro cadastrado"
             description="Adicione familiares ou companheiros de viagem no cadastro do cliente."
             actionLabel="Adicionar membros"
-            onAction={openEdit}
+            onAction={() => openEdit("membros")}
           />
         ) : (
           <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
