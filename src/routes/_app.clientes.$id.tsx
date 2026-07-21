@@ -350,11 +350,7 @@ function ClientProfilePage() {
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  onSelect={() =>
-                    navigate({ to: "/clientes", search: { edit: client.id } as never })
-                  }
-                >
+                <DropdownMenuItem onSelect={() => openEdit()}>
                   <Pencil className="mr-2 h-4 w-4" /> Editar cadastro
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
