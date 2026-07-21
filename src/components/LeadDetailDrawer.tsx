@@ -549,7 +549,9 @@ export function LeadDetailDrawer({
                     </button>
                     <button
                       onClick={handleEdit}
-                      className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-2 text-xs font-semibold hover:bg-muted"
+                      disabled={lead.status === "closed" || lead.status === "lost"}
+                      title={lead.status === "closed" || lead.status === "lost" ? "Viagem bloqueada — altere o status para editar" : undefined}
+                      className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-2 text-xs font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Pencil className="h-4 w-4" /> Editar
                     </button>
@@ -562,7 +564,7 @@ export function LeadDetailDrawer({
                     <select
                       value={lead.assigned_to || ""}
                       onChange={(e) => handleAssign(e.target.value)}
-                      disabled={assign.isPending}
+                      disabled={assign.isPending || lead.status === "closed" || lead.status === "lost"}
                       className="min-w-0 flex-1 rounded-lg border border-input bg-background px-2 py-2 text-xs outline-none focus:border-primary disabled:opacity-60"
                     >
                       <option value="">Ninguém</option>
