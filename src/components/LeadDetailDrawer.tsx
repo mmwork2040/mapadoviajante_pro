@@ -581,7 +581,15 @@ export function LeadDetailDrawer({
             </div>
 
 
+            {(lead.status === "closed" || lead.status === "lost") && (
+              <div className="flex items-center gap-2 bg-red-600 px-5 py-2 text-xs font-medium text-white">
+                <Lock className="h-3.5 w-3.5" />
+                Viagem {lead.status === "closed" ? "fechada" : "perdida"} — somente leitura. Altere o status no topo para editar.
+              </div>
+            )}
+
             {/* Tabs */}
+
 
             <div
               ref={tabsRef}
