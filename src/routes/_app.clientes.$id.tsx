@@ -505,7 +505,7 @@ function ClientProfilePage() {
 
         <div className="min-h-[360px]">
         {tab === "viagens" && (
-          <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} travelerCount={1 + members.length} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
+          <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
         )}
         {tab === "documentos" && (
           <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
