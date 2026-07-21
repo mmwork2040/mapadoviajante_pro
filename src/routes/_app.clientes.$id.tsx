@@ -1116,7 +1116,7 @@ function daysUntil(dateStr?: string | null): number | null {
   return diff;
 }
 
-function DatasTab({ client }: { client: Client }) {
+function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
   const items: { label: string; date?: string | null; hint?: string }[] = [
     { label: "Aniversário", date: client.birth_date, hint: "Data de nascimento" },
     { label: "Validade do passaporte", date: client.passport_expiry, hint: "Renovação" },
