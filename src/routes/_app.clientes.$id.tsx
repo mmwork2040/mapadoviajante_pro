@@ -490,6 +490,7 @@ function ClientProfilePage() {
           <TabPill active={tab === "anotacoes"} onClick={() => setTab("anotacoes")} icon={StickyNote}>Anotações</TabPill>
         </div>
 
+        <div className="min-h-[360px]">
         {tab === "viagens" && (
           <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
         )}
@@ -515,6 +516,7 @@ function ClientProfilePage() {
             />
           )
         )}
+        </div>
       </Collapsible>
 
 
