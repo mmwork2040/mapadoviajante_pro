@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState, type ReactNode } from "react";
+import { useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   Mail,
@@ -23,6 +23,13 @@ import {
   ChevronDown,
   FileText,
   FolderOpen,
+  DollarSign,
+  ListChecks,
+  Activity as ActivityIcon,
+  CalendarClock,
+  Map as MapIcon,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
@@ -30,11 +37,21 @@ import {
   fetchClientById,
   fetchLeadsByClient,
   fetchItineraries,
+  fetchTripExpenses,
+  fetchLeadActivities,
   deleteClient,
   getAgencyId,
   loadAgencyContext,
 } from "@/lib/services";
-import type { Client, Itinerary, Lead, LeadStatus } from "@/lib/types";
+import type {
+  Client,
+  Itinerary,
+  Lead,
+  LeadStatus,
+  LeadActivity,
+  Task,
+  TripExpense,
+} from "@/lib/types";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { extractMembers, type ClientMember } from "@/routes/_app.clientes";
@@ -62,6 +79,18 @@ export const Route = createFileRoute("/_app/clientes/$id")({
     ],
   }),
 });
+
+type HistoryTab =
+  | "viagens"
+  | "documentos"
+  | "financeiro"
+  | "tarefas"
+  | "timeline"
+  | "preferencias"
+  | "datas"
+  | "destinos"
+  | "anotacoes";
+
 
 const LEAD_STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
   new: { label: "Novo", cls: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
@@ -154,10 +183,50 @@ function ClientProfilePage() {
   });
 
 
+  // Tasks vinculadas às viagens do cliente
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["client-tasks", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_tasks")
+        .select(
+          "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name)",
+        )
+        .in("lead_id", tripIds)
+        .order("due_date", { ascending: true, nullsFirst: false });
+      if (error) return [] as Task[];
+      return (data as unknown as Task[]) || [];
+    },
+  });
+
+  // Atividades/timeline agregadas de todas as viagens
+  const { data: activities = [] } = useQuery({
+    queryKey: ["client-activities", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const lists = await Promise.all(tripIds.map((lid) => fetchLeadActivities(lid)));
+      return lists
+        .flat()
+        .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+    },
+  });
+
+  // Despesas agregadas
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["client-expenses", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const lists = await Promise.all(tripIds.map((lid) => fetchTripExpenses(lid)));
+      return lists.flat();
+    },
+  });
+
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openNewProposal, setOpenNewProposal] = useState(false);
-  const [tab, setTab] = useState<"viagens" | "documentos">("viagens");
+  const [tab, setTab] = useState<HistoryTab>("viagens");
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
+
 
   const delMut = useMutation({
     mutationFn: () => deleteClient(id),
@@ -338,46 +407,44 @@ function ClientProfilePage() {
         )}
       </Collapsible>
 
-      <Collapsible icon={Sparkles} title="Preferências base">
-        <PreferencesView prefs={client.preferences} />
-      </Collapsible>
 
-      <Collapsible icon={StickyNote} title="Observações">
-        {client.notes?.trim() ? (
-          <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
-        ) : (
-          <p className="text-sm text-muted-foreground">Nenhuma observação registrada.</p>
-        )}
-      </Collapsible>
 
-      {/* Última sessão: Viagens + Documentos em abas */}
+
+      {/* Histórico do cliente com múltiplas abas */}
       <Collapsible icon={FolderOpen} title="Histórico do cliente" defaultOpen>
-        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-2xl border border-border bg-muted/40 p-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
-          <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>
-            Viagens
-          </TabPill>
-          <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>
-            Documentos
-          </TabPill>
+        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-lg border border-border bg-muted/40 p-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+          <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>Viagens</TabPill>
+          <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>Documentos</TabPill>
+          <TabPill active={tab === "financeiro"} onClick={() => setTab("financeiro")} icon={DollarSign} count={expenses.length}>Financeiro</TabPill>
+          <TabPill active={tab === "tarefas"} onClick={() => setTab("tarefas")} icon={ListChecks} count={tasks.length}>Tarefas</TabPill>
+          <TabPill active={tab === "timeline"} onClick={() => setTab("timeline")} icon={ActivityIcon} count={activities.length}>Timeline</TabPill>
+          <TabPill active={tab === "destinos"} onClick={() => setTab("destinos")} icon={MapIcon}>Destinos</TabPill>
+          <TabPill active={tab === "datas"} onClick={() => setTab("datas")} icon={CalendarClock}>Datas</TabPill>
+          <TabPill active={tab === "preferencias"} onClick={() => setTab("preferencias")} icon={Sparkles}>Preferências</TabPill>
+          <TabPill active={tab === "anotacoes"} onClick={() => setTab("anotacoes")} icon={StickyNote}>Anotações</TabPill>
         </div>
 
-        {tab === "viagens" ? (
-          <TripsCarousel
-            itineraries={itineraries}
-            trips={trips}
-            clientId={client.id}
-            onOpenLead={(lid) => setOpenLeadId(lid)}
-            onNew={() => setOpenNewProposal(true)}
-          />
-        ) : (
-          <DocumentsCarousel
-            documents={documents}
-            onPreview={setPreviewDoc}
-            clientId={client.id}
-            onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })}
-          />
+        {tab === "viagens" && (
+          <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
+        )}
+        {tab === "documentos" && (
+          <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
+        )}
+        {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} />}
+        {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} />}
+        {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} />}
+        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} />}
+        {tab === "datas" && <DatasTab client={client} />}
+        {tab === "preferencias" && <PreferencesView prefs={client.preferences} />}
+        {tab === "anotacoes" && (
+          client.notes?.trim() ? (
+            <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma anotação registrada.</p>
+          )
         )}
       </Collapsible>
+
 
 
 
@@ -463,7 +530,7 @@ function TabPill({
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex min-w-[84px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-xl px-4 py-2.5 text-xs font-semibold transition ${
+      className={`relative flex min-w-[84px] shrink-0 snap-start flex-col items-center justify-center gap-1 rounded-md px-4 py-2.5 text-xs font-semibold transition ${
         active
           ? "bg-primary text-primary-foreground shadow-sm"
           : "text-muted-foreground hover:bg-background hover:text-foreground"
@@ -473,9 +540,12 @@ function TabPill({
       <span className="leading-none">{children}</span>
       {typeof count === "number" && count > 0 && (
         <span
-          className={`absolute -right-1 -top-1 min-w-[18px] rounded-full px-1 py-0.5 text-[10px] font-bold leading-none ${
-            active ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"
+          className={`absolute -right-1.5 -top-1.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-md border px-1 text-[10px] font-bold leading-none shadow-sm ${
+            active
+              ? "border-primary/30 bg-background text-primary"
+              : "border-border bg-primary text-primary-foreground"
           }`}
+
         >
           {count}
         </span>
@@ -769,5 +839,207 @@ function CoverImage({ value, alt }: { value: string; alt?: string }) {
   );
 }
 
+function fmtCurrency(n: number) {
+  return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
+}
+
+function FinanceiroTab({ trips, expenses }: { trips: Lead[]; expenses: TripExpense[] }) {
+  const totals = useMemo(() => {
+    const totalOrcado = trips.reduce((s, t) => s + (t.budget_total || t.value || 0), 0);
+    const totalGasto = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+    const totalEconomia = expenses.reduce((s, e) => s + (e.savings || 0), 0);
+    const closed = trips.filter((t) => t.status === "closed");
+    const totalFechado = closed.reduce((s, t) => s + (t.budget_total || t.value || 0), 0);
+    const ticket = closed.length > 0 ? totalFechado / closed.length : 0;
+    const byMethod: Record<string, number> = {};
+    for (const e of expenses) byMethod[e.paid_with] = (byMethod[e.paid_with] || 0) + (e.amount || 0);
+    return { totalOrcado, totalGasto, totalEconomia, ticket, closedCount: closed.length, byMethod };
+  }, [trips, expenses]);
+
+  if (trips.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Sem dados financeiros ainda.</p>;
+  }
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <StatCard label="Orçado total" value={fmtCurrency(totals.totalOrcado)} />
+        <StatCard label="Gasto (viagens)" value={fmtCurrency(totals.totalGasto)} />
+        <StatCard label="Economia" value={fmtCurrency(totals.totalEconomia)} />
+        <StatCard label={`Ticket médio (${totals.closedCount} fech.)`} value={fmtCurrency(totals.ticket)} />
+      </div>
+      {Object.keys(totals.byMethod).length > 0 && (
+        <div className="rounded-lg border border-border bg-background p-3">
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Por forma de pagamento</div>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(totals.byMethod).map(([k, v]) => (
+              <span key={k} className="rounded-md border border-border bg-muted/40 px-2 py-1 text-xs">
+                <span className="font-semibold capitalize">{k}</span> · {fmtCurrency(v)}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-3">
+      <div className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1 text-sm font-bold">{value}</div>
+    </div>
+  );
+}
+
+function TarefasTab({ tasks, onOpenLead }: { tasks: Task[]; onOpenLead: (id: string) => void }) {
+  if (tasks.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma tarefa vinculada.</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {tasks.map((t) => (
+        <li key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
+          {t.completed ? (
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          ) : (
+            <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+          )}
+          <div className="min-w-0 flex-1">
+            <div className={`truncate text-sm font-semibold ${t.completed ? "text-muted-foreground line-through" : ""}`}>{t.title}</div>
+            <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+              {t.due_date && <span className="inline-flex items-center gap-1"><Calendar className="h-3 w-3" />{fmtDate(t.due_date)}</span>}
+              {t.priority && <span className="rounded bg-muted px-1.5 py-0.5">{t.priority}</span>}
+              {t.lead_id && (
+                <button
+                  type="button"
+                  onClick={() => onOpenLead(t.lead_id as string)}
+                  className="text-primary hover:underline"
+                >
+                  {t.lead?.name || "Abrir viagem"}
+                </button>
+              )}
+            </div>
+          </div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function TimelineTab({
+  activities,
+  trips,
+  onOpenLead,
+}: {
+  activities: LeadActivity[];
+  trips: Lead[];
+  onOpenLead: (id: string) => void;
+}) {
+  const tripMap = useMemo(() => {
+    const m = new Map<string, Lead>();
+    for (const t of trips) m.set(t.id, t);
+    return m;
+  }, [trips]);
+  if (activities.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Sem atividades registradas.</p>;
+  }
+  return (
+    <ol className="space-y-2">
+      {activities.slice(0, 50).map((a) => {
+        const trip = a.lead_id ? tripMap.get(a.lead_id) : null;
+        return (
+          <li key={a.id} className="rounded-lg border border-border bg-background p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-sm font-semibold">{a.title}</div>
+                {a.details && <div className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{a.details}</div>}
+              </div>
+              <span className="shrink-0 text-[11px] text-muted-foreground">{fmtDate(a.created_at)}</span>
+            </div>
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+              <span className="rounded bg-muted px-1.5 py-0.5 capitalize">{a.type}</span>
+              {a.author?.name && <span>por {a.author.name}</span>}
+              {trip && (
+                <button type="button" onClick={() => onOpenLead(trip.id)} className="text-primary hover:underline">
+                  {trip.name}
+                </button>
+              )}
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function DestinosTab({ trips, itineraries }: { trips: Lead[]; itineraries: Itinerary[] }) {
+  const list = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of trips) if (t.destination) map.set(t.destination, (map.get(t.destination) || 0) + 1);
+    for (const it of itineraries) if (it.destination) map.set(it.destination, (map.get(it.destination) || 0) + 1);
+    return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
+  }, [trips, itineraries]);
+  if (list.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhum destino registrado.</p>;
+  }
+  return (
+    <div className="flex flex-wrap gap-2">
+      {list.map(([dest, count]) => (
+        <span key={dest} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs">
+          <MapPin className="h-3.5 w-3.5 text-primary" />
+          <span className="font-semibold">{dest}</span>
+          {count > 1 && <span className="rounded bg-muted px-1 text-[10px] font-bold text-muted-foreground">×{count}</span>}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function daysUntil(dateStr?: string | null): number | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (Number.isNaN(d.getTime())) return null;
+  const now = new Date();
+  const diff = Math.ceil((d.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  return diff;
+}
+
+function DatasTab({ client }: { client: Client }) {
+  const items: { label: string; date?: string | null; hint?: string }[] = [
+    { label: "Aniversário", date: client.birth_date, hint: "Data de nascimento" },
+    { label: "Validade do passaporte", date: client.passport_expiry, hint: "Renovação" },
+  ];
+  const visible = items.filter((i) => i.date);
+  if (visible.length === 0) {
+    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma data importante cadastrada.</p>;
+  }
+  return (
+    <ul className="space-y-2">
+      {visible.map((i) => {
+        const d = daysUntil(i.date);
+        return (
+          <li key={i.label} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background p-3">
+            <div>
+              <div className="text-sm font-semibold">{i.label}</div>
+              <div className="text-xs text-muted-foreground">{fmtDate(i.date)} · {i.hint}</div>
+            </div>
+            {typeof d === "number" && (
+              <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${
+                d < 0 ? "border-red-300 bg-red-50 text-red-700 dark:bg-red-950/40"
+                : d <= 30 ? "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40"
+                : "border-border bg-muted/40 text-muted-foreground"
+              }`}>
+                {d < 0 ? `há ${Math.abs(d)}d` : d === 0 ? "hoje" : `em ${d}d`}
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 // keep Client type referenced for TS consumers of this file
 export type { Client };
+
