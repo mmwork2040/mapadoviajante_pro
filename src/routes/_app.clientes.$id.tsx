@@ -267,30 +267,44 @@ function ClientProfilePage() {
             Nenhuma viagem registrada.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
             {trips.map((t: Lead) => {
               const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
+              const start = (t as unknown as { travel_start_date?: string | null }).travel_start_date;
+              const end = (t as unknown as { travel_end_date?: string | null }).travel_end_date;
               return (
-                <li key={t.id}>
-                  <button
-                    type="button"
-                    onClick={() => setOpenLeadId(t.id)}
-                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-2 text-left text-sm hover:bg-muted"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{t.name || "Viagem sem título"}</div>
-                      {t.destination && (
-                        <div className="truncate text-xs text-muted-foreground">{t.destination}</div>
-                      )}
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setOpenLeadId(t.id)}
+                  className="group flex min-h-[120px] w-[240px] shrink-0 snap-start flex-col justify-between gap-2 rounded-xl border border-border bg-background p-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[260px]"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                      <Plane className="h-4 w-4" />
                     </div>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${meta.cls}`}>
                       {meta.label}
                     </span>
-                  </button>
-                </li>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">{t.name || "Viagem sem título"}</div>
+                    {t.destination && (
+                      <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{t.destination}</span>
+                      </div>
+                    )}
+                    {(start || end) && (
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
+                        {fmtDate(start)}{end ? ` — ${fmtDate(end)}` : ""}
+                      </div>
+                    )}
+                  </div>
+                </button>
               );
             })}
-          </ul>
+          </div>
         )}
       </section>
 
