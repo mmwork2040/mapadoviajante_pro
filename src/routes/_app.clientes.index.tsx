@@ -766,9 +766,9 @@ export function ClientFormDrawer({
           )}
 
           {tab === "notas" && (
-            <Section icon={StickyNote} title="Observações">
+            <Section icon={StickyNote} title="Anotações">
               <ModalTextarea
-                label="Observações"
+                label="Anotações"
                 placeholder="Anotações gerais sobre o cliente…"
                 value={form.notes ?? ""}
                 onChange={(v) => set("notes", v)}
