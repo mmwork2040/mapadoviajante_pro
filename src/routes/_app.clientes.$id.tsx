@@ -338,6 +338,13 @@ function ClientProfilePage() {
               <ArrowLeft className="h-4 w-4" /> Voltar
             </Link>
             <button
+              onClick={() => openEdit()}
+              title="Editar cadastro"
+              className="flex items-center justify-center gap-2 rounded-lg border border-input px-3 py-2 text-sm font-semibold hover:bg-muted"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+            <button
               onClick={() => setOpenNewProposal(true)}
               className="flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
             >
