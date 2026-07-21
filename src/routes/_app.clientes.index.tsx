@@ -542,7 +542,7 @@ export function ClientFormDrawer({
     { key: "endereco", label: "Endereço", icon: MapPin },
     { key: "membros", label: "Membros", icon: Users },
     { key: "preferencias", label: "Preferências", icon: Sparkles },
-    { key: "notas", label: "Observações", icon: StickyNote },
+    { key: "notas", label: "Anotações", icon: StickyNote },
   ];
 
   return (
@@ -766,9 +766,9 @@ export function ClientFormDrawer({
           )}
 
           {tab === "notas" && (
-            <Section icon={StickyNote} title="Observações">
+            <Section icon={StickyNote} title="Anotações">
               <ModalTextarea
-                label="Observações"
+                label="Anotações"
                 placeholder="Anotações gerais sobre o cliente…"
                 value={form.notes ?? ""}
                 onChange={(v) => set("notes", v)}
