@@ -505,7 +505,7 @@ function ClientProfilePage() {
 
         <div className="min-h-[360px]">
         {tab === "viagens" && (
-          <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
+          <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} travelerCount={1 + members.length} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
         )}
         {tab === "documentos" && (
           <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
@@ -734,15 +734,18 @@ function TripsCarousel({
   itineraries,
   trips,
   clientId,
+  travelerCount,
   onOpenLead,
   onNew,
 }: {
   itineraries: Itinerary[];
   trips: Lead[];
   clientId: string;
+  travelerCount: number;
   onOpenLead: (id: string) => void;
   onNew: () => void;
 }) {
+
   if (itineraries.length === 0 && trips.length === 0) {
     return (
       <EmptyState
@@ -801,7 +804,7 @@ function TripsCarousel({
                 </p>
                 <p className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5 shrink-0" />
-                  {it.passengers || 1} {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
+                  {travelerCount} {travelerCount > 1 ? "viajantes" : "viajante"}
                 </p>
               </div>
             </div>
