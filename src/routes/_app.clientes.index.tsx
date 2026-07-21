@@ -519,6 +519,9 @@ export function ClientFormDrawer({
 
   const submit = () => {
     if (!form.name?.trim()) return toast.error("Informe o nome");
+    const email = form.email?.trim() ?? "";
+    if (!email) return toast.error("Informe o e-mail");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast.error("E-mail inválido");
     let preferences: Record<string, unknown> = {};
     try {
       preferences = prefText.trim() ? JSON.parse(prefText) : {};
