@@ -100,6 +100,9 @@ import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
   component: ItineraryDetailPage,
+  validateSearch: (search: Record<string, unknown>) => ({
+    from: typeof search.from === "string" ? (search.from as string) : undefined,
+  }),
 });
 
 const STATUS_OPTIONS = ["draft", "active", "completed", "cancelled"];
@@ -386,6 +389,7 @@ function PaletteItem({ type, label, icon: Icon, hint }: { type: string; label: s
 
 function ItineraryDetailPage() {
   const { id } = useParams({ from: "/_app/roteiros/$id" });
+  const { from: backTo } = Route.useSearch();
   const qc = useQueryClient();
   
   const [pendingDayId, setPendingDayId] = useState<string | null>(null);
@@ -1270,7 +1274,7 @@ function ItineraryDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link to="/roteiros" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+      <Link to={(backTo as any) || "/roteiros"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
         <ArrowLeft className="h-4 w-4" /> Voltar
       </Link>
 

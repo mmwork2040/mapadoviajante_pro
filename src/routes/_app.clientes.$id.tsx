@@ -352,6 +352,7 @@ function ClientProfilePage() {
           <TripsCarousel
             itineraries={itineraries}
             trips={trips}
+            clientId={client.id}
             onOpenLead={(lid) => setOpenLeadId(lid)}
             onNew={() => setOpenNewProposal(true)}
           />
@@ -455,11 +456,13 @@ function TabPill({
 function TripsCarousel({
   itineraries,
   trips,
+  clientId,
   onOpenLead,
   onNew,
 }: {
   itineraries: Itinerary[];
   trips: Lead[];
+  clientId: string;
   onOpenLead: (id: string) => void;
   onNew: () => void;
 }) {
@@ -484,6 +487,7 @@ function TripsCarousel({
             key={it.id}
             to="/roteiros/$id"
             params={{ id: it.id }}
+            search={{ from: `/clientes/${clientId}` } as any}
             className="group flex w-[280px] shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-background shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[300px]"
           >
             <div className="relative flex w-24 shrink-0 flex-col justify-end overflow-hidden bg-muted/60 p-3">
