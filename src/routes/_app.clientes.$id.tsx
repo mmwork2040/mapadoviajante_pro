@@ -466,9 +466,19 @@ function ClientProfilePage() {
                     Abrir perfil
                   </Link>
                 ) : (
-                  <span className="mt-auto inline-flex items-center justify-center rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
-                    Sem cadastro
-                  </span>
+                  <div className="mt-auto flex flex-col gap-1">
+                    <span className="inline-flex items-center justify-center rounded-md bg-muted px-2 py-1 text-[10px] font-medium text-muted-foreground">
+                      Sem cadastro
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setConvertingMember(m)}
+                      className="inline-flex items-center justify-center gap-1 rounded-md border border-input px-2 py-1 text-xs font-semibold text-primary hover:bg-muted"
+                      title="Transformar em cliente"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" /> Transformar em cliente
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
