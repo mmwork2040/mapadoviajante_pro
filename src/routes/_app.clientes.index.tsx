@@ -629,17 +629,11 @@ export function ClientFormDrawer({
               />
               <ModalField
                 label="E-mail"
+                required
                 type="email"
                 placeholder="email@exemplo.com"
                 value={form.email ?? ""}
                 onChange={(v) => set("email", v)}
-              />
-              <ModalField
-                label="Telefone"
-                format="phone"
-                placeholder="(11) 99999-9999"
-                value={form.phone ?? ""}
-                onChange={(v) => set("phone", v)}
               />
               <ModalField
                 label="WhatsApp"
@@ -647,6 +641,13 @@ export function ClientFormDrawer({
                 placeholder="(11) 99999-9999"
                 value={form.whatsapp ?? ""}
                 onChange={(v) => set("whatsapp", v)}
+              />
+              <ModalField
+                label="Telefone"
+                format="phone"
+                placeholder="(11) 99999-9999"
+                value={form.phone ?? ""}
+                onChange={(v) => set("phone", v)}
               />
               <ModalField
                 label="Data de nascimento"
