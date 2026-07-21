@@ -802,7 +802,7 @@ function TripsCarousel({
                 </p>
                 <p className="flex items-center gap-1.5">
                   <Users className="h-3.5 w-3.5 shrink-0" />
-                  {travelerCount} {travelerCount > 1 ? "viajantes" : "viajante"}
+                  {it.passengers || 1} {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
                 </p>
               </div>
             </div>
