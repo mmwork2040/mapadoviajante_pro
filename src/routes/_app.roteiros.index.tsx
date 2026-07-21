@@ -404,6 +404,7 @@ function ItinerariesPage() {
 
       {open && (
         <NewLeadModal
+          allLeads={leads}
           onClose={() => setOpen(false)}
           onCreated={() => {
             setOpen(false);
@@ -412,6 +413,7 @@ function ItinerariesPage() {
           }}
         />
       )}
+
     </div>
   );
 }
