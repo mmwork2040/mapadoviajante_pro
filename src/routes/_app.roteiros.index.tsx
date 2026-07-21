@@ -100,6 +100,8 @@ function ItinerariesPage() {
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
+  const { data: leads = [] } = useQuery({ queryKey: ["leads"], queryFn: () => fetchLeads() });
+
 
   const move = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
@@ -404,6 +406,7 @@ function ItinerariesPage() {
 
       {open && (
         <NewLeadModal
+          allLeads={leads}
           onClose={() => setOpen(false)}
           onCreated={() => {
             setOpen(false);
@@ -412,6 +415,7 @@ function ItinerariesPage() {
           }}
         />
       )}
+
     </div>
   );
 }
