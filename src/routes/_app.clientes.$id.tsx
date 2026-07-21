@@ -500,8 +500,8 @@ function ClientProfilePage() {
         {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} onNewTask={() => setOpenNewTask(true)} />}
         {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={openNew} />}
         {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} />}
-        {tab === "datas" && <DatasTab client={client} onEdit={openEdit} />}
-        {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={openEdit} />}
+        {tab === "datas" && <DatasTab client={client} onEdit={() => openEdit("contato")} />}
+        {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={() => openEdit("preferencias")} />}
         {tab === "anotacoes" && (
           client.notes?.trim() ? (
             <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
@@ -511,7 +511,7 @@ function ClientProfilePage() {
               title="Nenhuma anotação registrada"
               description="Anote preferências, restrições ou observações importantes sobre o cliente."
               actionLabel="Adicionar anotação"
-              onAction={openEdit}
+              onAction={() => openEdit("notas")}
             />
           )
         )}
