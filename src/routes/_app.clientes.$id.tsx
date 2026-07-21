@@ -456,11 +456,13 @@ function TabPill({
 function TripsCarousel({
   itineraries,
   trips,
+  clientId,
   onOpenLead,
   onNew,
 }: {
   itineraries: Itinerary[];
   trips: Lead[];
+  clientId: string;
   onOpenLead: (id: string) => void;
   onNew: () => void;
 }) {
