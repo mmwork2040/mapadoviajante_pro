@@ -42,11 +42,17 @@ export async function uploadLeadDocument(params: {
   leadId?: string | null;
   itineraryId?: string | null;
   activityId?: string | null;
+  clientId?: string | null;
   category?: string | null;
 }): Promise<LeadDocument | null> {
-  const { file, agencyId, leadId, itineraryId, activityId, category } = params;
+  const { file, agencyId, leadId, itineraryId, activityId, clientId, category } = params;
   const id = crypto.randomUUID();
-  const path = `${agencyId}/${leadId || "geral"}/${id}-${sanitize(file.name)}`;
+  const scope = leadId
+    ? leadId
+    : clientId
+      ? `client/${clientId}`
+      : "geral";
+  const path = `${agencyId}/${scope}/${id}-${sanitize(file.name)}`;
 
   const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, {
     contentType: file.type || undefined,
