@@ -1053,7 +1053,9 @@ function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLea
     );
   }
   return (
-    <ul className="space-y-2">
+    <div>
+      <TabActionBar description="Tarefas vinculadas às viagens do cliente." actionLabel="Nova tarefa" onAction={onNewTask} />
+      <ul className="space-y-2">
       {tasks.map((t) => (
         <li key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
           {t.completed ? (
@@ -1079,7 +1081,8 @@ function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLea
           </div>
         </li>
       ))}
-    </ul>
+      </ul>
+    </div>
   );
 }
 
