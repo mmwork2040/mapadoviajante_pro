@@ -757,7 +757,9 @@ function TripsCarousel({
     );
   }
   return (
-    <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+    <div>
+      <TabActionBar description="Propostas e viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
       {trips.map((t) => {
         const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
         return (
@@ -787,6 +789,7 @@ function TripsCarousel({
           </button>
         );
       })}
+      </div>
     </div>
   );
 }
