@@ -1215,27 +1215,16 @@ function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
     <div>
       <TabActionBar description="Datas importantes registradas no cadastro." actionLabel="Editar cadastro" onAction={onEdit} />
       <ul className="space-y-2">
-      {visible.map((i) => {
-        const d = daysUntil(i.date);
-        return (
-          <li key={i.label} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background p-3">
-            <div>
-              <div className="text-sm font-semibold">{i.label}</div>
-              <div className="text-xs text-muted-foreground">{fmtDate(i.date)} · {i.hint}</div>
-            </div>
-            {typeof d === "number" && (
-              <span className={`shrink-0 rounded-md border px-2 py-1 text-[11px] font-semibold ${
-                d < 0 ? "border-red-300 bg-red-50 text-red-700 dark:bg-red-950/40"
-                : d <= 30 ? "border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-950/40"
-                : "border-border bg-muted/40 text-muted-foreground"
-              }`}>
-                {d < 0 ? `há ${Math.abs(d)}d` : d === 0 ? "hoje" : `em ${d}d`}
-              </span>
-            )}
-          </li>
-        );
-      })}
+      {visible.map((i) => (
+        <li key={i.label} className="flex items-center justify-between gap-2 rounded-lg border border-border bg-background p-3">
+          <div>
+            <div className="text-sm font-semibold">{i.label}</div>
+            <div className="text-xs text-muted-foreground">{fmtDate(i.date)} · {i.hint}</div>
+          </div>
+        </li>
+      ))}
       </ul>
+
     </div>
   );
 }
