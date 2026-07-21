@@ -352,6 +352,7 @@ function ClientProfilePage() {
           <TripsCarousel
             itineraries={itineraries}
             trips={trips}
+            clientId={client.id}
             onOpenLead={(lid) => setOpenLeadId(lid)}
             onNew={() => setOpenNewProposal(true)}
           />
