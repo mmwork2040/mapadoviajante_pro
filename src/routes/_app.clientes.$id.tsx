@@ -734,14 +734,12 @@ function TripsCarousel({
   itineraries,
   trips,
   clientId,
-  travelerCount,
   onOpenLead,
   onNew,
 }: {
   itineraries: Itinerary[];
   trips: Lead[];
   clientId: string;
-  travelerCount: number;
   onOpenLead: (id: string) => void;
   onNew: () => void;
 }) {
