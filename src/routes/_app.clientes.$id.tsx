@@ -920,7 +920,7 @@ function fmtCurrency(n: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(n || 0);
 }
 
-function FinanceiroTab({ trips, expenses }: { trips: Lead[]; expenses: TripExpense[] }) {
+function FinanceiroTab({ trips, expenses, onNew }: { trips: Lead[]; expenses: TripExpense[]; onNew: () => void }) {
   const totals = useMemo(() => {
     const totalOrcado = trips.reduce((s, t) => s + (t.budget_total || t.value || 0), 0);
     const totalGasto = expenses.reduce((s, e) => s + (e.amount || 0), 0);
