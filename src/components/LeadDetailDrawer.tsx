@@ -1432,7 +1432,8 @@ function AtividadesTab({
             className="flex-1 rounded-lg border border-input bg-background px-2 py-2 text-sm outline-none focus:border-primary"
           />
         </label>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="@container">
+        <div className="flex flex-col gap-2 @[32rem]:flex-row @[32rem]:items-center">
           <span className="flex items-center gap-1.5 whitespace-nowrap text-sm font-semibold text-red-600">
             <User className="h-4 w-4" /> Atribuir a:
           </span>
@@ -1466,6 +1467,8 @@ function AtividadesTab({
             </button>
           </div>
         </div>
+        </div>
+
         </CollapsibleSection>
       </section>
 
