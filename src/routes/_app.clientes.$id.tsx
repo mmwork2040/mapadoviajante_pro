@@ -376,9 +376,15 @@ function ClientProfilePage() {
             onNew={() => setOpenNewProposal(true)}
           />
         ) : (
-          <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} />
+          <DocumentsCarousel
+            documents={documents}
+            onPreview={setPreviewDoc}
+            clientId={client.id}
+            onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })}
+          />
         )}
       </Collapsible>
+
 
       {openLeadId && (
         <LeadDetailDrawer
