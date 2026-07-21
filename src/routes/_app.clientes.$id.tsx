@@ -1123,7 +1123,15 @@ function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
   ];
   const visible = items.filter((i) => i.date);
   if (visible.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhuma data importante cadastrada.</p>;
+    return (
+      <EmptyState
+        icon={CalendarClock}
+        title="Nenhuma data importante"
+        description="Cadastre data de nascimento e validade do passaporte para receber lembretes."
+        actionLabel="Editar cadastro"
+        onAction={onEdit}
+      />
+    );
   }
   return (
     <ul className="space-y-2">
