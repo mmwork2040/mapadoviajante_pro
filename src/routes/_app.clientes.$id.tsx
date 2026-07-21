@@ -19,20 +19,24 @@ import {
   Globe2,
   Trash2,
   MoreVertical,
+  Calendar,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
   fetchClientById,
   fetchLeadsByClient,
-  
+  fetchItineraries,
   deleteClient,
 } from "@/lib/services";
-import type { Client, Lead, LeadStatus } from "@/lib/types";
+import type { Client, Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { extractMembers, type ClientMember } from "@/routes/_app.clientes";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { formatDate, initials } from "@/lib/ui";
+import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
+import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
 import {
   DropdownMenu,
   DropdownMenuContent,
