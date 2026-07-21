@@ -183,10 +183,50 @@ function ClientProfilePage() {
   });
 
 
+  // Tasks vinculadas às viagens do cliente
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["client-tasks", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("crm_tasks")
+        .select(
+          "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name)",
+        )
+        .in("lead_id", tripIds)
+        .order("due_date", { ascending: true, nullsFirst: false });
+      if (error) return [] as Task[];
+      return (data as unknown as Task[]) || [];
+    },
+  });
+
+  // Atividades/timeline agregadas de todas as viagens
+  const { data: activities = [] } = useQuery({
+    queryKey: ["client-activities", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const lists = await Promise.all(tripIds.map((lid) => fetchLeadActivities(lid)));
+      return lists
+        .flat()
+        .sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+    },
+  });
+
+  // Despesas agregadas
+  const { data: expenses = [] } = useQuery({
+    queryKey: ["client-expenses", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const lists = await Promise.all(tripIds.map((lid) => fetchTripExpenses(lid)));
+      return lists.flat();
+    },
+  });
+
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
   const [openNewProposal, setOpenNewProposal] = useState(false);
-  const [tab, setTab] = useState<"viagens" | "documentos">("viagens");
+  const [tab, setTab] = useState<HistoryTab>("viagens");
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
+
 
   const delMut = useMutation({
     mutationFn: () => deleteClient(id),
