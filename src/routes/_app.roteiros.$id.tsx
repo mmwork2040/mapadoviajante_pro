@@ -1445,6 +1445,29 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
+      {clientEditOpen && clientForEdit && (
+        <ClientFormDrawer
+          initial={clientForEdit}
+          isEdit
+          saving={clientEditSaving}
+          onClose={() => setClientEditOpen(false)}
+          onSubmit={async (payload) => {
+            try {
+              setClientEditSaving(true);
+              await updateClient(clientForEdit.id, payload);
+              await qc.invalidateQueries({ queryKey: ["itinerary-client", clientForEdit.id] });
+              await qc.invalidateQueries({ queryKey: ["clients"] });
+              toast.success("Cliente atualizado");
+              setClientEditOpen(false);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+            } finally {
+              setClientEditSaving(false);
+            }
+          }}
+        />
+      )}
+
       {coverPickerOpen && (
         <CoverPicker
           currentCover={it.cover_image || null}
