@@ -1244,7 +1244,51 @@ export function NewLeadModal({
 
 
               <TravelDatesField value={form.travel_dates} onChange={(v) => set({ travel_dates: v })} />
-              <ModalField label="Nº de Passageiros" type="number" placeholder="0" value={form.passengers} onChange={(v) => set({ passengers: v })} />
+              <ModalField
+                label="Nº de Passageiros"
+                type="number"
+                placeholder="0"
+                value={form.passengers}
+                onChange={(v) => {
+                  const cleaned = v.replace(/[^\d]/g, "");
+                  set({ passengers: cleaned });
+                }}
+              />
+              {clientMembers.length > 0 && (
+                <div className="sm:col-span-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3">
+                  <div className="mb-2 text-xs font-semibold text-foreground">
+                    Membros do cliente
+                  </div>
+                  <p className="mb-2 text-xs text-muted-foreground">
+                    Selecione quem também vai viajar para somar ao número de passageiros.
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {clientMembers.map((m) => {
+                      const active = selectedMemberIds.has(m.id);
+                      return (
+                        <button
+                          key={m.id}
+                          type="button"
+                          onClick={() => toggleMember(m.id)}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition ${
+                            active
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border bg-background text-foreground hover:border-primary/60"
+                          }`}
+                        >
+                          {active ? <Check className="h-3 w-3" /> : <Plus className="h-3 w-3" />}
+                          <span>{m.name}</span>
+                          {m.relationship && (
+                            <span className={active ? "opacity-80" : "text-muted-foreground"}>
+                              · {m.relationship}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <ModalField
                 label="Tipo de Viagem"
                 required
