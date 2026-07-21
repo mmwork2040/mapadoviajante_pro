@@ -700,8 +700,8 @@ export function LeadDetailDrawer({
                 return (
                   <button
                     onClick={onClick}
-                    disabled={pending || (blocked && !hasItinerary)}
-                    title={blocked && !hasItinerary ? "Não é possível criar roteiro para leads fechados ou perdidos" : undefined}
+                    disabled={pending || blocked}
+                    title={blocked ? "Viagem bloqueada — altere o status para editar" : undefined}
                     className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <MapIcon className="h-4 w-4" /> {hasItinerary ? "Salvar Roteiro" : "Criar Roteiro"}
