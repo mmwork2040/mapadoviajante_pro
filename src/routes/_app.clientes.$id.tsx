@@ -19,20 +19,24 @@ import {
   Globe2,
   Trash2,
   MoreVertical,
+  Calendar,
 } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
   fetchClientById,
   fetchLeadsByClient,
-  
+  fetchItineraries,
   deleteClient,
 } from "@/lib/services";
-import type { Client, Lead, LeadStatus } from "@/lib/types";
+import type { Client, Itinerary, Lead, LeadStatus } from "@/lib/types";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { NewLeadModal } from "@/routes/_app.leads";
 import { extractMembers, type ClientMember } from "@/routes/_app.clientes";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { formatDate, initials } from "@/lib/ui";
+import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
+import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,6 +100,17 @@ function ClientProfilePage() {
   const { data: trips = [] } = useQuery({
     queryKey: ["client-trips", id],
     queryFn: () => fetchLeadsByClient(id),
+  });
+
+  const tripIds = trips.map((t) => t.id);
+  const { data: itineraries = [] } = useQuery({
+    queryKey: ["client-itineraries", id, tripIds.join(",")],
+    enabled: tripIds.length > 0,
+    queryFn: async () => {
+      const all = await fetchItineraries();
+      const set = new Set(tripIds);
+      return all.filter((it) => it.lead_id && set.has(it.lead_id));
+    },
   });
 
   const [openLeadId, setOpenLeadId] = useState<string | null>(null);
@@ -252,7 +267,7 @@ function ClientProfilePage() {
             <Plane className="h-4 w-4 text-primary" />
             <h2 className="text-sm font-semibold">Viagens</h2>
             <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
-              {trips.length}
+              {itineraries.length || trips.length}
             </span>
           </div>
           <button
@@ -262,16 +277,67 @@ function ClientProfilePage() {
             <Plus className="h-3.5 w-3.5" /> Nova
           </button>
         </div>
-        {trips.length === 0 ? (
+        {itineraries.length === 0 && trips.length === 0 ? (
           <p className="py-6 text-center text-sm text-muted-foreground">
             Nenhuma viagem registrada.
           </p>
+        ) : itineraries.length > 0 ? (
+          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+            {itineraries.map((it: Itinerary) => (
+              <Link
+                key={it.id}
+                to="/roteiros/$id"
+                params={{ id: it.id }}
+                className="group flex w-[280px] shrink-0 snap-start overflow-hidden rounded-xl border border-border bg-background shadow-sm transition hover:border-primary/40 hover:shadow-md sm:w-[300px]"
+              >
+                <div className="relative flex w-24 shrink-0 flex-col justify-end overflow-hidden bg-muted/60 p-3">
+                  {it.cover_image ? (
+                    <CoverImage value={it.cover_image} alt={it.destination || "Destino"} />
+                  ) : (
+                    <img
+                      src={itineraryPlaceholder}
+                      alt="Destino sem imagem"
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                  <div className="relative flex items-center gap-1 text-xs font-bold text-white">
+                    <MapPin className="h-3 w-3 shrink-0" />
+                    <span className="truncate">{it.destination || "—"}</span>
+                  </div>
+                </div>
+                <div className="min-w-0 flex-1 p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-foreground">
+                      {initials(it.client_name || it.title)}
+                    </span>
+                    <span className="truncate text-sm font-semibold">
+                      {it.client_name || it.title}
+                    </span>
+                  </div>
+                  <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                    <p className="flex items-center gap-1.5">
+                      <Calendar className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">
+                        {it.start_date ? formatDate(it.start_date) : "—"}
+                        {it.end_date ? ` – ${formatDate(it.end_date)}` : ""}
+                      </span>
+                    </p>
+                    <p className="flex items-center gap-1.5">
+                      <Users className="h-3.5 w-3.5 shrink-0" />
+                      {it.passengers || 1}{" "}
+                      {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         ) : (
           <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
             {trips.map((t: Lead) => {
               const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
-              const start = (t as unknown as { travel_start_date?: string | null }).travel_start_date;
-              const end = (t as unknown as { travel_end_date?: string | null }).travel_end_date;
               return (
                 <button
                   key={t.id}
@@ -295,11 +361,6 @@ function ClientProfilePage() {
                         <span className="truncate">{t.destination}</span>
                       </div>
                     )}
-                    {(start || end) && (
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">
-                        {fmtDate(start)}{end ? ` — ${fmtDate(end)}` : ""}
-                      </div>
-                    )}
                   </div>
                 </button>
               );
@@ -307,6 +368,9 @@ function ClientProfilePage() {
           </div>
         )}
       </section>
+
+      {/* CoverImage helper */}
+
 
       {/* Membros */}
       <section className="rounded-xl border border-border bg-card p-4 shadow-sm">
@@ -467,5 +531,29 @@ function PreferencesView({ prefs }: { prefs: unknown }) {
         </div>
       ))}
     </dl>
+  );
+}
+
+function CoverImage({ value, alt }: { value: string; alt?: string }) {
+  const { url, failed, onError } = useResolvedImageUrl(value);
+  if (!url || failed) return null;
+  return (
+    <>
+      <img
+        src={url}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        onError={onError}
+        className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl opacity-60"
+      />
+      <img
+        src={url}
+        alt={alt || "Imagem do destino"}
+        loading="lazy"
+        onError={onError}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+    </>
   );
 }
