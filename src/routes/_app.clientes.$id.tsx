@@ -423,9 +423,13 @@ function ClientProfilePage() {
 
       <Collapsible icon={Users} title="Membros da viagem" badge={members.length}>
         {members.length === 0 ? (
-          <p className="py-4 text-center text-sm text-muted-foreground">
-            Nenhum membro cadastrado.
-          </p>
+          <EmptyState
+            icon={Users}
+            title="Nenhum membro cadastrado"
+            description="Adicione familiares ou companheiros de viagem no cadastro do cliente."
+            actionLabel="Adicionar membros"
+            onAction={openEdit}
+          />
         ) : (
           <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
             {members.map((m: ClientMember) => (
