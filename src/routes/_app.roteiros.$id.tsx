@@ -1469,17 +1469,6 @@ function ItineraryDetailPage() {
             <PaletteItem key={t.type} type={t.type} label={t.label} icon={t.icon} hint={t.hint} />
           ))}
 
-          {driveEnabled && (
-            <button
-              type="button"
-              onClick={() => setDriveOpen(true)}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium transition hover:bg-muted"
-              title="Importar um documento direto do Google Drive da agência para a IA interpretar."
-            >
-              <HardDrive className="h-3.5 w-3.5" /> Importar do Drive
-            </button>
-          )}
-
           <input
             ref={docInputRef}
             type="file"
