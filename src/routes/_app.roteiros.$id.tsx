@@ -39,6 +39,9 @@ import {
   fetchLibraryItems,
   fetchItineraryById,
   fetchAiConfig,
+  fetchLeadById,
+  fetchClientById,
+  updateClient,
 
   reorderDayActivitiesByTime,
   getLibraryAssetPathFromUrl,
@@ -54,6 +57,7 @@ import {
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
+import { ClientFormDrawer } from "@/routes/_app.clientes.index";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn, convertCurrencyFn, searchHotelsFn, searchSuggestionsFn } from "@/lib/ai.functions";
 import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, previewDriveSheets, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
