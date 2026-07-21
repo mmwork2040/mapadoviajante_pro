@@ -4392,10 +4392,12 @@ function AttachSourceModal({
   onClose,
   onDevice,
   onLibrary,
+  onDrive,
 }: {
   onClose: () => void;
   onDevice: () => void;
   onLibrary: (doc: LeadDocument) => void;
+  onDrive?: () => void;
 }) {
   const [view, setView] = useState<"choose" | "library">("choose");
   const [search, setSearch] = useState("");
@@ -4444,6 +4446,16 @@ function AttachSourceModal({
               <span className="text-sm font-semibold">Da biblioteca</span>
               <span className="text-xs text-muted-foreground">Reutilizar arquivo existente</span>
             </button>
+            {onDrive && (
+              <button
+                onClick={onDrive}
+                className="flex flex-col items-center gap-2 rounded-xl border border-border p-5 text-center hover:border-primary hover:bg-muted/40 sm:col-span-2"
+              >
+                <HardDrive className="h-7 w-7 text-primary" />
+                <span className="text-sm font-semibold">Do Google Drive</span>
+                <span className="text-xs text-muted-foreground">Importar do Drive da agência</span>
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
