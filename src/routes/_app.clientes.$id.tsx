@@ -533,3 +533,27 @@ function PreferencesView({ prefs }: { prefs: unknown }) {
     </dl>
   );
 }
+
+function CoverImage({ value, alt }: { value: string; alt?: string }) {
+  const { url, failed, onError } = useResolvedImageUrl(value);
+  if (!url || failed) return null;
+  return (
+    <>
+      <img
+        src={url}
+        alt=""
+        aria-hidden
+        loading="lazy"
+        onError={onError}
+        className="absolute inset-0 h-full w-full scale-110 object-cover blur-xl opacity-60"
+      />
+      <img
+        src={url}
+        alt={alt || "Imagem do destino"}
+        loading="lazy"
+        onError={onError}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+    </>
+  );
+}
