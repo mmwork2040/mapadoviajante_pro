@@ -100,6 +100,8 @@ function ItinerariesPage() {
     queryKey: ["itineraries"],
     queryFn: fetchItineraries,
   });
+  const { data: leads = [] } = useQuery({ queryKey: ["leads"], queryFn: fetchLeads });
+
 
   const move = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
