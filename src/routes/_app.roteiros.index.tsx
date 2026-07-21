@@ -12,6 +12,7 @@ import {
   duplicateItinerary,
   fetchItineraries,
   fetchLeads,
+  fetchClientById,
   updateItinerary,
   updateLead,
   fetchAiConfig,
@@ -21,6 +22,7 @@ import {
   getMemberId,
   getMemberRole,
 } from "@/lib/services";
+import { extractMembers } from "./_app.clientes";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { dispatchWebhook } from "@/lib/webhook";
