@@ -855,15 +855,24 @@ function InfoRow({
   );
 }
 
-function PreferencesView({ prefs }: { prefs: unknown }) {
+function PreferencesView({ prefs, onEdit }: { prefs: unknown; onEdit?: () => void }) {
+  const empty = (
+    <EmptyState
+      icon={Sparkles}
+      title="Nenhuma preferência cadastrada"
+      description="Registre companhia aérea preferida, tipo de hospedagem, restrições alimentares e mais."
+      actionLabel={onEdit ? "Adicionar preferências" : undefined}
+      onAction={onEdit}
+    />
+  );
   if (!prefs || typeof prefs !== "object") {
-    return <p className="text-sm text-muted-foreground">Nenhuma preferência cadastrada.</p>;
+    return empty;
   }
   const src = prefs as Record<string, unknown>;
   const { members: _m, ...rest } = src;
   const entries = Object.entries(rest);
   if (entries.length === 0) {
-    return <p className="text-sm text-muted-foreground">Nenhuma preferência cadastrada.</p>;
+    return empty;
   }
   return (
     <dl className="grid gap-2 sm:grid-cols-2">
