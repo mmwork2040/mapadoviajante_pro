@@ -552,6 +552,30 @@ function ClientProfilePage() {
         initial={trips[0] ? { leadId: trips[0].id } : null}
       />
 
+      {editOpen && (
+        <ClientFormDrawer
+          initial={client}
+          isEdit
+          saving={editSaving}
+          initialTab={editTab}
+          onClose={() => setEditOpen(false)}
+          onSubmit={async (payload) => {
+            try {
+              setEditSaving(true);
+              await updateClient(client.id, payload);
+              await qc.invalidateQueries({ queryKey: ["client", id] });
+              await qc.invalidateQueries({ queryKey: ["clients"] });
+              toast.success("Cliente atualizado");
+              setEditOpen(false);
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Erro ao salvar");
+            } finally {
+              setEditSaving(false);
+            }
+          }}
+        />
+      )}
+
 
       <DocumentPreviewModal doc={previewDoc} onClose={() => setPreviewDoc(null)} />
     </div>
