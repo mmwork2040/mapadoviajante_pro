@@ -371,7 +371,7 @@ function ClientProfilePage() {
             Nenhum membro cadastrado.
           </p>
         ) : (
-          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+          <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
             {members.map((m: ClientMember) => (
               <div
                 key={m.id}
@@ -412,7 +412,7 @@ function ClientProfilePage() {
 
       {/* Histórico do cliente com múltiplas abas */}
       <Collapsible icon={FolderOpen} title="Histórico do cliente" defaultOpen>
-        <div className="mb-3 -mx-1 flex snap-x snap-mandatory gap-2 overflow-x-auto rounded-lg border border-border bg-muted/40 p-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+        <div className="mb-3 -mx-1 flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain scroll-smooth rounded-lg border border-border bg-muted/40 p-2 pr-3 pt-3 scrollbar-thin [-webkit-overflow-scrolling:touch]">
           <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>Viagens</TabPill>
           <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>Documentos</TabPill>
           <TabPill active={tab === "financeiro"} onClick={() => setTab("financeiro")} icon={DollarSign} count={expenses.length}>Financeiro</TabPill>
@@ -583,7 +583,7 @@ function TripsCarousel({
   }
   if (itineraries.length > 0) {
     return (
-      <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+      <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
         {itineraries.map((it) => (
           <Link
             key={it.id}
@@ -636,7 +636,7 @@ function TripsCarousel({
     );
   }
   return (
-    <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+    <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
       {trips.map((t) => {
         const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
         return (
@@ -732,7 +732,7 @@ function DocumentsCarousel({
           Nenhum documento anexado ainda.
         </p>
       ) : (
-        <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 scrollbar-thin [-webkit-overflow-scrolling:touch]">
+        <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
           {documents.map((d) => {
             const link = isLinkDoc(d);
             const img = isImageDoc(d);
