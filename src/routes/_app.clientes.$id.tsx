@@ -1084,7 +1084,15 @@ function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries
     return Array.from(map.entries()).sort((a, b) => b[1] - a[1]);
   }, [trips, itineraries]);
   if (list.length === 0) {
-    return <p className="py-6 text-center text-sm text-muted-foreground">Nenhum destino registrado.</p>;
+    return (
+      <EmptyState
+        icon={MapIcon}
+        title="Nenhum destino registrado"
+        description="Assim que houver propostas ou roteiros, os destinos aparecem aqui."
+        actionLabel="Nova proposta"
+        onAction={onNew}
+      />
+    );
   }
   return (
     <div className="flex flex-wrap gap-2">
