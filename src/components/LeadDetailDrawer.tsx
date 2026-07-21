@@ -614,7 +614,24 @@ export function LeadDetailDrawer({
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto scrollbar-thin">
+            <div
+              className="flex-1 overflow-y-auto scrollbar-thin"
+              onPointerDownCapture={(e) => {
+                const locked = lead.status === "closed" || lead.status === "lost";
+                if (!locked) return;
+                const el = (e.target as HTMLElement)?.closest(
+                  'button,input,textarea,select,a,[role="button"],[contenteditable="true"]',
+                );
+                if (!el) return;
+                toast.warning(
+                  `Viagem ${lead.status === "closed" ? "fechada" : "perdida"} — somente leitura`,
+                  {
+                    id: "lead-locked",
+                    description: "Altere o status no topo para editar.",
+                  },
+                );
+              }}
+            >
               {(lead.status === "closed" || lead.status === "lost") && (
                 <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-amber-500/10 px-5 py-2 text-xs font-medium text-amber-800 dark:text-amber-300">
                   <Lock className="h-3.5 w-3.5" />
@@ -625,6 +642,7 @@ export function LeadDetailDrawer({
                 disabled={lead.status === "closed" || lead.status === "lost"}
                 className="min-w-0 border-0 p-5 disabled:opacity-95"
               >
+
                 {tab === "perfil" && (
                   <PerfilTab
                     lead={lead}
