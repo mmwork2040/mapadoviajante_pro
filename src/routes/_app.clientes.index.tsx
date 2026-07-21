@@ -60,7 +60,7 @@ function waLink(phone: string | null | undefined, name: string | null | undefine
   return `https://wa.me/${p}?text=${text}`;
 }
 
-export const Route = createFileRoute("/_app/clientes")({
+export const Route = createFileRoute("/_app/clientes/")({
   component: ClientesPage,
   validateSearch: (s: Record<string, unknown>) => ({
     edit: typeof s.edit === "string" ? s.edit : undefined,

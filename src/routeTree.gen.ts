@@ -21,11 +21,11 @@ import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppNotificacoesRouteImport } from './routes/_app.notificacoes'
 import { Route as AppLeadsRouteImport } from './routes/_app.leads'
 import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
-import { Route as AppClientesRouteImport } from './routes/_app.clientes'
 import { Route as AppChecklistTemplatesRouteImport } from './routes/_app.checklist-templates'
 import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
 import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
+import { Route as AppClientesIndexRouteImport } from './routes/_app.clientes.index'
 import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
 import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
@@ -91,11 +91,6 @@ const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
   path: '/financeiro',
   getParentRoute: () => AppRoute,
 } as any)
-const AppClientesRoute = AppClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppChecklistTemplatesRoute = AppChecklistTemplatesRouteImport.update({
   id: '/checklist-templates',
   path: '/checklist-templates',
@@ -115,6 +110,11 @@ const AppRoteirosIndexRoute = AppRoteirosIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoteirosRoute,
+} as any)
+const AppClientesIndexRoute = AppClientesIndexRouteImport.update({
+  id: '/clientes/',
+  path: '/clientes/',
+  getParentRoute: () => AppRoute,
 } as any)
 const ApiPublicPushDeliveryRoute = ApiPublicPushDeliveryRouteImport.update({
   id: '/api/public/push-delivery',
@@ -137,9 +137,9 @@ const AppRoteirosIdRoute = AppRoteirosIdRouteImport.update({
   getParentRoute: () => AppRoteirosRoute,
 } as any)
 const AppClientesIdRoute = AppClientesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppClientesRoute,
+  id: '/clientes/$id',
+  path: '/clientes/$id',
+  getParentRoute: () => AppRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -150,7 +150,6 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
   '/checklist-templates': typeof AppChecklistTemplatesRoute
-  '/clientes': typeof AppClientesRouteWithChildren
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -163,6 +162,7 @@ export interface FileRoutesByFullPath {
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/clientes/': typeof AppClientesIndexRoute
   '/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesByTo {
@@ -172,7 +172,6 @@ export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
   '/checklist-templates': typeof AppChecklistTemplatesRoute
-  '/clientes': typeof AppClientesRouteWithChildren
   '/financeiro': typeof AppFinanceiroRoute
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
@@ -185,6 +184,7 @@ export interface FileRoutesByTo {
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/clientes': typeof AppClientesIndexRoute
   '/roteiros': typeof AppRoteirosIndexRoute
 }
 export interface FileRoutesById {
@@ -196,7 +196,6 @@ export interface FileRoutesById {
   '/_app/admin': typeof AppAdminRoute
   '/_app/biblioteca': typeof AppBibliotecaRoute
   '/_app/checklist-templates': typeof AppChecklistTemplatesRoute
-  '/_app/clientes': typeof AppClientesRouteWithChildren
   '/_app/financeiro': typeof AppFinanceiroRoute
   '/_app/leads': typeof AppLeadsRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
@@ -210,6 +209,7 @@ export interface FileRoutesById {
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/_app/clientes/': typeof AppClientesIndexRoute
   '/_app/roteiros/': typeof AppRoteirosIndexRoute
 }
 export interface FileRouteTypes {
@@ -222,7 +222,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/biblioteca'
     | '/checklist-templates'
-    | '/clientes'
     | '/financeiro'
     | '/leads'
     | '/notificacoes'
@@ -235,6 +234,7 @@ export interface FileRouteTypes {
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/clientes/'
     | '/roteiros/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -244,7 +244,6 @@ export interface FileRouteTypes {
     | '/admin'
     | '/biblioteca'
     | '/checklist-templates'
-    | '/clientes'
     | '/financeiro'
     | '/leads'
     | '/notificacoes'
@@ -257,6 +256,7 @@ export interface FileRouteTypes {
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/clientes'
     | '/roteiros'
   id:
     | '__root__'
@@ -267,7 +267,6 @@ export interface FileRouteTypes {
     | '/_app/admin'
     | '/_app/biblioteca'
     | '/_app/checklist-templates'
-    | '/_app/clientes'
     | '/_app/financeiro'
     | '/_app/leads'
     | '/_app/notificacoes'
@@ -281,6 +280,7 @@ export interface FileRouteTypes {
     | '/api/public/asaas-webhook'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/_app/clientes/'
     | '/_app/roteiros/'
   fileRoutesById: FileRoutesById
 }
@@ -381,13 +381,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppFinanceiroRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/clientes': {
-      id: '/_app/clientes'
-      path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof AppClientesRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/checklist-templates': {
       id: '/_app/checklist-templates'
       path: '/checklist-templates'
@@ -415,6 +408,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/roteiros/'
       preLoaderRoute: typeof AppRoteirosIndexRouteImport
       parentRoute: typeof AppRoteirosRoute
+    }
+    '/_app/clientes/': {
+      id: '/_app/clientes/'
+      path: '/clientes'
+      fullPath: '/clientes/'
+      preLoaderRoute: typeof AppClientesIndexRouteImport
+      parentRoute: typeof AppRoute
     }
     '/api/public/push-delivery': {
       id: '/api/public/push-delivery'
@@ -446,25 +446,13 @@ declare module '@tanstack/react-router' {
     }
     '/_app/clientes/$id': {
       id: '/_app/clientes/$id'
-      path: '/$id'
+      path: '/clientes/$id'
       fullPath: '/clientes/$id'
       preLoaderRoute: typeof AppClientesIdRouteImport
-      parentRoute: typeof AppClientesRoute
+      parentRoute: typeof AppRoute
     }
   }
 }
-
-interface AppClientesRouteChildren {
-  AppClientesIdRoute: typeof AppClientesIdRoute
-}
-
-const AppClientesRouteChildren: AppClientesRouteChildren = {
-  AppClientesIdRoute: AppClientesIdRoute,
-}
-
-const AppClientesRouteWithChildren = AppClientesRoute._addFileChildren(
-  AppClientesRouteChildren,
-)
 
 interface AppRoteirosRouteChildren {
   AppRoteirosIdRoute: typeof AppRoteirosIdRoute
@@ -484,7 +472,6 @@ interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppBibliotecaRoute: typeof AppBibliotecaRoute
   AppChecklistTemplatesRoute: typeof AppChecklistTemplatesRoute
-  AppClientesRoute: typeof AppClientesRouteWithChildren
   AppFinanceiroRoute: typeof AppFinanceiroRoute
   AppLeadsRoute: typeof AppLeadsRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
@@ -492,13 +479,14 @@ interface AppRouteChildren {
   AppRoteirosRoute: typeof AppRoteirosRouteWithChildren
   AppTarefasRoute: typeof AppTarefasRoute
   AppIndexRoute: typeof AppIndexRoute
+  AppClientesIdRoute: typeof AppClientesIdRoute
+  AppClientesIndexRoute: typeof AppClientesIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppBibliotecaRoute: AppBibliotecaRoute,
   AppChecklistTemplatesRoute: AppChecklistTemplatesRoute,
-  AppClientesRoute: AppClientesRouteWithChildren,
   AppFinanceiroRoute: AppFinanceiroRoute,
   AppLeadsRoute: AppLeadsRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
@@ -506,6 +494,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppRoteirosRoute: AppRoteirosRouteWithChildren,
   AppTarefasRoute: AppTarefasRoute,
   AppIndexRoute: AppIndexRoute,
+  AppClientesIdRoute: AppClientesIdRoute,
+  AppClientesIndexRoute: AppClientesIndexRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -523,13 +513,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
