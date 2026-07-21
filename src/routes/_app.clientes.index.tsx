@@ -97,6 +97,29 @@ const EMPTY: Partial<Client> = {
   preferences: {},
 };
 
+const PREF_PRESETS: { label: string; options: string[] }[] = [
+  {
+    label: "Estilo de viagem",
+    options: ["Aventura", "Romântica", "Família", "Lua de mel", "Cultural", "Praia", "Neve", "Gastronômica", "Compras", "Luxo", "Econômica"],
+  },
+  {
+    label: "Hospedagem",
+    options: ["Hotel 5★", "Hotel 4★", "Resort", "All Inclusive", "Boutique", "Airbnb", "Pousada"],
+  },
+  {
+    label: "Voo",
+    options: ["Executiva", "Primeira classe", "Econômica premium", "Voo direto", "Assento janela", "Assento corredor"],
+  },
+  {
+    label: "Alimentação",
+    options: ["Vegetariano", "Vegano", "Sem glúten", "Sem lactose", "Kosher", "Halal"],
+  },
+  {
+    label: "Acessibilidade",
+    options: ["Mobilidade reduzida", "Cadeirante", "Acompanhante"],
+  },
+];
+
 export type Tab = "contato" | "documentos" | "endereco" | "membros" | "preferencias" | "notas";
 
 export interface ClientMember {
@@ -434,13 +457,21 @@ export function ClientFormDrawer({
   const [form, setForm] = useState<Partial<Client>>(initial);
   const [tab, setTab] = useState<Tab>(initialTab ?? "contato");
   const [members, setMembers] = useState<ClientMember[]>(() => extractMembers(initial.preferences));
-  const [prefText, setPrefText] = useState<string>(() => {
+  const [extraPrefs, setExtraPrefs] = useState<Record<string, unknown>>(() => {
     const src = (initial.preferences && typeof initial.preferences === "object")
       ? (initial.preferences as Record<string, unknown>)
       : {};
-    const { members: _m, ...rest } = src;
-    return JSON.stringify(rest, null, 2);
+    const { members: _m, tags: _t, ...rest } = src;
+    return rest;
   });
+  const [prefTags, setPrefTags] = useState<string[]>(() => {
+    const src = (initial.preferences && typeof initial.preferences === "object")
+      ? (initial.preferences as Record<string, unknown>)
+      : {};
+    const raw = (src as { tags?: unknown }).tags;
+    return Array.isArray(raw) ? raw.filter((t): t is string => typeof t === "string") : [];
+  });
+  const [prefInput, setPrefInput] = useState("");
   const [cepLoading, setCepLoading] = useState(false);
 
   const { data: ibgeCities = [] } = useQuery({
@@ -526,15 +557,11 @@ export function ClientFormDrawer({
       setTab("documentos");
       return toast.error("Informe a validade do passaporte");
     }
-    let preferences: Record<string, unknown> = {};
-    try {
-      preferences = prefText.trim() ? JSON.parse(prefText) : {};
-    } catch {
-      toast.error("Preferências: JSON inválido");
-      return;
-    }
-    // Membros são gerenciados pela aba dedicada; salvos dentro de preferences.
-    preferences.members = members;
+    const preferences: Record<string, unknown> = {
+      ...extraPrefs,
+      tags: prefTags,
+      members,
+    };
     // Normaliza datas vazias para null
     const clean: Partial<Client> = { ...form, preferences };
     (["birth_date", "passport_expiry"] as const).forEach((k) => {
@@ -754,22 +781,101 @@ export function ClientFormDrawer({
 
           {tab === "preferencias" && (
             <Section icon={Sparkles} title="Preferências">
-              <div className="sm:col-span-2">
-                <label className="block">
-                  <span className="mb-1 flex h-8 items-center text-sm font-semibold">
-                    Preferências base (JSON)
-                  </span>
-                  <p className="mb-2 text-xs text-muted-foreground">
-                    Preferências copiadas para cada nova viagem. Ex.: alimentação, hospedagem, tipo de viagem.
-                  </p>
-                  <textarea
-                    value={prefText}
-                    onChange={(e) => setPrefText(e.target.value)}
-                    rows={10}
-                    spellCheck={false}
-                    className="w-full rounded-xl border border-input bg-muted/40 px-4 py-3 font-mono text-xs outline-none focus:border-primary focus:bg-background"
-                  />
-                </label>
+              <div className="sm:col-span-2 space-y-5">
+                <p className="text-xs text-muted-foreground">
+                  Preferências copiadas automaticamente para cada nova viagem. Clique nas sugestões
+                  ou digite a sua própria.
+                </p>
+
+                {PREF_PRESETS.map((group) => (
+                  <div key={group.label}>
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {group.label}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {group.options.map((opt) => {
+                        const active = prefTags.includes(opt);
+                        return (
+                          <button
+                            key={opt}
+                            type="button"
+                            onClick={() =>
+                              setPrefTags((prev) =>
+                                active ? prev.filter((t) => t !== opt) : [...prev, opt],
+                              )
+                            }
+                            className={`rounded-full border px-3 py-1 text-xs transition ${
+                              active
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-input bg-muted/40 hover:bg-muted"
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+
+                <div>
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    Adicionar personalizada
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      value={prefInput}
+                      onChange={(e) => setPrefInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          const v = prefInput.trim();
+                          if (v && !prefTags.includes(v)) setPrefTags((p) => [...p, v]);
+                          setPrefInput("");
+                        }
+                      }}
+                      placeholder="Ex.: Prefere voo direto"
+                      className="flex-1 rounded-xl border border-input bg-muted/40 px-4 py-2 text-sm outline-none focus:border-primary focus:bg-background"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const v = prefInput.trim();
+                        if (v && !prefTags.includes(v)) setPrefTags((p) => [...p, v]);
+                        setPrefInput("");
+                      }}
+                      className="rounded-xl border border-input px-4 py-2 text-sm font-medium hover:bg-muted"
+                    >
+                      Adicionar
+                    </button>
+                  </div>
+                </div>
+
+                {prefTags.length > 0 && (
+                  <div>
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Selecionadas ({prefTags.length})
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {prefTags.map((t) => (
+                        <span
+                          key={t}
+                          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs text-primary"
+                        >
+                          {t}
+                          <button
+                            type="button"
+                            onClick={() => setPrefTags((prev) => prev.filter((x) => x !== t))}
+                            className="text-primary/70 hover:text-primary"
+                            aria-label={`Remover ${t}`}
+                          >
+                            ×
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </Section>
           )}
