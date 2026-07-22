@@ -1103,7 +1103,7 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLead: (id: string) => void; onNewTask: () => void }) {
+function TarefasTab({ tasks, onOpenLead, onNewTask, onToggle }: { tasks: Task[]; onOpenLead: (id: string) => void; onNewTask: () => void; onToggle: (t: Task) => void | Promise<void> }) {
   if (tasks.length === 0) {
     return (
       <EmptyState
@@ -1123,11 +1123,19 @@ function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLea
       <ul className="space-y-2">
       {tasks.map((t) => (
         <li key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
-          {t.completed ? (
-            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
-          ) : (
-            <Circle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          )}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onToggle(t); }}
+            className="mt-0.5 shrink-0"
+            title={t.completed ? "Reabrir tarefa" : "Concluir tarefa"}
+            aria-label={t.completed ? "Reabrir tarefa" : "Concluir tarefa"}
+          >
+            {t.completed ? (
+              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+            ) : (
+              <Circle className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+            )}
+          </button>
           <div className="min-w-0 flex-1">
             <div className={`truncate text-sm font-semibold ${t.completed ? "text-muted-foreground line-through" : ""}`}>{t.title}</div>
             <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
@@ -1144,12 +1152,20 @@ function TarefasTab({ tasks, onOpenLead, onNewTask }: { tasks: Task[]; onOpenLea
               )}
             </div>
           </div>
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onToggle(t); }}
+            className="shrink-0 rounded-md border border-border px-2 py-1 text-[11px] font-medium hover:bg-muted"
+          >
+            {t.completed ? "Reabrir" : "Concluir"}
+          </button>
         </li>
       ))}
       </ul>
     </div>
   );
 }
+
 
 function TimelineTab({
   activities,
