@@ -287,6 +287,7 @@ function ClientProfilePage() {
   const [editTab, setEditTab] = useState<ClientTab | undefined>(undefined);
   const [editSaving, setEditSaving] = useState(false);
   const [tab, setTab] = useState<HistoryTab>("viagens");
+  const [destinationFilter, setDestinationFilter] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
   const [convertingMember, setConvertingMember] = useState<ClientMember | null>(null);
   const [convertSaving, setConvertSaving] = useState(false);
@@ -505,7 +506,15 @@ function ClientProfilePage() {
 
         <div className="min-h-[360px]">
         {tab === "viagens" && (
-          <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
+          <TripsCarousel
+            itineraries={destinationFilter ? itineraries.filter((it) => (it.destination || "") === destinationFilter) : itineraries}
+            trips={destinationFilter ? trips.filter((t) => (t.destination || "") === destinationFilter) : trips}
+            clientId={client.id}
+            onOpenLead={(lid) => setOpenLeadId(lid)}
+            onNew={() => setOpenNewProposal(true)}
+            destinationFilter={destinationFilter}
+            onClearDestinationFilter={() => setDestinationFilter(null)}
+          />
         )}
         {tab === "documentos" && (
           <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
@@ -519,7 +528,7 @@ function ClientProfilePage() {
           qc.invalidateQueries({ queryKey: ["client-tasks", id] });
         }} />}
         {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={openNew} />}
-        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} />}
+        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} onSelect={(d) => { setDestinationFilter(d); setTab("viagens"); }} />}
         {tab === "datas" && <DatasTab client={client} onEdit={() => openEdit("contato")} />}
         {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={() => openEdit("preferencias")} />}
         {tab === "anotacoes" && (
@@ -742,28 +751,49 @@ function TripsCarousel({
   clientId,
   onOpenLead,
   onNew,
+  destinationFilter,
+  onClearDestinationFilter,
 }: {
   itineraries: Itinerary[];
   trips: Lead[];
   clientId: string;
   onOpenLead: (id: string) => void;
   onNew: () => void;
+  destinationFilter?: string | null;
+  onClearDestinationFilter?: () => void;
 }) {
+  const filterBanner = destinationFilter ? (
+    <div className="mb-3 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+      <MapPin className="h-3.5 w-3.5 text-primary" />
+      <span>Filtrando por destino: <strong>{destinationFilter}</strong></span>
+      <button
+        type="button"
+        onClick={onClearDestinationFilter}
+        className="ml-auto rounded-md border border-input px-2 py-0.5 text-[11px] font-semibold hover:bg-muted"
+      >
+        Limpar
+      </button>
+    </div>
+  ) : null;
 
   if (itineraries.length === 0 && trips.length === 0) {
     return (
-      <EmptyState
-        icon={Plane}
-        title="Nenhuma viagem registrada"
-        description="Comece uma nova proposta para este cliente e acompanhe todo o pipeline por aqui."
-        actionLabel="Nova proposta"
-        onAction={onNew}
-      />
+      <div>
+        {filterBanner}
+        <EmptyState
+          icon={Plane}
+          title={destinationFilter ? "Nenhuma viagem para este destino" : "Nenhuma viagem registrada"}
+          description={destinationFilter ? "Nenhuma proposta ou roteiro corresponde ao destino selecionado." : "Comece uma nova proposta para este cliente e acompanhe todo o pipeline por aqui."}
+          actionLabel={destinationFilter ? "Limpar filtro" : "Nova proposta"}
+          onAction={destinationFilter ? (onClearDestinationFilter ?? onNew) : onNew}
+        />
+      </div>
     );
   }
   if (itineraries.length > 0) {
     return (
       <div>
+        {filterBanner}
         <TabActionBar description="Roteiros e propostas vinculadas ao cliente." actionLabel="Nova proposta" onAction={onNew} />
         <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
         {itineraries.map((it) => (
@@ -820,6 +850,7 @@ function TripsCarousel({
   }
   return (
     <div>
+      {filterBanner}
       <TabActionBar description="Propostas e viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
       <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
       {trips.map((t) => {
@@ -1226,7 +1257,7 @@ function TimelineTab({
   );
 }
 
-function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries: Itinerary[]; onNew: () => void }) {
+function DestinosTab({ trips, itineraries, onNew, onSelect }: { trips: Lead[]; itineraries: Itinerary[]; onNew: () => void; onSelect: (destination: string) => void }) {
   const list = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of trips) if (t.destination) map.set(t.destination, (map.get(t.destination) || 0) + 1);
@@ -1246,14 +1277,20 @@ function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries
   }
   return (
     <div>
-      <TabActionBar description="Destinos das propostas e roteiros do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <TabActionBar description="Clique em um destino para ver as viagens relacionadas." actionLabel="Nova proposta" onAction={onNew} />
       <div className="flex flex-wrap gap-2">
       {list.map(([dest, count]) => (
-        <span key={dest} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs">
+        <button
+          key={dest}
+          type="button"
+          onClick={() => onSelect(dest)}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs transition hover:border-primary/50 hover:bg-primary/5"
+          title={`Ver viagens de ${dest}`}
+        >
           <MapPin className="h-3.5 w-3.5 text-primary" />
           <span className="font-semibold">{dest}</span>
           {count > 1 && <span className="rounded bg-muted px-1 text-[10px] font-bold text-muted-foreground">×{count}</span>}
-        </span>
+        </button>
       ))}
       </div>
     </div>
