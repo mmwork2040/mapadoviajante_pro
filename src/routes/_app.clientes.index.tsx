@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, Link2, Heart, ExternalLink, Copy, Check } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
 import { ModalField, ModalTextarea, Section, NewLeadModal } from "@/routes/_app.leads";
@@ -424,6 +424,7 @@ function ClientCard({
 
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow-md">
       <div className="flex items-start justify-between gap-2">
         <Link to="/clientes/$id" params={{ id: client.id }} className="flex flex-1 items-center gap-3 text-left">
@@ -562,6 +563,7 @@ function ClientCard({
       </div>
 
     </div>
+    </TooltipProvider>
   );
 }
 
