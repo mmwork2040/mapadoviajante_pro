@@ -502,7 +502,7 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     return null;
   }
   const lead = normalizeLead(data as Lead);
-  if (lead && (updates.status === "closed" || updates.status === "lost")) {
+  if (lead && !lead.client_id) {
     const clientId = await ensureClientFromLead(lead);
     if (clientId) lead.client_id = clientId;
   }
