@@ -155,7 +155,16 @@ function ClientesPage() {
   
   const confirm = useConfirm();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">(() => {
+    if (typeof window === "undefined") return "all";
+    const saved = window.localStorage.getItem("clientes:statusFilter");
+    const allowed = ["all", "new", "contacted", "negotiating", "closed", "lost"];
+    return (saved && allowed.includes(saved) ? saved : "all") as LeadStatus | "all";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem("clientes:statusFilter", statusFilter);
+  }, [statusFilter]);
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const editParam = Route.useSearch().edit as string | undefined;
