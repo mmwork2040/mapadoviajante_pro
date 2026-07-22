@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, Link2, Heart, ExternalLink } from "lucide-react";
+import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, Link2, Heart, ExternalLink, Copy, Check } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { SearchBar } from "@/components/SearchBar";
@@ -52,6 +52,33 @@ function normalizeWhatsPhone(raw: string | null | undefined): string {
   if (d.length === 10 || d.length === 11) d = `55${d}`;
   if (d.length < 12) return "";
   return d;
+}
+
+function CopyButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            navigator.clipboard.writeText(value).then(() => {
+              setCopied(true);
+              toast.success(`${label} copiado`);
+              setTimeout(() => setCopied(false), 1500);
+            }).catch(() => toast.error("Falha ao copiar"));
+          }}
+          className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          aria-label={`Copiar ${label}`}
+        >
+          {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>Copiar {label}</TooltipContent>
+    </Tooltip>
+  );
 }
 
 function waLink(phone: string | null | undefined, name: string | null | undefined): string | null {
@@ -460,58 +487,67 @@ function ClientCard({
       </div>
 
       <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-        {client.email ? (
-          <a
-            href={`mailto:${client.email}`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 truncate hover:text-primary hover:underline"
-          >
-            <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
-            <span className="truncate">{client.email}</span>
-          </a>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 cursor-help" onClick={(e) => e.stopPropagation()}>
-                <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
-                <span>—</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>E-mail não informado</TooltipContent>
-          </Tooltip>
-        )}
-        {client.phone ? (
-          <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-blue-500" />{client.phone}</div>
-        ) : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 cursor-help" onClick={(e) => e.stopPropagation()}>
-                <Phone className="h-3.5 w-3.5 text-blue-500" />—
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>Telefone não informado</TooltipContent>
-          </Tooltip>
-        )}
-        {client.whatsapp ? (() => {
-          const href = waLink(client.whatsapp, client.name);
-          const cls = "flex items-center gap-1.5 hover:text-primary hover:underline";
-          return href ? (
-            <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={cls}>
-              <MessageCircle className="h-3.5 w-3.5 text-green-500" />{client.whatsapp}
+        <div className="flex items-center gap-1.5">
+          {client.email ? (
+            <a
+              href={`mailto:${client.email}`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 truncate hover:text-primary hover:underline min-w-0 flex-1"
+            >
+              <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+              <span className="truncate">{client.email}</span>
             </a>
           ) : (
-            <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-green-500" />{client.whatsapp}</div>
-          );
-        })() : (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center gap-1.5 cursor-help" onClick={(e) => e.stopPropagation()}>
-                <MessageCircle className="h-3.5 w-3.5 text-green-500" />—
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>WhatsApp não informado</TooltipContent>
-          </Tooltip>
-        )}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 cursor-help flex-1" onClick={(e) => e.stopPropagation()}>
+                  <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+                  <span>—</span>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>E-mail não informado</TooltipContent>
+            </Tooltip>
+          )}
+          {client.email && <CopyButton value={client.email} label="E-mail" />}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {client.phone ? (
+            <div className="flex items-center gap-1.5 flex-1 min-w-0"><Phone className="h-3.5 w-3.5 text-blue-500" /><span className="truncate">{client.phone}</span></div>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 cursor-help flex-1" onClick={(e) => e.stopPropagation()}>
+                  <Phone className="h-3.5 w-3.5 text-blue-500" />—
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>Telefone não informado</TooltipContent>
+            </Tooltip>
+          )}
+          {client.phone && <CopyButton value={client.phone} label="Telefone" />}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {client.whatsapp ? (() => {
+            const href = waLink(client.whatsapp, client.name);
+            const cls = "flex items-center gap-1.5 flex-1 min-w-0 hover:text-primary hover:underline";
+            return href ? (
+              <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={cls}>
+                <MessageCircle className="h-3.5 w-3.5 text-green-500" /><span className="truncate">{client.whatsapp}</span>
+              </a>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-1 min-w-0"><MessageCircle className="h-3.5 w-3.5 text-green-500" /><span className="truncate">{client.whatsapp}</span></div>
+            );
+          })() : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 cursor-help flex-1" onClick={(e) => e.stopPropagation()}>
+                  <MessageCircle className="h-3.5 w-3.5 text-green-500" />—
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>WhatsApp não informado</TooltipContent>
+            </Tooltip>
+          )}
+          {client.whatsapp && <CopyButton value={client.whatsapp} label="WhatsApp" />}
+        </div>
       </div>
 
 
