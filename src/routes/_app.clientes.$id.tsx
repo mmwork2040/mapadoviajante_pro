@@ -751,23 +751,43 @@ function TripsCarousel({
   clientId,
   onOpenLead,
   onNew,
+  destinationFilter,
+  onClearDestinationFilter,
 }: {
   itineraries: Itinerary[];
   trips: Lead[];
   clientId: string;
   onOpenLead: (id: string) => void;
   onNew: () => void;
+  destinationFilter?: string | null;
+  onClearDestinationFilter?: () => void;
 }) {
+  const filterBanner = destinationFilter ? (
+    <div className="mb-3 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-xs">
+      <MapPin className="h-3.5 w-3.5 text-primary" />
+      <span>Filtrando por destino: <strong>{destinationFilter}</strong></span>
+      <button
+        type="button"
+        onClick={onClearDestinationFilter}
+        className="ml-auto rounded-md border border-input px-2 py-0.5 text-[11px] font-semibold hover:bg-muted"
+      >
+        Limpar
+      </button>
+    </div>
+  ) : null;
 
   if (itineraries.length === 0 && trips.length === 0) {
     return (
-      <EmptyState
-        icon={Plane}
-        title="Nenhuma viagem registrada"
-        description="Comece uma nova proposta para este cliente e acompanhe todo o pipeline por aqui."
-        actionLabel="Nova proposta"
-        onAction={onNew}
-      />
+      <div>
+        {filterBanner}
+        <EmptyState
+          icon={Plane}
+          title={destinationFilter ? "Nenhuma viagem para este destino" : "Nenhuma viagem registrada"}
+          description={destinationFilter ? "Nenhuma proposta ou roteiro corresponde ao destino selecionado." : "Comece uma nova proposta para este cliente e acompanhe todo o pipeline por aqui."}
+          actionLabel={destinationFilter ? "Limpar filtro" : "Nova proposta"}
+          onAction={destinationFilter ? (onClearDestinationFilter ?? onNew) : onNew}
+        />
+      </div>
     );
   }
   if (itineraries.length > 0) {
