@@ -54,6 +54,33 @@ function normalizeWhatsPhone(raw: string | null | undefined): string {
   return d;
 }
 
+function CopyButton({ value, label }: { value: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            navigator.clipboard.writeText(value).then(() => {
+              setCopied(true);
+              toast.success(`${label} copiado`);
+              setTimeout(() => setCopied(false), 1500);
+            }).catch(() => toast.error("Falha ao copiar"));
+          }}
+          className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          aria-label={`Copiar ${label}`}
+        >
+          {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
+        </button>
+      </TooltipTrigger>
+      <TooltipContent>Copiar {label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 function waLink(phone: string | null | undefined, name: string | null | undefined): string | null {
   const p = normalizeWhatsPhone(phone);
   if (!p) return null;
