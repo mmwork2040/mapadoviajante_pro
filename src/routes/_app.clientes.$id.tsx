@@ -528,7 +528,7 @@ function ClientProfilePage() {
           qc.invalidateQueries({ queryKey: ["client-tasks", id] });
         }} />}
         {tab === "timeline" && <TimelineTab activities={activities} trips={trips} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={openNew} />}
-        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} />}
+        {tab === "destinos" && <DestinosTab trips={trips} itineraries={itineraries} onNew={openNew} onSelect={(d) => { setDestinationFilter(d); setTab("viagens"); }} />}
         {tab === "datas" && <DatasTab client={client} onEdit={() => openEdit("contato")} />}
         {tab === "preferencias" && <PreferencesView prefs={client.preferences} onEdit={() => openEdit("preferencias")} />}
         {tab === "anotacoes" && (
