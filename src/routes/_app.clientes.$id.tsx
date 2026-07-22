@@ -287,6 +287,7 @@ function ClientProfilePage() {
   const [editTab, setEditTab] = useState<ClientTab | undefined>(undefined);
   const [editSaving, setEditSaving] = useState(false);
   const [tab, setTab] = useState<HistoryTab>("viagens");
+  const [destinationFilter, setDestinationFilter] = useState<string | null>(null);
   const [previewDoc, setPreviewDoc] = useState<LeadDocument | null>(null);
   const [convertingMember, setConvertingMember] = useState<ClientMember | null>(null);
   const [convertSaving, setConvertSaving] = useState(false);
