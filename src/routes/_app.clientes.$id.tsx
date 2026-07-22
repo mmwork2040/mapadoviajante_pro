@@ -1257,7 +1257,7 @@ function TimelineTab({
   );
 }
 
-function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries: Itinerary[]; onNew: () => void }) {
+function DestinosTab({ trips, itineraries, onNew, onSelect }: { trips: Lead[]; itineraries: Itinerary[]; onNew: () => void; onSelect: (destination: string) => void }) {
   const list = useMemo(() => {
     const map = new Map<string, number>();
     for (const t of trips) if (t.destination) map.set(t.destination, (map.get(t.destination) || 0) + 1);
@@ -1277,14 +1277,20 @@ function DestinosTab({ trips, itineraries, onNew }: { trips: Lead[]; itineraries
   }
   return (
     <div>
-      <TabActionBar description="Destinos das propostas e roteiros do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <TabActionBar description="Clique em um destino para ver as viagens relacionadas." actionLabel="Nova proposta" onAction={onNew} />
       <div className="flex flex-wrap gap-2">
       {list.map(([dest, count]) => (
-        <span key={dest} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs">
+        <button
+          key={dest}
+          type="button"
+          onClick={() => onSelect(dest)}
+          className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2.5 py-1.5 text-xs transition hover:border-primary/50 hover:bg-primary/5"
+          title={`Ver viagens de ${dest}`}
+        >
           <MapPin className="h-3.5 w-3.5 text-primary" />
           <span className="font-semibold">{dest}</span>
           {count > 1 && <span className="rounded bg-muted px-1 text-[10px] font-bold text-muted-foreground">×{count}</span>}
-        </span>
+        </button>
       ))}
       </div>
     </div>
