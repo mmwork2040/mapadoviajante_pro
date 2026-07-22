@@ -257,15 +257,48 @@ function ClientesPage() {
       />
 
 
+      <div className="flex flex-wrap gap-2">
+        {(
+          [
+            ["all", "Todos", "bg-muted text-foreground"],
+            ["new", "Novo", LEAD_STATUS_META.new.cls],
+            ["contacted", "Contatado", LEAD_STATUS_META.contacted.cls],
+            ["negotiating", "Em Negociação", LEAD_STATUS_META.negotiating.cls],
+            ["closed", "Fechado", LEAD_STATUS_META.closed.cls],
+            ["lost", "Perdido", LEAD_STATUS_META.lost.cls],
+          ] as [LeadStatus | "all", string, string][]
+        ).map(([key, label, cls]) => {
+          const active = statusFilter === key;
+          const count =
+            key === "all"
+              ? clients.length
+              : clients.filter((c) => clientStatuses.get(c.id)?.has(key)).length;
+          return (
+            <button
+              key={key}
+              onClick={() => setStatusFilter(key)}
+              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${cls} ${
+                active ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "opacity-70 hover:opacity-100"
+              }`}
+            >
+              {label}
+              <span className="rounded-full bg-background/60 px-1.5 py-px text-[10px] font-bold">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {isLoading ? (
         <div className="py-16 text-center text-sm text-muted-foreground">Carregando...</div>
-      ) : clients.length === 0 ? (
+      ) : filteredClients.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
-          Nenhum cliente cadastrado ainda.
+          {clients.length === 0
+            ? "Nenhum cliente cadastrado ainda."
+            : "Nenhum cliente encontrado para este filtro."}
         </div>
       ) : (
         <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {clients.map((c) => (
+          {filteredClients.map((c) => (
             <ClientCard
               key={c.id}
               client={c}
@@ -288,6 +321,7 @@ function ClientesPage() {
           ))}
         </div>
       )}
+
 
 
 
