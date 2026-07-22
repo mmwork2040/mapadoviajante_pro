@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, Link2, Heart, ExternalLink } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
 import { ModalField, ModalTextarea, Section, NewLeadModal } from "@/routes/_app.leads";
@@ -469,15 +470,27 @@ function ClientCard({
             <span className="truncate">{client.email}</span>
           </a>
         ) : (
-          <div className="flex items-center gap-1.5">
-            <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
-            <span>—</span>
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5 cursor-help" onClick={(e) => e.stopPropagation()}>
+                <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+                <span>—</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>E-mail não informado</TooltipContent>
+          </Tooltip>
         )}
         {client.phone ? (
           <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-blue-500" />{client.phone}</div>
         ) : (
-          <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-blue-500" />—</div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5 cursor-help" onClick={(e) => e.stopPropagation()}>
+                <Phone className="h-3.5 w-3.5 text-blue-500" />—
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>Telefone não informado</TooltipContent>
+          </Tooltip>
         )}
         {client.whatsapp ? (() => {
           const href = waLink(client.whatsapp, client.name);
@@ -490,7 +503,14 @@ function ClientCard({
             <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-green-500" />{client.whatsapp}</div>
           );
         })() : (
-          <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-green-500" />—</div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5 cursor-help" onClick={(e) => e.stopPropagation()}>
+                <MessageCircle className="h-3.5 w-3.5 text-green-500" />—
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>WhatsApp não informado</TooltipContent>
+          </Tooltip>
         )}
       </div>
 
