@@ -506,7 +506,15 @@ function ClientProfilePage() {
 
         <div className="min-h-[360px]">
         {tab === "viagens" && (
-          <TripsCarousel itineraries={itineraries} trips={trips} clientId={client.id} onOpenLead={(lid) => setOpenLeadId(lid)} onNew={() => setOpenNewProposal(true)} />
+          <TripsCarousel
+            itineraries={destinationFilter ? itineraries.filter((it) => (it.destination || "") === destinationFilter) : itineraries}
+            trips={destinationFilter ? trips.filter((t) => (t.destination || "") === destinationFilter) : trips}
+            clientId={client.id}
+            onOpenLead={(lid) => setOpenLeadId(lid)}
+            onNew={() => setOpenNewProposal(true)}
+            destinationFilter={destinationFilter}
+            onClearDestinationFilter={() => setDestinationFilter(null)}
+          />
         )}
         {tab === "documentos" && (
           <DocumentsCarousel documents={documents} onPreview={setPreviewDoc} clientId={client.id} onUploaded={() => qc.invalidateQueries({ queryKey: ["client-documents", id] })} />
