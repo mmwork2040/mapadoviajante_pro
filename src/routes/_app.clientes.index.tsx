@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, Link2, Heart, ExternalLink } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
 import { ModalField, ModalTextarea, Section, NewLeadModal } from "@/routes/_app.leads";
