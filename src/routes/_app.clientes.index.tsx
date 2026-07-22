@@ -155,6 +155,7 @@ function ClientesPage() {
   
   const confirm = useConfirm();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">("all");
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const editParam = Route.useSearch().edit as string | undefined;
@@ -163,6 +164,24 @@ function ClientesPage() {
     queryKey: ["clients", search],
     queryFn: () => fetchClients(search),
   });
+
+  const { data: allLeads = [] } = useQuery({
+    queryKey: ["leads", "all-for-clients"],
+    queryFn: () => fetchLeads(),
+  });
+
+  const clientStatuses = new Map<string, Set<LeadStatus>>();
+  for (const l of allLeads as Lead[]) {
+    if (!l.client_id) continue;
+    if (!clientStatuses.has(l.client_id)) clientStatuses.set(l.client_id, new Set());
+    clientStatuses.get(l.client_id)!.add(l.status);
+  }
+
+  const filteredClients =
+    statusFilter === "all"
+      ? clients
+      : clients.filter((c) => clientStatuses.get(c.id)?.has(statusFilter));
+
 
   const navigate = useNavigate();
   useEffect(() => {
