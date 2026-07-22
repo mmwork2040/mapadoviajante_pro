@@ -495,7 +495,7 @@ function ClientProfilePage() {
           <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>Viagens</TabPill>
           <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>Documentos</TabPill>
           <TabPill active={tab === "financeiro"} onClick={() => setTab("financeiro")} icon={DollarSign} count={expenses.length}>Financeiro</TabPill>
-          <TabPill active={tab === "tarefas"} onClick={() => setTab("tarefas")} icon={ListChecks} count={tasks.length}>Tarefas</TabPill>
+          <TabPill active={tab === "tarefas"} onClick={() => setTab("tarefas")} icon={ListChecks} count={tasks.filter((t) => !t.completed).length}>Tarefas</TabPill>
           <TabPill active={tab === "timeline"} onClick={() => setTab("timeline")} icon={ActivityIcon} count={activities.length}>Timeline</TabPill>
           <TabPill active={tab === "destinos"} onClick={() => setTab("destinos")} icon={MapIcon}>Destinos</TabPill>
           <TabPill active={tab === "datas"} onClick={() => setTab("datas")} icon={CalendarClock}>Datas</TabPill>
