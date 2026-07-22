@@ -22,10 +22,11 @@ import {
   createClient as createClientSvc,
   updateClient,
   deleteClient,
-  
+  fetchLeads,
   fetchLeadsByClient,
 } from "@/lib/services";
-import type { Client, LeadStatus } from "@/lib/types";
+import type { Client, Lead, LeadStatus } from "@/lib/types";
+
 
 import { lookupCep } from "@/lib/agency";
 import { useConfirm } from "@/components/ConfirmDialog";
