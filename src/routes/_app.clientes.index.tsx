@@ -459,7 +459,7 @@ function ClientCard({
       </div>
 
       <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-        {client.email && (
+        {client.email ? (
           <a
             href={`mailto:${client.email}`}
             onClick={(e) => e.stopPropagation()}
@@ -468,11 +468,18 @@ function ClientCard({
             <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
             <span className="truncate">{client.email}</span>
           </a>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
+            <span>—</span>
+          </div>
         )}
-        {client.phone && (
+        {client.phone ? (
           <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-blue-500" />{client.phone}</div>
+        ) : (
+          <div className="flex items-center gap-1.5"><Phone className="h-3.5 w-3.5 text-blue-500" />—</div>
         )}
-        {client.whatsapp && (() => {
+        {client.whatsapp ? (() => {
           const href = waLink(client.whatsapp, client.name);
           const cls = "flex items-center gap-1.5 hover:text-primary hover:underline";
           return href ? (
@@ -482,8 +489,11 @@ function ClientCard({
           ) : (
             <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-green-500" />{client.whatsapp}</div>
           );
-        })()}
+        })() : (
+          <div className="flex items-center gap-1.5"><MessageCircle className="h-3.5 w-3.5 text-green-500" />—</div>
+        )}
       </div>
+
 
       <div className="mt-3 flex items-center justify-end border-t border-border pt-3">
         <Link
