@@ -563,6 +563,7 @@ function ClientCard({
       </div>
 
     </div>
+    </TooltipProvider>
   );
 }
 
