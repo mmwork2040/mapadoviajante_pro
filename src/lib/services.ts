@@ -434,7 +434,12 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
     console.error("createLead:", error);
     return null;
   }
-  return normalizeLead(data as Lead);
+  const lead = normalizeLead(data as Lead);
+  if (lead && !lead.client_id) {
+    const clientId = await ensureClientFromLead(lead);
+    if (clientId) lead.client_id = clientId;
+  }
+  return lead;
 }
 
 export async function updateLead(leadId: string, updates: Partial<Lead>): Promise<Lead | null> {
