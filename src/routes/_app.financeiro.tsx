@@ -139,7 +139,17 @@ function FinanceContent() {
             options={{
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { position: "bottom" } },
+              plugins: {
+                legend: { position: "bottom" },
+                tooltip: {
+                  callbacks: {
+                    label: () => (hidden ? "Valor oculto" : undefined),
+                  },
+                },
+              },
+              scales: {
+                y: { ticks: { callback: () => (hidden ? "" : undefined) } },
+              },
             }}
           />
         </div>
