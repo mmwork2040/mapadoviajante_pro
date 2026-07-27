@@ -103,12 +103,24 @@ function FinanceContent() {
         title="Financeiro"
         subtitle="Receitas, comissões e despesas da agência."
         actions={
-          <button
-            onClick={() => setOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-          >
-            <Plus className="h-4 w-4" /> Nova Transação
-          </button>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setHidden((v) => !v)}
+              className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:opacity-90"
+              aria-label={hidden ? "Exibir valores" : "Ocultar valores"}
+              title={hidden ? "Exibir valores" : "Ocultar valores"}
+            >
+              {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="hidden sm:inline">{hidden ? "Exibir" : "Ocultar"}</span>
+            </button>
+            <button
+              onClick={() => setOpen(true)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:flex-none"
+            >
+              <Plus className="h-4 w-4" /> Nova Transação
+            </button>
+          </div>
         }
       />
 
