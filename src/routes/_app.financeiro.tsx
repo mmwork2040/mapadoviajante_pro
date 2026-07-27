@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { Plus, X, ArrowUpRight, ArrowDownRight, Wallet } from "lucide-react";
+import { Plus, X, ArrowUpRight, ArrowDownRight, Wallet, Eye, EyeOff } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
@@ -51,6 +51,7 @@ function FinanceContent() {
   const [typeFilter, setTypeFilter] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [hidden, setHidden] = useState(true);
 
   const { data: txs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["transactions", { typeFilter, from, to }],
@@ -68,6 +69,8 @@ function FinanceContent() {
     .reduce((s, t) => s + Number(t.amount), 0);
   const expense = txs.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
   const netProfit = commissions - expense;
+
+  const maskValue = (value: string) => (hidden ? "R$ ••••" : value);
 
   const chart = useMemo(() => {
     const now = new Date();
@@ -100,20 +103,32 @@ function FinanceContent() {
         title="Financeiro"
         subtitle="Receitas, comissões e despesas da agência."
         actions={
-          <button
-            onClick={() => setOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-          >
-            <Plus className="h-4 w-4" /> Nova Transação
-          </button>
+          <div className="flex w-full items-center gap-2 sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setHidden((v) => !v)}
+              className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:opacity-90"
+              aria-label={hidden ? "Exibir valores" : "Ocultar valores"}
+              title={hidden ? "Exibir valores" : "Ocultar valores"}
+            >
+              {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              <span className="hidden sm:inline">{hidden ? "Exibir" : "Ocultar"}</span>
+            </button>
+            <button
+              onClick={() => setOpen(true)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:flex-none"
+            >
+              <Plus className="h-4 w-4" /> Nova Transação
+            </button>
+          </div>
         }
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Receita Total" value={formatCurrency(income)} tone="text-[var(--success)]" />
-        <Stat label="Comissões" value={formatCurrency(commissions)} tone="text-primary" />
-        <Stat label="Despesas" value={formatCurrency(expense)} tone="text-destructive" />
-        <Stat label="Lucro Líquido" value={formatCurrency(netProfit)} tone={netProfit >= 0 ? "text-[var(--success)]" : "text-destructive"} />
+        <Stat label="Receita Total" value={maskValue(formatCurrency(income))} tone="text-[var(--success)]" />
+        <Stat label="Comissões" value={maskValue(formatCurrency(commissions))} tone="text-primary" />
+        <Stat label="Despesas" value={maskValue(formatCurrency(expense))} tone="text-destructive" />
+        <Stat label="Lucro Líquido" value={maskValue(formatCurrency(netProfit))} tone={netProfit >= 0 ? "text-[var(--success)]" : "text-destructive"} />
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
@@ -124,7 +139,17 @@ function FinanceContent() {
             options={{
               responsive: true,
               maintainAspectRatio: false,
-              plugins: { legend: { position: "bottom" } },
+              plugins: {
+                legend: { position: "bottom" },
+                tooltip: {
+                  callbacks: {
+                    label: () => (hidden ? "Valor oculto" : undefined),
+                  },
+                },
+              },
+              scales: {
+                y: { ticks: { callback: () => (hidden ? "" : undefined) } },
+              },
             }}
           />
         </div>
@@ -181,7 +206,7 @@ function FinanceContent() {
                     </span>
                     <span className={`shrink-0 font-semibold ${t.type === "income" ? "text-[var(--success)]" : "text-destructive"}`}>
                       {t.type === "income" ? "+" : "-"}
-                      {formatCurrency(t.amount)}
+                      {hidden ? "••••" : formatCurrency(t.amount)}
                     </span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
@@ -229,7 +254,7 @@ function FinanceContent() {
                       <td className="py-2 text-muted-foreground">{formatDate(t.transaction_date)}</td>
                       <td className={`py-2 text-right font-semibold ${t.type === "income" ? "text-[var(--success)]" : "text-destructive"}`}>
                         {t.type === "income" ? "+" : "-"}
-                        {formatCurrency(t.amount)}
+                        {hidden ? "••••" : formatCurrency(t.amount)}
                       </td>
                     </tr>
                   ))}
