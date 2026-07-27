@@ -70,6 +70,8 @@ function FinanceContent() {
   const expense = txs.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
   const netProfit = commissions - expense;
 
+  const maskValue = (value: string) => (hidden ? "R$ ••••" : value);
+
   const chart = useMemo(() => {
     const now = new Date();
     const months: { y: number; m: number; label: string; revenue: number; commission: number }[] = [];
