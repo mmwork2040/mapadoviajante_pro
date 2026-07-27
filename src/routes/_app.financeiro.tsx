@@ -51,6 +51,7 @@ function FinanceContent() {
   const [typeFilter, setTypeFilter] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
+  const [hidden, setHidden] = useState(true);
 
   const { data: txs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["transactions", { typeFilter, from, to }],
