@@ -254,7 +254,7 @@ function FinanceContent() {
                       <td className="py-2 text-muted-foreground">{formatDate(t.transaction_date)}</td>
                       <td className={`py-2 text-right font-semibold ${t.type === "income" ? "text-[var(--success)]" : "text-destructive"}`}>
                         {t.type === "income" ? "+" : "-"}
-                        {formatCurrency(t.amount)}
+                        {hidden ? "••••" : formatCurrency(t.amount)}
                       </td>
                     </tr>
                   ))}
