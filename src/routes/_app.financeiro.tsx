@@ -206,7 +206,7 @@ function FinanceContent() {
                     </span>
                     <span className={`shrink-0 font-semibold ${t.type === "income" ? "text-[var(--success)]" : "text-destructive"}`}>
                       {t.type === "income" ? "+" : "-"}
-                      {formatCurrency(t.amount)}
+                      {hidden ? "••••" : formatCurrency(t.amount)}
                     </span>
                   </div>
                   <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground">
