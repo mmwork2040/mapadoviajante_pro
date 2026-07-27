@@ -125,10 +125,10 @@ function FinanceContent() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Receita Total" value={formatCurrency(income)} tone="text-[var(--success)]" />
-        <Stat label="Comissões" value={formatCurrency(commissions)} tone="text-primary" />
-        <Stat label="Despesas" value={formatCurrency(expense)} tone="text-destructive" />
-        <Stat label="Lucro Líquido" value={formatCurrency(netProfit)} tone={netProfit >= 0 ? "text-[var(--success)]" : "text-destructive"} />
+        <Stat label="Receita Total" value={maskValue(formatCurrency(income))} tone="text-[var(--success)]" />
+        <Stat label="Comissões" value={maskValue(formatCurrency(commissions))} tone="text-primary" />
+        <Stat label="Despesas" value={maskValue(formatCurrency(expense))} tone="text-destructive" />
+        <Stat label="Lucro Líquido" value={maskValue(formatCurrency(netProfit))} tone={netProfit >= 0 ? "text-[var(--success)]" : "text-destructive"} />
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-5">
