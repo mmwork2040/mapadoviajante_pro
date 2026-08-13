@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Plus, X, ArrowUpRight, ArrowDownRight, Wallet, Eye, EyeOff } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
