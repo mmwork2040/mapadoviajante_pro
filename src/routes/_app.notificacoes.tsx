@@ -25,21 +25,21 @@ import type { AppNotification } from "@/lib/types";
 
 const PAGE_SIZE = 15;
 
-type NotifSearch = { page: number; q: string; filter: string; order: string };
+type NotifSearch = { page?: number; q?: string; filter?: string; order?: string };
 
 export const Route = createFileRoute("/_app/notificacoes")({
   validateSearch: (search: Partial<Record<keyof NotifSearch, unknown>>): NotifSearch => ({
     page: typeof search.page === "number" ? search.page : Number(search.page) || 1,
-    q: typeof search.q === "string" ? search.q : "",
-    filter: typeof search.filter === "string" ? search.filter : "all",
-    order: typeof search.order === "string" ? search.order : "desc",
+    q: typeof search.q === "string" ? search.q : undefined,
+    filter: typeof search.filter === "string" ? search.filter : undefined,
+    order: typeof search.order === "string" ? search.order : undefined,
   }),
   component: NotificationsPage,
 });
 
 function NotificationsPage() {
   const navigate = useNavigate({ from: "/notificacoes" });
-  const { page, q, filter, order } = Route.useSearch();
+  const { page = 1, q = "", filter = "all", order = "desc" } = Route.useSearch();
   const qc = useQueryClient();
   const [term, setTerm] = useState(q);
 
