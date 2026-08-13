@@ -51,7 +51,17 @@ function FinanceContent() {
   const [typeFilter, setTypeFilter] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [hidden, setHidden] = useState(true);
+  const [hidden, setHidden] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("finance_values_hidden");
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("finance_values_hidden", JSON.stringify(hidden));
+  }, [hidden]);
 
   const { data: txs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["transactions", { typeFilter, from, to }],
