@@ -28,7 +28,7 @@ const PAGE_SIZE = 15;
 type NotifSearch = { page: number; q: string; filter: string; order: string };
 
 export const Route = createFileRoute("/_app/notificacoes")({
-  validateSearch: (search: Record<string, unknown>): NotifSearch => ({
+  validateSearch: (search: Partial<Record<keyof NotifSearch, unknown>>): NotifSearch => ({
     page: typeof search.page === "number" ? search.page : Number(search.page) || 1,
     q: typeof search.q === "string" ? search.q : "",
     filter: typeof search.filter === "string" ? search.filter : "all",

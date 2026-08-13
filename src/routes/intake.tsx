@@ -5,7 +5,7 @@ import { getPublicFormEmbed } from "@/lib/form-embed.functions";
 
 export const Route = createFileRoute("/intake")({
   ssr: false,
-  validateSearch: (s: Record<string, unknown>) => ({ a: typeof s.a === "string" ? s.a : "" }),
+  validateSearch: (s: { a?: unknown }) => ({ a: typeof s.a === "string" ? s.a : "" }),
   head: () => ({
     meta: [
       { title: "Solicite seu orçamento — Mapa do Viajante PRO" },
