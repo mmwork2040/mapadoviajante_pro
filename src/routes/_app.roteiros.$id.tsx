@@ -104,9 +104,8 @@ import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
   component: ItineraryDetailPage,
-  validateSearch: (search: Record<string, unknown>) => ({
-    from: typeof search.from === "string" ? (search.from as string) : undefined,
-  }),
+  validateSearch: (search: { from?: unknown }): { from?: string } =>
+    typeof search.from === "string" ? { from: search.from } : {},
 });
 
 const STATUS_OPTIONS = ["draft", "active", "completed", "cancelled"];
