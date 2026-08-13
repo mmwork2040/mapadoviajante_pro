@@ -25,6 +25,7 @@ import {
   deleteClient,
   fetchLeads,
   fetchLeadsByClient,
+  
 } from "@/lib/services";
 import type { Client, Lead, LeadStatus } from "@/lib/types";
 
@@ -227,7 +228,7 @@ function ClientesPage() {
     if (c) {
       setEditing(c);
       setOpenForm(true);
-      navigate({ to: "/clientes", search: {}, replace: true });
+      navigate({ to: "/clientes", search: (prev: any) => ({ ...prev, edit: undefined }), replace: true });
     }
   }, [editParam, clients, navigate]);
 

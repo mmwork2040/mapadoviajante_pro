@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Plus, X, ArrowUpRight, ArrowDownRight, Wallet, Eye, EyeOff } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
@@ -51,7 +51,17 @@ function FinanceContent() {
   const [typeFilter, setTypeFilter] = useState("");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
-  const [hidden, setHidden] = useState(true);
+  const [hidden, setHidden] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("finance_values_hidden");
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("finance_values_hidden", JSON.stringify(hidden));
+  }, [hidden]);
 
   const { data: txs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["transactions", { typeFilter, from, to }],
@@ -106,7 +116,7 @@ function FinanceContent() {
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
               type="button"
-              onClick={() => setHidden((v) => !v)}
+              onClick={() => setHidden((v: boolean) => !v)}
               className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:opacity-90"
               aria-label={hidden ? "Exibir valores" : "Ocultar valores"}
               title={hidden ? "Exibir valores" : "Ocultar valores"}
