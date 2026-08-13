@@ -116,7 +116,7 @@ function FinanceContent() {
           <div className="flex w-full items-center gap-2 sm:w-auto">
             <button
               type="button"
-              onClick={() => setHidden((v: boolean) => !v)}
+              onClick={() => setHidden((v) => !v)}
               className="flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground hover:opacity-90"
               aria-label={hidden ? "Exibir valores" : "Ocultar valores"}
               title={hidden ? "Exibir valores" : "Ocultar valores"}

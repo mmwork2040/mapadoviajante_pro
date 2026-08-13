@@ -25,7 +25,7 @@ import {
   deleteClient,
   fetchLeads,
   fetchLeadsByClient,
-  type ClientSearch,
+  
 } from "@/lib/services";
 import type { Client, Lead, LeadStatus } from "@/lib/types";
 
