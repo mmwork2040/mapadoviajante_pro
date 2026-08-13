@@ -111,7 +111,7 @@ function NotificationsPage() {
           if (k) s[decodeURIComponent(k)] = decodeURIComponent(v ?? "");
         }
       }
-      navigate({ to: path, search: s });
+      navigate({ to: path as never, search: s as never });
     }
   }
 
