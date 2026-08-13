@@ -228,7 +228,7 @@ function ClientesPage() {
     if (c) {
       setEditing(c);
       setOpenForm(true);
-      navigate({ to: "/clientes", search: (prev: any) => ({ ...prev }), replace: true });
+      navigate({ to: "/clientes", search: (prev: any) => ({ ...prev, edit: undefined }), replace: true });
     }
   }, [editParam, clients, navigate]);
 
