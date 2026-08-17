@@ -19,13 +19,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, setLeadArchived, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
+import { createLead, deleteLead, fetchLeads, setLeadArchived, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles, initials } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/leads")({
   validateSearch: (search: { lead?: unknown }): { lead?: string } =>
@@ -69,6 +79,7 @@ function LeadsPage() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
@@ -162,6 +173,20 @@ function LeadsPage() {
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const ok = await deleteLead(id);
+      if (!ok) throw new Error("Falha ao excluir");
+      return id;
+    },
+    onSuccess: () => {
+      toast.success("Venda excluída.");
+      setConfirmDeleteId(null);
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
+    onError: () => toast.error("Não foi possível excluir a venda."),
   });
 
   const archiveMut = useMutation({
@@ -298,6 +323,7 @@ function LeadsPage() {
                         onToggleArchive={() =>
                           archiveMut.mutate({ id: l.id, archived: !showArchived })
                         }
+                        onDelete={() => setConfirmDeleteId(l.id)}
                       />
                     ))
                   )}
@@ -322,6 +348,30 @@ function LeadsPage() {
       )}
 
       {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => { setDetailId(null); if (leadParam) navigate({ search: {}, replace: true }); }} />}
+      <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir venda?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A venda e seus dados vinculados serão removidos
+              permanentemente. Se preferir mantê-la no histórico, use "Arquivar venda".
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMut.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteMut.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (confirmDeleteId) deleteMut.mutate(confirmDeleteId);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteMut.isPending ? "Excluindo..." : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -344,6 +394,7 @@ function LeadCard({
   onOpen,
   archived,
   onToggleArchive,
+  onDelete,
 }: {
   lead: Lead;
   assignee?: AgencyMember | null;
@@ -355,6 +406,7 @@ function LeadCard({
   onOpen: () => void;
   archived?: boolean;
   onToggleArchive?: () => void;
+  onDelete?: () => void;
 }) {
   
 
@@ -431,6 +483,17 @@ function LeadCard({
                       <Archive className="h-4 w-4" /> Arquivar venda
                     </>
                   )}
+                </DropdownMenuItem>
+              </>
+            )}
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={onDelete}
+                  className="gap-2 text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" /> Excluir venda
                 </DropdownMenuItem>
               </>
             )}
