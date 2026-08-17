@@ -174,6 +174,20 @@ function LeadsPage() {
     },
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const ok = await deleteLead(id);
+      if (!ok) throw new Error("Falha ao excluir");
+      return id;
+    },
+    onSuccess: () => {
+      toast.success("Venda excluída.");
+      setConfirmDeleteId(null);
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
+    onError: () => toast.error("Não foi possível excluir a venda."),
+  });
+
   const archiveMut = useMutation({
     mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
       const ok = await setLeadArchived(id, archived);
