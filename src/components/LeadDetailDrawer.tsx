@@ -104,6 +104,7 @@ const TABS = [
 ] as const;
 
 type TabKey = (typeof TABS)[number]["key"];
+export type LeadDetailTab = TabKey;
 
 const ACTIVITY_TYPES = [
   { key: "call", label: "Ligação", icon: Phone },
