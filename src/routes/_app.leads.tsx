@@ -92,11 +92,13 @@ function LeadsPage() {
   }
 
   const { data: allLeads = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ["leads", { search }],
-    queryFn: () => fetchLeads({ search: search || undefined }),
+    queryKey: ["leads", { search, archived: showArchived }],
+    queryFn: () =>
+      fetchLeads({ search: search || undefined, archived: showArchived ? "archived" : "active" }),
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
+
   const myId = getMemberId();
   const memberRole = getMemberRole();
   const isManager = memberRole === "admin" || memberRole === "gerente";
