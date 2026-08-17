@@ -225,7 +225,7 @@ function ItinerariesPage() {
       <PageHeader
         icon={RouteIcon}
         title="Viagens"
-        subtitle="Planejamento das viagens (arraste para mover)."
+        subtitle="Cada viagem pertence a um cliente e a uma venda. O roteiro é o conteúdo dia a dia; checklist, financeiro e benefícios ficam nos detalhes da viagem."
         actions={
           <>
             <SearchBar
@@ -373,21 +373,76 @@ function ItinerariesPage() {
                                 {it.passengers || 1}{" "}
                                 {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
                               </p>
-                              {it.lead?.status && (
-                                <p className="flex items-center gap-1.5">
-                                  <span
-                                    className={`h-2 w-2 shrink-0 rounded-full ${
-                                      LEAD_STATUS_META[it.lead.status as string]?.dot ?? "bg-muted-foreground"
-                                    }`}
-                                  />
-                                  <span className="truncate">
-                                    Venda: {LEAD_STATUS_META[it.lead.status as string]?.label ?? it.lead.status}
-                                  </span>
+                              {it.lead_id ? (
+                                it.lead?.status && (
+                                  <p className="flex items-center gap-1.5">
+                                    <span
+                                      className={`h-2 w-2 shrink-0 rounded-full ${
+                                        LEAD_STATUS_META[it.lead.status as string]?.dot ?? "bg-muted-foreground"
+                                      }`}
+                                    />
+                                    <span className="truncate">
+                                      Venda: {LEAD_STATUS_META[it.lead.status as string]?.label ?? it.lead.status}
+                                    </span>
+                                  </p>
+                                )
+                              ) : (
+                                <p className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
+                                  Sem venda vinculada
                                 </p>
                               )}
                             </div>
                           </div>
                         </Link>
+
+                        <div className="flex items-center gap-1 border-t border-border px-2 py-1.5">
+                          {it.lead_id ? (
+                            <>
+                              <button
+                                type="button"
+                                title="Detalhes da viagem"
+                                onClick={() => openDetail(it)}
+                                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                              >
+                                <ClipboardList className="h-3.5 w-3.5" /> Detalhes
+                              </button>
+                              <button
+                                type="button"
+                                title="Checklist da viagem"
+                                onClick={() => openDetail(it, "checklist")}
+                                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                              >
+                                <ListChecks className="h-3.5 w-3.5" /> Checklist
+                              </button>
+                              <button
+                                type="button"
+                                title="Financeiro da viagem"
+                                onClick={() => openDetail(it, "financeiro")}
+                                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                              >
+                                <CircleDollarSign className="h-3.5 w-3.5" /> Financeiro
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setOpen(true)}
+                              className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-amber-700 hover:bg-muted dark:text-amber-400"
+                            >
+                              <Plus className="h-3.5 w-3.5" /> Criar proposta
+                            </button>
+                          )}
+                          {it.lead?.client_id && (
+                            <Link
+                              to="/clientes/$id"
+                              params={{ id: it.lead.client_id }}
+                              title="Perfil do cliente"
+                              className="ml-auto flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+                            >
+                              <User className="h-3.5 w-3.5" /> Cliente
+                            </Link>
+                          )}
+                        </div>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
