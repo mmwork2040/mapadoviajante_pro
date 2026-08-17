@@ -217,7 +217,13 @@ export interface Itinerary {
   status: string;
   created_at?: string;
   cover_image?: string | null;
-  lead?: { name: string; assigned_to?: string | null } | null;
+  lead?: {
+    id?: string;
+    name: string;
+    assigned_to?: string | null;
+    status?: LeadStatus | string | null;
+    client_id?: string | null;
+  } | null;
   days?: ItineraryDay[];
   vouchers?: Voucher[];
 }

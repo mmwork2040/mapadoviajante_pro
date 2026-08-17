@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Upload, ClipboardList } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -86,6 +86,7 @@ import {
   type AgencyDocument,
 } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
 import { formatCurrency, parseCurrency, formatMoney, brlWithRate } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
@@ -422,6 +423,7 @@ function ItineraryDetailPage() {
     queryFn: () => (clientIdForEdit ? fetchClientById(clientIdForEdit) : null),
     enabled: !!clientIdForEdit,
   });
+  const [tripDetailOpen, setTripDetailOpen] = useState(false);
   const [clientEditOpen, setClientEditOpen] = useState(false);
   const [clientEditSaving, setClientEditSaving] = useState(false);
 
@@ -1293,9 +1295,31 @@ function ItineraryDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link to={(backTo as any) || "/roteiros"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Voltar
-      </Link>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Link to={(backTo as any) || "/roteiros"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </Link>
+        <nav className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+          {clientIdForEdit ? (
+            <Link to="/clientes/$id" params={{ id: clientIdForEdit }} className="truncate hover:text-foreground hover:underline">
+              {clientForEdit?.name || it.client_name || "Cliente"}
+            </Link>
+          ) : (
+            <span className="truncate">{it.client_name || "Cliente"}</span>
+          )}
+          <span>›</span>
+          {leadIdForClient ? (
+            <button type="button" onClick={() => setTripDetailOpen(true)} className="truncate hover:text-foreground hover:underline">
+              Viagem
+            </button>
+          ) : (
+            <span>Viagem</span>
+          )}
+          <span>›</span>
+          <span className="truncate font-medium text-foreground">Roteiro</span>
+        </nav>
+      </div>
+
 
       <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_2px_4px_rgba(0,0,0,0.06),0_8px_16px_-8px_rgba(0,0,0,0.12)] sm:flex-row sm:items-stretch">
         <div className="relative h-40 w-full shrink-0 overflow-hidden bg-muted/60 sm:h-auto sm:w-56">
@@ -1401,6 +1425,15 @@ function ItineraryDetailPage() {
           })()}
         </div>
         <div className="flex flex-wrap gap-2">
+          {leadIdForClient && (
+            <button
+              type="button"
+              onClick={() => setTripDetailOpen(true)}
+              className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <ClipboardList className="h-4 w-4" /> Detalhes da viagem
+            </button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
@@ -1443,6 +1476,16 @@ function ItineraryDetailPage() {
         </div>
         </div>
       </div>
+
+      {tripDetailOpen && leadIdForClient && (
+        <LeadDetailDrawer
+          leadId={leadIdForClient}
+          onClose={() => {
+            setTripDetailOpen(false);
+            qc.invalidateQueries({ queryKey: ["itinerary", id] });
+          }}
+        />
+      )}
 
       {clientEditOpen && clientForEdit && (
         <ClientFormDrawer

@@ -3,7 +3,7 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon, Save, User } from "lucide-react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon, Save, User, ClipboardList, ListChecks, CircleDollarSign } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
@@ -33,6 +33,7 @@ import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { ModalField, LibraryImagePicker, NewLeadModal } from "./_app.leads";
 import { SearchBar } from "@/components/SearchBar";
+import { LeadDetailDrawer, type LeadDetailTab } from "@/components/LeadDetailDrawer";
 
 import {
   DropdownMenu,
@@ -53,6 +54,14 @@ const STATUS_COLUMNS: { key: string; label: string; dot: string }[] = [
   { key: "completed", label: "Concluído", dot: "bg-emerald-500" },
   { key: "cancelled", label: "Cancelado", dot: "bg-red-500" },
 ];
+
+const LEAD_STATUS_META: Record<string, { label: string; dot: string }> = {
+  new: { label: "Novo", dot: "bg-blue-500" },
+  contacted: { label: "Contatado", dot: "bg-sky-500" },
+  negotiating: { label: "Negociando", dot: "bg-amber-400" },
+  closed: { label: "Fechado", dot: "bg-emerald-500" },
+  lost: { label: "Perdido", dot: "bg-red-500" },
+};
 
 function initials(name?: string | null) {
   const parts = (name || "").trim().split(/\s+/).filter(Boolean);
@@ -91,6 +100,7 @@ function ItinerariesPage() {
   const [search, setSearch] = useState("");
   const [onlyMine, setOnlyMine] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<{ leadId: string; tab?: LeadDetailTab } | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
   const memberRole = getMemberRole();
   const isManager = memberRole === "admin" || memberRole === "gerente";
@@ -182,6 +192,20 @@ function ItinerariesPage() {
       destructive: true,
     });
     if (ok) remove.mutate(it);
+  }
+
+  function openDetail(it: Itinerary, tab?: LeadDetailTab) {
+    if (!it.lead_id) {
+      toast.info("Esta viagem não está vinculada a uma venda.");
+      return;
+    }
+    setDetail({ leadId: it.lead_id, tab });
+  }
+
+  function closeDetail() {
+    setDetail(null);
+    qc.invalidateQueries({ queryKey: ["itineraries"] });
+    qc.invalidateQueries({ queryKey: ["leads"] });
   }
 
   async function handleDuplicate(it: Itinerary) {
@@ -349,6 +373,18 @@ function ItinerariesPage() {
                                 {it.passengers || 1}{" "}
                                 {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
                               </p>
+                              {it.lead?.status && (
+                                <p className="flex items-center gap-1.5">
+                                  <span
+                                    className={`h-2 w-2 shrink-0 rounded-full ${
+                                      LEAD_STATUS_META[it.lead.status as string]?.dot ?? "bg-muted-foreground"
+                                    }`}
+                                  />
+                                  <span className="truncate">
+                                    Venda: {LEAD_STATUS_META[it.lead.status as string]?.label ?? it.lead.status}
+                                  </span>
+                                </p>
+                              )}
                             </div>
                           </div>
                         </Link>
@@ -361,12 +397,37 @@ function ItinerariesPage() {
                               <MoreVertical className="h-4 w-4" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuItem asChild>
                               <Link to="/roteiros/$id" params={{ id: it.id }}>
-                                <RouteIcon className="mr-2 h-4 w-4" /> Abrir
+                                <RouteIcon className="mr-2 h-4 w-4" /> Abrir roteiro
                               </Link>
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!it.lead_id}
+                              onSelect={() => openDetail(it)}
+                            >
+                              <ClipboardList className="mr-2 h-4 w-4" /> Detalhes da viagem
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!it.lead_id}
+                              onSelect={() => openDetail(it, "checklist")}
+                            >
+                              <ListChecks className="mr-2 h-4 w-4" /> Checklist
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!it.lead_id}
+                              onSelect={() => openDetail(it, "financeiro")}
+                            >
+                              <CircleDollarSign className="mr-2 h-4 w-4" /> Financeiro
+                            </DropdownMenuItem>
+                            {it.lead?.client_id && (
+                              <DropdownMenuItem asChild>
+                                <Link to="/clientes/$id" params={{ id: it.lead.client_id }}>
+                                  <User className="mr-2 h-4 w-4" /> Perfil do cliente
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             {STATUS_COLUMNS.filter((s) => s.key !== it.status).map((s) => (
                               <DropdownMenuItem
@@ -416,6 +477,13 @@ function ItinerariesPage() {
         />
       )}
 
+      {detail && (
+        <LeadDetailDrawer
+          leadId={detail.leadId}
+          initialTab={detail.tab}
+          onClose={closeDetail}
+        />
+      )}
     </div>
   );
 }
