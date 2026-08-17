@@ -389,11 +389,7 @@ function ItinerariesPage() {
                             </DropdownMenuItem>
                             {it.lead?.client_id && (
                               <DropdownMenuItem asChild>
-                                <Link
-                                  to="/clientes/$id"
-                                  params={{ id: it.lead.client_id }}
-                                  search={{ from: "/roteiros" }}
-                                >
+                                <Link to="/clientes/$id" params={{ id: it.lead.client_id }}>
                                   <User className="mr-2 h-4 w-4" /> Perfil do cliente
                                 </Link>
                               </DropdownMenuItem>
