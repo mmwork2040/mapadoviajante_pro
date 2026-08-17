@@ -1295,9 +1295,31 @@ function ItineraryDetailPage() {
 
   return (
     <div className="space-y-6">
-      <Link to={(backTo as any) || "/roteiros"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-4 w-4" /> Voltar
-      </Link>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+        <Link to={(backTo as any) || "/roteiros"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowLeft className="h-4 w-4" /> Voltar
+        </Link>
+        <nav className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+          {clientIdForEdit ? (
+            <Link to="/clientes/$id" params={{ id: clientIdForEdit }} className="truncate hover:text-foreground hover:underline">
+              {clientForEdit?.name || it.client_name || "Cliente"}
+            </Link>
+          ) : (
+            <span className="truncate">{it.client_name || "Cliente"}</span>
+          )}
+          <span>›</span>
+          {leadIdForClient ? (
+            <button type="button" onClick={() => setTripDetailOpen(true)} className="truncate hover:text-foreground hover:underline">
+              Viagem
+            </button>
+          ) : (
+            <span>Viagem</span>
+          )}
+          <span>›</span>
+          <span className="truncate font-medium text-foreground">Roteiro</span>
+        </nav>
+      </div>
+
 
       <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_2px_4px_rgba(0,0,0,0.06),0_8px_16px_-8px_rgba(0,0,0,0.12)] sm:flex-row sm:items-stretch">
         <div className="relative h-40 w-full shrink-0 overflow-hidden bg-muted/60 sm:h-auto sm:w-56">
