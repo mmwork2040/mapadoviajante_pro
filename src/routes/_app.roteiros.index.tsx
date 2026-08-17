@@ -365,6 +365,18 @@ function ItinerariesPage() {
                                 {it.passengers || 1}{" "}
                                 {(it.passengers || 1) > 1 ? "viajantes" : "viajante"}
                               </p>
+                              {it.lead?.status && (
+                                <p className="flex items-center gap-1.5">
+                                  <span
+                                    className={`h-2 w-2 shrink-0 rounded-full ${
+                                      LEAD_STATUS_META[it.lead.status as string]?.dot ?? "bg-muted-foreground"
+                                    }`}
+                                  />
+                                  <span className="truncate">
+                                    Venda: {LEAD_STATUS_META[it.lead.status as string]?.label ?? it.lead.status}
+                                  </span>
+                                </p>
+                              )}
                             </div>
                           </div>
                         </Link>
