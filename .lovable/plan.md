@@ -1,39 +1,41 @@
-## Objetivo
+## Diagnóstico do estado atual
 
-Renomear rótulos e restringir visibilidade por papel:
+Verificado no código e no banco:
 
-- Página atual **"Viagens"** (rota `/leads`) → **"Vendas"**.
-- Página atual **"Roteiros"** (rota `/roteiros`) → **"Viagens"**.
-- **Vendas**: apenas o gestor (`role = admin` ou `gerente`) vê todas; demais membros veem apenas as vendas atribuídas a eles.
-- **Viagens (ex-Roteiros)**: gestor vê todas; demais membros veem apenas as viagens cujo lead está atribuído a eles, com um filtro/toggle "Minhas / Todas" análogo ao já existente em `/leads`.
+- **Vendas (`/leads`)**: o card abre o `LeadDetailDrawer`, que já concentra tudo da viagem — abas Perfil, Viagem, Atividades, Checklist, Financeiro, Benefícios e Notas, além de editar a proposta e criar/salvar o roteiro.
+- **Viagens (`/roteiros`)**: o card só leva ao roteiro (`/roteiros/$id`) — blocos de dias, atividades, documentos, PDF. Não há acesso ao checklist, financeiro, benefícios, notas nem às atividades. O menu de 3 pontos só tem Abrir / Mover status / Duplicar / Excluir.
+- **A ligação existe**: todo roteiro tem `lead_id` preenchido (6 de 6 hoje), e a página do roteiro já carrega o lead vinculado para editar o cliente no cabeçalho.
 
-Rotas e nomes de arquivos permanecem (`/leads`, `/roteiros`) para evitar quebra de links salvos, roteiros existentes e imports do `routeTree.gen.ts`. Alteração é apenas de rótulos visíveis + filtro de dados.
+Ou seja: a hierarquia Cliente > Viagem > (roteiro, checklist, financeiro...) está correta nos dados, mas na aba Viagens falta a porta de entrada para esses dados.
 
-## Mudanças
+## Ajustes propostos
 
-### 1. Rótulos (UI apenas)
-- `src/components/layout/AppLayout.tsx`: item de menu `/leads` label `"Vendas"`; `/roteiros` label `"Viagens"`.
-- `src/routes/_app.leads.tsx`: `PageHeader` title `"Vendas"` + subtítulo/ícone coerente; textos internos ("Nova Viagem" etc.) → "Nova Venda"/equivalentes onde referem-se à entidade.
-- `src/routes/_app.roteiros.index.tsx`: `PageHeader` title `"Viagens"`; "Novo Roteiro" → "Nova Viagem"; textos correlatos (toasts, placeholders, modal `NewItineraryModal`).
-- `src/routes/_app.roteiros.$id.tsx`: títulos/breadcrumb.
-- Ajustes menores de texto em `_app.index.tsx` (dashboard), `_app.admin.tsx`, `_app.checklist-templates.tsx`, `_app.biblioteca.tsx`, `auth.tsx`, `__root.tsx` (head/meta) onde aparecem "Roteiros"/"Viagens" com a semântica antiga.
+### 1. Painel completo a partir do card da aba Viagens
+Em `src/routes/_app.roteiros.index.tsx`:
+- Novo item no menu de 3 pontos: **"Detalhes da viagem"**, abrindo o `LeadDetailDrawer` do `lead_id` do roteiro na própria página (sem ir para Vendas).
+- Atalhos diretos para **Checklist** e **Financeiro** usando a prop `initialTab` que o drawer já aceita.
+- Roteiro sem `lead_id` (caso legado): itens desabilitados com aviso.
 
-Nenhuma rota, tabela ou chave de query renomeada.
+### 2. Acesso pelo cabeçalho do roteiro
+Em `src/routes/_app.roteiros.$id.tsx`:
+- Botão **"Detalhes da viagem"** no cabeçalho, abrindo o mesmo drawer sobre a página do roteiro (o lead já é carregado ali).
+- Ao fechar, invalidar as queries do roteiro/lista para refletir mudanças de status e valores.
 
-### 2. Filtro por papel em Vendas (`/leads`)
-Hoje `_app.leads.tsx` já tem toggle `onlyMine`. Ajuste:
-- Se o membro atual **não é gestor** (`role !== 'admin' && role !== 'gerente'`), forçar `onlyMine = true` e ocultar o toggle.
-- Gestor mantém toggle "Minhas / Todas" como hoje.
+### 3. Clareza da hierarquia
+- No card da aba Viagens: nome do cliente como link para o perfil (`/clientes/$id`, com `from` para o voltar correto) e o status da venda ao lado do status do roteiro.
+- No cabeçalho do roteiro: breadcrumb curto **Cliente › Viagem › Roteiro**.
 
-### 3. Filtro por papel em Viagens (`/roteiros`)
-- Em `fetchItineraries` (`src/lib/services.ts`), quando o membro atual não é gestor, filtrar via join no lead: `crm_leads.assigned_to = <memberId>`. Alternativa: buscar todos e filtrar no cliente por `it.lead?.assigned_to` — para isso incluir `assigned_to` no `select` do relacionamento (`lead:crm_leads!...(name, profile, assigned_to)`) e filtrar em memória.
-- Adicionar toggle "Minhas / Todas" em `_app.roteiros.index.tsx` (apenas visível para gestor), padrão "Todas" para gestor e "Minhas" fixo para demais.
-- Ajustar tipo `Itinerary["lead"]` (ou tipo local) para incluir `assigned_to`.
+### 4. Sem mudanças de banco
+Nenhuma tabela, coluna ou RLS nova — apenas reuso do `LeadDetailDrawer` e navegação.
 
-### 4. Sem migração de banco
-Papéis já existem em `agency_members.role`. Nenhuma coluna nova. RLS existente segue válida.
+## Detalhes técnicos
+
+- `LeadDetailDrawer({ leadId, onClose, initialTab })` já é reusado em `/leads`, `/clientes/$id` e `/tarefas`; o contrato não muda.
+- Estado local `detailLeadId` + `detailTab` nas duas rotas de roteiros.
+- `fetchItineraries` já traz `lead:crm_leads(...)`; incluir `id` e `client_id` no select para montar os links de cliente.
 
 ## Verificação
-- Logar como membro comum: `/leads` mostra só atribuídas, sem toggle; `/roteiros` mostra só viagens de leads dele.
-- Logar como admin/gerente: ambos toggles disponíveis, "Todas" lista tudo.
-- Menu lateral mostra "Vendas" e "Viagens" nos lugares corretos.
+
+- Na aba Viagens, "Detalhes da viagem" mostra checklist, financeiro, benefícios, notas e atividades da mesma viagem vista em Vendas.
+- Alterar status pelo drawer reflete no Kanban de Viagens ao fechar.
+- Roteiro sem lead vinculado não quebra a tela.
