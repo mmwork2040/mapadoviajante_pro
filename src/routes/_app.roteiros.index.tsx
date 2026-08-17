@@ -209,8 +209,8 @@ function ItinerariesPage() {
     const ok = await confirm({
       title: "Excluir cliente",
       description: `Isto remove permanentemente a venda/cliente "${it.lead?.name || it.client_name || ""}" e seus dados vinculados. Esta ação não pode ser desfeita. Se preferir manter o histórico, use "Arquivar".`,
-      confirmText: "Excluir",
-      variant: "destructive",
+      confirmLabel: "Excluir",
+      destructive: true,
     });
     if (ok) removeClient.mutate(it.lead_id);
   }
