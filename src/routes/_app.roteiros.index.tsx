@@ -91,6 +91,7 @@ function ItinerariesPage() {
   const [search, setSearch] = useState("");
   const [onlyMine, setOnlyMine] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [detail, setDetail] = useState<{ leadId: string; tab?: LeadDetailTab } | null>(null);
   const [overCol, setOverCol] = useState<string | null>(null);
   const memberRole = getMemberRole();
   const isManager = memberRole === "admin" || memberRole === "gerente";
