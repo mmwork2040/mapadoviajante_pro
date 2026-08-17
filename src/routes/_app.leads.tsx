@@ -72,6 +72,8 @@ function LeadsPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+
   useEffect(() => {
     if (leadParam) setDetailId(leadParam);
   }, [leadParam]);
