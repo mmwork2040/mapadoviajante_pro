@@ -1401,6 +1401,15 @@ function ItineraryDetailPage() {
           })()}
         </div>
         <div className="flex flex-wrap gap-2">
+          {leadIdForClient && (
+            <button
+              type="button"
+              onClick={() => setTripDetailOpen(true)}
+              className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
+            >
+              <ClipboardList className="h-4 w-4" /> Detalhes da viagem
+            </button>
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button
