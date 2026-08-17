@@ -33,6 +33,7 @@ import { QueryError } from "@/components/QueryError";
 import { useConfirm } from "@/components/ConfirmDialog";
 import { ModalField, LibraryImagePicker, NewLeadModal } from "./_app.leads";
 import { SearchBar } from "@/components/SearchBar";
+import { LeadDetailDrawer, type LeadDetailTab } from "@/components/LeadDetailDrawer";
 
 import {
   DropdownMenu,
