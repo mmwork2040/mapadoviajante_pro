@@ -363,12 +363,41 @@ function ItinerariesPage() {
                               <MoreVertical className="h-4 w-4" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuItem asChild>
                               <Link to="/roteiros/$id" params={{ id: it.id }}>
-                                <RouteIcon className="mr-2 h-4 w-4" /> Abrir
+                                <RouteIcon className="mr-2 h-4 w-4" /> Abrir roteiro
                               </Link>
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!it.lead_id}
+                              onSelect={() => openDetail(it)}
+                            >
+                              <ClipboardList className="mr-2 h-4 w-4" /> Detalhes da viagem
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!it.lead_id}
+                              onSelect={() => openDetail(it, "checklist")}
+                            >
+                              <ListChecks className="mr-2 h-4 w-4" /> Checklist
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={!it.lead_id}
+                              onSelect={() => openDetail(it, "financeiro")}
+                            >
+                              <CircleDollarSign className="mr-2 h-4 w-4" /> Financeiro
+                            </DropdownMenuItem>
+                            {it.lead?.client_id && (
+                              <DropdownMenuItem asChild>
+                                <Link
+                                  to="/clientes/$id"
+                                  params={{ id: it.lead.client_id }}
+                                  search={{ from: "/roteiros" }}
+                                >
+                                  <User className="mr-2 h-4 w-4" /> Perfil do cliente
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuSeparator />
                             {STATUS_COLUMNS.filter((s) => s.key !== it.status).map((s) => (
                               <DropdownMenuItem
