@@ -422,6 +422,7 @@ function ItineraryDetailPage() {
     queryFn: () => (clientIdForEdit ? fetchClientById(clientIdForEdit) : null),
     enabled: !!clientIdForEdit,
   });
+  const [tripDetailOpen, setTripDetailOpen] = useState(false);
   const [clientEditOpen, setClientEditOpen] = useState(false);
   const [clientEditSaving, setClientEditSaving] = useState(false);
 
