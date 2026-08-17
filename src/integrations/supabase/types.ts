@@ -924,6 +924,7 @@ export type Database = {
       crm_leads: {
         Row: {
           agency_id: string
+          archived_at: string | null
           assigned_to: string | null
           benefits: Json
           budget_client: number | null
@@ -947,6 +948,7 @@ export type Database = {
         }
         Insert: {
           agency_id: string
+          archived_at?: string | null
           assigned_to?: string | null
           benefits?: Json
           budget_client?: number | null
@@ -970,6 +972,7 @@ export type Database = {
         }
         Update: {
           agency_id?: string
+          archived_at?: string | null
           assigned_to?: string | null
           benefits?: Json
           budget_client?: number | null
