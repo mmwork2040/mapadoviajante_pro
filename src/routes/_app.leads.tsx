@@ -323,6 +323,7 @@ function LeadsPage() {
                         onToggleArchive={() =>
                           archiveMut.mutate({ id: l.id, archived: !showArchived })
                         }
+                        onDelete={() => setConfirmDeleteId(l.id)}
                       />
                     ))
                   )}
@@ -369,6 +370,7 @@ function LeadCard({
   onOpen,
   archived,
   onToggleArchive,
+  onDelete,
 }: {
   lead: Lead;
   assignee?: AgencyMember | null;
@@ -380,6 +382,7 @@ function LeadCard({
   onOpen: () => void;
   archived?: boolean;
   onToggleArchive?: () => void;
+  onDelete?: () => void;
 }) {
   
 
@@ -456,6 +459,17 @@ function LeadCard({
                       <Archive className="h-4 w-4" /> Arquivar venda
                     </>
                   )}
+                </DropdownMenuItem>
+              </>
+            )}
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onSelect={onDelete}
+                  className="gap-2 text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" /> Excluir venda
                 </DropdownMenuItem>
               </>
             )}
