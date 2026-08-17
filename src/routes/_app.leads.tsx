@@ -145,14 +145,15 @@ function LeadsPage() {
     },
     onMutate: async ({ id, status }) => {
       await qc.cancelQueries({ queryKey: ["leads"] });
-      const prev = qc.getQueryData<Lead[]>(["leads", { search }]);
-      qc.setQueryData<Lead[]>(["leads", { search }], (old) =>
+      const key = ["leads", { search, archived: showArchived }];
+      const prev = qc.getQueryData<Lead[]>(key);
+      qc.setQueryData<Lead[]>(key, (old) =>
         (old ?? []).map((l) => (l.id === id ? { ...l, status } : l)),
       );
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["leads", { search }], ctx.prev);
+      if (ctx?.prev) qc.setQueryData(["leads", { search, archived: showArchived }], ctx.prev);
       toast.error("Não foi possível mover o lead.");
     },
     onSuccess: (_res, vars) => {
@@ -162,6 +163,20 @@ function LeadsPage() {
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
   });
+
+  const archiveMut = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const ok = await setLeadArchived(id, archived);
+      if (!ok) throw new Error("Falha ao arquivar");
+      return archived;
+    },
+    onSuccess: (archived) => {
+      toast.success(archived ? "Venda arquivada." : "Venda desarquivada.");
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
+    onError: () => toast.error("Não foi possível arquivar a venda."),
+  });
+
 
   function onDrop(e: React.DragEvent, status: LeadStatus) {
     e.preventDefault();
