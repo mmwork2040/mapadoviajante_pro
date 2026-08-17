@@ -1477,6 +1477,16 @@ function ItineraryDetailPage() {
         </div>
       </div>
 
+      {tripDetailOpen && leadIdForClient && (
+        <LeadDetailDrawer
+          leadId={leadIdForClient}
+          onClose={() => {
+            setTripDetailOpen(false);
+            qc.invalidateQueries({ queryKey: ["itinerary", id] });
+          }}
+        />
+      )}
+
       {clientEditOpen && clientForEdit && (
         <ClientFormDrawer
           initial={clientForEdit}
