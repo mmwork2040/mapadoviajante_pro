@@ -3,7 +3,7 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot, Map as MapIcon, Save } from "lucide-react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot, Map as MapIcon, Save, Archive, ArchiveRestore } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 
@@ -194,7 +194,7 @@ function LeadsPage() {
       <PageHeader
         icon={Plane}
         title="Vendas"
-        subtitle="Funil de vendas (arraste para mover)."
+        subtitle={showArchived ? "Vendas arquivadas." : "Funil de vendas (arraste para mover)."}
         actions={
           <>
             <SearchBar
@@ -217,6 +217,15 @@ function LeadsPage() {
                 <User className="h-4 w-4" /> {onlyMine ? "Minhas vendas" : "Todas as vendas"}
               </button>
             )}
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              title={showArchived ? "Voltar para vendas ativas" : "Ver vendas arquivadas"}
+              className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+                showArchived ? "border-primary bg-primary/10 text-primary" : "border-input hover:bg-muted"
+              }`}
+            >
+              <Archive className="h-4 w-4" /> {showArchived ? "Arquivadas" : "Ver arquivadas"}
+            </button>
             <button
               onClick={() => setOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
@@ -285,6 +294,10 @@ function LeadsPage() {
                         }}
                         onMove={(status) => move.mutate({ id: l.id, status })}
                         onOpen={() => setDetailId(l.id)}
+                        archived={showArchived}
+                        onToggleArchive={() =>
+                          archiveMut.mutate({ id: l.id, archived: !showArchived })
+                        }
                       />
                     ))
                   )}
@@ -329,6 +342,8 @@ function LeadCard({
   onDragEnd,
   onMove,
   onOpen,
+  archived,
+  onToggleArchive,
 }: {
   lead: Lead;
   assignee?: AgencyMember | null;
@@ -338,6 +353,8 @@ function LeadCard({
   onDragEnd: () => void;
   onMove: (status: LeadStatus) => void;
   onOpen: () => void;
+  archived?: boolean;
+  onToggleArchive?: () => void;
 }) {
   
 
@@ -401,6 +418,22 @@ function LeadCard({
                 {c.label}
               </DropdownMenuItem>
             ))}
+            {onToggleArchive && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={onToggleArchive} className="gap-2">
+                  {archived ? (
+                    <>
+                      <ArchiveRestore className="h-4 w-4" /> Desarquivar venda
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4" /> Arquivar venda
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
