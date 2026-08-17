@@ -1426,13 +1426,29 @@ function ItineraryDetailPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           {leadIdForClient && (
-            <button
-              type="button"
-              onClick={() => setTripDetailOpen(true)}
-              className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
-            >
-              <ClipboardList className="h-4 w-4" /> Detalhes da viagem
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={() => setTripDetailOpen("perfil")}
+                className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
+              >
+                <ClipboardList className="h-4 w-4" /> Detalhes da viagem
+              </button>
+              <button
+                type="button"
+                onClick={() => setTripDetailOpen("checklist")}
+                className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
+              >
+                <ListChecks className="h-4 w-4" /> Checklist
+              </button>
+              <button
+                type="button"
+                onClick={() => setTripDetailOpen("financeiro")}
+                className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
+              >
+                <CircleDollarSign className="h-4 w-4" /> Financeiro
+              </button>
+            </>
           )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
