@@ -55,6 +55,8 @@ export interface Lead {
   budget_client?: number | null;
   budget_osv?: number | null;
   benefits?: TripBenefits | null;
+  archived_at?: string | null;
+
 }
 
 export interface TripExpense {
