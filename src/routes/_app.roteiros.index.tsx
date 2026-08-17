@@ -225,7 +225,7 @@ function ItinerariesPage() {
       <PageHeader
         icon={RouteIcon}
         title="Viagens"
-        subtitle="Planejamento das viagens (arraste para mover)."
+        subtitle="Cada viagem pertence a um cliente e a uma venda. O roteiro é o conteúdo dia a dia; checklist, financeiro e benefícios ficam nos detalhes da viagem."
         actions={
           <>
             <SearchBar
