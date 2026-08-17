@@ -186,6 +186,20 @@ function ItinerariesPage() {
     if (ok) remove.mutate(it);
   }
 
+  function openDetail(it: Itinerary, tab?: LeadDetailTab) {
+    if (!it.lead_id) {
+      toast.info("Esta viagem não está vinculada a uma venda.");
+      return;
+    }
+    setDetail({ leadId: it.lead_id, tab });
+  }
+
+  function closeDetail() {
+    setDetail(null);
+    qc.invalidateQueries({ queryKey: ["itineraries"] });
+    qc.invalidateQueries({ queryKey: ["leads"] });
+  }
+
   async function handleDuplicate(it: Itinerary) {
     const ok = await confirm({
       title: "Duplicar viagem",
