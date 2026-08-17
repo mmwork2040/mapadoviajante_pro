@@ -6,7 +6,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Plus, Trash2, ExternalLink, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Upload } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ExternalLink, FileUp, Loader2, Check, Send, MessageCircle, X, Paperclip, Bot, Eraser, ArrowRight, Plane, BedDouble, MapPin, Car, Utensils, GripVertical, FileText, Download, ChevronDown, ChevronLeft, ChevronRight, Eye, Copy, Calendar, Users, MoreVertical, Sparkles, Pencil, Image as ImageIcon, HardDrive, Upload, ClipboardList } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -86,6 +86,7 @@ import {
   type AgencyDocument,
 } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
+import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { RoteiroPdfExport } from "@/components/RoteiroPdfExport";
 import { formatCurrency, parseCurrency, formatMoney, brlWithRate } from "@/lib/ui";
 import { QueryError } from "@/components/QueryError";
