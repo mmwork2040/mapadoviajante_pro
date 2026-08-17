@@ -55,6 +55,14 @@ const STATUS_COLUMNS: { key: string; label: string; dot: string }[] = [
   { key: "cancelled", label: "Cancelado", dot: "bg-red-500" },
 ];
 
+const LEAD_STATUS_META: Record<string, { label: string; dot: string }> = {
+  new: { label: "Novo", dot: "bg-blue-500" },
+  contacted: { label: "Contatado", dot: "bg-sky-500" },
+  negotiating: { label: "Negociando", dot: "bg-amber-400" },
+  closed: { label: "Fechado", dot: "bg-emerald-500" },
+  lost: { label: "Perdido", dot: "bg-red-500" },
+};
+
 function initials(name?: string | null) {
   const parts = (name || "").trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
