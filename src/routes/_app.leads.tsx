@@ -3,7 +3,7 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot, Map as MapIcon, Save } from "lucide-react";
+import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot, Map as MapIcon, Save, Archive, ArchiveRestore } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 
@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
+import { createLead, fetchLeads, setLeadArchived, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles, initials } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
@@ -72,6 +72,8 @@ function LeadsPage() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+
   useEffect(() => {
     if (leadParam) setDetailId(leadParam);
   }, [leadParam]);
@@ -92,11 +94,13 @@ function LeadsPage() {
   }
 
   const { data: allLeads = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ["leads", { search }],
-    queryFn: () => fetchLeads({ search: search || undefined }),
+    queryKey: ["leads", { search, archived: showArchived }],
+    queryFn: () =>
+      fetchLeads({ search: search || undefined, archived: showArchived ? "archived" : "active" }),
     refetchInterval: 15000,
     refetchOnWindowFocus: true,
   });
+
   const myId = getMemberId();
   const memberRole = getMemberRole();
   const isManager = memberRole === "admin" || memberRole === "gerente";
@@ -141,14 +145,15 @@ function LeadsPage() {
     },
     onMutate: async ({ id, status }) => {
       await qc.cancelQueries({ queryKey: ["leads"] });
-      const prev = qc.getQueryData<Lead[]>(["leads", { search }]);
-      qc.setQueryData<Lead[]>(["leads", { search }], (old) =>
+      const key = ["leads", { search, archived: showArchived }];
+      const prev = qc.getQueryData<Lead[]>(key);
+      qc.setQueryData<Lead[]>(key, (old) =>
         (old ?? []).map((l) => (l.id === id ? { ...l, status } : l)),
       );
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["leads", { search }], ctx.prev);
+      if (ctx?.prev) qc.setQueryData(["leads", { search, archived: showArchived }], ctx.prev);
       toast.error("Não foi possível mover o lead.");
     },
     onSuccess: (_res, vars) => {
@@ -158,6 +163,20 @@ function LeadsPage() {
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
   });
+
+  const archiveMut = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const ok = await setLeadArchived(id, archived);
+      if (!ok) throw new Error("Falha ao arquivar");
+      return archived;
+    },
+    onSuccess: (archived) => {
+      toast.success(archived ? "Venda arquivada." : "Venda desarquivada.");
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
+    onError: () => toast.error("Não foi possível arquivar a venda."),
+  });
+
 
   function onDrop(e: React.DragEvent, status: LeadStatus) {
     e.preventDefault();
@@ -175,7 +194,7 @@ function LeadsPage() {
       <PageHeader
         icon={Plane}
         title="Vendas"
-        subtitle="Funil de vendas (arraste para mover)."
+        subtitle={showArchived ? "Vendas arquivadas." : "Funil de vendas (arraste para mover)."}
         actions={
           <>
             <SearchBar
@@ -198,6 +217,15 @@ function LeadsPage() {
                 <User className="h-4 w-4" /> {onlyMine ? "Minhas vendas" : "Todas as vendas"}
               </button>
             )}
+            <button
+              onClick={() => setShowArchived((v) => !v)}
+              title={showArchived ? "Voltar para vendas ativas" : "Ver vendas arquivadas"}
+              className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+                showArchived ? "border-primary bg-primary/10 text-primary" : "border-input hover:bg-muted"
+              }`}
+            >
+              <Archive className="h-4 w-4" /> {showArchived ? "Arquivadas" : "Ver arquivadas"}
+            </button>
             <button
               onClick={() => setOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
@@ -266,6 +294,10 @@ function LeadsPage() {
                         }}
                         onMove={(status) => move.mutate({ id: l.id, status })}
                         onOpen={() => setDetailId(l.id)}
+                        archived={showArchived}
+                        onToggleArchive={() =>
+                          archiveMut.mutate({ id: l.id, archived: !showArchived })
+                        }
                       />
                     ))
                   )}
@@ -310,6 +342,8 @@ function LeadCard({
   onDragEnd,
   onMove,
   onOpen,
+  archived,
+  onToggleArchive,
 }: {
   lead: Lead;
   assignee?: AgencyMember | null;
@@ -319,6 +353,8 @@ function LeadCard({
   onDragEnd: () => void;
   onMove: (status: LeadStatus) => void;
   onOpen: () => void;
+  archived?: boolean;
+  onToggleArchive?: () => void;
 }) {
   
 
@@ -382,6 +418,22 @@ function LeadCard({
                 {c.label}
               </DropdownMenuItem>
             ))}
+            {onToggleArchive && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={onToggleArchive} className="gap-2">
+                  {archived ? (
+                    <>
+                      <ArchiveRestore className="h-4 w-4" /> Desarquivar venda
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4" /> Arquivar venda
+                    </>
+                  )}
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

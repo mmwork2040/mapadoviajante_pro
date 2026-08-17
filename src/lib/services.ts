@@ -324,6 +324,8 @@ export async function fetchLeads(filters: {
   status?: string;
   destination?: string;
   search?: string;
+  /** "active" (padrão) exibe apenas não arquivadas; "archived" só arquivadas; "all" ambas. */
+  archived?: "active" | "archived" | "all";
 } = {}): Promise<Lead[]> {
   if (!_agencyId) return [];
   let query = supabase
@@ -331,6 +333,10 @@ export async function fetchLeads(filters: {
     .select("*, assigned_member:agency_members!crm_leads_assigned_to_fkey(name, avatar_color)")
     .eq("agency_id", _agencyId)
     .order("name", { ascending: true });
+
+  const archivedMode = filters.archived ?? "active";
+  if (archivedMode === "active") query = query.is("archived_at", null);
+  else if (archivedMode === "archived") query = query.not("archived_at", "is", null);
 
   if (filters.status && filters.status !== "contacted") query = query.eq("status", filters.status);
   if (filters.destination) query = query.eq("destination", filters.destination);
@@ -347,6 +353,19 @@ export async function fetchLeads(filters: {
   const normalized = ((data as Lead[]) || []).map(normalizeLead);
   return filters.status ? normalized.filter((lead) => lead.status === filters.status) : normalized;
 }
+
+export async function setLeadArchived(leadId: string, archived: boolean): Promise<boolean> {
+  const { error } = await supabase
+    .from("crm_leads")
+    .update({ archived_at: archived ? new Date().toISOString() : null })
+    .eq("id", leadId);
+  if (error) {
+    console.error("setLeadArchived:", error);
+    return false;
+  }
+  return true;
+}
+
 
 export async function fetchLeadById(leadId: string): Promise<Lead | null> {
   let query = supabase.from("crm_leads").select("*").eq("id", leadId);
