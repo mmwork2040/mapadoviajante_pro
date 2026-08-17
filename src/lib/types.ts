@@ -225,6 +225,7 @@ export interface Itinerary {
     assigned_to?: string | null;
     status?: LeadStatus | string | null;
     client_id?: string | null;
+    archived_at?: string | null;
   } | null;
   days?: ItineraryDay[];
   vouchers?: Voucher[];

@@ -1667,7 +1667,7 @@ export async function fetchItineraries(): Promise<Itinerary[]> {
   if (!_agencyId) return [];
   const { data, error } = await supabase
     .from("crm_itineraries")
-    .select("*, lead:crm_leads!crm_itineraries_lead_id_fkey(id, name, profile, assigned_to, status, client_id)")
+    .select("*, lead:crm_leads!crm_itineraries_lead_id_fkey(id, name, profile, assigned_to, status, client_id, archived_at)")
     .eq("agency_id", _agencyId)
     .order("created_at", { ascending: false });
   if (error) {

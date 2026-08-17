@@ -3,7 +3,7 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
-import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon, Save, User, ClipboardList, ListChecks, CircleDollarSign } from "lucide-react";
+import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon, Save, User, ClipboardList, ListChecks, CircleDollarSign, Archive, ArchiveRestore } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
@@ -15,6 +15,8 @@ import {
   fetchClientById,
   updateItinerary,
   updateLead,
+  setLeadArchived,
+  deleteLead,
   fetchAiConfig,
   searchLibraryImageForDestination,
   saveExternalImageToLibrary,
@@ -173,6 +175,45 @@ function ItinerariesPage() {
     },
     onError: () => toast.error("Erro ao excluir viagem."),
   });
+
+  const archiveLead = useMutation({
+    mutationFn: async ({ id, archived }: { id: string; archived: boolean }) => {
+      const ok = await setLeadArchived(id, archived);
+      if (!ok) throw new Error("Falha ao arquivar");
+      return archived;
+    },
+    onSuccess: (archived) => {
+      toast.success(archived ? "Venda arquivada." : "Venda desarquivada.");
+      qc.invalidateQueries({ queryKey: ["itineraries"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
+    onError: () => toast.error("Não foi possível arquivar a venda."),
+  });
+
+  const removeClient = useMutation({
+    mutationFn: async (leadId: string) => {
+      const ok = await deleteLead(leadId);
+      if (!ok) throw new Error("Falha ao excluir");
+      return leadId;
+    },
+    onSuccess: () => {
+      toast.success("Cliente/venda excluído.");
+      qc.invalidateQueries({ queryKey: ["itineraries"] });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+    },
+    onError: () => toast.error("Não foi possível excluir."),
+  });
+
+  async function handleDeleteClient(it: Itinerary) {
+    if (!it.lead_id) return;
+    const ok = await confirm({
+      title: "Excluir cliente",
+      description: `Isto remove permanentemente a venda/cliente "${it.lead?.name || it.client_name || ""}" e seus dados vinculados. Esta ação não pode ser desfeita. Se preferir manter o histórico, use "Arquivar".`,
+      confirmLabel: "Excluir",
+      destructive: true,
+    });
+    if (ok) removeClient.mutate(it.lead_id);
+  }
 
   const duplicate = useMutation({
     mutationFn: (it: Itinerary) => duplicateItinerary(it.id),
@@ -500,6 +541,37 @@ function ItinerariesPage() {
                             >
                               <Copy className="mr-2 h-4 w-4" /> Duplicar viagem
                             </DropdownMenuItem>
+                            {it.lead_id && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onSelect={() =>
+                                    archiveLead.mutate({
+                                      id: it.lead_id!,
+                                      archived: !it.lead?.archived_at,
+                                    })
+                                  }
+                                  disabled={archiveLead.isPending}
+                                >
+                                  {it.lead?.archived_at ? (
+                                    <>
+                                      <ArchiveRestore className="mr-2 h-4 w-4" /> Desarquivar
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Archive className="mr-2 h-4 w-4" /> Arquivar
+                                    </>
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => handleDeleteClient(it)}
+                                  disabled={removeClient.isPending}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="text-destructive mr-2 h-4 w-4" /> Excluir cliente
+                                </DropdownMenuItem>
+                              </>
+                            )}
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
                               onSelect={() => handleDelete(it)}
