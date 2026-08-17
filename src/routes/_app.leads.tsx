@@ -19,13 +19,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, fetchLeads, setLeadArchived, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
+import { createLead, deleteLead, fetchLeads, setLeadArchived, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles, initials } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_app/leads")({
   validateSearch: (search: { lead?: unknown }): { lead?: string } =>
