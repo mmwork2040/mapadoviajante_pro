@@ -457,6 +457,13 @@ function ItinerariesPage() {
         />
       )}
 
+      {detail && (
+        <LeadDetailDrawer
+          leadId={detail.leadId}
+          initialTab={detail.tab}
+          onClose={closeDetail}
+        />
+      )}
     </div>
   );
 }
