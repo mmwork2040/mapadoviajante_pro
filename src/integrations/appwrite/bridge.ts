@@ -277,10 +277,11 @@ class AppwriteAuthBridge {
   async signInWithPassword({ email, password }: { email: string; password: string }) {
     try {
       const user = await appwriteAuthService.login(email, password);
+      const userObj = { id: user.id, email: user.email, user_metadata: { name: user.name } };
       return {
         data: {
-          user: { id: user.id, email: user.email, user_metadata: { name: user.name } },
-          session: { access_token: 'appwrite_session_active' },
+          user: userObj,
+          session: { access_token: 'appwrite_session_active', user: userObj } as any,
         },
         error: null,
       };
@@ -301,10 +302,11 @@ class AppwriteAuthBridge {
     try {
       const name = options?.data?.name || email.split('@')[0];
       const user = await appwriteAuthService.register(name, email, password);
+      const userObj = { id: user.id, email: user.email, user_metadata: { name: user.name } };
       return {
         data: {
-          user: { id: user.id, email: user.email, user_metadata: { name: user.name } },
-          session: { access_token: 'appwrite_session_active' },
+          user: userObj,
+          session: { access_token: 'appwrite_session_active', user: userObj } as any,
         },
         error: null,
       };

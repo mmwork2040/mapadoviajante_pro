@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // 3) Usuário novo, sem convite → provisiona a própria agência.
-    if (!m) {
+    if (!m && sess?.user) {
       const meta = sess.user.user_metadata as { name?: string } | undefined;
       m = await autoProvisionAgency(sess.user.id, meta?.name || sess.user.email || "Novo Usuário", sess.user.email || "");
     }
