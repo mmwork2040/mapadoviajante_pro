@@ -9,38 +9,32 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IntakeRouteImport } from './routes/intake'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AceitarConviteRouteImport } from './routes/aceitar-convite'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as AceitarConviteRouteImport } from './routes/aceitar-convite'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
-import { Route as ViajanteIdRouteImport } from './routes/viajante.$id'
-import { Route as AppTarefasRouteImport } from './routes/_app.tarefas'
-import { Route as AppRoteirosRouteImport } from './routes/_app.roteiros'
-import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
-import { Route as AppNotificacoesRouteImport } from './routes/_app.notificacoes'
-import { Route as AppLeadsRouteImport } from './routes/_app.leads'
-import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
-import { Route as AppClientesRouteImport } from './routes/_app.clientes'
-import { Route as AppChecklistTemplatesRouteImport } from './routes/_app.checklist-templates'
-import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
-import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
+import { Route as AppBibliotecaRouteImport } from './routes/_app.biblioteca'
+import { Route as AppChecklistTemplatesRouteImport } from './routes/_app.checklist-templates'
+import { Route as AppClientesRouteImport } from './routes/_app.clientes'
+import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
+import { Route as AppLeadsRouteImport } from './routes/_app.leads'
+import { Route as AppNotificacoesRouteImport } from './routes/_app.notificacoes'
+import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
+import { Route as AppRoteirosRouteImport } from './routes/_app.roteiros'
+import { Route as AppTarefasRouteImport } from './routes/_app.tarefas'
+import { Route as ViajanteIdRouteImport } from './routes/viajante.$id'
 import { Route as AppClientesIndexRouteImport } from './routes/_app.clientes.index'
-import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
-import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
-import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
-import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
 import { Route as AppClientesIdRouteImport } from './routes/_app.clientes.$id'
+import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
+import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
+import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
+import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
+import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
 
-const IntakeRoute = IntakeRouteImport.update({
-  id: '/intake',
-  path: '/intake',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AceitarConviteRoute = AceitarConviteRouteImport.update({
@@ -48,8 +42,14 @@ const AceitarConviteRoute = AceitarConviteRouteImport.update({
   path: '/aceitar-convite',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AppRoute = AppRouteImport.update({
-  id: '/_app',
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IntakeRoute = IntakeRouteImport.update({
+  id: '/intake',
+  path: '/intake',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -57,49 +57,9 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const ViajanteIdRoute = ViajanteIdRouteImport.update({
-  id: '/viajante/$id',
-  path: '/viajante/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AppTarefasRoute = AppTarefasRouteImport.update({
-  id: '/tarefas',
-  path: '/tarefas',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRoteirosRoute = AppRoteirosRouteImport.update({
-  id: '/roteiros',
-  path: '/roteiros',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppPerfilRoute = AppPerfilRouteImport.update({
-  id: '/perfil',
-  path: '/perfil',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
-  id: '/notificacoes',
-  path: '/notificacoes',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppLeadsRoute = AppLeadsRouteImport.update({
-  id: '/leads',
-  path: '/leads',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
-  id: '/financeiro',
-  path: '/financeiro',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppClientesRoute = AppClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppChecklistTemplatesRoute = AppChecklistTemplatesRouteImport.update({
-  id: '/checklist-templates',
-  path: '/checklist-templates',
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
 const AppBibliotecaRoute = AppBibliotecaRouteImport.update({
@@ -107,24 +67,74 @@ const AppBibliotecaRoute = AppBibliotecaRouteImport.update({
   path: '/biblioteca',
   getParentRoute: () => AppRoute,
 } as any)
-const AppAdminRoute = AppAdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const AppChecklistTemplatesRoute = AppChecklistTemplatesRouteImport.update({
+  id: '/checklist-templates',
+  path: '/checklist-templates',
   getParentRoute: () => AppRoute,
 } as any)
-const AppRoteirosIndexRoute = AppRoteirosIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AppRoteirosRoute,
+const AppClientesRoute = AppClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppFinanceiroRoute = AppFinanceiroRouteImport.update({
+  id: '/financeiro',
+  path: '/financeiro',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLeadsRoute = AppLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificacoesRoute = AppNotificacoesRouteImport.update({
+  id: '/notificacoes',
+  path: '/notificacoes',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPerfilRoute = AppPerfilRouteImport.update({
+  id: '/perfil',
+  path: '/perfil',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRoteirosRoute = AppRoteirosRouteImport.update({
+  id: '/roteiros',
+  path: '/roteiros',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTarefasRoute = AppTarefasRouteImport.update({
+  id: '/tarefas',
+  path: '/tarefas',
+  getParentRoute: () => AppRoute,
+} as any)
+const ViajanteIdRoute = ViajanteIdRouteImport.update({
+  id: '/viajante/$id',
+  path: '/viajante/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AppClientesIndexRoute = AppClientesIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppClientesRoute,
 } as any)
-const ApiPublicPushDeliveryRoute = ApiPublicPushDeliveryRouteImport.update({
-  id: '/api/public/push-delivery',
-  path: '/api/public/push-delivery',
+const AppClientesIdRoute = AppClientesIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppClientesRoute,
+} as any)
+const AppRoteirosIndexRoute = AppRoteirosIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoteirosRoute,
+} as any)
+const AppRoteirosIdRoute = AppRoteirosIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AppRoteirosRoute,
+} as any)
+const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
+  id: '/api/public/asaas-webhook',
+  path: '/api/public/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicN8nLeadRoute = ApiPublicN8nLeadRouteImport.update({
@@ -132,20 +142,10 @@ const ApiPublicN8nLeadRoute = ApiPublicN8nLeadRouteImport.update({
   path: '/api/public/n8n-lead',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
-  id: '/api/public/asaas-webhook',
-  path: '/api/public/asaas-webhook',
+const ApiPublicPushDeliveryRoute = ApiPublicPushDeliveryRouteImport.update({
+  id: '/api/public/push-delivery',
+  path: '/api/public/push-delivery',
   getParentRoute: () => rootRouteImport,
-} as any)
-const AppRoteirosIdRoute = AppRoteirosIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppRoteirosRoute,
-} as any)
-const AppClientesIdRoute = AppClientesIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AppClientesRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -307,18 +307,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/intake': {
-      id: '/intake'
-      path: '/intake'
-      fullPath: '/intake'
-      preLoaderRoute: typeof IntakeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/aceitar-convite': {
@@ -328,11 +321,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AceitarConviteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_app': {
-      id: '/_app'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof AppRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/intake': {
+      id: '/intake'
+      path: '/intake'
+      fullPath: '/intake'
+      preLoaderRoute: typeof IntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -342,67 +342,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/viajante/$id': {
-      id: '/viajante/$id'
-      path: '/viajante/$id'
-      fullPath: '/viajante/$id'
-      preLoaderRoute: typeof ViajanteIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_app/tarefas': {
-      id: '/_app/tarefas'
-      path: '/tarefas'
-      fullPath: '/tarefas'
-      preLoaderRoute: typeof AppTarefasRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/roteiros': {
-      id: '/_app/roteiros'
-      path: '/roteiros'
-      fullPath: '/roteiros'
-      preLoaderRoute: typeof AppRoteirosRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/perfil': {
-      id: '/_app/perfil'
-      path: '/perfil'
-      fullPath: '/perfil'
-      preLoaderRoute: typeof AppPerfilRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/notificacoes': {
-      id: '/_app/notificacoes'
-      path: '/notificacoes'
-      fullPath: '/notificacoes'
-      preLoaderRoute: typeof AppNotificacoesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/leads': {
-      id: '/_app/leads'
-      path: '/leads'
-      fullPath: '/leads'
-      preLoaderRoute: typeof AppLeadsRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/financeiro': {
-      id: '/_app/financeiro'
-      path: '/financeiro'
-      fullPath: '/financeiro'
-      preLoaderRoute: typeof AppFinanceiroRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/clientes': {
-      id: '/_app/clientes'
-      path: '/clientes'
-      fullPath: '/clientes'
-      preLoaderRoute: typeof AppClientesRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/checklist-templates': {
-      id: '/_app/checklist-templates'
-      path: '/checklist-templates'
-      fullPath: '/checklist-templates'
-      preLoaderRoute: typeof AppChecklistTemplatesRouteImport
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/biblioteca': {
@@ -412,19 +356,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBibliotecaRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/admin': {
-      id: '/_app/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AppAdminRouteImport
+    '/_app/checklist-templates': {
+      id: '/_app/checklist-templates'
+      path: '/checklist-templates'
+      fullPath: '/checklist-templates'
+      preLoaderRoute: typeof AppChecklistTemplatesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/roteiros/': {
-      id: '/_app/roteiros/'
-      path: '/'
-      fullPath: '/roteiros/'
-      preLoaderRoute: typeof AppRoteirosIndexRouteImport
-      parentRoute: typeof AppRoteirosRoute
+    '/_app/clientes': {
+      id: '/_app/clientes'
+      path: '/clientes'
+      fullPath: '/clientes'
+      preLoaderRoute: typeof AppClientesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/financeiro': {
+      id: '/_app/financeiro'
+      path: '/financeiro'
+      fullPath: '/financeiro'
+      preLoaderRoute: typeof AppFinanceiroRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/leads': {
+      id: '/_app/leads'
+      path: '/leads'
+      fullPath: '/leads'
+      preLoaderRoute: typeof AppLeadsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notificacoes': {
+      id: '/_app/notificacoes'
+      path: '/notificacoes'
+      fullPath: '/notificacoes'
+      preLoaderRoute: typeof AppNotificacoesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/perfil': {
+      id: '/_app/perfil'
+      path: '/perfil'
+      fullPath: '/perfil'
+      preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/roteiros': {
+      id: '/_app/roteiros'
+      path: '/roteiros'
+      fullPath: '/roteiros'
+      preLoaderRoute: typeof AppRoteirosRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tarefas': {
+      id: '/_app/tarefas'
+      path: '/tarefas'
+      fullPath: '/tarefas'
+      preLoaderRoute: typeof AppTarefasRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/viajante/$id': {
+      id: '/viajante/$id'
+      path: '/viajante/$id'
+      fullPath: '/viajante/$id'
+      preLoaderRoute: typeof ViajanteIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_app/clientes/': {
       id: '/_app/clientes/'
@@ -433,11 +426,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientesIndexRouteImport
       parentRoute: typeof AppClientesRoute
     }
-    '/api/public/push-delivery': {
-      id: '/api/public/push-delivery'
-      path: '/api/public/push-delivery'
-      fullPath: '/api/public/push-delivery'
-      preLoaderRoute: typeof ApiPublicPushDeliveryRouteImport
+    '/_app/clientes/$id': {
+      id: '/_app/clientes/$id'
+      path: '/$id'
+      fullPath: '/clientes/$id'
+      preLoaderRoute: typeof AppClientesIdRouteImport
+      parentRoute: typeof AppClientesRoute
+    }
+    '/_app/roteiros/': {
+      id: '/_app/roteiros/'
+      path: '/'
+      fullPath: '/roteiros/'
+      preLoaderRoute: typeof AppRoteirosIndexRouteImport
+      parentRoute: typeof AppRoteirosRoute
+    }
+    '/_app/roteiros/$id': {
+      id: '/_app/roteiros/$id'
+      path: '/$id'
+      fullPath: '/roteiros/$id'
+      preLoaderRoute: typeof AppRoteirosIdRouteImport
+      parentRoute: typeof AppRoteirosRoute
+    }
+    '/api/public/asaas-webhook': {
+      id: '/api/public/asaas-webhook'
+      path: '/api/public/asaas-webhook'
+      fullPath: '/api/public/asaas-webhook'
+      preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/n8n-lead': {
@@ -447,26 +461,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicN8nLeadRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/asaas-webhook': {
-      id: '/api/public/asaas-webhook'
-      path: '/api/public/asaas-webhook'
-      fullPath: '/api/public/asaas-webhook'
-      preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
+    '/api/public/push-delivery': {
+      id: '/api/public/push-delivery'
+      path: '/api/public/push-delivery'
+      fullPath: '/api/public/push-delivery'
+      preLoaderRoute: typeof ApiPublicPushDeliveryRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_app/roteiros/$id': {
-      id: '/_app/roteiros/$id'
-      path: '/$id'
-      fullPath: '/roteiros/$id'
-      preLoaderRoute: typeof AppRoteirosIdRouteImport
-      parentRoute: typeof AppRoteirosRoute
-    }
-    '/_app/clientes/$id': {
-      id: '/_app/clientes/$id'
-      path: '/$id'
-      fullPath: '/clientes/$id'
-      preLoaderRoute: typeof AppClientesIdRouteImport
-      parentRoute: typeof AppClientesRoute
     }
   }
 }

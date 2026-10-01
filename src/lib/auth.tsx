@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { appwriteAuthService } from "@/services/appwriteAuthService";
 import {
   autoProvisionAgency,
   loadAgencyContext,
@@ -24,6 +25,7 @@ interface AuthContextValue {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (name: string, email: string, password: string) => Promise<{ error?: string; needsConfirmation?: boolean }>;
+  signInWithGoogle: () => void;
   signOut: () => Promise<void>;
   refreshMember: () => Promise<void>;
   acceptPendingInvite: () => Promise<{ ok: boolean; error?: string }>;
@@ -90,17 +92,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setMember(m);
   }, []);
 
-
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => {
+    supabase.auth.getSession().then(async ({ data }: any) => {
       setSession(data.session);
       await hydrateMember(data.session);
       setLoading(false);
-      // Atualiza o device token também ao restaurar a sessão (reload/app aberto).
       if (data.session) void captureDeviceTokenOnLogin();
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event: string, sess: any) => {
       setSession(sess);
       if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
         hydrateMember(sess);
@@ -133,12 +133,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: error.message };
     }
     if (data.user && data.session) {
-      // hydrateMember respeita convites pendentes antes de provisionar uma nova agência.
       await hydrateMember(data.session);
       return {};
     }
     return { needsConfirmation: true };
   }, [hydrateMember]);
+
+  const signInWithGoogle = useCallback(() => {
+    appwriteAuthService.loginWithGoogle();
+  }, []);
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -163,13 +166,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ session, member, pendingInvite, loading, signIn, signUp, signOut, refreshMember, acceptPendingInvite }}
+      value={{
+        session,
+        member,
+        pendingInvite,
+        loading,
+        signIn,
+        signUp,
+        signInWithGoogle,
+        signOut,
+        refreshMember,
+        acceptPendingInvite,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
-
 
 export function useAuth() {
   const ctx = useContext(AuthContext);
