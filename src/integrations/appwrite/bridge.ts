@@ -318,6 +318,18 @@ class AppwriteAuthBridge {
     return { error: null };
   }
 
+  async updateUser({ password }: { password?: string }) {
+    try {
+      if (password) {
+        await account.updatePassword(password);
+      }
+      const user = await appwriteAuthService.getCurrentUser();
+      return { data: { user }, error: null };
+    } catch (err: any) {
+      return { data: null, error: { message: err.message } };
+    }
+  }
+
   onAuthStateChange(callback: (event: string, session: any) => void) {
     // Dispara estado inicial
     this.getSession().then(({ data }) => {
@@ -355,7 +367,64 @@ class AppwriteStorageBridge {
           return { data: { publicUrl: '' } };
         }
       },
+      async createSignedUrl(path: string, _expiresIn: number = 3600) {
+        try {
+          const url = storage.getFileView(bucketId, path);
+          return { data: { signedUrl: url.toString() }, error: null };
+        } catch (err: any) {
+          return { data: null, error: err };
+        }
+      },
+      async remove(paths: string[]) {
+        try {
+          for (const path of paths) {
+            try {
+              await storage.deleteFile(bucketId, path);
+            } catch {}
+          }
+          return { data: paths, error: null };
+        } catch (err: any) {
+          return { data: null, error: err };
+        }
+      },
     };
+  }
+}
+
+// ── Bridge Realtime / Channels ────────────────────────────────────
+class AppwriteChannelBridge {
+  private name: string;
+  private unsubscribeFn?: () => void;
+
+  constructor(name: string) {
+    this.name = name;
+  }
+
+  on(_event: string, filter: any, callback: (payload: any) => void) {
+    try {
+      if (filter?.table && client) {
+        const channelName = `databases.${APPWRITE_DATABASE_ID}.collections.${filter.table}.documents`;
+        this.unsubscribeFn = client.subscribe(channelName, (response) => {
+          callback(response);
+        });
+      }
+    } catch (e) {
+      console.warn('[Realtime bridge warning]:', e);
+    }
+    return this;
+  }
+
+  subscribe(callback?: (status: string) => void) {
+    if (callback) callback('SUBSCRIBED');
+    return this;
+  }
+
+  unsubscribe() {
+    if (this.unsubscribeFn) {
+      try {
+        this.unsubscribeFn();
+      } catch {}
+    }
   }
 }
 
@@ -366,6 +435,14 @@ export const appwriteSupabaseClient = {
   },
   auth: new AppwriteAuthBridge(),
   storage: new AppwriteStorageBridge(),
+  channel(name: string) {
+    return new AppwriteChannelBridge(name);
+  },
+  removeChannel(ch: any) {
+    if (ch && typeof ch.unsubscribe === 'function') {
+      ch.unsubscribe();
+    }
+  },
   rpc(fnName: string, args: Record<string, any> = {}) {
     const execute = async () => {
       try {
