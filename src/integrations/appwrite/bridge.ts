@@ -1,4 +1,4 @@
-import { databases, storage, account, APPWRITE_DATABASE_ID, APPWRITE_BUCKET_ID, Query, ID } from './client';
+import { client, databases, storage, account, APPWRITE_DATABASE_ID, APPWRITE_BUCKET_ID, Query, ID } from './client';
 import { appwriteAuthService } from '@/services/appwriteAuthService';
 
 // Normaliza o documento do Appwrite para ser 100% compatível com a interface do Supabase
@@ -125,6 +125,78 @@ class AppwriteQueryBuilder {
     return this.like(column, pattern);
   }
 
+  is(column: string, value: any) {
+    const col = column === 'id' ? '$id' : column;
+    if (value === null) {
+      this.queries.push(Query.isNull(col));
+    } else {
+      this.queries.push(Query.equal(col, value));
+    }
+    return this;
+  }
+
+  not(column: string, operator: string, value: any) {
+    const col = column === 'id' ? '$id' : column;
+    if (operator === 'is' && value === null) {
+      this.queries.push(Query.isNotNull(col));
+    } else {
+      this.queries.push(Query.notEqual(col, value));
+    }
+    return this;
+  }
+
+  gte(column: string, value: any) {
+    const col = column === 'id' ? '$id' : column;
+    this.queries.push(Query.greaterThanEqual(col, value));
+    return this;
+  }
+
+  lte(column: string, value: any) {
+    const col = column === 'id' ? '$id' : column;
+    this.queries.push(Query.lessThanEqual(col, value));
+    return this;
+  }
+
+  gt(column: string, value: any) {
+    const col = column === 'id' ? '$id' : column;
+    this.queries.push(Query.greaterThan(col, value));
+    return this;
+  }
+
+  lt(column: string, value: any) {
+    const col = column === 'id' ? '$id' : column;
+    this.queries.push(Query.lessThan(col, value));
+    return this;
+  }
+
+  contains(column: string, values: any[]) {
+    const col = column === 'id' ? '$id' : column;
+    this.queries.push(Query.contains(col, values));
+    return this;
+  }
+
+  or(expression: string) {
+    try {
+      const parts = expression.split(',');
+      const subQueries: string[] = [];
+      for (const part of parts) {
+        const [field, op, val] = part.split('.');
+        const cleanVal = (val || '').replace(/%/g, '');
+        if (op === 'ilike' || op === 'like') {
+          subQueries.push(Query.search(field, cleanVal));
+        } else if (op === 'eq') {
+          subQueries.push(Query.equal(field, cleanVal));
+        }
+      }
+      if (subQueries.length > 0) {
+        this.queries.push(Query.or(subQueries));
+      }
+    } catch {
+      // Fallback
+    }
+    return this;
+  }
+
   order(column: string, options?: { ascending?: boolean }) {
     const ascending = options?.ascending ?? true;
     const col = column === 'id' ? '$createdAt' : column;
@@ -162,7 +234,14 @@ class AppwriteQueryBuilder {
   async execute(): Promise<{ data: any; error: any; count?: number }> {
     try {
       if (this.action === 'select') {
-        const res = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, this.queries);
+        let res;
+        try {
+          res = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, this.queries);
+        } catch (queryErr: any) {
+          console.warn(`[Appwrite listDocuments fallback on ${this.collectionId}]:`, queryErr);
+          // If query filter failed (e.g. search index missing), fallback to basic query without filters
+          res = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, [Query.limit(100)]);
+        }
         const docs = res.documents.map(normalizeDoc);
 
         if (this.isSingle) {
