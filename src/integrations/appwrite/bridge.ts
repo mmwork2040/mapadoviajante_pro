@@ -366,4 +366,107 @@ export const appwriteSupabaseClient = {
   },
   auth: new AppwriteAuthBridge(),
   storage: new AppwriteStorageBridge(),
+  rpc(fnName: string, args: Record<string, any> = {}) {
+    const execute = async () => {
+      try {
+        if (fnName === 'provision_agency') {
+          const currentUser = await appwriteAuthService.getCurrentUser();
+          const userId = currentUser?.id || ID.unique();
+          const userEmail = args._email || currentUser?.email || '';
+          const userName = args._user_name || currentUser?.name || 'Administrador';
+
+          const agencyId = ID.unique();
+          const now = new Date().toISOString();
+
+          await databases.createDocument(
+            APPWRITE_DATABASE_ID,
+            'agencies',
+            agencyId,
+            {
+              name: args._name || `Agência de ${userName}`,
+              slug: args._slug || `agencia-${Date.now().toString(36)}`,
+              email: userEmail,
+              created_at: now,
+              updated_at: now,
+            }
+          );
+
+          const memberId = ID.unique();
+          const member = await databases.createDocument(
+            APPWRITE_DATABASE_ID,
+            'agency_members',
+            memberId,
+            {
+              agency_id: agencyId,
+              user_id: userId,
+              name: userName,
+              email: userEmail,
+              role: 'admin',
+              status: 'active',
+              is_active: true,
+              avatar_color: args._avatar_color || '#ff7a1a',
+              pref_leads_mine: false,
+              pref_tasks_mine: false,
+              pref_agenda_mine: false,
+              created_at: now,
+              updated_at: now,
+            }
+          );
+
+          const memberObj = {
+            id: member.$id,
+            agency_id: agencyId,
+            user_id: userId,
+            name: member.name,
+            email: member.email,
+            phone: member.phone || '',
+            role: member.role,
+            avatar_color: member.avatar_color,
+            is_active: member.is_active,
+            pref_leads_mine: member.pref_leads_mine,
+          };
+
+          return { data: memberObj, error: null };
+        }
+
+        if (fnName === 'get_user_agency_id') {
+          const currentUser = await appwriteAuthService.getCurrentUser();
+          if (!currentUser) return { data: null, error: null };
+          const res = await databases.listDocuments(
+            APPWRITE_DATABASE_ID,
+            'agency_members',
+            [Query.equal('user_id', currentUser.id), Query.limit(1)]
+          );
+          if (res.documents.length === 0) return { data: null, error: null };
+          return { data: res.documents[0].agency_id, error: null };
+        }
+
+        if (fnName === 'has_role') {
+          return { data: true, error: null };
+        }
+
+        if (fnName === 'get_shared_itinerary') {
+          const doc = await databases.getDocument(
+            APPWRITE_DATABASE_ID,
+            'crm_itineraries',
+            args._id
+          );
+          return { data: { ...doc, id: doc.$id }, error: null };
+        }
+
+        return { data: null, error: null };
+      } catch (err: any) {
+        console.error(`[RPC ${fnName} error]:`, err);
+        return { data: null, error: { message: err.message || `Erro ao executar ${fnName}` } };
+      }
+    };
+
+    const promise = execute();
+    return {
+      then: promise.then.bind(promise),
+      catch: promise.catch.bind(promise),
+      single: async () => execute(),
+      maybeSingle: async () => execute(),
+    };
+  },
 };

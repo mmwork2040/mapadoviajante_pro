@@ -159,22 +159,68 @@ export async function autoProvisionAgency(
 
   // Provisionamento atômico via RPC SECURITY DEFINER (cria agência + membro admin
   // numa única transação, evitando agências órfãs e escalonamento de privilégio).
-  const { data: member, error } = await supabase
-    .rpc("provision_agency", {
-      _name: agencyName,
-      _slug: slug,
-      _email: userEmail,
-      _user_name: userName || "Novo Usuário",
-      _avatar_color: "#ff7a1a",
-    })
-    .single();
-  if (error || !member) {
-    console.error("autoProvisionAgency — provision_agency:", error);
-    return null;
+  try {
+    const { data: member, error } = await supabase
+      .rpc("provision_agency", {
+        _name: agencyName,
+        _slug: slug,
+        _email: userEmail,
+        _user_name: userName || "Novo Usuário",
+        _avatar_color: "#ff7a1a",
+      })
+      .single();
+
+    if (!error && member) {
+      setAgencyContext(member as AgencyMember);
+      return member as AgencyMember;
+    }
+  } catch (rpcErr) {
+    console.warn("autoProvisionAgency RPC fallback:", rpcErr);
   }
 
-  setAgencyContext(member as AgencyMember);
-  return member as AgencyMember;
+  // Fallback direto via Appwrite / Supabase queries
+  try {
+    const { data: newAgencies, error: agencyErr } = await supabase
+      .from("agencies")
+      .insert({
+        name: agencyName,
+        slug,
+        email: userEmail,
+      })
+      .select();
+
+    const createdAgency = Array.isArray(newAgencies) ? newAgencies[0] : newAgencies;
+    if (agencyErr || !createdAgency) {
+      console.error("autoProvisionAgency fallback agency error:", agencyErr);
+      return null;
+    }
+
+    const { data: newMembers, error: memberErr } = await supabase
+      .from("agency_members")
+      .insert({
+        agency_id: createdAgency.id,
+        user_id: userId,
+        name: userName || "Novo Usuário",
+        email: userEmail,
+        role: "admin",
+        status: "active",
+        is_active: true,
+        avatar_color: "#ff7a1a",
+      })
+      .select();
+
+    const createdMember = Array.isArray(newMembers) ? newMembers[0] : newMembers;
+    if (memberErr || !createdMember) {
+      console.error("autoProvisionAgency fallback member error:", memberErr);
+      return null;
+    }
+
+    setAgencyContext(createdMember as AgencyMember);
+    return createdMember as AgencyMember;
+  } catch (fallbackErr) {
+    console.error("autoProvisionAgency fallback error:", fallbackErr);
+    return null;
+  }
 }
 
 // ── Team members ───────────────────────────────────────────────
