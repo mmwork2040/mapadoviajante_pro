@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { sendEmailWithConfig } from "@/lib/gmail.functions";
+// email.server imported dynamically
 import { DEFAULT_CONFIG, type EmailConfig } from "@/lib/gmail-config";
 
 const MEMBER_COLORS = ["#ff7a1a", "#2563eb", "#16a34a", "#db2777", "#9333ea", "#0891b2"];
@@ -198,6 +198,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       link,
     });
 
+    const { sendEmailWithConfig } = await import("./email.server");
     const sendRes = await sendEmailWithConfig(emailConfig, {
       to: email,
       subject,
