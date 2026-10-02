@@ -316,6 +316,18 @@ class AppwriteQueryBuilder {
 
 // ── Bridge Auth ───────────────────────────────────────────────────
 class AppwriteAuthBridge {
+  private authListeners: ((event: string, session: any) => void)[] = [];
+
+  private notifyAuth(event: string, session: any) {
+    this.authListeners.forEach((cb) => {
+      try {
+        cb(event, session);
+      } catch (err) {
+        console.error("[AuthListener Error]:", err);
+      }
+    });
+  }
+
   async getSession() {
     try {
       const user = await appwriteAuthService.getCurrentUser();
@@ -395,7 +407,11 @@ class AppwriteAuthBridge {
   }
 
   async signOut() {
-    await appwriteAuthService.logout();
+    try {
+      await appwriteAuthService.logout();
+    } finally {
+      this.notifyAuth("SIGNED_OUT", null);
+    }
     return { error: null };
   }
 
@@ -412,6 +428,7 @@ class AppwriteAuthBridge {
   }
 
   onAuthStateChange(callback: (event: string, session: any) => void) {
+    this.authListeners.push(callback);
     // Dispara estado inicial
     this.getSession().then(({ data }) => {
       callback('INITIAL_SESSION', data.session);
@@ -420,7 +437,9 @@ class AppwriteAuthBridge {
     return {
       data: {
         subscription: {
-          unsubscribe: () => {},
+          unsubscribe: () => {
+            this.authListeners = this.authListeners.filter((cb) => cb !== callback);
+          },
         },
       },
     };

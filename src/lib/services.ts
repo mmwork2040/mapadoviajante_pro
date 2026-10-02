@@ -128,12 +128,35 @@ export async function loadAgencyContext(): Promise<AgencyMember | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data: members, error } = await supabase
+  let { data: members, error } = await supabase
     .from("agency_members")
     .select("id, agency_id, name, email, phone, role, avatar_color, is_active, user_id, pref_leads_mine")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .limit(1);
+
+  // Fallback: se não achar por user_id, busca por email para vincular contas migradas do Supabase
+  if ((!members || members.length === 0) && user.email) {
+    const cleanEmail = user.email.toLowerCase().trim();
+    const { data: membersByEmail } = await supabase
+      .from("agency_members")
+      .select("id, agency_id, name, email, phone, role, avatar_color, is_active, user_id, pref_leads_mine")
+      .eq("email", cleanEmail)
+      .eq("is_active", true)
+      .limit(1);
+
+    if (membersByEmail && membersByEmail.length > 0) {
+      members = membersByEmail;
+      // Atualiza o user_id no Appwrite para os próximos acessos
+      const foundId = (membersByEmail[0] as any).id;
+      if (foundId) {
+        void supabase
+          .from("agency_members")
+          .update({ user_id: user.id })
+          .eq("id", foundId);
+      }
+    }
+  }
 
   if (error || !members || members.length === 0) return null;
   setAgencyContext(members[0] as AgencyMember);

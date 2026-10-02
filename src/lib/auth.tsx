@@ -144,10 +144,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.warn("SignOut error:", e);
+    }
+    setSession(null);
     setAgencyContext(null);
     setMember(null);
     setPendingInvite(null);
+    window.location.href = "/auth";
   }, []);
 
   const refreshMember = useCallback(async () => {
