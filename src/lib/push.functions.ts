@@ -69,10 +69,121 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
   return json.access_token;
 }
 
-/** Indica se a service account do Firebase está configurada no servidor. */
+async function resolveFirebaseServiceAccount(supabase: any, userId: string): Promise<ServiceAccount | null> {
+  const envRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (envRaw) {
+    try {
+      return JSON.parse(envRaw) as ServiceAccount;
+    } catch {}
+  }
+
+  let agencyId: string | null = null;
+  try {
+    const { data: member } = await supabase
+      .from("agency_members")
+      .select("agency_id")
+      .eq("user_id", userId)
+      .eq("is_active", true)
+      .limit(1)
+      .maybeSingle();
+    agencyId = member?.agency_id || null;
+  } catch {}
+
+  if (!agencyId) agencyId = "2a0f9141-3246-4c0f-b064-2bf4cb718adc";
+
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("system_settings")
+      .select("value")
+      .eq("key", `agency_cfg:${agencyId}:notifications`)
+      .maybeSingle();
+
+    if (row?.value) {
+      const parsed = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
+      if (parsed.serviceAccountJson?.trim()) {
+        return JSON.parse(parsed.serviceAccountJson.trim()) as ServiceAccount;
+      }
+      if (parsed.clientEmail && parsed.privateKey) {
+        return {
+          client_email: parsed.clientEmail,
+          private_key: parsed.privateKey,
+          project_id: parsed.projectId,
+        };
+      }
+    }
+  } catch {}
+
+  return null;
+}
+
+/** Indica se a service account do Firebase está configurada e pronta. */
 export const getPushStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => ({ configured: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT) }));
+  .handler(async ({ context }) => {
+    const sa = await resolveFirebaseServiceAccount(context.supabase, context.userId);
+    return {
+      configured: Boolean(sa?.project_id && sa?.private_key),
+      projectId: sa?.project_id ?? null,
+      clientEmail: sa?.client_email ?? null,
+    };
+  });
+
+/** Valida a chave privada (Service Account JSON) do Firebase testando a autorização OAuth2 com a Google. */
+export const validateFirebaseConfig = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z
+      .object({
+        serviceAccountJson: z.string().optional(),
+        projectId: z.string().optional(),
+      })
+      .parse(data),
+  )
+  .handler(async ({ data, context }): Promise<{ ok: boolean; message: string; details?: { projectId: string; clientEmail: string } }> => {
+    let sa: ServiceAccount | null = null;
+    if (data.serviceAccountJson?.trim()) {
+      try {
+        sa = JSON.parse(data.serviceAccountJson.trim()) as ServiceAccount;
+      } catch (err: any) {
+        return { ok: false, message: `JSON da Service Account inválido: ${err.message}` };
+      }
+    } else {
+      sa = await resolveFirebaseServiceAccount(context.supabase, context.userId);
+    }
+
+    if (!sa) {
+      return { ok: false, message: "Cole o conteúdo do arquivo JSON da Service Account do Firebase para validar." };
+    }
+
+    if (!sa.project_id || !sa.client_email || !sa.private_key) {
+      return {
+        ok: false,
+        message: "JSON incompleto: os campos 'project_id', 'client_email' e 'private_key' são obrigatórios.",
+      };
+    }
+
+    try {
+      const accessToken = await getAccessToken(sa);
+      if (!accessToken) {
+        return { ok: false, message: "Não foi possível gerar o token de acesso OAuth2 do Firebase." };
+      }
+      return {
+        ok: true,
+        message: `Conexão autorizada com sucesso! Projeto: ${sa.project_id} · Conta: ${sa.client_email}`,
+        details: {
+          projectId: sa.project_id,
+          clientEmail: sa.client_email,
+        },
+      };
+    } catch (err: any) {
+      console.error("Firebase validation error:", err);
+      return {
+        ok: false,
+        message: `Falha ao autenticar com o Firebase: ${err.message || "Chave privada inválida ou rejeitada pelo Google"}`,
+      };
+    }
+  });
 
 /** Registra/atualiza o device token de push do usuário logado em system_settings. */
 export const saveDeviceToken = createServerFn({ method: "POST" })

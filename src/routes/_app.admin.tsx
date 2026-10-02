@@ -48,7 +48,7 @@ import {
 } from "@/lib/n8n-config";
 import { getGDriveConfig, saveGDriveConfig, DEFAULT_GDRIVE_CONFIG, type GDriveConfig } from "@/lib/gdrive-config";
 import { checkDriveConnection } from "@/lib/gdrive.functions";
-import { sendTestPush, getPushStatus, listDeviceTokens, getPushDeliveryStatus, type DeviceTokenEntry } from "@/lib/push.functions";
+import { sendTestPush, getPushStatus, listDeviceTokens, getPushDeliveryStatus, validateFirebaseConfig, type DeviceTokenEntry } from "@/lib/push.functions";
 import {
   fetchAiConfig,
   fetchTeamMembers,
@@ -434,8 +434,8 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         <CollapsibleSection
           icon={Mail}
           color="#ea4335"
-          title="E-mail (Gmail)"
-          subtitle="Envie e-mails pela conta Gmail conectada à agência"
+          title="E-mail (Gmail & Appwrite)"
+          subtitle="Envie e-mails através do Gmail ou do Appwrite da agência"
         >
           <GmailCard />
         </CollapsibleSection>
@@ -1008,60 +1008,97 @@ function WebhookCard() {
 }
 
 function NotificationsCard() {
-  const qc = useQueryClient();
   const [config, setConfig] = useState<NotifConfig>(DEFAULT_NOTIF_CONFIG);
-  const [token, setToken] = useState<string>("");
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [token, setToken] = useState<string | null>(null);
   const [activating, setActivating] = useState(false);
   const [testing, setTesting] = useState(false);
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [validating, setValidating] = useState(false);
+  const [validationResult, setValidationResult] = useState<{ ok: boolean; message: string; details?: any } | null>(null);
+
   const sendPush = useServerFn(sendTestPush);
   const getDelivery = useServerFn(getPushDeliveryStatus);
+  const validateFb = useServerFn(validateFirebaseConfig);
   const statusQ = useQuery({ queryKey: ["push-status"], queryFn: () => getPushStatus() });
 
   useEffect(() => {
     getNotifConfig().then(setConfig);
-    if (typeof window !== "undefined") {
-      setPermission("Notification" in window ? Notification.permission : "unsupported");
+    if (!("Notification" in window)) {
+      setPermission("unsupported");
+      return;
     }
+    setPermission(Notification.permission);
   }, []);
 
   function update(patch: Partial<NotifConfig>) {
     setConfig((c) => ({ ...c, ...patch }));
   }
 
-  function toggleEvent(id: NotifConfig["events"][number]) {
-    update({
-      events: config.events.includes(id)
-        ? config.events.filter((e) => e !== id)
-        : [...config.events, id],
-    });
+  function handleServiceAccountChange(rawJson: string) {
+    update({ serviceAccountJson: rawJson });
+    try {
+      const parsed = JSON.parse(rawJson);
+      if (parsed.project_id && !config.projectId) {
+        update({ serviceAccountJson: rawJson, projectId: parsed.project_id });
+      }
+    } catch {}
+  }
+
+  function toggleEvent(id: NotifEventId) {
+    const next = config.events.includes(id)
+      ? config.events.filter((e) => e !== id)
+      : [...config.events, id];
+    update({ events: next });
+  }
+
+  async function handleValidateCredentials() {
+    setValidating(true);
+    setValidationResult(null);
+    try {
+      const res = await validateFb({
+        data: {
+          serviceAccountJson: config.serviceAccountJson?.trim() || undefined,
+          projectId: config.projectId?.trim() || undefined,
+        },
+      });
+      setValidationResult(res);
+      if (res.ok) {
+        toast.success(res.message);
+        statusQ.refetch();
+      } else {
+        toast.error(res.message);
+      }
+    } catch (err: any) {
+      const msg = err.message || "Erro de conexão ao validar credenciais.";
+      setValidationResult({ ok: false, message: msg });
+      toast.error(msg);
+    } finally {
+      setValidating(false);
+    }
   }
 
   async function save() {
-    if (!configIsComplete(config)) {
-      toast.error("Preencha todos os campos e selecione ao menos um evento.");
-      return;
-    }
     try {
-      await saveNotifConfig({ ...config, enabled: true });
-      setConfig((c) => ({ ...c, enabled: true }));
-      toast.success("Configuração de notificações salva e habilitada.");
+      await saveNotifConfig(config);
+      toast.success("Configuração de notificações salva.");
+      statusQ.refetch();
     } catch {
       toast.error("Não foi possível salvar a configuração.");
     }
   }
 
   async function activate() {
+    if (!config.enabled) {
+      toast.error("Habilite as notificações primeiro.");
+      return;
+    }
     setActivating(true);
     const res = await requestPushToken(config);
     setActivating(false);
-    if (typeof window !== "undefined" && "Notification" in window) {
-      setPermission(Notification.permission);
-    }
     if (res.ok && res.token) {
-      await registerPushToken(res.token);
-      qc.invalidateQueries({ queryKey: ["device-tokens"] });
       setToken(res.token);
+      setPermission("granted");
+      await registerPushToken(res.token);
       toast.success(res.message);
     } else {
       toast.error(res.message);
@@ -1075,7 +1112,12 @@ function NotificationsCard() {
     }
     setTesting(true);
     const res = await sendPush({
-      data: { token, deviceId: getDeviceId(), title: "Teste de notificação", body: "As notificações estão funcionando! 🎉" },
+      data: {
+        token,
+        deviceId: getDeviceId(),
+        title: "Teste de notificação",
+        body: "Se você viu este push, o Firebase está 100% configurado!",
+      },
     });
     setTesting(false);
     if (!res.ok || !res.traceId) {
@@ -1095,9 +1137,9 @@ function NotificationsCard() {
   }
 
   const fields: { key: keyof NotifConfig; label: string; placeholder: string }[] = [
-    { key: "apiKey", label: "API Key", placeholder: "AIza..." },
-    { key: "authDomain", label: "Auth Domain", placeholder: "seu-app.firebaseapp.com" },
     { key: "projectId", label: "Project ID", placeholder: "seu-app" },
+    { key: "apiKey", label: "API Key (Web)", placeholder: "AIza..." },
+    { key: "authDomain", label: "Auth Domain", placeholder: "seu-app.firebaseapp.com" },
     { key: "messagingSenderId", label: "Messaging Sender ID", placeholder: "1234567890" },
     { key: "appId", label: "App ID", placeholder: "1:1234567890:web:abc123" },
     { key: "vapidKey", label: "VAPID Key (Web Push)", placeholder: "B*****" },
@@ -1106,10 +1148,25 @@ function NotificationsCard() {
   const serverReady = statusQ.data?.configured;
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Cole a configuração web do seu projeto Firebase para habilitar notificações push neste navegador/dispositivo.
-      </p>
+    <div className="space-y-5">
+      <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex h-2.5 w-2.5 rounded-full ${serverReady ? "bg-emerald-500" : "bg-amber-500"}`}
+            />
+            <span className="font-medium text-foreground">
+              {serverReady ? "Servidor FCM v1 pronto para envio" : "Falta validar Chave da Conta de Serviço (FCM v1)"}
+            </span>
+          </div>
+          {statusQ.data?.clientEmail && (
+            <span className="text-xs text-muted-foreground">{statusQ.data.clientEmail}</span>
+          )}
+        </div>
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          As notificações push exigem a configuração do cliente Web (para gerar tokens nos navegadores) e a Chave Privada da Conta de Serviço (para envio seguro pelo servidor via API HTTP v1).
+        </p>
+      </div>
 
       {(() => {
         const map: Record<string, { label: string; cls: string }> = {
@@ -1134,7 +1191,6 @@ function NotificationsCard() {
         );
       })()}
 
-
       <label className="flex items-center gap-3 text-sm font-medium">
         <button
           type="button"
@@ -1149,24 +1205,84 @@ function NotificationsCard() {
         {config.enabled ? "Habilitado" : "Desabilitado"}
       </label>
 
-      <div className="grid gap-3 sm:grid-cols-2">
-        {fields.map((f) => (
-          <label key={f.key} className="block">
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">{f.label}</span>
-            <input
-              value={(config[f.key] as string) || ""}
-              onChange={(e) => update({ [f.key]: e.target.value } as Partial<NotifConfig>)}
-              placeholder={f.placeholder}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            />
-          </label>
-        ))}
+      {/* Seção 1: Web Push Client */}
+      <div>
+        <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          1. Configurações Web (Client SDK)
+        </h4>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {fields.map((f) => (
+            <label key={f.key} className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">{f.label}</span>
+              <input
+                value={(config[f.key] as string) || ""}
+                onChange={(e) => update({ [f.key]: e.target.value } as Partial<NotifConfig>)}
+                placeholder={f.placeholder}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+          ))}
+        </div>
       </div>
 
+      {/* Seção 2: Service Account / Chave Privada */}
       <div>
-        <span className="mb-2 block text-sm font-medium">Eventos notificados</span>
+        <div className="mb-1.5 flex items-center justify-between">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            2. Chave Privada da Conta de Serviço (Servidor FCM v1)
+          </h4>
+          <a
+            href="https://console.firebase.google.com"
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-primary hover:underline"
+          >
+            Abrir Firebase Console ↗
+          </a>
+        </div>
         <p className="mb-2 text-xs text-muted-foreground">
-          Selecione ao menos um evento para habilitar o serviço.
+          No Console do Firebase, acesse <strong>Configurações do Projeto → Contas de serviço → Gerar nova chave privada</strong>. Cole todo o conteúdo do arquivo <code>.json</code> gerado abaixo:
+        </p>
+        <textarea
+          value={config.serviceAccountJson || ""}
+          onChange={(e) => handleServiceAccountChange(e.target.value)}
+          rows={5}
+          placeholder='{"type": "service_account", "project_id": "...", "private_key": "-----BEGIN PRIVATE KEY-----...", "client_email": "firebase-adminsdk@..."}'
+          className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs"
+        />
+
+        {/* Botão de Validação */}
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleValidateCredentials}
+            disabled={validating || (!config.serviceAccountJson && !serverReady)}
+            className="inline-flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
+          >
+            {validating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Shield className="h-3.5 w-3.5" />}
+            {validating ? "Validando com o Google…" : "Validar Credenciais do Firebase"}
+          </button>
+
+          {validationResult && (
+            <span
+              className={`text-xs font-medium ${
+                validationResult.ok ? "text-emerald-600" : "text-destructive"
+              }`}
+            >
+              {validationResult.ok ? "✓ " : "✕ "}
+              {validationResult.message}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Seção 3: Eventos */}
+      <div>
+        <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          3. Eventos notificados
+        </h4>
+        <p className="mb-2 text-xs text-muted-foreground">
+          Selecione os gatilhos que emitirão notificações aos membros da agência:
         </p>
         <div className="grid gap-2 sm:grid-cols-2">
           {NOTIF_EVENTS.map((ev) => (
@@ -1183,27 +1299,19 @@ function NotificationsCard() {
         </div>
       </div>
 
-
-      {!serverReady && (
-        <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-          Para o envio funcionar, falta configurar a <strong>service account</strong> do Firebase no servidor.
-        </p>
-      )}
-
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 border-t border-border pt-4">
         <button
           type="button"
           onClick={save}
-          disabled={!configIsComplete(config)}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
         >
-          <Save className="h-4 w-4" /> Salvar e habilitar
+          <Save className="h-4 w-4" /> Salvar configurações
         </button>
         <button
           type="button"
           onClick={activate}
           disabled={activating || !config.enabled || !configIsComplete(config)}
-          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50"
         >
           {activating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bell className="h-4 w-4" />}
           {activating ? "Ativando…" : "Ativar neste dispositivo"}
@@ -1212,10 +1320,10 @@ function NotificationsCard() {
           type="button"
           onClick={runTest}
           disabled={testing || !token || !serverReady}
-          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-border px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50"
         >
           {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-          {testing ? "Enviando…" : "Enviar teste"}
+          {testing ? "Enviando…" : "Enviar push de teste"}
         </button>
       </div>
     </div>
@@ -1228,6 +1336,7 @@ type SendResult = {
   message: string;
   at: string;
 };
+
 
 function DeviceTokensCard() {
   const [sendingId, setSendingId] = useState<string | null>(null);
@@ -1386,15 +1495,18 @@ function DeviceTokensCard() {
 
 
 function GmailCard() {
-  const [config, setConfig] = useState<GmailConfig>(DEFAULT_GMAIL_CONFIG);
+  const [config, setConfig] = useState<EmailConfig>(DEFAULT_GMAIL_CONFIG);
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [saving, setSaving] = useState(false);
+
   const send = useServerFn(sendGmail);
   const statusQ = useQuery({ queryKey: ["gmail-status"], queryFn: () => getGmailStatus() });
   const connected = statusQ.data?.connected;
   const connectedEmail = statusQ.data?.email;
+  const activeProvider = config.provider || "gmail";
 
   useEffect(() => {
     getGmailConfig().then((c) => {
@@ -1403,16 +1515,20 @@ function GmailCard() {
     });
   }, []);
 
-  function update(patch: Partial<GmailConfig>) {
+  function update(patch: Partial<EmailConfig>) {
     setConfig((c) => ({ ...c, ...patch }));
   }
 
   async function save() {
+    setSaving(true);
     try {
       await saveGmailConfig(config);
-      toast.success("Configuração de e-mail salva.");
+      toast.success("Configuração de e-mail salva com sucesso.");
+      statusQ.refetch();
     } catch {
-      toast.error("Não foi possível salvar a configuração.");
+      toast.error("Não foi possível salvar a configuração de e-mail.");
+    } finally {
+      setSaving(false);
     }
   }
 
@@ -1435,40 +1551,69 @@ function GmailCard() {
     setSending(false);
     if (res.ok) {
       toast.success(res.message);
-      setSubject(config.defaultSubject);
       setBody("");
+      statusQ.refetch();
     } else {
       toast.error(res.message);
     }
   }
 
-  const fields: { key: keyof GmailConfig; label: string; placeholder: string }[] = [
-    { key: "senderName", label: "Nome do remetente", placeholder: "Sua Agência" },
-    { key: "replyTo", label: "Responder para", placeholder: "contato@suaagencia.com" },
-    { key: "defaultSubject", label: "Assunto padrão", placeholder: "Sobre sua viagem" },
-  ];
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Seletor de Provedor */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Provedor de Envio</span>
+          <p className="text-xs text-muted-foreground">Escolha por onde a agência enviará os e-mails e convites.</p>
+        </div>
+
+        <div className="inline-flex rounded-lg border border-border p-1 bg-muted/30">
+          <button
+            type="button"
+            onClick={() => update({ provider: "gmail" })}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
+              activeProvider === "gmail"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Mail className="h-3.5 w-3.5" /> Gmail (Google)
+          </button>
+          <button
+            type="button"
+            onClick={() => update({ provider: "appwrite" })}
+            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
+              activeProvider === "appwrite"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Database className="h-3.5 w-3.5" /> Appwrite
+          </button>
+        </div>
+      </div>
+
+      {/* Status da Conexão */}
       <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
         <div className="flex items-center gap-2">
           <span
             className={`inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-500" : "bg-muted-foreground"}`}
           />
           <span className="text-muted-foreground">
-            {connected ? "Conta Gmail conectada para envio:" : "Gmail não conectado."}
+            {connected
+              ? `Provedor ${activeProvider === "gmail" ? "Gmail" : "Appwrite"} conectado para envio:`
+              : `${activeProvider === "gmail" ? "Gmail" : "Appwrite"} não configurado ou inativo.`}
           </span>
         </div>
-        {connected && (
-          <p className="mt-1 font-medium">{connectedEmail || "conta conectada"}</p>
+        {connected && connectedEmail && (
+          <p className="mt-1 font-medium text-foreground">{connectedEmail}</p>
         )}
-        <p className="mt-2 text-xs text-muted-foreground">
-          Para trocar a conta de envio, reconecte o conector do Gmail nas configurações do
-          projeto (Conectores) com a conta desejada. O nome do remetente, o e-mail de resposta
-          e a assinatura abaixo podem ser alterados livremente.
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          {activeProvider === "gmail"
+            ? "Configure a sua conta Google com Senha de Aplicativo para envio via SMTP seguro."
+            : "Configure o envio pelo serviço de mensageria ou SMTP corporativo do Appwrite."}
         </p>
       </div>
-
 
       <label className="flex items-center gap-3 text-sm font-medium">
         <button
@@ -1481,25 +1626,254 @@ function GmailCard() {
             className={`h-5 w-5 rounded-full bg-white transition-transform ${config.enabled ? "translate-x-[22px]" : "translate-x-0.5"}`}
           />
         </button>
-        {config.enabled ? "Habilitado" : "Desabilitado"}
+        {config.enabled ? "Envio Habilitado" : "Envio Desabilitado"}
       </label>
 
+      {/* Formulário Gmail */}
+      {activeProvider === "gmail" && (
+        <div className="space-y-4 rounded-lg border border-border/70 p-4">
+          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Configurações da Conta Gmail
+          </h4>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Nome do remetente</span>
+              <input
+                value={config.senderName || ""}
+                onChange={(e) => update({ senderName: e.target.value })}
+                placeholder="O Segredo do Viajante"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">E-mail do Gmail</span>
+              <input
+                type="email"
+                value={config.gmailUser || ""}
+                onChange={(e) => update({ gmailUser: e.target.value })}
+                placeholder="suaagencia@gmail.com"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Senha de Aplicativo (16 caracteres)</span>
+                <a
+                  href="https://myaccount.google.com/apppasswords"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-[11px] text-primary hover:underline"
+                >
+                  Gerar no Google ↗
+                </a>
+              </div>
+              <input
+                type="password"
+                value={config.gmailAppPassword || ""}
+                onChange={(e) => update({ gmailAppPassword: e.target.value })}
+                placeholder="abcd efgh ijkl mnop"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
+              />
+              <span className="mt-1 block text-[10px] text-muted-foreground">
+                Gere em: Conta Google → Segurança → Verificação em 2 etapas → Senhas de app.
+              </span>
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Responder para (Reply-To)</span>
+              <input
+                value={config.replyTo || ""}
+                onChange={(e) => update({ replyTo: e.target.value })}
+                placeholder="contato@suaagencia.com"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Host SMTP</span>
+              <input
+                value={config.gmailSmtpHost || "smtp.gmail.com"}
+                onChange={(e) => update({ gmailSmtpHost: e.target.value })}
+                placeholder="smtp.gmail.com"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Porta SMTP</span>
+              <input
+                type="number"
+                value={config.gmailSmtpPort || 465}
+                onChange={(e) => update({ gmailSmtpPort: Number(e.target.value) })}
+                placeholder="465"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Formulário Appwrite */}
+      {activeProvider === "appwrite" && (
+        <div className="space-y-4 rounded-lg border border-border/70 p-4">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Configurações de E-mail via Appwrite
+            </h4>
+            <div className="inline-flex rounded-lg border border-border p-0.5 text-xs bg-muted/40">
+              <button
+                type="button"
+                onClick={() => update({ appwriteMode: "messaging" })}
+                className={`rounded px-2.5 py-1 ${
+                  config.appwriteMode === "messaging" ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground"
+                }`}
+              >
+                Messaging API
+              </button>
+              <button
+                type="button"
+                onClick={() => update({ appwriteMode: "smtp" })}
+                className={`rounded px-2.5 py-1 ${
+                  config.appwriteMode === "smtp" ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground"
+                }`}
+              >
+                Servidor SMTP
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Nome do remetente</span>
+              <input
+                value={config.senderName || ""}
+                onChange={(e) => update({ senderName: e.target.value })}
+                placeholder="O Segredo do Viajante"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">E-mail de envio (From)</span>
+              <input
+                type="email"
+                value={config.appwriteSenderEmail || ""}
+                onChange={(e) => update({ appwriteSenderEmail: e.target.value })}
+                placeholder="noreply@agenc-ia.net"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            {config.appwriteMode === "messaging" ? (
+              <>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Appwrite Endpoint</span>
+                  <input
+                    value={config.appwriteEndpoint || "https://appwrite.agenc-ia.net/v1"}
+                    onChange={(e) => update({ appwriteEndpoint: e.target.value })}
+                    placeholder="https://appwrite.agenc-ia.net/v1"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Project ID</span>
+                  <input
+                    value={config.appwriteProjectId || "6abdb8190017d98565f5"}
+                    onChange={(e) => update({ appwriteProjectId: e.target.value })}
+                    placeholder="6abdb8190017d98565f5"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block sm:col-span-2">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Chave de API do Appwrite (API Key)</span>
+                  <input
+                    type="password"
+                    value={config.appwriteApiKey || ""}
+                    onChange={(e) => update({ appwriteApiKey: e.target.value })}
+                    placeholder="standard_..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Host SMTP</span>
+                  <input
+                    value={config.appwriteSmtpHost || ""}
+                    onChange={(e) => update({ appwriteSmtpHost: e.target.value })}
+                    placeholder="smtp.agenc-ia.net"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Porta SMTP</span>
+                  <input
+                    type="number"
+                    value={config.appwriteSmtpPort || 587}
+                    onChange={(e) => update({ appwriteSmtpPort: Number(e.target.value) })}
+                    placeholder="587"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Usuário SMTP</span>
+                  <input
+                    value={config.appwriteSmtpUser || ""}
+                    onChange={(e) => update({ appwriteSmtpUser: e.target.value })}
+                    placeholder="usuario_smtp"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Senha SMTP</span>
+                  <input
+                    type="password"
+                    value={config.appwriteSmtpPassword || ""}
+                    onChange={(e) => update({ appwriteSmtpPassword: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
+                  />
+                </label>
+              </>
+            )}
+
+            <label className="block sm:col-span-2">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Responder para (Reply-To)</span>
+              <input
+                value={config.replyTo || ""}
+                onChange={(e) => update({ replyTo: e.target.value })}
+                placeholder="contato@suaagencia.com"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Assunto e Assinatura comuns */}
       <div className="grid gap-3 sm:grid-cols-2">
-        {fields.map((f) => (
-          <label key={f.key} className="block">
-            <span className="mb-1 block text-xs font-medium text-muted-foreground">{f.label}</span>
-            <input
-              value={(config[f.key] as string) || ""}
-              onChange={(e) => update({ [f.key]: e.target.value } as Partial<GmailConfig>)}
-              placeholder={f.placeholder}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-            />
-          </label>
-        ))}
         <label className="block sm:col-span-2">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground">Assinatura</span>
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Assunto padrão</span>
+          <input
+            value={config.defaultSubject || ""}
+            onChange={(e) => update({ defaultSubject: e.target.value })}
+            placeholder="Sobre sua viagem"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          />
+        </label>
+
+        <label className="block sm:col-span-2">
+          <span className="mb-1 block text-xs font-medium text-muted-foreground">Assinatura do e-mail</span>
           <textarea
-            value={config.signature}
+            value={config.signature || ""}
             onChange={(e) => update({ signature: e.target.value })}
             rows={2}
             placeholder="Atenciosamente, Equipe…"
@@ -1511,13 +1885,18 @@ function GmailCard() {
       <button
         type="button"
         onClick={save}
-        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+        disabled={saving}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
       >
-        <Save className="h-4 w-4" /> Salvar
+        {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+        {saving ? "Salvando…" : "Salvar configurações de e-mail"}
       </button>
 
+      {/* Enviar teste */}
       <div className="border-t border-border pt-4">
-        <p className="mb-3 text-xs font-medium text-muted-foreground">Enviar e-mail de teste</p>
+        <p className="mb-3 text-xs font-medium text-muted-foreground">
+          Enviar e-mail de teste ({activeProvider === "gmail" ? "Gmail" : "Appwrite"})
+        </p>
         <div className="space-y-4">
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-muted-foreground">Destinatário</span>
@@ -1525,7 +1904,7 @@ function GmailCard() {
               type="email"
               value={to}
               onChange={(e) => setTo(e.target.value)}
-              placeholder="cliente@email.com"
+              placeholder="seuemail@exemplo.com"
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             />
           </label>
@@ -1543,8 +1922,8 @@ function GmailCard() {
             <textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              rows={5}
-              placeholder="Escreva a mensagem (HTML permitido)…"
+              rows={4}
+              placeholder="Escreva a mensagem de teste…"
               className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
             />
           </label>
@@ -1552,11 +1931,11 @@ function GmailCard() {
           <button
             type="button"
             onClick={submit}
-            disabled={sending || !connected || !config.enabled}
+            disabled={sending || !config.enabled}
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {sending ? "Enviando…" : "Enviar e-mail"}
+            {sending ? "Enviando…" : `Enviar e-mail via ${activeProvider === "gmail" ? "Gmail" : "Appwrite"}`}
           </button>
         </div>
       </div>

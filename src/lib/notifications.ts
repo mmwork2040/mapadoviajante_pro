@@ -121,6 +121,10 @@ export interface NotifConfig {
   messagingSenderId: string;
   appId: string;
   vapidKey: string;
+  // Campos de validação do servidor (Service Account JSON / Chave Privada)
+  serviceAccountJson?: string;
+  clientEmail?: string;
+  privateKey?: string;
   events: NotifEventId[];
 }
 
@@ -132,6 +136,9 @@ export const DEFAULT_CONFIG: NotifConfig = {
   messagingSenderId: "",
   appId: "",
   vapidKey: "",
+  serviceAccountJson: "",
+  clientEmail: "",
+  privateKey: "",
   events: [],
 };
 

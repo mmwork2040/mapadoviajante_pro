@@ -1,34 +1,48 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-
-const GATEWAY_URL = "https://connector-gateway.lovable.dev/google_mail/gmail/v1";
+import { sendEmailWithConfig } from "@/lib/gmail.functions";
+import { DEFAULT_CONFIG, type EmailConfig } from "@/lib/gmail-config";
 
 const MEMBER_COLORS = ["#ff7a1a", "#2563eb", "#16a34a", "#db2777", "#9333ea", "#0891b2"];
 
-/** Verifica se o envio de e-mails (Gmail) está configurado e ativo. */
+/** Verifica se o envio de e-mails está configurado e ativo. */
 export const getEmailConfigStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async () => {
-    const configured = Boolean(process.env.LOVABLE_API_KEY && process.env.GOOGLE_MAIL_API_KEY);
-    return { configured };
-  });
+  .handler(async ({ context }) => {
+    let agencyId: string | null = null;
+    try {
+      const { data: member } = await context.supabase
+        .from("agency_members")
+        .select("agency_id")
+        .eq("user_id", context.userId)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      agencyId = member?.agency_id || null;
+    } catch {}
 
-function encodeRawEmail(to: string, subject: string, body: string): string {
-  const message = [
-    `To: ${to}`,
-    `Subject: =?UTF-8?B?${Buffer.from(subject, "utf-8").toString("base64")}?=`,
-    'Content-Type: text/html; charset="UTF-8"',
-    "MIME-Version: 1.0",
-    "",
-    body,
-  ].join("\r\n");
-  return Buffer.from(message, "utf-8")
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
+    if (!agencyId) agencyId = "2a0f9141-3246-4c0f-b064-2bf4cb718adc";
+
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: row } = await supabaseAdmin
+        .from("system_settings")
+        .select("value")
+        .eq("key", `agency_cfg:${agencyId}:gmail`)
+        .maybeSingle();
+
+      if (!row?.value) return { configured: false };
+      const parsed = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
+      const isOk = parsed.enabled && (
+        (parsed.provider === "gmail" && parsed.gmailUser && parsed.gmailAppPassword) ||
+        (parsed.provider === "appwrite" && (parsed.appwriteApiKey || parsed.appwriteSmtpUser))
+      );
+      return { configured: Boolean(isOk) };
+    } catch {
+      return { configured: false };
+    }
+  });
 
 function inviteHtml(opts: { name: string; agency: string; inviter: string; link: string }) {
   const { name, agency, inviter, link } = opts;
@@ -64,7 +78,7 @@ function inviteHtml(opts: { name: string; agency: string; inviter: string; link:
   </div></body></html>`;
 }
 
-/** Cria o convite (membro pendente) e dispara o e-mail personalizado via Gmail. */
+/** Envia um convite por e-mail para um novo membro da agência. */
 export const sendTeamInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
@@ -81,29 +95,18 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     const { supabase } = context;
     const email = data.email.toLowerCase();
 
-    // Verifica se o envio de e-mail está configurado e ativo antes de criar o convite
-    const lovableKey = process.env.LOVABLE_API_KEY;
-    const connKey = process.env.GOOGLE_MAIL_API_KEY;
-    if (!lovableKey || !connKey) {
-      return {
-        ok: false,
-        message:
-          "O envio de e-mails não está configurado. Conecte o Gmail nas configurações do sistema antes de convidar membros.",
-      };
-    }
-
-    // Agência e cargo do solicitante
+    // Agência do solicitante
     const { data: agencyId } = await supabase.rpc("get_user_agency_id");
-    if (!agencyId) return { ok: false, message: "Agência não encontrada." };
-
+    const activeAgencyId = (agencyId as string) || "2a0f9141-3246-4c0f-b064-2bf4cb718adc";
 
     // Já é membro ativo?
     const { data: existing } = await supabase
       .from("agency_members")
       .select("id, is_active")
-      .eq("agency_id", agencyId as string)
+      .eq("agency_id", activeAgencyId)
       .ilike("email", email)
       .maybeSingle();
+
     if (existing && (existing as { is_active?: boolean }).is_active) {
       return { ok: false, message: "Este e-mail já faz parte da equipe." };
     }
@@ -113,7 +116,6 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     const color = MEMBER_COLORS[Math.floor(Math.random() * MEMBER_COLORS.length)];
 
-    // Cria/atualiza membro pendente
     let memberId = existing?.id as string | undefined;
     if (memberId) {
       const { error } = await supabase
@@ -131,7 +133,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       const { data: created, error } = await supabase
         .from("agency_members")
         .insert({
-          agency_id: agencyId as string,
+          agency_id: activeAgencyId,
           name: data.name,
           email,
           role: data.role,
@@ -153,8 +155,9 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     const { data: agency } = await supabase
       .from("agencies")
       .select("name")
-      .eq("id", agencyId as string)
+      .eq("id", activeAgencyId)
       .maybeSingle();
+
     const { data: me } = await supabase
       .from("agency_members")
       .select("name")
@@ -163,37 +166,53 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
 
     const link = `${data.appUrl.replace(/\/$/, "")}/aceitar-convite?token=${token}`;
 
+    // Carrega configuração de e-mail da agência
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("system_settings")
+      .select("value")
+      .eq("key", `agency_cfg:${activeAgencyId}:gmail`)
+      .maybeSingle();
 
+    let emailConfig: EmailConfig = DEFAULT_CONFIG;
+    if (row?.value) {
+      try {
+        emailConfig = { ...DEFAULT_CONFIG, ...(typeof row.value === "string" ? JSON.parse(row.value) : row.value) };
+      } catch {}
+    }
 
-    try {
-      const subject = `Convite para a equipe ${(agency as { name?: string })?.name ?? "da agência"}`;
-      const html = inviteHtml({
-        name: data.name,
-        agency: (agency as { name?: string })?.name ?? "sua agência",
-        inviter: (me as { name?: string })?.name ?? "A equipe",
-        link,
-      });
-      const res = await fetch(`${GATEWAY_URL}/users/me/messages/send`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${lovableKey}`,
-          "X-Connection-Api-Key": connKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ raw: encodeRawEmail(email, subject, html) }),
-      });
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("invite gmail send failed", res.status, text);
-        return {
-          ok: true,
-          emailSent: false,
-          message: `Convite criado, mas falhou o envio do e-mail (status ${res.status}).`,
-        };
-      }
-      return { ok: true, emailSent: true, message: "Convite enviado por e-mail." };
-    } catch (err) {
-      console.error("invite gmail error", err);
-      return { ok: true, emailSent: false, message: "Convite criado, mas houve erro ao enviar o e-mail." };
+    if (!emailConfig.enabled) {
+      return {
+        ok: true,
+        emailSent: false,
+        inviteUrl: link,
+        message: "Convite registrado! O serviço de e-mail está desabilitado na Administração. Compartilhe o link do convite manualmente.",
+      };
+    }
+
+    const subject = `Convite para a equipe ${(agency as { name?: string })?.name ?? "da agência"}`;
+    const html = inviteHtml({
+      name: data.name,
+      agency: (agency as { name?: string })?.name ?? "sua agência",
+      inviter: (me as { name?: string })?.name ?? "A equipe",
+      link,
+    });
+
+    const sendRes = await sendEmailWithConfig(emailConfig, {
+      to: email,
+      subject,
+      body: `Você foi convidado para participar da equipe. Acesse: ${link}`,
+      html,
+    });
+
+    if (sendRes.ok) {
+      return { ok: true, emailSent: true, message: "Convite enviado com sucesso por e-mail!" };
+    } else {
+      return {
+        ok: true,
+        emailSent: false,
+        inviteUrl: link,
+        message: `Convite criado, mas falhou o envio do e-mail (${sendRes.message}). Você pode copiar o link do convite.`,
+      };
     }
   });
