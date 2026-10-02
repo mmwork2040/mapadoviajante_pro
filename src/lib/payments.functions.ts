@@ -39,7 +39,6 @@ async function resolveAgencyId(
   const { data } = await supabase
     .from("agency_members")
     .select("agency_id")
-    .eq("user_id", userId)
     .eq("is_active", true)
     .limit(1)
     .maybeSingle();
@@ -52,13 +51,13 @@ export const getAgencyPaymentConfig = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<AgencyPaymentConfig> => {
     const agencyId = await resolveAgencyId(context.supabase, context.userId);
     if (!agencyId) return DEFAULT_PAYMENT_CONFIG;
-    const { data } = await (context.supabase as any)
-      .from("agency_payment_settings")
-      .select(
-        "is_active, asaas_environment, asaas_api_key, asaas_webhook_token, monthly_price, yearly_price, trial_days, grace_period_days, first_layer_rate, second_layer_rate",
-      )
-      .eq("agency_id", agencyId)
+    const key = `agency_cfg:${agencyId}:payments`;
+    const { data: row } = await (context.supabase as any)
+      .from("system_settings")
+      .select("value")
+      .eq("key", key)
       .maybeSingle();
+    const data = row?.value;
     if (!data) return DEFAULT_PAYMENT_CONFIG;
     return {
       isActive: !!data.is_active,
@@ -112,9 +111,10 @@ export const saveAgencyPaymentConfig = createServerFn({ method: "POST" })
       row.asaas_api_key = data.apiKey.trim();
     }
 
+    const key = `agency_cfg:${agencyId}:payments`;
     const { error } = await (context.supabase as any)
-      .from("agency_payment_settings")
-      .upsert(row, { onConflict: "agency_id" });
+      .from("system_settings")
+      .upsert({ key, value: row, updated_at: new Date().toISOString() }, { onConflict: "key" });
     if (error) throw new Error(error.message);
     return { ok: true };
   });

@@ -55,6 +55,7 @@ function getValidDocId(rawId?: string): string {
 }
 
 class AppwriteQueryBuilder {
+  private onConflictCol: string | null = null;
   private collectionId: string;
   private queries: string[] = [];
   private isSingle = false;
@@ -77,9 +78,12 @@ class AppwriteQueryBuilder {
     return this;
   }
 
-  upsert(values: any | any[], _opts?: any) {
-    this.action = 'insert';
+  upsert(values: any | any[], opts?: { onConflict?: string }) {
+    this.action = 'upsert';
     this.writePayload = values;
+    if (opts?.onConflict) {
+      this.onConflictCol = opts.onConflict;
+    }
     return this;
   }
 
@@ -258,14 +262,49 @@ class AppwriteQueryBuilder {
         return { data: docs, error: null, count: res.total };
       }
 
-      if (this.action === 'insert') {
+      if (this.action === 'insert' || this.action === 'upsert') {
         const items = Array.isArray(this.writePayload) ? this.writePayload : [this.writePayload];
         const results = [];
 
         for (const item of items) {
-          const docId = getValidDocId(item.id);
           const payload = preparePayload(item);
-          const doc = await databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
+          let targetId: string | null = null;
+
+          // Se há onConflict (ex: 'key' em system_settings)
+          if (this.onConflictCol && item[this.onConflictCol] !== undefined) {
+            try {
+              const existing = await databases.listDocuments(
+                APPWRITE_DATABASE_ID,
+                this.collectionId,
+                [Query.equal(this.onConflictCol, item[this.onConflictCol]), Query.limit(1)]
+              );
+              if (existing.documents.length > 0) {
+                targetId = existing.documents[0].$id;
+              }
+            } catch {}
+          } else if (item.id) {
+            const candidate = getValidDocId(item.id);
+            try {
+              const existing = await databases.getDocument(APPWRITE_DATABASE_ID, this.collectionId, candidate);
+              if (existing) targetId = candidate;
+            } catch {}
+          }
+
+          let doc;
+          if (targetId) {
+            doc = await databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, targetId, payload);
+          } else {
+            const docId = getValidDocId(item.id);
+            try {
+              doc = await databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
+            } catch (createErr: any) {
+              if (createErr.code === 409 || createErr.type === 'document_already_exists') {
+                doc = await databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
+              } else {
+                throw createErr;
+              }
+            }
+          }
           results.push(normalizeDoc(doc));
         }
 
@@ -609,11 +648,18 @@ export const appwriteSupabaseClient = {
         if (fnName === 'get_user_agency_id') {
           const currentUser = await appwriteAuthService.getCurrentUser();
           if (!currentUser) return { data: null, error: null };
-          const res = await databases.listDocuments(
+          let res = await databases.listDocuments(
             APPWRITE_DATABASE_ID,
             'agency_members',
             [Query.equal('user_id', currentUser.id), Query.limit(1)]
           );
+          if (res.documents.length === 0 && currentUser.email) {
+            res = await databases.listDocuments(
+              APPWRITE_DATABASE_ID,
+              'agency_members',
+              [Query.equal('email', currentUser.email.toLowerCase().trim()), Query.limit(1)]
+            );
+          }
           if (res.documents.length === 0) return { data: null, error: null };
           return { data: res.documents[0].agency_id, error: null };
         }

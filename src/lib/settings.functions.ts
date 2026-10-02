@@ -1,100 +1,71 @@
-import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabase } from "@/integrations/supabase/client";
+import { getAgencyId, loadAgencyContext } from "@/lib/services";
 
 // Configurações por agência são armazenadas na tabela global `system_settings`
-// usando uma chave composta. Assim ficam persistidas no banco e disponíveis em
-// qualquer dispositivo/ambiente (não apenas no navegador onde foram salvas).
-// O payload trafega como string JSON para manter a serialização simples.
+// usando uma chave composta `agency_cfg:{agencyId}:{scope}` no Appwrite.
 
-const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive"] as const;
+const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive", "payments"] as const;
 type Scope = (typeof SCOPES)[number];
 
-function isScope(v: string): v is Scope {
-  return (SCOPES as readonly string[]).includes(v);
-}
-
-function settingsKey(agencyId: string, scope: Scope) {
+function settingsKey(agencyId: string, scope: string) {
   return `agency_cfg:${agencyId}:${scope}`;
 }
 
-async function resolveAgency(
-  supabase: { from: (t: string) => any },
-  userId: string,
-): Promise<{ agencyId: string } | null> {
-  const { data } = await supabase
-    .from("agency_members")
-    .select("agency_id")
-    .eq("user_id", userId)
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
-  if (!data?.agency_id) return null;
-  return { agencyId: data.agency_id as string };
+async function resolveAgencyId(): Promise<string | null> {
+  const direct = getAgencyId();
+  if (direct) return direct;
+  const member = await loadAgencyContext();
+  return member?.agency_id ?? null;
 }
 
 /** Lê a configuração de uma seção da Administração para a agência do usuário. */
-export const getAgencyConfig = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
-    z.object({ scope: z.string().refine(isScope, "scope inválido") }).parse(data),
-  )
-  .handler(async ({ data, context }): Promise<{ value: string | null }> => {
-    const member = await resolveAgency(context.supabase, context.userId);
-    if (!member) return { value: null };
-    const { data: row } = await context.supabase
+export async function getAgencyConfig(opts: { data: { scope: string } }): Promise<{ value: string | null }> {
+  try {
+    const agencyId = await resolveAgencyId();
+    if (!agencyId) return { value: null };
+
+    const key = settingsKey(agencyId, opts.data.scope);
+    const { data: row } = await supabase
       .from("system_settings")
       .select("value")
-      .eq("key", settingsKey(member.agencyId, data.scope as Scope))
+      .eq("key", key)
       .maybeSingle();
-    if (row?.value == null) return { value: null };
-    return { value: JSON.stringify(row.value) };
-  });
+
+    if (!row || row.value == null) return { value: null };
+    return { value: typeof row.value === "string" ? row.value : JSON.stringify(row.value) };
+  } catch (err) {
+    console.error("getAgencyConfig error:", err);
+    return { value: null };
+  }
+}
 
 /** Lê apenas a configuração pública de push para qualquer membro ativo da agência. */
-export const getPublicNotificationConfig = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ value: string | null }> => {
-    const member = await resolveAgency(context.supabase, context.userId);
-    if (!member) return { value: null };
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
-      .from("system_settings")
-      .select("value")
-      .eq("key", settingsKey(member.agencyId, "notifications"))
-      .maybeSingle();
-    if (row?.value == null) return { value: null };
-    return { value: JSON.stringify(row.value) };
-  });
+export async function getPublicNotificationConfig(): Promise<{ value: string | null }> {
+  return getAgencyConfig({ data: { scope: "notifications" } });
+}
 
 /** Salva a configuração de uma seção da Administração para a agência do usuário. */
-export const saveAgencyConfig = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data) =>
-    z
-      .object({
-        scope: z.string().refine(isScope, "scope inválido"),
-        value: z.string(),
-      })
-      .parse(data),
-  )
-  .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const member = await resolveAgency(context.supabase, context.userId);
-    if (!member) throw new Error("Agência não encontrada para o usuário.");
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(data.value);
-    } catch {
-      throw new Error("Configuração inválida.");
-    }
-    const { error } = await context.supabase.from("system_settings").upsert(
-      {
-        key: settingsKey(member.agencyId, data.scope as Scope),
-        value: parsed as never,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "key" },
-    );
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
+export async function saveAgencyConfig(opts: { data: { scope: string; value: string } }): Promise<{ ok: true }> {
+  const agencyId = await resolveAgencyId();
+  if (!agencyId) throw new Error("Agência não encontrada para o usuário.");
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(opts.data.value);
+  } catch {
+    parsed = opts.data.value;
+  }
+
+  const key = settingsKey(agencyId, opts.data.scope);
+  const { error } = await supabase.from("system_settings").upsert(
+    {
+      key,
+      value: parsed,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "key" },
+  );
+
+  if (error) throw new Error(error.message);
+  return { ok: true };
+}
