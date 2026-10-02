@@ -1506,7 +1506,7 @@ function GmailCard() {
   const statusQ = useQuery({ queryKey: ["gmail-status"], queryFn: () => getGmailStatus() });
   const connected = statusQ.data?.connected;
   const connectedEmail = statusQ.data?.email;
-  const activeProvider = config.provider || "gmail";
+  const activeProvider = config.provider || "appwrite";
 
   useEffect(() => {
     getGmailConfig().then((c) => {
@@ -1514,6 +1514,14 @@ function GmailCard() {
       setSubject((s) => s || c.defaultSubject);
     });
   }, []);
+
+  function selectProvider(prov: "gmail" | "appwrite") {
+    setConfig((c) => ({
+      ...c,
+      provider: prov,
+      enabled: true, // ativa automaticamente o selecionado
+    }));
+  }
 
   function update(patch: Partial<EmailConfig>) {
     setConfig((c) => ({ ...c, ...patch }));
@@ -1523,7 +1531,7 @@ function GmailCard() {
     setSaving(true);
     try {
       await saveGmailConfig(config);
-      toast.success("Configuração de e-mail salva com sucesso.");
+      toast.success(`Configuração salva! Provedor ativo: ${config.provider === "appwrite" ? "Appwrite" : "Gmail"}`);
       statusQ.refetch();
     } catch {
       toast.error("Não foi possível salvar a configuração de e-mail.");
@@ -1560,62 +1568,82 @@ function GmailCard() {
 
   return (
     <div className="space-y-5">
-      {/* Seletor de Provedor */}
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Provedor de Envio</span>
-          <p className="text-xs text-muted-foreground">Escolha por onde a agência enviará os e-mails e convites.</p>
+      {/* Banner de Provedor Exclusivo Único */}
+      <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                Provedor de E-mail Único do Sistema
+              </span>
+              <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-600">
+                Apenas 1 ativo
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              O sistema utiliza <strong>exclusivamente o provedor selecionado</strong>. Ao ativar um, o outro é desabilitado automaticamente.
+            </p>
+          </div>
+
+          <div className="inline-flex rounded-lg border border-border p-1 bg-muted/40">
+            <button
+              type="button"
+              onClick={() => selectProvider("appwrite")}
+              className={`flex items-center gap-2 rounded-md px-3.5 py-2 text-xs font-semibold transition-all ${
+                activeProvider === "appwrite"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Database className="h-4 w-4" />
+              <span>Appwrite</span>
+              {activeProvider === "appwrite" ? (
+                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold">ATIVO</span>
+              ) : (
+                <span className="text-[10px] opacity-60">Inativo</span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => selectProvider("gmail")}
+              className={`flex items-center gap-2 rounded-md px-3.5 py-2 text-xs font-semibold transition-all ${
+                activeProvider === "gmail"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              <span>Gmail (Google)</span>
+              {activeProvider === "gmail" ? (
+                <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px] font-bold">ATIVO</span>
+              ) : (
+                <span className="text-[10px] opacity-60">Inativo</span>
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="inline-flex rounded-lg border border-border p-1 bg-muted/30">
-          <button
-            type="button"
-            onClick={() => update({ provider: "gmail" })}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
-              activeProvider === "gmail"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Mail className="h-3.5 w-3.5" /> Gmail (Google)
-          </button>
-          <button
-            type="button"
-            onClick={() => update({ provider: "appwrite" })}
-            className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all ${
-              activeProvider === "appwrite"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Database className="h-3.5 w-3.5" /> Appwrite
-          </button>
-        </div>
-      </div>
-
-      {/* Status da Conexão */}
-      <div className="rounded-lg border border-border bg-muted/40 p-3 text-sm">
-        <div className="flex items-center gap-2">
-          <span
-            className={`inline-flex h-2.5 w-2.5 rounded-full ${connected ? "bg-emerald-500" : "bg-muted-foreground"}`}
-          />
-          <span className="text-muted-foreground">
-            {connected
-              ? `Provedor ${activeProvider === "gmail" ? "Gmail" : "Appwrite"} conectado para envio:`
-              : `${activeProvider === "gmail" ? "Gmail" : "Appwrite"} não configurado ou inativo.`}
+        {/* Resumo do Provedor Ativo */}
+        <div className="mt-3.5 flex items-center justify-between border-t border-border pt-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex h-2 w-2 rounded-full ${connected ? "bg-emerald-500" : "bg-amber-500"}`} />
+            <span className="text-muted-foreground">
+              Provedor em uso: <strong className="text-foreground">{activeProvider === "appwrite" ? "Appwrite (Titan/SMTP)" : "Gmail (Google)"}</strong>
+              {connectedEmail ? ` (${connectedEmail})` : ""}
+            </span>
+          </div>
+          <span className="text-[11px] text-muted-foreground">
+            {activeProvider === "appwrite" ? "Gmail desabilitado" : "Appwrite desabilitado"}
           </span>
         </div>
-        {connected && connectedEmail && (
-          <p className="mt-1 font-medium text-foreground">{connectedEmail}</p>
-        )}
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          {activeProvider === "gmail"
-            ? "Configure a sua conta Google com Senha de Aplicativo para envio via SMTP seguro."
-            : "Configure o envio pelo serviço de mensageria ou SMTP corporativo do Appwrite."}
-        </p>
       </div>
 
-      <label className="flex items-center gap-3 text-sm font-medium">
+      {/* Chave Geral de Envio */}
+      <div className="flex items-center justify-between rounded-lg border border-border/80 px-3.5 py-2.5 bg-muted/20">
+        <div>
+          <span className="text-sm font-medium text-foreground">Habilitar disparo de e-mails</span>
+          <p className="text-xs text-muted-foreground">Permite que o sistema envie convites e notificações por e-mail.</p>
+        </div>
         <button
           type="button"
           onClick={() => update({ enabled: !config.enabled })}
@@ -1626,15 +1654,168 @@ function GmailCard() {
             className={`h-5 w-5 rounded-full bg-white transition-transform ${config.enabled ? "translate-x-[22px]" : "translate-x-0.5"}`}
           />
         </button>
-        {config.enabled ? "Envio Habilitado" : "Envio Desabilitado"}
-      </label>
+      </div>
 
-      {/* Formulário Gmail */}
+      {/* Formulário do Provedor Ativo: Appwrite */}
+      {activeProvider === "appwrite" && (
+        <div className="space-y-4 rounded-xl border border-emerald-500/30 bg-emerald-500/[0.02] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Database className="h-4 w-4 text-emerald-600" />
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+                Configurações do Appwrite (Provedor Ativo)
+              </h4>
+            </div>
+            <div className="inline-flex rounded-lg border border-border p-0.5 text-xs bg-muted/40">
+              <button
+                type="button"
+                onClick={() => update({ appwriteMode: "smtp" })}
+                className={`rounded px-2.5 py-1 ${
+                  config.appwriteMode === "smtp" ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground"
+                }`}
+              >
+                Servidor SMTP (Titan / Próprio)
+              </button>
+              <button
+                type="button"
+                onClick={() => update({ appwriteMode: "messaging" })}
+                className={`rounded px-2.5 py-1 ${
+                  config.appwriteMode === "messaging" ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground"
+                }`}
+              >
+                Messaging API
+              </button>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Nome do remetente</span>
+              <input
+                value={config.senderName || ""}
+                onChange={(e) => update({ senderName: e.target.value })}
+                placeholder="O Segredo do Viajante"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">E-mail de envio (From)</span>
+              <input
+                type="email"
+                value={config.appwriteSenderEmail || ""}
+                onChange={(e) => update({ appwriteSenderEmail: e.target.value })}
+                placeholder="atendimento@agenc-ia.net"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+
+            {config.appwriteMode === "smtp" ? (
+              <>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Host SMTP</span>
+                  <input
+                    value={config.appwriteSmtpHost || ""}
+                    onChange={(e) => update({ appwriteSmtpHost: e.target.value })}
+                    placeholder="smtp.titan.email"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Porta SMTP</span>
+                  <input
+                    type="number"
+                    value={config.appwriteSmtpPort || 587}
+                    onChange={(e) => update({ appwriteSmtpPort: Number(e.target.value) })}
+                    placeholder="587"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Usuário SMTP</span>
+                  <input
+                    value={config.appwriteSmtpUser || ""}
+                    onChange={(e) => update({ appwriteSmtpUser: e.target.value })}
+                    placeholder="atendimento@agenc-ia.net"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Senha SMTP</span>
+                  <input
+                    type="password"
+                    value={config.appwriteSmtpPassword || ""}
+                    onChange={(e) => update({ appwriteSmtpPassword: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
+                  />
+                </label>
+              </>
+            ) : (
+              <>
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Appwrite Endpoint</span>
+                  <input
+                    value={config.appwriteEndpoint || "https://appwrite.agenc-ia.net/v1"}
+                    onChange={(e) => update({ appwriteEndpoint: e.target.value })}
+                    placeholder="https://appwrite.agenc-ia.net/v1"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Project ID</span>
+                  <input
+                    value={config.appwriteProjectId || "6abdb8190017d98565f5"}
+                    onChange={(e) => update({ appwriteProjectId: e.target.value })}
+                    placeholder="6abdb8190017d98565f5"
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+                  />
+                </label>
+
+                <label className="block sm:col-span-2">
+                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Chave de API do Appwrite</span>
+                  <input
+                    type="password"
+                    value={config.appwriteApiKey || ""}
+                    onChange={(e) => update({ appwriteApiKey: e.target.value })}
+                    placeholder="standard_..."
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
+                  />
+                </label>
+              </>
+            )}
+
+            <label className="block sm:col-span-2">
+              <span className="mb-1 block text-xs font-medium text-muted-foreground">Responder para (Reply-To)</span>
+              <input
+                value={config.replyTo || ""}
+                onChange={(e) => update({ replyTo: e.target.value })}
+                placeholder="atendimento@agenc-ia.net"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* Formulário do Provedor Ativo: Gmail */}
       {activeProvider === "gmail" && (
-        <div className="space-y-4 rounded-lg border border-border/70 p-4">
-          <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            Configurações da Conta Gmail
-          </h4>
+        <div className="space-y-4 rounded-xl border border-primary/30 bg-primary/[0.02] p-4">
+          <div className="flex items-center gap-2">
+            <Mail className="h-4 w-4 text-primary" />
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+              Configurações da Conta Gmail (Provedor Ativo)
+            </h4>
+          </div>
+
+          <div className="rounded-lg bg-amber-500/10 p-3 text-xs text-amber-800 dark:text-amber-200">
+            <strong>Importante sobre o Gmail:</strong> Utilize uma conta Google válida (<code>@gmail.com</code> ou Google Workspace). O Google exige o uso exclusivo de uma <strong>Senha de Aplicativo (16 caracteres)</strong> gerada no painel de segurança da Conta Google, e não a sua senha comum.
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="mb-1 block text-xs font-medium text-muted-foreground">Nome do remetente</span>
@@ -1676,9 +1857,6 @@ function GmailCard() {
                 placeholder="abcd efgh ijkl mnop"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
               />
-              <span className="mt-1 block text-[10px] text-muted-foreground">
-                Gere em: Conta Google → Segurança → Verificação em 2 etapas → Senhas de app.
-              </span>
             </label>
 
             <label className="block">
@@ -1708,149 +1886,6 @@ function GmailCard() {
                 value={config.gmailSmtpPort || 465}
                 onChange={(e) => update({ gmailSmtpPort: Number(e.target.value) })}
                 placeholder="465"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
-            </label>
-          </div>
-        </div>
-      )}
-
-      {/* Formulário Appwrite */}
-      {activeProvider === "appwrite" && (
-        <div className="space-y-4 rounded-lg border border-border/70 p-4">
-          <div className="flex items-center justify-between">
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Configurações de E-mail via Appwrite
-            </h4>
-            <div className="inline-flex rounded-lg border border-border p-0.5 text-xs bg-muted/40">
-              <button
-                type="button"
-                onClick={() => update({ appwriteMode: "messaging" })}
-                className={`rounded px-2.5 py-1 ${
-                  config.appwriteMode === "messaging" ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground"
-                }`}
-              >
-                Messaging API
-              </button>
-              <button
-                type="button"
-                onClick={() => update({ appwriteMode: "smtp" })}
-                className={`rounded px-2.5 py-1 ${
-                  config.appwriteMode === "smtp" ? "bg-primary text-primary-foreground font-semibold" : "text-muted-foreground"
-                }`}
-              >
-                Servidor SMTP
-              </button>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-muted-foreground">Nome do remetente</span>
-              <input
-                value={config.senderName || ""}
-                onChange={(e) => update({ senderName: e.target.value })}
-                placeholder="O Segredo do Viajante"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
-            </label>
-
-            <label className="block">
-              <span className="mb-1 block text-xs font-medium text-muted-foreground">E-mail de envio (From)</span>
-              <input
-                type="email"
-                value={config.appwriteSenderEmail || ""}
-                onChange={(e) => update({ appwriteSenderEmail: e.target.value })}
-                placeholder="noreply@agenc-ia.net"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-              />
-            </label>
-
-            {config.appwriteMode === "messaging" ? (
-              <>
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Appwrite Endpoint</span>
-                  <input
-                    value={config.appwriteEndpoint || "https://appwrite.agenc-ia.net/v1"}
-                    onChange={(e) => update({ appwriteEndpoint: e.target.value })}
-                    placeholder="https://appwrite.agenc-ia.net/v1"
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Project ID</span>
-                  <input
-                    value={config.appwriteProjectId || "6abdb8190017d98565f5"}
-                    onChange={(e) => update({ appwriteProjectId: e.target.value })}
-                    placeholder="6abdb8190017d98565f5"
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  />
-                </label>
-
-                <label className="block sm:col-span-2">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Chave de API do Appwrite (API Key)</span>
-                  <input
-                    type="password"
-                    value={config.appwriteApiKey || ""}
-                    onChange={(e) => update({ appwriteApiKey: e.target.value })}
-                    placeholder="standard_..."
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
-                  />
-                </label>
-              </>
-            ) : (
-              <>
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Host SMTP</span>
-                  <input
-                    value={config.appwriteSmtpHost || ""}
-                    onChange={(e) => update({ appwriteSmtpHost: e.target.value })}
-                    placeholder="smtp.agenc-ia.net"
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Porta SMTP</span>
-                  <input
-                    type="number"
-                    value={config.appwriteSmtpPort || 587}
-                    onChange={(e) => update({ appwriteSmtpPort: Number(e.target.value) })}
-                    placeholder="587"
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Usuário SMTP</span>
-                  <input
-                    value={config.appwriteSmtpUser || ""}
-                    onChange={(e) => update({ appwriteSmtpUser: e.target.value })}
-                    placeholder="usuario_smtp"
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">Senha SMTP</span>
-                  <input
-                    type="password"
-                    value={config.appwriteSmtpPassword || ""}
-                    onChange={(e) => update({ appwriteSmtpPassword: e.target.value })}
-                    placeholder="••••••••"
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
-                  />
-                </label>
-              </>
-            )}
-
-            <label className="block sm:col-span-2">
-              <span className="mb-1 block text-xs font-medium text-muted-foreground">Responder para (Reply-To)</span>
-              <input
-                value={config.replyTo || ""}
-                onChange={(e) => update({ replyTo: e.target.value })}
-                placeholder="contato@suaagencia.com"
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm"
               />
             </label>
@@ -1889,14 +1924,20 @@ function GmailCard() {
         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
       >
         {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-        {saving ? "Salvando…" : "Salvar configurações de e-mail"}
+        {saving ? "Salvando…" : `Salvar e ativar ${activeProvider === "appwrite" ? "Appwrite" : "Gmail"}`}
       </button>
 
-      {/* Enviar teste */}
+      {/* Enviar teste usando o provedor único ativo */}
       <div className="border-t border-border pt-4">
-        <p className="mb-3 text-xs font-medium text-muted-foreground">
-          Enviar e-mail de teste ({activeProvider === "gmail" ? "Gmail" : "Appwrite"})
-        </p>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-xs font-medium text-muted-foreground">
+            Enviar e-mail de teste via <strong>{activeProvider === "appwrite" ? "Appwrite" : "Gmail"}</strong>
+          </p>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            Usando provedor ativo
+          </span>
+        </div>
+
         <div className="space-y-4">
           <label className="block">
             <span className="mb-1 block text-xs font-medium text-muted-foreground">Destinatário</span>
@@ -1935,7 +1976,7 @@ function GmailCard() {
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {sending ? "Enviando…" : `Enviar e-mail via ${activeProvider === "gmail" ? "Gmail" : "Appwrite"}`}
+            {sending ? "Enviando…" : `Enviar e-mail de teste via ${activeProvider === "appwrite" ? "Appwrite" : "Gmail"}`}
           </button>
         </div>
       </div>

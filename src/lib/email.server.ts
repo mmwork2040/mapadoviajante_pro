@@ -9,6 +9,7 @@ export async function sendEmailWithConfig(
     return { ok: false, message: "O envio de e-mails está desabilitado nas configurações da agência." };
   }
 
+  // Provedor 1: Gmail (Google)
   if (config.provider === "gmail") {
     const user = config.gmailUser?.trim();
     const pass = config.gmailAppPassword?.trim()?.replace(/\s+/g, "");
@@ -16,7 +17,7 @@ export async function sendEmailWithConfig(
     if (!user || !pass) {
       return {
         ok: false,
-        message: "Configuração do Gmail incompleta. Informe o e-mail do Gmail e a Senha de Aplicativo de 16 caracteres.",
+        message: "Configuração do Gmail incompleta. Informe o e-mail do Gmail e a Senha de Aplicativo de 16 caracteres gerada na sua Conta Google.",
       };
     }
 
@@ -41,12 +42,17 @@ export async function sendEmailWithConfig(
       return { ok: true, message: `E-mail enviado com sucesso via Gmail para ${opts.to}!` };
     } catch (err: any) {
       console.error("Gmail SMTP error:", err);
-      return { ok: false, message: `Erro ao enviar via Gmail: ${err.message || "Falha na autenticação SMTP"}` };
+      let msg = err.message || "Falha na autenticação SMTP";
+      if (err.code === "EAUTH" || (err.response && String(err.response).includes("535"))) {
+        msg = `Credenciais recusadas pelo Google (Erro 535). Para usar o Gmail com '${user}', é obrigatório que a conta seja Google (@gmail.com ou Google Workspace) com Verificação em 2 Etapas ativa, usando uma 'Senha de Aplicativo' (16 letras) gerada em myaccount.google.com/apppasswords. Se '${user}' for de outro provedor de e-mail (ex: Titan Email), ative o provedor 'Appwrite' acima.`;
+      }
+      return { ok: false, message: `Erro ao enviar via Gmail: ${msg}` };
     }
   }
 
+  // Provedor 2: Appwrite / SMTP Corporativo
   if (config.provider === "appwrite") {
-    // Modo 1: SMTP do Appwrite ou servidor conectado
+    // Modo 1: SMTP Corporativo configurado (ex: Titan Email, VPS, cPanel)
     if (config.appwriteSmtpHost?.trim() && config.appwriteSmtpUser?.trim()) {
       try {
         const port = Number(config.appwriteSmtpPort) || 587;
@@ -57,6 +63,9 @@ export async function sendEmailWithConfig(
           auth: {
             user: config.appwriteSmtpUser.trim(),
             pass: config.appwriteSmtpPassword?.trim() || "",
+          },
+          tls: {
+            rejectUnauthorized: false,
           },
         });
 
@@ -69,10 +78,10 @@ export async function sendEmailWithConfig(
           html: opts.html || opts.body.replace(/\n/g, "<br/>"),
         });
 
-        return { ok: true, message: `E-mail enviado com sucesso via SMTP Appwrite para ${opts.to}!` };
+        return { ok: true, message: `E-mail enviado com sucesso via Appwrite para ${opts.to}!` };
       } catch (err: any) {
         console.error("Appwrite SMTP error:", err);
-        return { ok: false, message: `Erro ao enviar via SMTP Appwrite: ${err.message}` };
+        return { ok: false, message: `Erro ao enviar via Appwrite: ${err.message}` };
       }
     }
 
@@ -84,7 +93,7 @@ export async function sendEmailWithConfig(
     if (!apiKey) {
       return {
         ok: false,
-        message: "Configuração do Appwrite incompleta. Informe a Chave de API do Appwrite ou os dados SMTP.",
+        message: "Configuração do Appwrite incompleta. Informe os dados SMTP ou a Chave de API do Appwrite.",
       };
     }
 
@@ -94,5 +103,5 @@ export async function sendEmailWithConfig(
     };
   }
 
-  return { ok: false, message: "Provedor de e-mail não suportado." };
+  return { ok: false, message: "Nenhum provedor de e-mail ativo." };
 }
