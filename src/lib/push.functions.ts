@@ -69,50 +69,74 @@ async function getAccessToken(sa: ServiceAccount): Promise<string> {
   return json.access_token;
 }
 
-async function resolveFirebaseServiceAccount(supabase: any, userId: string): Promise<ServiceAccount | null> {
+async function resolveFirebaseServiceAccount(supabase: any, userId?: string): Promise<ServiceAccount | null> {
   const envRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (envRaw) {
     try {
-      return JSON.parse(envRaw) as ServiceAccount;
+      const sa = JSON.parse(envRaw) as ServiceAccount;
+      if (sa.private_key) sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+      return sa;
     } catch {}
   }
 
   let agencyId: string | null = null;
-  try {
-    const { data: member } = await supabase
-      .from("agency_members")
-      .select("agency_id")
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-    agencyId = member?.agency_id || null;
-  } catch {}
+  if (userId) {
+    try {
+      const { data: member } = await supabase
+        .from("agency_members")
+        .select("agency_id")
+        .eq("user_id", userId)
+        .eq("is_active", true)
+        .limit(1)
+        .maybeSingle();
+      agencyId = member?.agency_id || null;
+    } catch {}
+  }
 
   if (!agencyId) agencyId = "2a0f9141-3246-4c0f-b064-2bf4cb718adc";
 
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
+    let { data: row } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("key", `agency_cfg:${agencyId}:notifications`)
       .maybeSingle();
 
+    if (!row?.value) {
+      const { data: fallbackRows } = await supabaseAdmin
+        .from("system_settings")
+        .select("value")
+        .like("key", "agency_cfg:%:notifications");
+      for (const r of fallbackRows ?? []) {
+        if (r.value) {
+          const p = typeof r.value === "string" ? JSON.parse(r.value) : r.value;
+          if (p.serviceAccountJson?.trim()) {
+            row = r;
+            break;
+          }
+        }
+      }
+    }
+
     if (row?.value) {
       const parsed = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
       if (parsed.serviceAccountJson?.trim()) {
-        return JSON.parse(parsed.serviceAccountJson.trim()) as ServiceAccount;
+        const sa = JSON.parse(parsed.serviceAccountJson.trim()) as ServiceAccount;
+        if (sa.private_key) sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+        return sa;
       }
       if (parsed.clientEmail && parsed.privateKey) {
         return {
           client_email: parsed.clientEmail,
-          private_key: parsed.privateKey,
+          private_key: parsed.privateKey.replace(/\\n/g, "\n"),
           project_id: parsed.projectId,
         };
       }
     }
-  } catch {}
+  } catch (err) {
+    console.error("resolveFirebaseServiceAccount error:", err);
+  }
 
   return null;
 }
@@ -333,14 +357,13 @@ export const sendTestPush = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data }): Promise<{ ok: boolean; message: string; traceId?: string }> => {
-    const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!raw) return { ok: false, message: "Service account do Firebase não configurada." };
-    let sa: ServiceAccount;
-    try {
-      sa = JSON.parse(raw) as ServiceAccount;
-    } catch {
-      return { ok: false, message: "Service account inválida (JSON malformado)." };
+    .handler(async ({ data, context }): Promise<{ ok: boolean; message: string; traceId?: string }> => {
+    const sa = await resolveFirebaseServiceAccount(context.supabase, context.userId);
+    if (!sa) {
+      return {
+        ok: false,
+        message: "Service account do Firebase não configurada. Cole o JSON da chave na administração e clique em Salvar.",
+      };
     }
     if (!sa.private_key || !sa.client_email || !sa.project_id) {
       return {
@@ -349,8 +372,9 @@ export const sendTestPush = createServerFn({ method: "POST" })
           "Service account incompleta: verifique os campos private_key, client_email e project_id.",
       };
     }
-    // Normaliza quebras de linha escapadas (\\n) do private_key colado como texto.
-    sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+    if (sa.private_key) {
+      sa.private_key = sa.private_key.replace(/\\n/g, "\n");
+    }
     const traceId = crypto.randomUUID();
     const ackSecret = randomSecret();
     const sentAt = new Date().toISOString();
