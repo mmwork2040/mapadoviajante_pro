@@ -422,6 +422,10 @@ export const sendTestPush = createServerFn({ method: "POST" })
               },
               notification: { title: data.title, body: data.body },
               webpush: {
+                headers: {
+                  Urgency: "high",
+                  TTL: "86400",
+                },
                 notification: {
                   title: data.title,
                   body: data.body,
@@ -430,6 +434,9 @@ export const sendTestPush = createServerFn({ method: "POST" })
                   data: { traceId, ackSecret, url: "/" },
                   requireInteraction: false,
                 },
+              },
+              android: {
+                priority: "high",
               },
             },
           }),
