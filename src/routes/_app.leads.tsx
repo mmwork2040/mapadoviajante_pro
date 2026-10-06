@@ -1106,13 +1106,14 @@ export function NewLeadModal({
         return;
       }
     }
-    if (!form.trip_type.trim()) {
+    if (!editing && !form.trip_type.trim()) {
       toast.error("Selecione o Tipo de Viagem.");
       setStep(1);
       return;
     }
     const emailNorm = form.email.trim().toLowerCase();
-    if (emailNorm) {
+    const originalEmail = (lead?.email || "").trim().toLowerCase();
+    if (emailNorm && (!editing || emailNorm !== originalEmail)) {
       const dup = allLeads.some(
         (l) => l.id !== lead?.id && (l.email || "").trim().toLowerCase() === emailNorm,
       );
@@ -1131,6 +1132,7 @@ export function NewLeadModal({
       value: parseCurrency(form.value),
       origin: (form.origin === "Outro" ? form.origin_other.trim() : form.origin) || "direto",
       profile: {
+        ...(editing && lead?.profile && typeof lead.profile === "object" ? lead.profile : {}),
         departure,
         cover_image: form.cover_image || "",
         travel_dates: form.travel_dates,
