@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { createLead, deleteLead, fetchLeads, setLeadArchived, updateLead, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
+import { createLead, deleteLead, fetchLeads, setLeadArchived, updateLead, updateClient, updateItinerary, fetchItinerariesByLead, fetchLeadItineraryStatuses, fetchAiConfig, searchLibraryImageForDestination, resolveDisplayImageUrl, saveExternalImageToLibrary, uploadImageToLibraryForDestination, fetchLibraryItems, getLibraryAssetUrl, fetchLeadsMinePref, setLeadsMinePref, getMemberId, getMemberRole, fetchTeamMembers } from "@/lib/services";
 import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles, initials } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
@@ -1059,16 +1059,12 @@ export function NewLeadModal({
       return false;
     }
     const email = form.email.trim();
-    if (!email) {
-      toast.error("Informe o e-mail.");
-      return false;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       toast.error("Informe um e-mail válido.");
       return false;
     }
-    if (!form.phone.trim()) {
-      toast.error("Informe o WhatsApp.");
+    if (!editing && !email && !form.phone.trim()) {
+      toast.error("Informe o e-mail ou o WhatsApp.");
       return false;
     }
     return true;
@@ -1155,6 +1151,17 @@ export function NewLeadModal({
     const res = editing
       ? await updateLead(lead!.id, payload)
       : await createLead({ ...payload, status: "new" });
+
+    if (res && editing && lead?.client_id) {
+      const clientPatch: { name?: string; email?: string | null; phone?: string | null } = {};
+      if (payload.name !== lead.name) clientPatch.name = payload.name;
+      if (payload.email !== (lead.email || null)) clientPatch.email = payload.email;
+      if (payload.phone !== (lead.phone || null)) clientPatch.phone = payload.phone;
+      if (Object.keys(clientPatch).length > 0) {
+        const client = await updateClient(lead.client_id, clientPatch);
+        if (!client) toast.warning("Proposta salva, mas o cadastro do cliente não foi atualizado.");
+      }
+    }
 
     // Sincroniza o rascunho do roteiro vinculado quando o resumo muda.
     if (res && editing && linkedItinerary) {
@@ -1278,7 +1285,7 @@ export function NewLeadModal({
                   onChange={(v) => set({ name: v })}
                   onFocus={() => setNameFocused(true)}
                   onBlur={() => setTimeout(() => setNameFocused(false), 150)}
-                  disabled={editing || !!clientId}
+                  disabled={!!clientId}
                   full
                 />
                 {!editing && nameFocused && nameSuggestions.length > 0 && (
@@ -1298,8 +1305,8 @@ export function NewLeadModal({
                   </div>
                 )}
               </div>
-              <ModalField label="E-mail" type="email" required placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} disabled={!!clientId || (editing && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead?.email?.trim() || ""))} />
-              <ModalField label="WhatsApp" format="phone" required placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
+              <ModalField label="E-mail" type="email" placeholder="email@exemplo.com" value={form.email} onChange={(v) => set({ email: v })} disabled={!!clientId} />
+              <ModalField label="WhatsApp" format="phone" placeholder="(11) 99999-9999" value={form.phone} onChange={(v) => set({ phone: v })} />
               <ModalField label="Orçamento Estimado (R$)" format="currency" placeholder="R$ 0,00" value={form.value} onChange={(v) => set({ value: v })} />
               <ModalSelect label="Como nos encontrou?" value={form.origin} onChange={(v) => set({ origin: v })} options={ORIGINS} />
               {form.origin === "Outro" && (

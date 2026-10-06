@@ -546,7 +546,9 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     }
 
     const profile = { ...((current?.profile || {}) as Record<string, unknown>) };
-    delete profile[CONTACTED_PROFILE_STATUS_KEY];
+    // Valor explícito para limpar também registros antigos marcados pelo
+    // fallback de status "contacted" no perfil serializado.
+    profile[CONTACTED_PROFILE_STATUS_KEY] = null;
     normalizedUpdates.profile = profile;
   }
 
@@ -590,7 +592,7 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     return null;
   }
   const lead = normalizeLead(data as Lead);
-  if (lead && !lead.client_id) {
+  if (lead && !lead.client_id && (updates.name !== undefined || updates.email !== undefined || updates.phone !== undefined)) {
     const clientId = await ensureClientFromLead(lead);
     if (clientId) lead.client_id = clientId;
   }
@@ -1124,12 +1126,15 @@ export async function fetchDestinations(): Promise<Destination[]> {
     .from("crm_library_destinations")
     .select("*")
     .eq("agency_id", _agencyId)
-    .order("title", { ascending: true });
+    .order("name", { ascending: true });
   if (error) {
     console.error("fetchDestinations:", error);
     throw new Error("Não foi possível carregar os destinos.");
   }
-  return (data as Destination[]) || [];
+  return ((data as Destination[]) || []).map((destination) => ({
+    ...destination,
+    title: destination.title || destination.name,
+  }));
 }
 
 export async function updateDestination(
@@ -1137,7 +1142,10 @@ export async function updateDestination(
   updates: Partial<Destination>,
 ): Promise<Destination | null> {
   const patch: Partial<Destination> = { ...updates };
-  if (updates.title !== undefined) patch.name = updates.title;
+  if (updates.title !== undefined) {
+    patch.name = updates.title;
+    delete patch.title;
+  }
   const { data, error } = await supabase
     .from("crm_library_destinations")
     .update(patch)
@@ -1148,7 +1156,7 @@ export async function updateDestination(
     console.error("updateDestination:", error);
     return null;
   }
-  return data as Destination;
+  return data ? { ...(data as Destination), title: (data as Destination).name } : null;
 }
 
 export async function deleteDestination(id: string): Promise<boolean> {
@@ -1166,12 +1174,10 @@ export async function createDestination(destData: Partial<Destination>): Promise
     .from("crm_library_destinations")
     .insert({
       agency_id: _agencyId,
-      title: destData.title,
-      name: destData.title,
+      name: destData.title || destData.name,
       country: destData.country || null,
       category: destData.category || "praia",
-      base_price: destData.base_price || 0,
-      days: destData.days || 1,
+      avg_budget: destData.base_price || 0,
       description: destData.description || null,
       image_url: destData.image_url || null,
     })
@@ -1181,7 +1187,7 @@ export async function createDestination(destData: Partial<Destination>): Promise
     console.error("createDestination:", error);
     return null;
   }
-  return data as Destination;
+  return data ? { ...(data as Destination), title: (data as Destination).name } : null;
 }
 
 // ── Biblioteca (repositório de conhecimento) ───────────────────
@@ -2460,7 +2466,7 @@ export async function fetchClients(search?: string): Promise<Client[]> {
   const { data, error } = await q;
   if (error) {
     console.error("fetchClients:", error);
-    return [];
+    throw new Error("Não foi possível carregar os clientes.");
   }
   const clients = (data ?? []) as Client[];
   const term = search?.trim().toLocaleLowerCase("pt-BR");
@@ -2519,7 +2525,7 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
   if (updates.name !== undefined) {
     // Roteiros usam client_name (texto); atualizamos via leads vinculados.
     const { data: leadIds } = await supabase.from("crm_leads").select("id").eq("client_id", id);
-    const ids = (leadIds ?? []).map((l) => (l as { id: string }).id);
+    const ids = ((leadIds ?? []) as Array<{ id: string }>).map((lead) => lead.id);
     if (ids.length > 0) {
       const { error: itErr } = await supabase
         .from("crm_itineraries")

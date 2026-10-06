@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Plus, User, Mail, Phone, MessageCircle, X, Trash2, Plane, Save, IdCard, MapPin, StickyNote, Sparkles, Users, UserPlus, MoreVertical, Pencil, Link2, Heart, ExternalLink, Copy, Check } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { QueryError } from "@/components/QueryError";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
@@ -197,7 +198,7 @@ function ClientesPage() {
   const [editing, setEditing] = useState<Client | null>(null);
   const editParam = Route.useSearch().edit as string | undefined;
 
-  const { data: clients = [], isLoading } = useQuery({
+  const { data: clients = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["clients", search],
     queryFn: () => fetchClients(search),
   });
@@ -327,6 +328,8 @@ function ClientesPage() {
 
       {isLoading ? (
         <div className="py-16 text-center text-sm text-muted-foreground">Carregando...</div>
+      ) : isError ? (
+        <QueryError message="Não foi possível carregar os clientes." onRetry={() => refetch()} />
       ) : filteredClients.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
           {clients.length === 0
@@ -1336,4 +1339,3 @@ function MembersTab({
     </Section>
   );
 }
-

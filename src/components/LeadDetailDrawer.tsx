@@ -57,6 +57,7 @@ import {
   extractChecklistItemId,
   fetchItinerariesByLead,
   fetchClientTripHistory,
+  fetchClients,
   fetchLeadActivities,
   fetchLeadById,
   fetchTasks,
@@ -171,6 +172,7 @@ export function LeadDetailDrawer({
   const tabsRef = useRef<HTMLDivElement>(null);
 
   const { data: lead } = useQuery({ queryKey: ["lead", leadId], queryFn: () => fetchLeadById(leadId) });
+  const { data: clients = [] } = useQuery({ queryKey: ["clients", ""], queryFn: () => fetchClients() });
   const { data: activities = [] } = useQuery({
     queryKey: ["lead-activities", leadId],
     queryFn: () => fetchLeadActivities(leadId),
@@ -183,10 +185,15 @@ export function LeadDetailDrawer({
   const existingItinerary = leadItineraries.find((it) => it.status !== "cancelled") ?? null;
 
   const update = useMutation({
-    mutationFn: (updates: Partial<Lead>) => updateLead(leadId, updates),
+    mutationFn: async (updates: Partial<Lead>) => {
+      const saved = await updateLead(leadId, updates);
+      if (!saved) throw new Error("Não foi possível salvar a viagem.");
+      return saved;
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["lead", leadId] });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Viagem atualizada!");
     },
     onError: () => toast.error("Erro ao atualizar lead."),
@@ -540,6 +547,21 @@ export function LeadDetailDrawer({
                     travelDates={String(p.travel_dates || "")}
                     clientNotes={String(p.trip_notes || "")}
                   />
+
+                  <label className="block text-xs font-medium text-muted-foreground">
+                    Cliente vinculado
+                    <select
+                      className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
+                      value={lead.client_id ?? ""}
+                      onChange={(event) => update.mutate({ client_id: event.target.value || null })}
+                      disabled={update.isPending}
+                    >
+                      <option value="">Sem vínculo</option>
+                      {clients.map((client) => (
+                        <option key={client.id} value={client.id}>{client.name}</option>
+                      ))}
+                    </select>
+                  </label>
 
                   <div className="grid grid-cols-2 gap-2">
                     <button
