@@ -1,0 +1,459 @@
+.osv-trip-document {
+  --trip-night: #0c0a08;
+  --trip-orange: #f58e26;
+  --trip-cream: #f2e7da;
+  --trip-paper: #fffdf9;
+  --trip-ink: #1d1d1b;
+  color: var(--trip-ink);
+  font-family: "DM Sans", system-ui, sans-serif;
+}
+
+.osv-trip-page {
+  position: relative;
+  width: min(100%, 210mm);
+  min-height: 297mm;
+  margin: 0 auto 24px;
+  padding: 37mm 17mm 25mm;
+  overflow: hidden;
+  background: var(--trip-cream);
+  box-shadow: 0 22px 70px rgb(12 10 8 / 14%);
+  break-after: page;
+}
+
+.osv-trip-page:not(.osv-trip-cover, .osv-trip-back-cover)::before {
+  content: "";
+  position: absolute;
+  top: -52mm;
+  left: -49mm;
+  width: 98mm;
+  height: 88mm;
+  border-radius: 48%;
+  background: var(--trip-night);
+}
+
+.osv-trip-page-top {
+  position: absolute;
+  z-index: 1;
+  inset: 8mm 12mm auto 12mm;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 20mm;
+}
+
+.osv-trip-page-top img {
+  width: 29mm;
+  max-height: 19mm;
+  object-fit: contain;
+}
+.osv-trip-page-top a,
+.osv-trip-day-nav a {
+  color: var(--trip-ink);
+  font-size: 10pt;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.osv-trip-page h1,
+.osv-trip-page h2,
+.osv-trip-page h3,
+.osv-trip-page h4 {
+  font-family: "League Spartan", system-ui, sans-serif;
+}
+.osv-trip-page h2 {
+  font-size: 31pt;
+  line-height: 1;
+  margin: 4mm 0 7mm;
+}
+.osv-trip-page p {
+  line-height: 1.5;
+}
+.osv-trip-page footer {
+  position: absolute;
+  inset: auto 17mm 11mm;
+  font-size: 8pt;
+  letter-spacing: 0.14em;
+  font-weight: 700;
+}
+.osv-trip-script {
+  display: block;
+  color: var(--trip-orange);
+  font:
+    36pt "Ms Madi",
+    cursive;
+}
+.osv-trip-eyebrow,
+.osv-trip-label {
+  display: inline-block;
+  padding: 2mm 5mm;
+  border-radius: 99px;
+  background: var(--trip-night);
+  color: white;
+  font-size: 10pt;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.osv-trip-cover,
+.osv-trip-back-cover {
+  background: var(--trip-night);
+  color: white;
+}
+.osv-trip-cover {
+  display: flex;
+  align-items: flex-end;
+}
+.osv-trip-cover-photo,
+.osv-trip-cover-veil {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.osv-trip-cover-veil {
+  background: linear-gradient(180deg, rgb(12 10 8 / 35%), rgb(12 10 8 / 88%));
+}
+.osv-trip-cover-content {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+.osv-trip-logo {
+  width: 58mm;
+  max-height: 28mm;
+  object-fit: contain;
+  position: absolute;
+  bottom: 222mm;
+}
+.osv-trip-cover h1 {
+  font-size: clamp(38pt, 8vw, 68pt);
+  line-height: 0.93;
+  margin: 11mm 0 5mm;
+}
+.osv-trip-cover p {
+  font-size: 16pt;
+}
+.osv-trip-cover-dates {
+  margin-top: 5mm;
+  opacity: 0.8;
+}
+.osv-trip-cover a,
+.osv-trip-back-cover a {
+  display: inline-flex;
+  margin-top: 15mm;
+  border-radius: 99px;
+  padding: 4mm 8mm;
+  background: var(--trip-orange);
+  color: var(--trip-night);
+  font-size: 12pt;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.osv-trip-summary > p {
+  max-width: 58ch;
+  font-size: 11pt;
+}
+.osv-trip-facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3mm;
+  margin: 10mm 0;
+}
+.osv-trip-facts div {
+  background: var(--trip-paper);
+  border-radius: 3mm;
+  padding: 5mm;
+}
+.osv-trip-facts span {
+  display: block;
+  font-size: 9pt;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+.osv-trip-facts strong {
+  display: block;
+  margin-top: 2mm;
+  font-size: 13pt;
+}
+.osv-trip-index {
+  display: grid;
+  gap: 1mm;
+}
+.osv-trip-index a {
+  display: grid;
+  grid-template-columns: 22mm 1fr auto;
+  gap: 3mm;
+  align-items: center;
+  padding: 3mm;
+  border-bottom: 1px solid rgb(29 29 27 / 20%);
+  color: var(--trip-ink);
+  text-decoration: none;
+}
+.osv-trip-index a:hover {
+  background: var(--trip-paper);
+}
+.osv-trip-index a > span:first-child {
+  font-size: 10pt;
+  font-weight: 700;
+}
+.osv-trip-index strong {
+  font-size: 11pt;
+}
+
+.osv-trip-day-heading {
+  margin-bottom: 9mm;
+}
+.osv-trip-day {
+  height: auto;
+  overflow: visible;
+}
+.osv-trip-day-heading h2 {
+  margin-top: 5mm;
+}
+.osv-trip-activities {
+  display: grid;
+  gap: 4mm;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.osv-trip-activity {
+  padding: 5mm;
+  border-radius: 3mm;
+  background: var(--trip-paper);
+  break-inside: avoid;
+}
+.osv-trip-activity--tip {
+  border-left: 4px solid var(--trip-orange);
+}
+.osv-trip-activity-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm 4mm;
+  color: var(--trip-night);
+  font-size: 9pt;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.osv-trip-activity-meta span + span::before {
+  content: "· ";
+}
+.osv-trip-activity h4 {
+  margin-top: 2mm;
+  font-size: 16pt;
+}
+.osv-trip-activity p {
+  margin-top: 2mm;
+  font-size: 10.5pt;
+}
+.osv-trip-location,
+.osv-trip-cost {
+  font-weight: 700;
+}
+.osv-trip-activity a {
+  display: inline-block;
+  margin-top: 3mm;
+  color: var(--trip-night);
+  font-size: 10pt;
+  font-weight: 800;
+  text-decoration: underline;
+}
+.osv-trip-pending {
+  padding: 6mm;
+  border: 1px dashed var(--trip-orange);
+}
+.osv-trip-day-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8mm;
+}
+.osv-trip-back-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+.osv-trip-back-cover img {
+  width: 60mm;
+  margin-bottom: 20mm;
+}
+.osv-trip-back-cover h2 {
+  font-size: 60pt;
+}
+.osv-trip-back-cover em {
+  color: var(--trip-orange);
+  font:
+    0.8em "Ms Madi",
+    cursive;
+}
+.osv-trip-back-cover p {
+  font-size: 14pt;
+}
+
+.osv-trip-preview {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  overflow: auto;
+  background: #d8d1c9;
+}
+.osv-trip-preview-bar {
+  position: sticky;
+  z-index: 2;
+  top: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px;
+  background: #fff;
+  border-bottom: 1px solid #e6ddd3;
+}
+.osv-trip-preview-content {
+  padding: 24px 12px;
+}
+.osv-share-view {
+  min-height: 100vh;
+  background: #e8e1d9;
+}
+.osv-share-view main {
+  padding: 28px 12px;
+}
+.osv-share-toolbar {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px max(18px, calc((100vw - 1100px) / 2));
+  background: #fff;
+  border-bottom: 1px solid #e6ddd3;
+  box-shadow: 0 2px 12px rgb(12 10 8 / 8%);
+}
+.osv-share-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #1d1d1b;
+  font:
+    700 18px "League Spartan",
+    sans-serif;
+  text-decoration: none;
+}
+.osv-share-brand img {
+  width: 72px;
+  height: 42px;
+  object-fit: contain;
+}
+.osv-share-toolbar nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.osv-share-toolbar nav > * {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e6ddd3;
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: #fff;
+  color: #1d1d1b;
+  font:
+    700 13px "DM Sans",
+    sans-serif;
+  text-decoration: none;
+  cursor: pointer;
+}
+.osv-share-toolbar nav > .osv-share-print {
+  border-color: #f58e26;
+  background: #f58e26;
+}
+.osv-share-state {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 24px;
+  color: #1d1d1b;
+  font:
+    600 18px "DM Sans",
+    sans-serif;
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .osv-share-toolbar {
+    padding: 8px 12px;
+  }
+  .osv-share-brand span,
+  .osv-share-toolbar nav span {
+    display: none;
+  }
+  .osv-share-toolbar nav > * {
+    padding: 9px;
+  }
+  .osv-trip-page {
+    min-height: 0;
+    padding: 80px 22px 80px;
+    margin-bottom: 12px;
+    box-shadow: none;
+  }
+  .osv-trip-page-top {
+    inset: 16px 16px auto;
+  }
+  .osv-trip-page-top img {
+    width: 88px;
+  }
+  .osv-trip-logo {
+    position: static;
+    width: 170px;
+    margin-bottom: 50px;
+  }
+  .osv-trip-cover {
+    min-height: 620px;
+  }
+  .osv-trip-cover h1 {
+    font-size: 44pt;
+    overflow-wrap: anywhere;
+  }
+  .osv-trip-facts {
+    grid-template-columns: 1fr 1fr;
+  }
+  .osv-trip-index a {
+    grid-template-columns: 58px 1fr auto;
+  }
+  .osv-trip-back-cover {
+    min-height: 500px;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body:has(.osv-share-view) {
+    background: #fff;
+  }
+  .osv-share-toolbar {
+    display: none;
+  }
+  .osv-share-view,
+  .osv-share-view main {
+    padding: 0;
+    background: #fff;
+  }
+  .osv-trip-page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    box-shadow: none;
+  }
+  .osv-trip-activity {
+    break-inside: avoid;
+  }
+}

@@ -63,60 +63,60 @@
 
 :root {
   --radius: 0.875rem;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 
-  --background: #f8f8fa;
-  --foreground: #1f242b;
+  --background: #ffffff;
+  --foreground: #1d1d1b;
   --card: #ffffff;
-  --card-foreground: #1f242b;
+  --card-foreground: #1d1d1b;
   --popover: #ffffff;
-  --popover-foreground: #1f242b;
-  --primary: #ff7a1a;
-  --primary-foreground: #ffffff;
-  --secondary: #f6efe6;
-  --secondary-foreground: #914000;
-  --muted: #f1f2f4;
-  --muted-foreground: #697281;
-  --accent: #fff3e8;
-  --accent-foreground: #bf5200;
+  --popover-foreground: #1d1d1b;
+  --primary: #f58e26;
+  --primary-foreground: #1d1d1b;
+  --secondary: #f2e7da;
+  --secondary-foreground: #1d1d1b;
+  --muted: #f6f2ed;
+  --muted-foreground: #645e58;
+  --accent: #fff3e7;
+  --accent-foreground: #1d1d1b;
   --destructive: #ee5f52;
   --destructive-foreground: #ffffff;
   --success: #1f9d55;
   --warning: #f4b400;
   --info: #3178ff;
-  --border: #e8eaee;
-  --input: #dde1e6;
-  --ring: #ff9447;
-  --chart-1: #ff7a1a;
+  --border: #e6ddd3;
+  --input: #d8cdc1;
+  --ring: #f58e26;
+  --chart-1: #f58e26;
   --chart-2: #1f9d55;
   --chart-3: #3178ff;
   --chart-4: #f4b400;
   --chart-5: #ea6600;
   --sidebar: #ffffff;
-  --sidebar-foreground: #4e5662;
-  --sidebar-primary: #ff7a1a;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #fff3e8;
-  --sidebar-accent-foreground: #bf5200;
-  --sidebar-border: #e8eaee;
-  --sidebar-ring: #ff9447;
+  --sidebar-foreground: #1d1d1b;
+  --sidebar-primary: #f58e26;
+  --sidebar-primary-foreground: #1d1d1b;
+  --sidebar-accent: #fff3e7;
+  --sidebar-accent-foreground: #1d1d1b;
+  --sidebar-border: #e6ddd3;
+  --sidebar-ring: #f58e26;
 }
 
 .dark {
-  --background: #111418;
-  --foreground: #f8f8fa;
-  --card: #1f242b;
-  --card-foreground: #f8f8fa;
-  --popover: #1f242b;
-  --popover-foreground: #f8f8fa;
-  --primary: #ff8a33;
-  --primary-foreground: #1f130a;
-  --secondary: #2a2f37;
-  --secondary-foreground: #f8f8fa;
-  --muted: #2a2f37;
-  --muted-foreground: #99a1ad;
-  --accent: #3a2a18;
-  --accent-foreground: #ffb378;
+  --background: #0c0a08;
+  --foreground: #fffdf9;
+  --card: #1d1b18;
+  --card-foreground: #fffdf9;
+  --popover: #1d1b18;
+  --popover-foreground: #fffdf9;
+  --primary: #f58e26;
+  --primary-foreground: #0c0a08;
+  --secondary: #2a241f;
+  --secondary-foreground: #fffdf9;
+  --muted: #2a241f;
+  --muted-foreground: #c9beb2;
+  --accent: #3a2919;
+  --accent-foreground: #f2e7da;
   --destructive: #f0766a;
   --destructive-foreground: #1f130a;
   --success: #36b46a;
@@ -124,20 +124,20 @@
   --info: #5b93ff;
   --border: rgba(255, 255, 255, 0.08);
   --input: rgba(255, 255, 255, 0.12);
-  --ring: #ff8a33;
-  --chart-1: #ff8a33;
+  --ring: #f58e26;
+  --chart-1: #f58e26;
   --chart-2: #36b46a;
   --chart-3: #5b93ff;
   --chart-4: #f4b400;
-  --chart-5: #ffb378;
-  --sidebar: #1a1e24;
-  --sidebar-foreground: #c9cfd8;
-  --sidebar-primary: #ff8a33;
-  --sidebar-primary-foreground: #1f130a;
-  --sidebar-accent: #2a2f37;
-  --sidebar-accent-foreground: #ffb378;
+  --chart-5: #f2e7da;
+  --sidebar: #1d1b18;
+  --sidebar-foreground: #f2e7da;
+  --sidebar-primary: #f58e26;
+  --sidebar-primary-foreground: #0c0a08;
+  --sidebar-accent: #2a241f;
+  --sidebar-accent-foreground: #f2e7da;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-ring: #ff8a33;
+  --sidebar-ring: #f58e26;
 }
 
 @theme inline {
@@ -156,6 +156,10 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+  }
+
+  h1, h2, h3 {
+    font-family: "League Spartan", var(--font-sans);
   }
 }
 

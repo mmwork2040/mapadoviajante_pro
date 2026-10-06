@@ -24,12 +24,14 @@ import { Route as AppNotificacoesRouteImport } from './routes/_app.notificacoes'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppRoteirosRouteImport } from './routes/_app.roteiros'
 import { Route as AppTarefasRouteImport } from './routes/_app.tarefas'
+import { Route as ImprimirIdRouteImport } from './routes/imprimir.$id'
 import { Route as ViajanteIdRouteImport } from './routes/viajante.$id'
 import { Route as AppClientesIndexRouteImport } from './routes/_app.clientes.index'
 import { Route as AppClientesIdRouteImport } from './routes/_app.clientes.$id'
 import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
 import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
+import { Route as ApiPublicItineraryRouteImport } from './routes/api/public/itinerary'
 import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
 
@@ -107,6 +109,11 @@ const AppTarefasRoute = AppTarefasRouteImport.update({
   path: '/tarefas',
   getParentRoute: () => AppRoute,
 } as any)
+const ImprimirIdRoute = ImprimirIdRouteImport.update({
+  id: '/imprimir/$id',
+  path: '/imprimir/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ViajanteIdRoute = ViajanteIdRouteImport.update({
   id: '/viajante/$id',
   path: '/viajante/$id',
@@ -137,6 +144,11 @@ const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   path: '/api/public/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicItineraryRoute = ApiPublicItineraryRouteImport.update({
+  id: '/api/public/itinerary',
+  path: '/api/public/itinerary',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicN8nLeadRoute = ApiPublicN8nLeadRouteImport.update({
   id: '/api/public/n8n-lead',
   path: '/api/public/n8n-lead',
@@ -163,10 +175,12 @@ export interface FileRoutesByFullPath {
   '/perfil': typeof AppPerfilRoute
   '/roteiros': typeof AppRoteirosRouteWithChildren
   '/tarefas': typeof AppTarefasRoute
+  '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
   '/clientes/': typeof AppClientesIndexRoute
@@ -184,11 +198,13 @@ export interface FileRoutesByTo {
   '/notificacoes': typeof AppNotificacoesRoute
   '/perfil': typeof AppPerfilRoute
   '/tarefas': typeof AppTarefasRoute
+  '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/': typeof AppIndexRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
   '/clientes': typeof AppClientesIndexRoute
@@ -210,11 +226,13 @@ export interface FileRoutesById {
   '/_app/perfil': typeof AppPerfilRoute
   '/_app/roteiros': typeof AppRoteirosRouteWithChildren
   '/_app/tarefas': typeof AppTarefasRoute
+  '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/_app/': typeof AppIndexRoute
   '/_app/clientes/$id': typeof AppClientesIdRoute
   '/_app/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
   '/_app/clientes/': typeof AppClientesIndexRoute
@@ -237,10 +255,12 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/roteiros'
     | '/tarefas'
+    | '/imprimir/$id'
     | '/viajante/$id'
     | '/clientes/$id'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
     | '/clientes/'
@@ -258,11 +278,13 @@ export interface FileRouteTypes {
     | '/notificacoes'
     | '/perfil'
     | '/tarefas'
+    | '/imprimir/$id'
     | '/viajante/$id'
     | '/'
     | '/clientes/$id'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
     | '/clientes'
@@ -283,11 +305,13 @@ export interface FileRouteTypes {
     | '/_app/perfil'
     | '/_app/roteiros'
     | '/_app/tarefas'
+    | '/imprimir/$id'
     | '/viajante/$id'
     | '/_app/'
     | '/_app/clientes/$id'
     | '/_app/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
     | '/_app/clientes/'
@@ -299,8 +323,10 @@ export interface RootRouteChildren {
   AceitarConviteRoute: typeof AceitarConviteRoute
   AuthRoute: typeof AuthRoute
   IntakeRoute: typeof IntakeRoute
+  ImprimirIdRoute: typeof ImprimirIdRoute
   ViajanteIdRoute: typeof ViajanteIdRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
+  ApiPublicItineraryRoute: typeof ApiPublicItineraryRoute
   ApiPublicN8nLeadRoute: typeof ApiPublicN8nLeadRoute
   ApiPublicPushDeliveryRoute: typeof ApiPublicPushDeliveryRoute
 }
@@ -412,6 +438,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTarefasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/imprimir/$id': {
+      id: '/imprimir/$id'
+      path: '/imprimir/$id'
+      fullPath: '/imprimir/$id'
+      preLoaderRoute: typeof ImprimirIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/viajante/$id': {
       id: '/viajante/$id'
       path: '/viajante/$id'
@@ -452,6 +485,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/asaas-webhook'
       fullPath: '/api/public/asaas-webhook'
       preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/itinerary': {
+      id: '/api/public/itinerary'
+      path: '/api/public/itinerary'
+      fullPath: '/api/public/itinerary'
+      preLoaderRoute: typeof ApiPublicItineraryRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/n8n-lead': {
@@ -534,8 +574,10 @@ const rootRouteChildren: RootRouteChildren = {
   AceitarConviteRoute: AceitarConviteRoute,
   AuthRoute: AuthRoute,
   IntakeRoute: IntakeRoute,
+  ImprimirIdRoute: ImprimirIdRoute,
   ViajanteIdRoute: ViajanteIdRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
+  ApiPublicItineraryRoute: ApiPublicItineraryRoute,
   ApiPublicN8nLeadRoute: ApiPublicN8nLeadRoute,
   ApiPublicPushDeliveryRoute: ApiPublicPushDeliveryRoute,
 }

@@ -2,17 +2,9 @@
 
 Preciso implementar o sistema configurado através deste projeto no GitHub: https://github.com/mmwork2040/mapa-do-viajante.git
 
-This project was built with [Lovable](https://lovable.dev).
+Código hospedado no GitHub e publicado pela Vercel.
 
-**Live app**: https://crmosegredodoviajante.lovable.app
-
-## Build with Lovable
-
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/78abf1cb-35ef-46a5-bb8d-fd107c2813f8).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+**App em produção**: https://mapadoviajante-pro.vercel.app
 
 ## Development
 
@@ -24,3 +16,9 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+## Roteiros compartilháveis
+
+O link do viajante usa uma rota de leitura no servidor para carregar o roteiro, seus dias e atividades após conferir o `share_token`. Configure `APPWRITE_API_KEY` **somente no ambiente do servidor** com permissão de leitura para `crm_itineraries`, `crm_itinerary_days` e `crm_itinerary_activities`. O endpoint, projeto e banco usam `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID` e `APPWRITE_DATABASE_ID`, com fallback para os respectivos valores `VITE_APPWRITE_*` já existentes. Não coloque a chave em variável `VITE_*` nem no navegador.
+
+O botão de compartilhar só copia ou abre o link depois de validar que a rota pública respondeu com sucesso. O PDF é salvo pelo diálogo de impressão do navegador. No cabeçalho do roteiro, o botão PDF abre uma página de impressão e inicia esse diálogo automaticamente; o botão na própria página permite reabri-lo.

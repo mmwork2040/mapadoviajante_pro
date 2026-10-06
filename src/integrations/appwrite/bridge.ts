@@ -60,7 +60,7 @@ class AppwriteQueryBuilder {
   private queries: string[] = [];
   private isSingle = false;
   private isMaybeSingle = false;
-  private action: 'select' | 'insert' | 'update' | 'delete' = 'select';
+  private action: 'select' | 'insert' | 'upsert' | 'update' | 'delete' = 'select';
   private writePayload: any = null;
 
   constructor(collectionId: string) {
@@ -68,7 +68,9 @@ class AppwriteQueryBuilder {
   }
 
   select(_columns?: string, _options?: { count?: string; head?: boolean }) {
-    this.action = 'select';
+    // Em Supabase, `.insert(...).select()` e `.update(...).select()` mantêm a
+    // escrita e apenas pedem o registro resultante. A ponte precisa preservar
+    // a operação que já foi definida.
     return this;
   }
 
@@ -238,14 +240,7 @@ class AppwriteQueryBuilder {
   async execute(): Promise<{ data: any; error: any; count?: number }> {
     try {
       if (this.action === 'select') {
-        let res;
-        try {
-          res = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, this.queries);
-        } catch (queryErr: any) {
-          console.warn(`[Appwrite listDocuments fallback on ${this.collectionId}]:`, queryErr);
-          // If query filter failed (e.g. search index missing), fallback to basic query without filters
-          res = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, [Query.limit(100)]);
-        }
+        const res = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, this.queries);
         const docs = res.documents.map(normalizeDoc);
 
         if (this.isSingle) {

@@ -242,15 +242,30 @@ function LeadsPage() {
                 <User className="h-4 w-4" /> {onlyMine ? "Minhas vendas" : "Todas as vendas"}
               </button>
             )}
-            <button
-              onClick={() => setShowArchived((v) => !v)}
-              title={showArchived ? "Voltar para vendas ativas" : "Ver vendas arquivadas"}
-              className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
-                showArchived ? "border-primary bg-primary/10 text-primary" : "border-input hover:bg-muted"
-              }`}
-            >
-              <Archive className="h-4 w-4" /> {showArchived ? "Arquivadas" : "Ver arquivadas"}
-            </button>
+            <div className="flex w-full rounded-lg border border-input p-1 sm:w-auto" role="tablist" aria-label="Vendas">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={!showArchived}
+                onClick={() => setShowArchived(false)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition sm:flex-none ${
+                  !showArchived ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                Ativas
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={showArchived}
+                onClick={() => setShowArchived(true)}
+                className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition sm:flex-none ${
+                  showArchived ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <Archive className="h-4 w-4" /> Arquivadas
+              </button>
+            </div>
             <button
               onClick={() => setOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
@@ -2007,4 +2022,3 @@ export function ModalTextarea({
     </label>
   );
 }
-

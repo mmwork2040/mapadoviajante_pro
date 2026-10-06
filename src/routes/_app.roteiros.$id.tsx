@@ -1039,6 +1039,36 @@ function ItineraryDetailPage() {
     onError: () => toast.error("Erro ao atualizar o status."),
   });
 
+  const [sharing, setSharing] = useState(false);
+  async function shareItinerary(open = false) {
+    if (!it || sharing) return;
+    const tab = open ? window.open("about:blank", "_blank") : null;
+    setSharing(true);
+    try {
+      let token = it.share_token;
+      if (!token) {
+        token = crypto.randomUUID();
+        const updated = await updateItinerary(id, { share_token: token });
+        if (!updated) throw new Error("Não foi possível preparar o link.");
+        await refresh();
+      }
+      const url = new URL(`/viajante/${encodeURIComponent(id)}?token=${encodeURIComponent(token)}`, window.location.origin);
+      const check = await fetch(`/api/public/itinerary?id=${encodeURIComponent(id)}&token=${encodeURIComponent(token)}`);
+      if (!check.ok) throw new Error(check.status === 503 ? "Compartilhamento indisponível. Configure APPWRITE_API_KEY no servidor." : "Não foi possível validar o link.");
+      if (open) {
+        if (!tab) throw new Error("O navegador bloqueou a abertura da nova aba.");
+        tab.opener = null;
+        tab.location.href = url.toString();
+      }
+      else { await navigator.clipboard.writeText(url.toString()); toast.success("Link compartilhável copiado."); }
+    } catch (error) {
+      tab?.close();
+      toast.error(error instanceof Error ? error.message : "Não foi possível compartilhar o roteiro.");
+    } finally {
+      setSharing(false);
+    }
+  }
+
   async function handleClear() {
     const ok = await confirm({
       title: "Limpar roteiro?",
@@ -1486,9 +1516,13 @@ function ItineraryDetailPage() {
             </button>
           )}
           <CompleteWithAI it={it} onDone={refresh} />
-          {(it.days || []).some((d) => (d.activities?.length || 0) > 0) && (
-            <RoteiroPdfExport it={it} coverUrl={coverUrl} />
-          )}
+          <button type="button" disabled={sharing} onClick={() => shareItinerary()} className="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60">
+            {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />} Copiar link
+          </button>
+          <button type="button" disabled={sharing} onClick={() => shareItinerary(true)} className="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60">
+            <ExternalLink className="h-4 w-4" /> Abrir roteiro
+          </button>
+          <RoteiroPdfExport it={it} coverUrl={coverUrl} />
         </div>
         </div>
       </div>
@@ -5715,6 +5749,3 @@ function CoverPicker({
     </div>
   );
 }
-
-
-

@@ -219,6 +219,7 @@ export interface Itinerary {
   status: string;
   created_at?: string;
   cover_image?: string | null;
+  share_token?: string | null;
   lead?: {
     id?: string;
     name: string;
