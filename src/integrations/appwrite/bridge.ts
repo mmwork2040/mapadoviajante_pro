@@ -54,12 +54,24 @@ function getValidDocId(rawId?: string): string {
   return ID.unique();
 }
 
+function matchesLike(value: unknown, pattern: string, caseInsensitive: boolean): boolean {
+  if (value === null || value === undefined) return false;
+  const expression = pattern
+    .split(/([%_])/)
+    .map((part) => part === '%' ? '.*' : part === '_' ? '.' : part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('');
+  return new RegExp(`^${expression}$`, caseInsensitive ? 'i' : '').test(String(value));
+}
+
 class AppwriteQueryBuilder {
   private onConflictCol: string | null = null;
   private collectionId: string;
   private queries: string[] = [];
+  private localFilters: Array<(doc: any) => boolean> = [];
   private isSingle = false;
   private isMaybeSingle = false;
+  private windowStart = 0;
+  private windowCount: number | null = null;
   private action: 'select' | 'insert' | 'upsert' | 'update' | 'delete' = 'select';
   private writePayload: any = null;
 
@@ -122,13 +134,13 @@ class AppwriteQueryBuilder {
   }
 
   like(column: string, pattern: string) {
-    const cleanPattern = pattern.replace(/%/g, '');
-    this.queries.push(Query.search(column, cleanPattern));
+    this.localFilters.push((doc) => matchesLike(doc[column], pattern, false));
     return this;
   }
 
   ilike(column: string, pattern: string) {
-    return this.like(column, pattern);
+    this.localFilters.push((doc) => matchesLike(doc[column], pattern, true));
+    return this;
   }
 
   is(column: string, value: any) {
@@ -182,23 +194,16 @@ class AppwriteQueryBuilder {
   }
 
   or(expression: string) {
-    try {
-      const parts = expression.split(',');
-      const subQueries: string[] = [];
-      for (const part of parts) {
-        const [field, op, val] = part.split('.');
-        const cleanVal = (val || '').replace(/%/g, '');
-        if (op === 'ilike' || op === 'like') {
-          subQueries.push(Query.search(field, cleanVal));
-        } else if (op === 'eq') {
-          subQueries.push(Query.equal(field, cleanVal));
-        }
-      }
-      if (subQueries.length > 0) {
-        this.queries.push(Query.or(subQueries));
-      }
-    } catch {
-      // Fallback
+    const predicates = expression.split(',').flatMap((part) => {
+      const match = /^([^.]*)\.(ilike|like|eq)\.(.*)$/.exec(part);
+      if (!match) return [];
+      const [, field, op, value] = match;
+      return [(doc: any) => op === 'eq'
+        ? String(doc[field] ?? '') === value
+        : matchesLike(doc[field], value, op === 'ilike')];
+    });
+    if (predicates.length > 0) {
+      this.localFilters.push((doc) => predicates.some((predicate) => predicate(doc)));
     }
     return this;
   }
@@ -215,32 +220,68 @@ class AppwriteQueryBuilder {
   }
 
   limit(count: number) {
-    this.queries.push(Query.limit(count));
+    this.windowCount = count;
     return this;
   }
 
   range(from: number, to: number) {
-    this.queries.push(Query.offset(from));
-    this.queries.push(Query.limit(to - from + 1));
+    this.windowStart = from;
+    this.windowCount = to - from + 1;
     return this;
   }
 
   single() {
     this.isSingle = true;
-    this.queries.push(Query.limit(1));
+    this.windowCount = 1;
     return this;
   }
 
   maybeSingle() {
     this.isMaybeSingle = true;
-    this.queries.push(Query.limit(1));
+    this.windowCount = 1;
     return this;
+  }
+
+  private async listMatchingDocuments() {
+    if (this.windowCount !== null && this.localFilters.length === 0) {
+      return databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, [
+        ...this.queries,
+        ...(this.windowStart ? [Query.offset(this.windowStart)] : []),
+        Query.limit(this.windowCount),
+      ]);
+    }
+
+    // Appwrite devolve apenas 25 documentos sem paginação. As telas e as
+    // atualizações em lote desta ponte esperam todos os registros da consulta.
+    const documents: any[] = [];
+    let total = 0;
+    let cursor: string | null = null;
+    do {
+      const page: { documents: Array<{ $id: string; [key: string]: any }>; total: number } = await databases.listDocuments(
+        APPWRITE_DATABASE_ID,
+        this.collectionId,
+        [...this.queries, Query.limit(100), ...(cursor ? [Query.cursorAfter(cursor)] : [])],
+      );
+      total = page.total;
+      documents.push(...page.documents);
+      cursor = page.documents.length === 100 && documents.length < total
+        ? page.documents[page.documents.length - 1].$id
+        : null;
+    } while (cursor);
+    if (this.localFilters.length === 0) return { documents, total };
+    const matching = documents.filter((doc) => this.localFilters.every((filter) => filter(doc)));
+    return {
+      documents: this.windowCount === null
+        ? matching
+        : matching.slice(this.windowStart, this.windowStart + this.windowCount),
+      total: matching.length,
+    };
   }
 
   async execute(): Promise<{ data: any; error: any; count?: number }> {
     try {
       if (this.action === 'select') {
-        const res = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, this.queries);
+        const res = await this.listMatchingDocuments();
         const docs = res.documents.map(normalizeDoc);
 
         if (this.isSingle) {
@@ -309,7 +350,7 @@ class AppwriteQueryBuilder {
 
       if (this.action === 'update') {
         // Encontra o documento pelo query ou ID
-        const list = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, this.queries);
+        const list = await this.listMatchingDocuments();
         if (list.documents.length === 0) {
           return { data: null, error: null };
         }
@@ -325,7 +366,7 @@ class AppwriteQueryBuilder {
       }
 
       if (this.action === 'delete') {
-        const list = await databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, this.queries);
+        const list = await this.listMatchingDocuments();
         for (const target of list.documents) {
           await databases.deleteDocument(APPWRITE_DATABASE_ID, this.collectionId, target.$id);
         }
@@ -683,8 +724,8 @@ export const appwriteSupabaseClient = {
     return {
       then: promise.then.bind(promise),
       catch: promise.catch.bind(promise),
-      single: async () => execute(),
-      maybeSingle: async () => execute(),
+      single: () => promise,
+      maybeSingle: () => promise,
     };
   },
 };

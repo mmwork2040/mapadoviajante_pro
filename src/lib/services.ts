@@ -608,46 +608,23 @@ async function ensureClientFromLead(lead: Lead): Promise<string | null> {
   const rawCpf = (profile.cpf ?? profile.cnpj ?? profile.cpf_cnpj ?? profile.document ?? "") as string;
   const cpfDigits = String(rawCpf || "").replace(/\D/g, "") || null;
 
-  let existingId: string | null = null;
-
-  // 1) CPF/CNPJ (digits only, ignora máscara existente)
-  if (!existingId && cpfDigits) {
-    const { data } = await supabase
-      .from("crm_clients")
-      .select("id, cpf")
-      .eq("agency_id", _agencyId)
-      .not("cpf", "is", null);
-    const hit = (data ?? []).find(
-      (c) => String((c as { cpf?: string }).cpf ?? "").replace(/\D/g, "") === cpfDigits,
-    );
-    if (hit) existingId = (hit as { id: string }).id;
+  // Appwrite só permite Query.search em campos com índice fulltext. Comparamos
+  // os identificadores da própria agência para não perder vínculos existentes.
+  const { data: clients, error: clientsError } = await supabase
+    .from("crm_clients")
+    .select("id, cpf, email, phone, whatsapp")
+    .eq("agency_id", _agencyId);
+  if (clientsError) {
+    console.error("ensureClientFromLead:", clientsError);
+    return null;
   }
-
-  // 2) E-mail (case-insensitive)
-  if (!existingId && email) {
-    const { data } = await supabase
-      .from("crm_clients")
-      .select("id")
-      .eq("agency_id", _agencyId)
-      .ilike("email", email)
-      .limit(1)
-      .maybeSingle();
-    if (data) existingId = (data as { id: string }).id;
-  }
-
-  // 3) Telefone (comparação por dígitos)
-  if (!existingId && phoneDigits) {
-    const { data } = await supabase
-      .from("crm_clients")
-      .select("id, phone, whatsapp")
-      .eq("agency_id", _agencyId);
-    const hit = (data ?? []).find((c) => {
-      const p = String((c as { phone?: string }).phone ?? "").replace(/\D/g, "");
-      const w = String((c as { whatsapp?: string }).whatsapp ?? "").replace(/\D/g, "");
-      return (p && p === phoneDigits) || (w && w === phoneDigits);
-    });
-    if (hit) existingId = (hit as { id: string }).id;
-  }
+  const existing = ((clients ?? []) as Client[]).find((client) =>
+    (cpfDigits && client.cpf?.replace(/\D/g, "") === cpfDigits)
+    || (email && client.email?.trim().toLowerCase() === email)
+    || (phoneDigits && [client.phone, client.whatsapp]
+      .some((value) => value?.replace(/\D/g, "") === phoneDigits)),
+  );
+  let existingId: string | null = existing?.id ?? null;
 
   if (!existingId) {
     const created = await createClient({
@@ -2480,16 +2457,18 @@ export async function fetchClients(search?: string): Promise<Client[]> {
     .select("*")
     .eq("agency_id", _agencyId!)
     .order("name", { ascending: true });
-  if (search && search.trim()) {
-    const s = `%${search.trim()}%`;
-    q = q.or(`name.ilike.${s},email.ilike.${s},cpf.ilike.${s},phone.ilike.${s}`);
-  }
   const { data, error } = await q;
   if (error) {
     console.error("fetchClients:", error);
     return [];
   }
-  return (data ?? []) as Client[];
+  const clients = (data ?? []) as Client[];
+  const term = search?.trim().toLocaleLowerCase("pt-BR");
+  if (!term) return clients;
+  return clients.filter((client) =>
+    [client.name, client.email, client.cpf, client.phone, client.whatsapp]
+      .some((value) => value?.toLocaleLowerCase("pt-BR").includes(term)),
+  );
 }
 
 export async function fetchClientById(id: string): Promise<Client | null> {
