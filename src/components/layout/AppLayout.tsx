@@ -24,7 +24,6 @@ import { fetchLeads, fetchTasks } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
 import { NotificationBell } from "@/components/NotificationBell";
-import brandLogo from "@/assets/logo-mapa-viajante.png.asset.json";
 
 const NAV = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
@@ -96,9 +95,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         }`}
       >
         <div className={`flex items-center gap-2 py-5 ${collapsed ? "justify-center px-2" : "px-5"}`}>
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-white">
-            <img src={brandLogo.url} alt="O Mapa do Viajante" className="h-full w-full object-contain" />
-          </div>
+          <img src="/mapapro-mark.svg" alt="MapaPRO" className="h-9 w-9 shrink-0 rounded-lg" />
           {!collapsed && (
             <span className="animate-fade-in whitespace-nowrap text-lg font-extrabold tracking-tight">
               Mapa<span className="text-primary">PRO</span>
@@ -197,9 +194,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-5">
           {/* Marca no mobile (a navegação fica na barra inferior) */}
           <div className="flex items-center gap-2 md:hidden">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-white">
-              <img src={brandLogo.url} alt="O Mapa do Viajante" className="h-full w-full object-contain" />
-            </div>
+            <img src="/mapapro-mark.svg" alt="MapaPRO" className="h-8 w-8 shrink-0 rounded-lg" />
             <span className="text-base font-extrabold tracking-tight">
               Mapa<span className="text-primary">PRO</span>
             </span>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">MapaPRO</title>
+  <desc id="desc">Letra M desenhada como uma rota, com um ponto de destino laranja.</desc>
+  <rect width="512" height="512" rx="112" fill="#0C0A08"/>
+  <path d="M111 367V151c0-10 12-15 19-8l126 116 126-116c7-7 19-2 19 8v216"
+        fill="none" stroke="#FFFFFF" stroke-width="45" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="256" cy="259" r="34" fill="#F58E26"/>
+  <circle cx="256" cy="259" r="11" fill="#0C0A08"/>
+</svg>
