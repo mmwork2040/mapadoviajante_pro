@@ -27,7 +27,14 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
 
     // Agência ativa do usuário (null se não tiver). O cliente de dados entregue
     // às funções só enxerga e grava registros dessa agência.
-    const membership = await findMembership({ userId: user.id, userEmail: user.email });
+    // Se a busca falhar (ex.: APPWRITE_API_KEY ausente), segue sem agência:
+    // funções que precisam dela respondem "Sem agência ativa".
+    let membership: Awaited<ReturnType<typeof findMembership>> = null;
+    try {
+      membership = await findMembership({ userId: user.id, userEmail: user.email });
+    } catch (err) {
+      console.error('[auth] não foi possível carregar a agência do usuário:', err);
+    }
 
     return next({
       context: {
