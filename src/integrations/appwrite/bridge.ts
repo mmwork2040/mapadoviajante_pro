@@ -1,5 +1,8 @@
 import { client, databases, storage, account, APPWRITE_DATABASE_ID, APPWRITE_BUCKET_ID, Query, ID } from './client';
 import { appwriteAuthService } from '@/services/appwriteAuthService';
+import type { Databases, Storage } from 'appwrite';
+
+export type BridgeServices = { databases: Databases; storage: Storage };
 
 // Normaliza o documento do Appwrite para ser 100% compatível com a interface do Supabase
 function normalizeDoc(doc: any): any {
@@ -75,7 +78,7 @@ class AppwriteQueryBuilder {
   private action: 'select' | 'insert' | 'upsert' | 'update' | 'delete' = 'select';
   private writePayload: any = null;
 
-  constructor(collectionId: string) {
+  constructor(collectionId: string, private svc: BridgeServices) {
     this.collectionId = collectionId;
   }
 
@@ -244,7 +247,7 @@ class AppwriteQueryBuilder {
 
   private async listMatchingDocuments() {
     if (this.windowCount !== null && this.localFilters.length === 0) {
-      return databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, [
+      return this.svc.databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, [
         ...this.queries,
         ...(this.windowStart ? [Query.offset(this.windowStart)] : []),
         Query.limit(this.windowCount),
@@ -257,7 +260,7 @@ class AppwriteQueryBuilder {
     let total = 0;
     let cursor: string | null = null;
     do {
-      const page: { documents: Array<{ $id: string; [key: string]: any }>; total: number } = await databases.listDocuments(
+      const page: { documents: Array<{ $id: string; [key: string]: any }>; total: number } = await this.svc.databases.listDocuments(
         APPWRITE_DATABASE_ID,
         this.collectionId,
         [...this.queries, Query.limit(100), ...(cursor ? [Query.cursorAfter(cursor)] : [])],
@@ -309,7 +312,7 @@ class AppwriteQueryBuilder {
           // Se há onConflict (ex: 'key' em system_settings)
           if (this.onConflictCol && item[this.onConflictCol] !== undefined) {
             try {
-              const existing = await databases.listDocuments(
+              const existing = await this.svc.databases.listDocuments(
                 APPWRITE_DATABASE_ID,
                 this.collectionId,
                 [Query.equal(this.onConflictCol, item[this.onConflictCol]), Query.limit(1)]
@@ -321,21 +324,21 @@ class AppwriteQueryBuilder {
           } else if (item.id) {
             const candidate = getValidDocId(item.id);
             try {
-              const existing = await databases.getDocument(APPWRITE_DATABASE_ID, this.collectionId, candidate);
+              const existing = await this.svc.databases.getDocument(APPWRITE_DATABASE_ID, this.collectionId, candidate);
               if (existing) targetId = candidate;
             } catch {}
           }
 
           let doc;
           if (targetId) {
-            doc = await databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, targetId, payload);
+            doc = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, targetId, payload);
           } else {
             const docId = getValidDocId(item.id);
             try {
-              doc = await databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
+              doc = await this.svc.databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
             } catch (createErr: any) {
               if (createErr.code === 409 || createErr.type === 'document_already_exists') {
-                doc = await databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
+                doc = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
               } else {
                 throw createErr;
               }
@@ -358,7 +361,7 @@ class AppwriteQueryBuilder {
         const payload = preparePayload(this.writePayload);
         const updatedDocs = [];
         for (const target of list.documents) {
-          const updated = await databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, target.$id, payload);
+          const updated = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, target.$id, payload);
           updatedDocs.push(normalizeDoc(updated));
         }
 
@@ -368,7 +371,7 @@ class AppwriteQueryBuilder {
       if (this.action === 'delete') {
         const list = await this.listMatchingDocuments();
         for (const target of list.documents) {
-          await databases.deleteDocument(APPWRITE_DATABASE_ID, this.collectionId, target.$id);
+          await this.svc.databases.deleteDocument(APPWRITE_DATABASE_ID, this.collectionId, target.$id);
         }
         return { data: null, error: null };
       }
@@ -523,7 +526,10 @@ class AppwriteAuthBridge {
 
 // ── Bridge Storage ────────────────────────────────────────────────
 class AppwriteStorageBridge {
+  constructor(private svc: BridgeServices) {}
+
   from(bucketId: string = APPWRITE_BUCKET_ID) {
+    const storage = this.svc.storage;
     return {
       async upload(path: string, file: File) {
         try {
@@ -603,13 +609,16 @@ class AppwriteChannelBridge {
   }
 }
 
-// Cliente exportado compatível com Supabase
-export const appwriteSupabaseClient = {
+// Cliente compatível com Supabase. O mesmo código atende o navegador (sessão do
+// usuário) e o servidor (chave de API), mudando só os serviços do Appwrite.
+export function createAppwriteBridge(svc: BridgeServices) {
+  const databases = svc.databases;
+  return {
   from(collectionName: string) {
-    return new AppwriteQueryBuilder(collectionName);
+    return new AppwriteQueryBuilder(collectionName, svc);
   },
   auth: new AppwriteAuthBridge(),
-  storage: new AppwriteStorageBridge(),
+  storage: new AppwriteStorageBridge(svc),
   channel(name: string) {
     return new AppwriteChannelBridge(name);
   },
@@ -729,3 +738,7 @@ export const appwriteSupabaseClient = {
     };
   },
 };
+}
+
+// Cliente do navegador, autenticado pela sessão do usuário no Appwrite.
+export const appwriteSupabaseClient = createAppwriteBridge({ databases, storage });

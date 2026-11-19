@@ -40,7 +40,7 @@ export default defineConfig(({ command, mode }) => {
           client: { files: ["**/server/**"], specifiers: ["server-only"] },
         },
       }),
-      ...(command === "build" ? [nitro({ preset: "vercel" })] : []),
+      ...(command === "build" ? [nitro({ preset: process.env.NITRO_PRESET || "vercel" })] : []),
       viteReact(),
     ],
   };

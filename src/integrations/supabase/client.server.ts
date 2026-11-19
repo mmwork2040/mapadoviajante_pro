@@ -1,4 +1,4 @@
-// Server-side Appwrite/Supabase client bridge
-import { appwriteSupabaseClient } from '@/integrations/appwrite/bridge';
+// Cliente de dados do servidor (chave de API do Appwrite). Só para código de servidor.
+import { getServerBridge } from '@/integrations/appwrite/server';
 
-export const supabaseAdmin = appwriteSupabaseClient as any;
+export const supabaseAdmin = getServerBridge() as any;
