@@ -86,3 +86,45 @@ export async function verifyAppwriteJwt(jwt: string): Promise<AppwriteUserIdenti
     emailVerified: !!user.emailVerification,
   };
 }
+
+/**
+ * Coleções que pertencem a uma agência (têm `agency_id`). No servidor, toda
+ * operação nelas passa a valer só para a agência do usuário.
+ */
+export const AGENCY_SCOPED_COLLECTIONS = new Set([
+  'agency_members',
+  'agency_payment_settings',
+  'crm_ai_config',
+  'crm_clients',
+  'crm_itineraries',
+  'crm_lead_activities',
+  'crm_lead_documents',
+  'crm_leads',
+  'crm_library_destinations',
+  'crm_library_items',
+  'crm_notifications',
+  'crm_tasks',
+  'crm_transactions',
+  'crm_trip_expenses',
+]);
+
+/**
+ * Cliente do servidor limitado a uma agência: equivale ao RLS do Supabase.
+ * Coleções sem `agency_id` (ex.: dias e atividades de roteiro) não são
+ * filtradas aqui; quem as usa precisa conferir o roteiro dono antes.
+ */
+export function createAgencyScopedBridge(agencyId: string | null): ServerBridge {
+  const base = getServerBridge();
+  return {
+    ...base,
+    from(collectionName: string) {
+      const qb = base.from(collectionName);
+      if (!AGENCY_SCOPED_COLLECTIONS.has(collectionName)) return qb;
+      if (!agencyId) throw new Error('Sem agência ativa.');
+      return qb.withAgencyScope(agencyId);
+    },
+    rpc() {
+      throw new Error('Operação indisponível no servidor.');
+    },
+  } as ServerBridge;
+}

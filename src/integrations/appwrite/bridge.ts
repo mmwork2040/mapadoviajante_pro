@@ -77,6 +77,8 @@ class AppwriteQueryBuilder {
   private windowCount: number | null = null;
   private action: 'select' | 'insert' | 'upsert' | 'update' | 'delete' = 'select';
   private writePayload: any = null;
+  private scopeAgencyId: string | null = null;
+  private scopeApplied = false;
 
   constructor(collectionId: string, private svc: BridgeServices) {
     this.collectionId = collectionId;
@@ -86,6 +88,16 @@ class AppwriteQueryBuilder {
     // Em Supabase, `.insert(...).select()` e `.update(...).select()` mantêm a
     // escrita e apenas pedem o registro resultante. A ponte precisa preservar
     // a operação que já foi definida.
+    return this;
+  }
+
+  /**
+   * Restringe a operação a uma agência (uso no servidor, que tem acesso total
+   * pela chave de API): filtra leituras, edições e exclusões por `agency_id` e
+   * grava `agency_id` nas inserções. Faz o papel que o RLS fazia no Supabase.
+   */
+  withAgencyScope(agencyId: string) {
+    this.scopeAgencyId = agencyId;
     return this;
   }
 
@@ -283,6 +295,11 @@ class AppwriteQueryBuilder {
 
   async execute(): Promise<{ data: any; error: any; count?: number }> {
     try {
+      const scope = this.scopeAgencyId;
+      if (scope && !this.scopeApplied && this.action !== 'insert' && this.action !== 'upsert') {
+        this.queries.push(Query.equal('agency_id', scope));
+        this.scopeApplied = true;
+      }
       if (this.action === 'select') {
         const res = await this.listMatchingDocuments();
         const docs = res.documents.map(normalizeDoc);
@@ -305,7 +322,8 @@ class AppwriteQueryBuilder {
         const items = Array.isArray(this.writePayload) ? this.writePayload : [this.writePayload];
         const results = [];
 
-        for (const item of items) {
+        for (const rawItem of items) {
+          const item = scope ? { ...rawItem, agency_id: scope } : rawItem;
           const payload = preparePayload(item);
           let targetId: string | null = null;
 
@@ -315,7 +333,11 @@ class AppwriteQueryBuilder {
               const existing = await this.svc.databases.listDocuments(
                 APPWRITE_DATABASE_ID,
                 this.collectionId,
-                [Query.equal(this.onConflictCol, item[this.onConflictCol]), Query.limit(1)]
+                [
+                  Query.equal(this.onConflictCol, item[this.onConflictCol]),
+                  ...(scope ? [Query.equal('agency_id', scope)] : []),
+                  Query.limit(1),
+                ]
               );
               if (existing.documents.length > 0) {
                 targetId = existing.documents[0].$id;
@@ -325,8 +347,13 @@ class AppwriteQueryBuilder {
             const candidate = getValidDocId(item.id);
             try {
               const existing = await this.svc.databases.getDocument(APPWRITE_DATABASE_ID, this.collectionId, candidate);
+              if (existing && scope && (existing as any).agency_id !== scope) {
+                throw Object.assign(new Error('Registro de outra agência.'), { code: 403, scopeViolation: true });
+              }
               if (existing) targetId = candidate;
-            } catch {}
+            } catch (lookupErr: any) {
+              if (lookupErr?.scopeViolation) throw lookupErr;
+            }
           }
 
           let doc;
@@ -337,7 +364,7 @@ class AppwriteQueryBuilder {
             try {
               doc = await this.svc.databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
             } catch (createErr: any) {
-              if (createErr.code === 409 || createErr.type === 'document_already_exists') {
+              if ((createErr.code === 409 || createErr.type === 'document_already_exists') && !scope) {
                 doc = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
               } else {
                 throw createErr;

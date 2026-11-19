@@ -93,7 +93,7 @@ async function resolveFirebaseServiceAccount(supabase: any, userId?: string): Pr
     } catch {}
   }
 
-  if (!agencyId) agencyId = "2a0f9141-3246-4c0f-b064-2bf4cb718adc";
+  if (!agencyId) return null;
 
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -295,20 +295,9 @@ export interface PushDeliveryStatus {
 export const listDeviceTokens = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<DeviceTokenEntry[]> => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin) return [];
-
-    const { data: me } = await context.supabase
-      .from("agency_members")
-      .select("agency_id")
-      .eq("user_id", context.userId)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-    const agencyId = me?.agency_id ?? null;
+    // Só admin, e só os aparelhos da própria agência.
+    const { requireAdmin } = await import("@/lib/server/authz");
+    const { agencyId } = await requireAdmin(context);
 
     const { data, error } = await context.supabase
       .from("system_settings")
@@ -339,7 +328,7 @@ export const listDeviceTokens = createServerFn({ method: "GET" })
           updatedAt: row.updated_at as string | null,
         };
       })
-      .filter((e) => e.token && e.deviceId && (agencyId === null || e.agencyId === agencyId))
+      .filter((e) => e.token && e.deviceId && e.agencyId === agencyId)
       .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""))
       .map(({ agencyId: _a, ...e }) => ({ ...e, isSelf: e.userId === context.userId }));
   });
@@ -358,6 +347,8 @@ export const sendTestPush = createServerFn({ method: "POST" })
       .parse(data),
   )
     .handler(async ({ data, context }): Promise<{ ok: boolean; message: string; traceId?: string }> => {
+    const { requireAdmin } = await import("@/lib/server/authz");
+    await requireAdmin(context);
     const sa = await resolveFirebaseServiceAccount(context.supabase, context.userId);
     if (!sa) {
       return {

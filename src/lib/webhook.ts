@@ -1,5 +1,9 @@
-import { getAgencyId } from "@/lib/services";
-import { getAgencyConfig, saveAgencyConfig } from "@/lib/settings.functions";
+import {
+  getAgencyConfig,
+  saveAgencyConfig,
+  dispatchWebhookFn,
+  sendTestWebhookFn,
+} from "@/lib/settings.functions";
 
 // ── Eventos disponíveis para disparo ───────────────────────────
 export const WEBHOOK_EVENTS = [
@@ -46,25 +50,10 @@ export async function saveWebhookConfig(config: WebhookConfig): Promise<void> {
 }
 
 // ── Disparo de eventos ─────────────────────────────────────────
+// O envio acontece no servidor, que lê a URL e o segredo salvos da agência.
 export async function dispatchWebhook(event: WebhookEventId, payload: unknown) {
-  const config = await getWebhookConfig();
-  if (!config.enabled || !config.url) return;
-  if (!config.events.includes(event)) return;
-
   try {
-    await fetch(config.url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(config.secret ? { "X-Webhook-Secret": config.secret } : {}),
-      },
-      body: JSON.stringify({
-        event,
-        agency_id: getAgencyId(),
-        timestamp: new Date().toISOString(),
-        data: payload,
-      }),
-    });
+    await dispatchWebhookFn({ data: { event, payload } });
   } catch (err) {
     // Não interrompe o fluxo da aplicação caso o webhook falhe.
     console.warn("Falha ao disparar webhook:", err);
@@ -77,25 +66,8 @@ export async function sendTestWebhook(config: WebhookConfig) {
     return { ok: false, message: "Informe a URL do webhook." };
   }
   try {
-    const res = await fetch(config.url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(config.secret ? { "X-Webhook-Secret": config.secret } : {}),
-      },
-      body: JSON.stringify({
-        event: "webhook.test",
-        agency_id: getAgencyId(),
-        timestamp: new Date().toISOString(),
-        data: { message: "Teste de configuração do webhook." },
-      }),
-    });
-    return {
-      ok: res.ok,
-      message: res.ok
-        ? `Webhook respondeu com status ${res.status}.`
-        : `Falha: o webhook respondeu com status ${res.status}.`,
-    };
+    const res = await sendTestWebhookFn({ data: { url: config.url.trim(), secret: config.secret || undefined } });
+    return { ok: res.ok, message: res.message ?? "" };
   } catch (err) {
     return {
       ok: false,

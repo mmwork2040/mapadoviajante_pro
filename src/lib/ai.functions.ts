@@ -370,11 +370,14 @@ export const analyzeImageActivityFn = createServerFn({ method: "POST" })
         .maybeSingle();
       destination = (it as { destination?: string } | null)?.destination ?? "";
       itineraryTitle = (it as { title?: string } | null)?.title ?? "";
-      const { data: days } = await context.supabase
-        .from("crm_itinerary_days")
-        .select("day_number, title, crm_itinerary_activities(title, type, location)")
-        .eq("itinerary_id", data.itineraryId)
-        .order("day_number", { ascending: true });
+      // Dias não têm agency_id: só lê se o roteiro for da agência do usuário.
+      const { data: days } = it
+        ? await context.supabase
+            .from("crm_itinerary_days")
+            .select("day_number, title, crm_itinerary_activities(title, type, location)")
+            .eq("itinerary_id", data.itineraryId)
+            .order("day_number", { ascending: true })
+        : { data: [] };
       const rows = (days as unknown as {
         day_number: number;
         title?: string;

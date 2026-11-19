@@ -10,19 +10,8 @@ const MEMBER_COLORS = ["#ff7a1a", "#2563eb", "#16a34a", "#db2777", "#9333ea", "#
 export const getEmailConfigStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    let agencyId: string | null = null;
-    try {
-      const { data: member } = await context.supabase
-        .from("agency_members")
-        .select("agency_id")
-        .eq("user_id", context.userId)
-        .eq("is_active", true)
-        .limit(1)
-        .maybeSingle();
-      agencyId = member?.agency_id || null;
-    } catch {}
-
-    if (!agencyId) agencyId = "2a0f9141-3246-4c0f-b064-2bf4cb718adc";
+    const { getMembership } = await import("@/lib/server/authz");
+    const { agencyId } = await getMembership(context);
 
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -44,8 +33,22 @@ export const getEmailConfigStatus = createServerFn({ method: "GET" })
     }
   });
 
+const ROLES = ["admin", "gerente", "consultor"] as const;
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function inviteHtml(opts: { name: string; agency: string; inviter: string; link: string }) {
-  const { name, agency, inviter, link } = opts;
+  const name = escapeHtml(opts.name);
+  const agency = escapeHtml(opts.agency);
+  const inviter = escapeHtml(opts.inviter);
+  const link = escapeHtml(opts.link);
   return `<!DOCTYPE html><html lang="pt-BR"><body style="margin:0;background:#f4f4f5;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
   <div style="max-width:560px;margin:0 auto;padding:32px 16px;">
     <div style="background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
@@ -86,7 +89,13 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       .object({
         name: z.string().trim().min(1).max(120),
         email: z.string().trim().email().max(255),
-        role: z.string().trim().min(1).max(40).default("agent"),
+        // "agent" era o valor padrão antigo; vira consultor.
+        role: z
+          .string()
+          .trim()
+          .transform((r) => (r === "agent" || !r ? "consultor" : r))
+          .pipe(z.enum(ROLES))
+          .default("consultor"),
         appUrl: z.string().url().max(300),
       })
       .parse(data),
@@ -95,16 +104,16 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     const { supabase } = context;
     const email = data.email.toLowerCase();
 
-    // Agência do solicitante
-    const { data: agencyId } = await supabase.rpc("get_user_agency_id");
-    const activeAgencyId = (agencyId as string) || "2a0f9141-3246-4c0f-b064-2bf4cb718adc";
+    // Só admin convida, e sempre para a própria agência.
+    const { requireAdmin } = await import("@/lib/server/authz");
+    const { agencyId: activeAgencyId } = await requireAdmin(context);
 
     // Já é membro ativo?
     const { data: existing } = await supabase
       .from("agency_members")
       .select("id, is_active")
       .eq("agency_id", activeAgencyId)
-      .ilike("email", email)
+      .eq("email", email)
       .maybeSingle();
 
     if (existing && (existing as { is_active?: boolean }).is_active) {
@@ -164,7 +173,9 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .maybeSingle();
 
-    const link = `${data.appUrl.replace(/\/$/, "")}/aceitar-convite?token=${token}`;
+    // APP_URL no servidor tem prioridade sobre o endereço enviado pelo navegador.
+    const baseUrl = (process.env.APP_URL || data.appUrl).replace(/\/$/, "");
+    const link = `${baseUrl}/aceitar-convite?token=${encodeURIComponent(token)}`;
 
     // Carrega configuração de e-mail da agência
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

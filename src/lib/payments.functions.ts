@@ -32,24 +32,18 @@ export const DEFAULT_PAYMENT_CONFIG: AgencyPaymentConfig = {
   webhookToken: null,
 };
 
-async function resolveAgencyId(
-  supabase: { from: (t: string) => any },
-  userId: string,
-): Promise<string | null> {
-  const { data } = await supabase
-    .from("agency_members")
-    .select("agency_id")
-    .eq("is_active", true)
-    .limit(1)
-    .maybeSingle();
-  return (data?.agency_id as string | undefined) ?? null;
+/** Pagamentos são só do admin, sempre na agência do próprio usuário. */
+async function resolveAgencyId(context: { supabase: any; userId: string; userEmail?: string }): Promise<string> {
+  const { requireAdmin } = await import("@/lib/server/authz");
+  const { agencyId } = await requireAdmin(context);
+  return agencyId;
 }
 
 /** Lê a configuração de pagamentos da agência do usuário (admin). */
 export const getAgencyPaymentConfig = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AgencyPaymentConfig> => {
-    const agencyId = await resolveAgencyId(context.supabase, context.userId);
+    const agencyId = await resolveAgencyId(context);
     if (!agencyId) return DEFAULT_PAYMENT_CONFIG;
     const key = `agency_cfg:${agencyId}:payments`;
     const { data: row } = await (context.supabase as any)
@@ -91,7 +85,7 @@ export const saveAgencyPaymentConfig = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => saveSchema.parse(data))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const agencyId = await resolveAgencyId(context.supabase, context.userId);
+    const agencyId = await resolveAgencyId(context);
     if (!agencyId) throw new Error("Agência não encontrada para o usuário.");
 
     const row: Record<string, unknown> = {
@@ -134,7 +128,7 @@ export const createAsaasCharge = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data) => chargeSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const agencyId = await resolveAgencyId(context.supabase, context.userId);
+    const agencyId = await resolveAgencyId(context);
     if (!agencyId) throw new Error("Agência não encontrada para o usuário.");
 
     const { data: cfg } = await (context.supabase as any)

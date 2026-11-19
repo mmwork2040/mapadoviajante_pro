@@ -3,44 +3,19 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { DEFAULT_CONFIG, type EmailConfig } from "@/lib/gmail-config";
 
-async function resolveAgencyEmailConfig(supabase: any, userId: string): Promise<EmailConfig> {
-  let agencyId: string | null = null;
-  try {
-    const { data: member } = await supabase
-      .from("agency_members")
-      .select("agency_id")
-      .eq("user_id", userId)
-      .eq("is_active", true)
-      .limit(1)
-      .maybeSingle();
-    agencyId = member?.agency_id || null;
-  } catch {}
-
-  if (!agencyId) {
-    agencyId = "2a0f9141-3246-4c0f-b064-2bf4cb718adc";
-  }
-
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
-      .from("system_settings")
-      .select("value")
-      .eq("key", `agency_cfg:${agencyId}:gmail`)
-      .maybeSingle();
-
-    if (!row || !row.value) return DEFAULT_CONFIG;
-    const parsed = typeof row.value === "string" ? JSON.parse(row.value) : row.value;
-    return { ...DEFAULT_CONFIG, ...parsed };
-  } catch {
-    return DEFAULT_CONFIG;
-  }
+async function resolveAgencyEmailConfig(agencyId: string): Promise<EmailConfig> {
+  const { readAgencyConfigServer } = await import("@/lib/settings.functions");
+  const value = await readAgencyConfigServer(agencyId, "gmail");
+  return value ? { ...DEFAULT_CONFIG, ...(value as Partial<EmailConfig>) } : DEFAULT_CONFIG;
 }
 
 /** Verifica o status da conexão de e-mail (Gmail ou Appwrite). */
 export const getGmailStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ connected: boolean; provider?: string; email: string | null }> => {
-    const config = await resolveAgencyEmailConfig(context.supabase, context.userId);
+    const { getMembership } = await import("@/lib/server/authz");
+    const m = await getMembership(context);
+    const config = await resolveAgencyEmailConfig(m.agencyId);
     if (!config.enabled) {
       return { connected: false, email: null };
     }
@@ -75,7 +50,10 @@ export const sendGmail = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const config = await resolveAgencyEmailConfig(context.supabase, context.userId);
+    const { requireAdmin } = await import("@/lib/server/authz");
+    const m = await requireAdmin(context);
+    const config = await resolveAgencyEmailConfig(m.agencyId);
+    if (!config.enabled) return { ok: false, message: "O envio de e-mail está desativado na Administração." };
     const { sendEmailWithConfig } = await import("./email.server");
     return sendEmailWithConfig(config, { to: data.to, subject: data.subject, body: data.body });
   });

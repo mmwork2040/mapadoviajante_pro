@@ -1748,7 +1748,11 @@ function GmailCard() {
                     type="password"
                     value={config.appwriteSmtpPassword || ""}
                     onChange={(e) => update({ appwriteSmtpPassword: e.target.value })}
-                    placeholder="••••••••"
+                    placeholder={
+                      (config as { has_appwriteSmtpPassword?: boolean }).has_appwriteSmtpPassword
+                        ? "•••••••• (salva — deixe em branco para manter)"
+                        : "••••••••"
+                    }
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
                   />
                 </label>
@@ -1781,7 +1785,11 @@ function GmailCard() {
                     type="password"
                     value={config.appwriteApiKey || ""}
                     onChange={(e) => update({ appwriteApiKey: e.target.value })}
-                    placeholder="standard_..."
+                    placeholder={
+                      (config as { has_appwriteApiKey?: boolean }).has_appwriteApiKey
+                        ? "•••••••• (salva — deixe em branco para manter)"
+                        : "standard_..."
+                    }
                     className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
                   />
                 </label>
@@ -1853,7 +1861,11 @@ function GmailCard() {
                 type="password"
                 value={config.gmailAppPassword || ""}
                 onChange={(e) => update({ gmailAppPassword: e.target.value })}
-                placeholder="abcd efgh ijkl mnop"
+                placeholder={
+                  (config as { has_gmailAppPassword?: boolean }).has_gmailAppPassword
+                    ? "•••••••• (salva — deixe em branco para manter)"
+                    : "abcd efgh ijkl mnop"
+                }
                 className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm"
               />
             </label>
