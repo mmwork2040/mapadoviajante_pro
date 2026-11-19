@@ -122,7 +122,7 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
   const resendInvite = useMutation({
     mutationFn: (m: { name: string; email: string; role: string }) =>
       sendTeamInvite({
-        data: { ...m, appUrl: "https://crmosegredodoviajante.lovable.app" },
+        data: { ...m, appUrl: window.location.origin },
       }),
     onSuccess: (res) => {
       if (res.ok) toast.success(res.emailSent ? "Convite reenviado por e-mail!" : res.message);
@@ -713,9 +713,8 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
     e.preventDefault();
     if (!emailReady) return;
     setSaving(true);
-    // Usa sempre o domínio público publicado (o preview/sandbox do editor
-    // não abre fora do Lovable).
-    const appUrl = "https://crmosegredodoviajante.lovable.app";
+    // O link do convite aponta para o mesmo endereço em que o admin está usando o app.
+    const appUrl = window.location.origin;
     const res = await sendTeamInvite({
       data: { ...form, appUrl },
     });

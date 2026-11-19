@@ -5,8 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { getInviteInfo, acceptInvite, type InviteInfo } from "@/lib/invites";
 
-const APP_URL = "https://crmosegredodoviajante.lovable.app";
-
 export const Route = createFileRoute("/aceitar-convite")({
   pendingComponent: InviteLoading,
   head: () => ({ meta: [{ title: "Aceitar convite — O Segredo do Viajante" }] }),
@@ -124,7 +122,7 @@ function AcceptInvitePage() {
         const { data, error: signErr } = await supabase.auth.signUp({
           email: info.email,
           password,
-          options: { data: { name }, emailRedirectTo: `${APP_URL}/aceitar-convite?token=${token}` },
+          options: { data: { name }, emailRedirectTo: `${window.location.origin}/aceitar-convite?token=${token}` },
         });
         if (signErr) {
           if (signErr.message.includes("already registered")) {
