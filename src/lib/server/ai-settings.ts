@@ -7,6 +7,8 @@
 //   AI_DEFAULT_MODEL    modelo padrão (ex.: "gpt-4o-mini" ou "openai/gpt-4o-mini" no Gateway)
 // Sem nenhuma delas, vale a chave que a agência cadastrou na Administração.
 
+import { assertWithinQuota, enterAiScope } from "@/lib/server/ai-usage";
+
 export const AI_GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1";
 
 export function platformAi(): { apiKey: string; model: string; baseUrl: string } | null {
@@ -40,10 +42,27 @@ export function openAiBaseUrlFor(apiKey: string): string {
  * se houver chave da plataforma, usa ela no lugar da chave da agência.
  * Mesmo formato de retorno da consulta antiga ({ data, error }).
  */
+type AiContext = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any;
+  userId: string;
+  membership?: { agencyId: string } | null;
+};
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function loadAiSettings(supabase: any): Promise<{ data: any; error: any }> {
-  const { data: cfg, error } = await supabase.from("crm_ai_config").select("*").maybeSingle();
+export async function loadAiSettings(ctx: AiContext): Promise<{ data: any; error: any }> {
   const platform = platformAi();
+  const agencyId = ctx.membership?.agencyId ?? null;
+  // Marca de quem é o consumo desta requisição. Tem de vir antes de qualquer
+  // await para valer também na função que chamou (ver ai-usage.ts).
+  enterAiScope({ agencyId, userId: ctx.userId, platform: !!platform });
+
+  if (platform) {
+    if (!agencyId) throw new Error("Sem agência ativa.");
+    await assertWithinQuota(agencyId);
+  }
+
+  const { data: cfg, error } = await ctx.supabase.from("crm_ai_config").select("*").maybeSingle();
   if (!platform) return { data: cfg, error };
   const ks = cfg?.knowledge_sources && typeof cfg.knowledge_sources === "object" ? cfg.knowledge_sources : {};
   return {

@@ -135,7 +135,7 @@ export const downloadDestinationImage = createServerFn({ method: "POST" })
     return { destination: d.destination.trim(), exclude };
   })
   .handler(async ({ data, context }): Promise<{ imageUrl: string | null }> => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;

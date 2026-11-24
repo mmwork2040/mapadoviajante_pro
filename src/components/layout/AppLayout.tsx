@@ -16,9 +16,9 @@ import {
   Bot,
   ChevronLeft,
   UserCog,
-
+  Gauge,
 } from "lucide-react";
-import { useAuth, isAdminUser } from "@/lib/auth";
+import { useAuth, isAdminUser, isSuperAdminEmail } from "@/lib/auth";
 import { useFinanceAccess } from "@/lib/finance-access";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads, fetchTasks } from "@/lib/services";
@@ -36,6 +36,7 @@ const NAV = [
   { to: "/biblioteca", label: "Biblioteca", icon: Images },
   { to: "/financeiro", label: "Financeiro", icon: Wallet },
   { to: "/admin", label: "Administração", icon: ShieldCheck },
+  { to: "/plataforma", label: "Plataforma", icon: Gauge },
   { to: "/perfil", label: "Meu Perfil", icon: UserCog },
 ] as const;
 
@@ -71,6 +72,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const { canView: showFinance } = useFinanceAccess();
   const nav = NAV.filter((i) => {
     if (i.to === "/admin") return isAdmin;
+    if (i.to === "/plataforma") return isSuperAdminEmail(session?.user?.email);
     if (i.to === "/financeiro") return showFinance;
     return true;
   });

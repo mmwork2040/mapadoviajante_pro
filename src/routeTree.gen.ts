@@ -22,6 +22,7 @@ import { Route as AppFinanceiroRouteImport } from './routes/_app.financeiro'
 import { Route as AppLeadsRouteImport } from './routes/_app.leads'
 import { Route as AppNotificacoesRouteImport } from './routes/_app.notificacoes'
 import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
+import { Route as AppPlataformaRouteImport } from './routes/_app.plataforma'
 import { Route as AppRoteirosRouteImport } from './routes/_app.roteiros'
 import { Route as AppTarefasRouteImport } from './routes/_app.tarefas'
 import { Route as ImprimirIdRouteImport } from './routes/imprimir.$id'
@@ -99,6 +100,11 @@ const AppPerfilRoute = AppPerfilRouteImport.update({
   path: '/perfil',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPlataformaRoute = AppPlataformaRouteImport.update({
+  id: '/plataforma',
+  path: '/plataforma',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppRoteirosRoute = AppRoteirosRouteImport.update({
   id: '/roteiros',
   path: '/roteiros',
@@ -173,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/perfil': typeof AppPerfilRoute
+  '/plataforma': typeof AppPlataformaRoute
   '/roteiros': typeof AppRoteirosRouteWithChildren
   '/tarefas': typeof AppTarefasRoute
   '/imprimir/$id': typeof ImprimirIdRoute
@@ -197,6 +204,7 @@ export interface FileRoutesByTo {
   '/leads': typeof AppLeadsRoute
   '/notificacoes': typeof AppNotificacoesRoute
   '/perfil': typeof AppPerfilRoute
+  '/plataforma': typeof AppPlataformaRoute
   '/tarefas': typeof AppTarefasRoute
   '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
@@ -224,6 +232,7 @@ export interface FileRoutesById {
   '/_app/leads': typeof AppLeadsRoute
   '/_app/notificacoes': typeof AppNotificacoesRoute
   '/_app/perfil': typeof AppPerfilRoute
+  '/_app/plataforma': typeof AppPlataformaRoute
   '/_app/roteiros': typeof AppRoteirosRouteWithChildren
   '/_app/tarefas': typeof AppTarefasRoute
   '/imprimir/$id': typeof ImprimirIdRoute
@@ -253,6 +262,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notificacoes'
     | '/perfil'
+    | '/plataforma'
     | '/roteiros'
     | '/tarefas'
     | '/imprimir/$id'
@@ -277,6 +287,7 @@ export interface FileRouteTypes {
     | '/leads'
     | '/notificacoes'
     | '/perfil'
+    | '/plataforma'
     | '/tarefas'
     | '/imprimir/$id'
     | '/viajante/$id'
@@ -303,6 +314,7 @@ export interface FileRouteTypes {
     | '/_app/leads'
     | '/_app/notificacoes'
     | '/_app/perfil'
+    | '/_app/plataforma'
     | '/_app/roteiros'
     | '/_app/tarefas'
     | '/imprimir/$id'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof AppPerfilRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/plataforma': {
+      id: '/_app/plataforma'
+      path: '/plataforma'
+      fullPath: '/plataforma'
+      preLoaderRoute: typeof AppPlataformaRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/roteiros': {
@@ -548,6 +567,7 @@ interface AppRouteChildren {
   AppLeadsRoute: typeof AppLeadsRoute
   AppNotificacoesRoute: typeof AppNotificacoesRoute
   AppPerfilRoute: typeof AppPerfilRoute
+  AppPlataformaRoute: typeof AppPlataformaRoute
   AppRoteirosRoute: typeof AppRoteirosRouteWithChildren
   AppTarefasRoute: typeof AppTarefasRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -562,6 +582,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppLeadsRoute: AppLeadsRoute,
   AppNotificacoesRoute: AppNotificacoesRoute,
   AppPerfilRoute: AppPerfilRoute,
+  AppPlataformaRoute: AppPlataformaRoute,
   AppRoteirosRoute: AppRoteirosRouteWithChildren,
   AppTarefasRoute: AppTarefasRoute,
   AppIndexRoute: AppIndexRoute,

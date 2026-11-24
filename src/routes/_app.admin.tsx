@@ -28,6 +28,7 @@ import {
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
 import { getAccessPermissions, saveAccessPermissions } from "@/lib/finance.functions";
+import { getMyAiUsage } from "@/lib/platform.functions";
 import {
   getGmailConfig,
   saveGmailConfig,
@@ -2539,6 +2540,14 @@ function AiConfigCard() {
   const test = useServerFn(testAiConnection);
   const extractDoc = useServerFn(extractKnowledgeDoc);
   const { data: config } = useQuery({ queryKey: ["ai-config"], queryFn: fetchAiConfig });
+  // IA da plataforma (chave na Vercel): dispensa provedor, chave e "testar e conectar".
+  const platform = (config as { platform?: { active: boolean; model: string | null } } | null | undefined)?.platform;
+  const platformActive = !!platform?.active;
+  const usageQ = useQuery({
+    queryKey: ["my-ai-usage"],
+    queryFn: () => getMyAiUsage(),
+    enabled: platformActive,
+  });
 
   const [form, setForm] = useState<AiConfig>({
     provider: "openai",
@@ -2574,12 +2583,16 @@ function AiConfigCard() {
   const documents = ks.documents ?? [];
   const dataSources = ks.data_sources ?? {};
 
-  // Alterações de credencial invalidam a conexão, mas preservam base de conhecimento.
+  // Só mudar provedor, modelo ou chave invalida a conexão; editar as
+  // orientações não pode desconectar a IA.
   function update(patch: Partial<AiConfig>) {
+    const touchesCredential = "provider" in patch || "model" in patch || "api_key_encrypted" in patch;
     setForm((c) => ({
       ...c,
       ...patch,
-      knowledge_sources: { ...(c.knowledge_sources ?? {}), status: "disconnected" },
+      knowledge_sources: touchesCredential
+        ? { ...(c.knowledge_sources ?? {}), status: "disconnected" }
+        : c.knowledge_sources,
     }));
   }
 
@@ -2616,7 +2629,7 @@ function AiConfigCard() {
 
   async function handleFiles(files: FileList | null) {
     if (!files || !files.length) return;
-    if (!form.model.trim() || !(form.api_key_encrypted || "").trim()) {
+    if (!platformActive && (!form.model.trim() || !(form.api_key_encrypted || "").trim())) {
       toast.error("Configure e conecte a IA antes de subir documentos.");
       return;
     }
@@ -2699,6 +2712,40 @@ function AiConfigCard() {
 
   return (
     <div>
+      {platformActive ? (
+        <div className="space-y-3 rounded-xl border border-[var(--success)]/40 bg-[var(--success)]/10 p-4">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold">IA da plataforma ativa</p>
+            <span className="rounded-full bg-[var(--success)]/15 px-3 py-1 text-xs font-medium text-[var(--success)]">
+              Conectada
+            </span>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            A Thay usa a IA fornecida pela plataforma{platform?.model ? ` (modelo ${platform.model})` : ""}. Não é
+            preciso cadastrar chave.
+          </p>
+          {usageQ.data && (
+            <div>
+              <div className="flex justify-between text-xs">
+                <span>Consumo de IA em {usageQ.data.month}</span>
+                <span className="tabular-nums">
+                  {usageQ.data.totalTokens.toLocaleString("pt-BR")}
+                  {usageQ.data.limit > 0 ? ` de ${usageQ.data.limit.toLocaleString("pt-BR")} tokens` : " tokens"}
+                </span>
+              </div>
+              {usageQ.data.limit > 0 && (
+                <div className="mt-1.5 h-2 w-full rounded-full bg-muted">
+                  <div
+                    className="h-2 rounded-full bg-primary"
+                    style={{ width: `${Math.min(100, Math.round((usageQ.data.totalTokens / usageQ.data.limit) * 100))}%` }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      ) : (
+      <>
       <div className="mb-4 flex items-center justify-end">
         <span
           className={`rounded-full px-3 py-1 text-xs font-medium ${
@@ -2771,6 +2818,8 @@ function AiConfigCard() {
         {testing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
         {testing ? "Testando…" : "Testar e conectar"}
       </button>
+      </>
+      )}
 
       {/* ── Base de conhecimento ─────────────────────────────── */}
       <div className="mt-8 space-y-8 border-t border-border pt-6">

@@ -10,12 +10,23 @@ type ExtractActivitiesInput = { fileBase64: string; mime: string; context?: stri
 export const testAiConnection = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: TestInput) => {
-    if (!d?.provider || !d?.model || !d?.apiKey) throw new Error("Dados de conexão incompletos.");
+    if (!d?.provider) throw new Error("Dados de conexão incompletos.");
     return d;
   })
-  .handler(async ({ data }): Promise<{ ok: boolean; message: string }> => {
+  .handler(async ({ data, context }): Promise<{ ok: boolean; message: string }> => {
+    const { requireAdmin } = await import("@/lib/server/authz");
+    const m = await requireAdmin(context);
+    const { resolveProviderForAdmin } = await import("@/lib/ai-config.functions");
+    const provider = await resolveProviderForAdmin(context, data);
+    const { platformAi } = await import("@/lib/server/ai-settings");
+    const usage = await import("@/lib/server/ai-usage");
+    usage.enterAiScope({
+      agencyId: m.agencyId,
+      userId: context.userId,
+      platform: provider.apiKey === platformAi()?.apiKey,
+    });
     const { testConnection } = await import("./ai.server");
-    return testConnection({ provider: data.provider, model: data.model, apiKey: data.apiKey });
+    return testConnection(provider);
   });
 
 export const extractDocumentData = createServerFn({ method: "POST" })
@@ -25,7 +36,7 @@ export const extractDocumentData = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data, context }): Promise<ExtractedDocData> => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -53,7 +64,7 @@ export const extractDocumentActivitiesData = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data, context }): Promise<ExtractedDocData[]> => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -85,7 +96,7 @@ export const extractActivitiesFromTextData = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data, context }): Promise<ExtractedDocData[]> => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -119,17 +130,21 @@ type ExtractKnowledgeInput = {
 export const extractKnowledgeDoc = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: ExtractKnowledgeInput) => {
-    if (!d?.provider || !d?.model || !d?.apiKey) throw new Error("Configure e conecte a IA antes.");
     if (!d?.fileBase64 || !d?.mime) throw new Error("Arquivo inválido.");
     return d;
   })
-  .handler(async ({ data }): Promise<{ text: string }> => {
+  .handler(async ({ data, context }): Promise<{ text: string }> => {
+    const { requireAdmin } = await import("@/lib/server/authz");
+    const m = await requireAdmin(context);
+    const { resolveProviderForAdmin } = await import("@/lib/ai-config.functions");
+    const provider = await resolveProviderForAdmin(context, data);
+    const { platformAi } = await import("@/lib/server/ai-settings");
+    const usage = await import("@/lib/server/ai-usage");
+    const isPlatform = provider.apiKey === platformAi()?.apiKey;
+    usage.enterAiScope({ agencyId: m.agencyId, userId: context.userId, platform: isPlatform });
+    if (isPlatform) await usage.assertWithinQuota(m.agencyId);
     const { extractKnowledgeText } = await import("./ai.server");
-    const text = await extractKnowledgeText(
-      { provider: data.provider, model: data.model, apiKey: data.apiKey },
-      data.fileBase64,
-      data.mime,
-    );
+    const text = await extractKnowledgeText(provider, data.fileBase64, data.mime);
     return { text };
   });
 
@@ -143,7 +158,7 @@ export const parseTravelPeriodFn = createServerFn({ method: "POST" })
     return { text: d.text.trim() };
   })
   .handler(async ({ data, context }) => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -174,7 +189,7 @@ export const convertCurrencyFn = createServerFn({ method: "POST" })
     return { amount, currency: d.currency.trim() };
   })
   .handler(async ({ data, context }) => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -215,7 +230,7 @@ export const searchHotelsFn = createServerFn({ method: "POST" })
     return { city: d.city.trim(), neighborhood, filters: d.filters ?? undefined, limit, sites };
   })
   .handler(async ({ data, context }) => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -277,7 +292,7 @@ export const searchSuggestionsFn = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }) => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -328,7 +343,7 @@ export const analyzeImageActivityFn = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data, context }) => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -427,7 +442,7 @@ export const generateLibraryContent = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data, context }): Promise<{ text: string; tags?: string[] }> => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
@@ -599,7 +614,7 @@ export const itineraryCopilot = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data, context }): Promise<{ text: string }> => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as KnowledgeState | null) ?? null;
@@ -801,7 +816,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
     return { message: d.message || "", context: d.context || "", files: d.files || [], leadId: d.leadId ?? null, itineraryId: d.itineraryId ?? null };
   })
   .handler(async ({ data, context }): Promise<PlannerResult> => {
-    const { data: cfg, error } = await loadAiSettings(context.supabase);
+    const { data: cfg, error } = await loadAiSettings(context);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
     if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;

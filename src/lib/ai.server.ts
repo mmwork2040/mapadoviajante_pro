@@ -34,6 +34,12 @@ Extraia as informações relevantes e responda APENAS com um JSON válido, sem t
   "description": "resumo das informações encontradas"
 }`;
 
+/** Soma o consumo da chamada à agência da requisição (só com a chave da plataforma). */
+async function recordUsage(input?: number, output?: number) {
+  const { recordAiUsage } = await import("@/lib/server/ai-usage");
+  await recordAiUsage(input, output);
+}
+
 /**
  * Modelos de raciocínio (famílias gpt-5 e o1/o3/o4…) não aceitam `max_tokens`:
  * exigem `max_completion_tokens`, e esse limite inclui o "raciocínio" interno,
@@ -87,6 +93,7 @@ async function callOpenAI(cfg: ProviderConfig, content: unknown): Promise<string
     throw new Error(`A IA não respondeu (erro ${res.status}).`);
   }
   const json = await res.json();
+  await recordUsage(json.usage?.prompt_tokens, json.usage?.completion_tokens);
   return json.choices?.[0]?.message?.content ?? "";
 }
 
@@ -107,6 +114,7 @@ async function callAnthropic(cfg: ProviderConfig, content: unknown): Promise<str
   });
   if (!res.ok) throw new Error(`Anthropic ${res.status}: ${await res.text()}`);
   const json = await res.json();
+  await recordUsage(json.usage?.input_tokens, json.usage?.output_tokens);
   return json.content?.map((c: { text?: string }) => c.text ?? "").join("") ?? "";
 }
 
@@ -125,6 +133,7 @@ async function callGoogle(cfg: ProviderConfig, parts: unknown[]): Promise<string
   });
   if (!res.ok) throw new Error(`Google ${res.status}: ${await res.text()}`);
   const json = await res.json();
+  await recordUsage(json.usageMetadata?.promptTokenCount, json.usageMetadata?.candidatesTokenCount);
   return json.candidates?.[0]?.content?.parts?.map((p: { text?: string }) => p.text ?? "").join("") ?? "";
 }
 
