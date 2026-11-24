@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import logoBranco from "@/assets/osv-logo-branco.svg";
+import logoPreto from "@/assets/osv-logo-preto.svg";
 import { useAuth } from "@/lib/auth";
 import { appwriteAuthService } from "@/services/appwriteAuthService";
 
@@ -91,12 +93,13 @@ function AuthPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4">
-      <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
-        <div className="mb-6 flex items-center gap-2">
-          <img src="/mapapro-mark.svg" alt="MapaPRO" className="h-10 w-10 shrink-0 rounded-xl" />
-          <span className="text-xl font-extrabold tracking-tight">
-            Mapa<span className="text-primary">PRO</span>
+    <div className="flex min-h-screen items-center justify-center px-4">
+      <div className="w-full max-w-md rounded-[28px] border border-border bg-card p-8 shadow-xl">
+        <div className="mb-8 flex items-center gap-3">
+          <img src={logoBranco} alt="O Segredo do Viajante" className="hidden h-11 w-auto dark:block" />
+          <img src={logoPreto} alt="O Segredo do Viajante" className="block h-11 w-auto dark:hidden" />
+          <span className="border-l border-border pl-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+            Consultoria
           </span>
         </div>
 
@@ -111,9 +114,9 @@ function AuthPage() {
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {mode === "login"
-            ? "Entre para gerenciar leads e roteiros com seu CRM Copilot."
+            ? "Entre para cuidar das viagens e dos viajantes."
             : mode === "signup"
-              ? "Comece a usar o CRM Copilot para sua agência de turismo."
+              ? "Comece a usar o CRM para a sua agência."
               : mode === "forgot"
                 ? "Informe o e-mail da sua conta. Vale também para quem sempre entrou pelo Google e quer uma senha."
                 : "Escolha uma senha com pelo menos 8 caracteres."}

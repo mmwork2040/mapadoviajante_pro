@@ -269,8 +269,8 @@ function ClientesPage() {
     <div className="space-y-6">
       <PageHeader
         icon={Users}
-        title="Clientes"
-        subtitle="Cadastro completo dos viajantes. Crie uma nova viagem com um clique."
+        title="Viajantes"
+        subtitle="A base de pessoas da agência: cada viajante, sua família e todas as suas viagens."
         actions={
           <>
             <SearchBar

@@ -118,7 +118,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=League+Spartan:wght@400;500;600;700;800&family=Ms+Madi&display=swap",
+        // League Spartan e Inter são a identidade do app; DM Sans e Ms Madi ficam só no roteiro impresso.
+        href: "https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;800&family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=Ms+Madi&display=swap",
       },
       {
         rel: "stylesheet",
@@ -134,8 +135,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <head>
+        {/* Aplica o tema antes de pintar a tela (escuro é o padrão da marca OSV). */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('mv-theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark')}catch(e){document.documentElement.classList.add('dark')}",
+          }}
+        />
         <HeadContent />
       </head>
       <body>
