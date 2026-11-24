@@ -34,30 +34,56 @@ Extraia as informações relevantes e responda APENAS com um JSON válido, sem t
   "description": "resumo das informações encontradas"
 }`;
 
+/**
+ * Modelos de raciocínio (famílias gpt-5 e o1/o3/o4…) não aceitam `max_tokens`:
+ * exigem `max_completion_tokens`, e esse limite inclui o "raciocínio" interno,
+ * então precisam de uma margem maior para sobrar texto de resposta.
+ */
+function isReasoningModel(model: string): boolean {
+  return /(^|\/)(gpt-5|o[1-9])/i.test(model.trim());
+}
+
 async function callOpenAI(cfg: ProviderConfig, content: unknown): Promise<string> {
   // Chave da plataforma no Vercel AI Gateway usa o endereço do Gateway (compatível com OpenAI).
   const { openAiBaseUrlFor } = await import("@/lib/server/ai-settings");
-  const res = await fetch(`${openAiBaseUrlFor(cfg.apiKey)}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${cfg.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: cfg.model,
-      max_tokens: cfg.maxTokens || 1024,
-      messages: [
-        ...(cfg.systemPrompt ? [{ role: "system", content: cfg.systemPrompt }] : []),
-        { role: "user", content },
-      ],
-    }),
-  });
+  const url = `${openAiBaseUrlFor(cfg.apiKey)}/chat/completions`;
+  const limit = cfg.maxTokens || 1024;
+  const messages = [
+    ...(cfg.systemPrompt ? [{ role: "system", content: cfg.systemPrompt }] : []),
+    { role: "user", content },
+  ];
+
+  const request = (useCompletionTokens: boolean) =>
+    fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${cfg.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: cfg.model,
+        ...(useCompletionTokens
+          ? { max_completion_tokens: Math.max(limit, 8000) }
+          : { max_tokens: limit }),
+        messages,
+      }),
+    });
+
+  let res = await request(isReasoningModel(cfg.model));
+  let detail = res.ok ? "" : await res.text();
+  // Modelo novo que não está no padrão acima: tenta de novo com o parâmetro novo.
+  if (res.status === 400 && /max_tokens/i.test(detail)) {
+    res = await request(true);
+    detail = res.ok ? "" : await res.text();
+  }
+
   if (!res.ok) {
-    const detail = await res.text();
     console.error("[IA] OpenAI respondeu", res.status, detail.slice(0, 500));
     if (res.status === 401) throw new Error("Chave da IA inválida. Confira a chave configurada.");
     if (res.status === 429) throw new Error("Limite da IA atingido. Tente de novo em alguns minutos.");
-    if (res.status === 404) throw new Error("Modelo de IA não encontrado. Confira o modelo configurado.");
+    if (res.status === 404 || /model_not_found|does not exist|invalid model/i.test(detail)) {
+      throw new Error(`Modelo de IA "${cfg.model}" não disponível. Confira o nome exato do modelo.`);
+    }
     throw new Error(`A IA não respondeu (erro ${res.status}).`);
   }
   const json = await res.json();
