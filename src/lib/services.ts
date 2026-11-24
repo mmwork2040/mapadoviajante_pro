@@ -2490,10 +2490,17 @@ export async function fetchClientById(id: string): Promise<Client | null> {
   return (data as Client) ?? null;
 }
 
+/** Campos de texto vazios viram null: o Appwrite recusa "" em e-mail, data e similares. */
+function emptyStringsToNull<T extends Record<string, unknown>>(obj: T): T {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) out[k] = typeof v === "string" && v.trim() === "" ? null : v;
+  return out as T;
+}
+
 export async function createClient(payload: Partial<Client>): Promise<Client | null> {
   if (!_agencyId) await loadAgencyContext();
   const insert = {
-    ...payload,
+    ...emptyStringsToNull(payload as Record<string, unknown>),
     agency_id: _agencyId,
     created_by: _memberId,
     name: payload.name ?? "",
@@ -2511,7 +2518,12 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
   const patch = { ...updates };
   delete (patch as Partial<Client>).id;
   delete (patch as Partial<Client>).agency_id;
-  const { data, error } = await supabase.from("crm_clients").update(patch).eq("id", id).select().single();
+  const { data, error } = await supabase
+    .from("crm_clients")
+    .update(emptyStringsToNull(patch as Record<string, unknown>))
+    .eq("id", id)
+    .select()
+    .single();
   if (error) {
     console.error("updateClient:", error);
     return null;

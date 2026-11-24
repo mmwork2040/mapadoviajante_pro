@@ -35,7 +35,9 @@ Extraia as informações relevantes e responda APENAS com um JSON válido, sem t
 }`;
 
 async function callOpenAI(cfg: ProviderConfig, content: unknown): Promise<string> {
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+  // Chave da plataforma no Vercel AI Gateway usa o endereço do Gateway (compatível com OpenAI).
+  const { openAiBaseUrlFor } = await import("@/lib/server/ai-settings");
+  const res = await fetch(`${openAiBaseUrlFor(cfg.apiKey)}/chat/completions`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -50,7 +52,14 @@ async function callOpenAI(cfg: ProviderConfig, content: unknown): Promise<string
       ],
     }),
   });
-  if (!res.ok) throw new Error(`OpenAI ${res.status}: ${await res.text()}`);
+  if (!res.ok) {
+    const detail = await res.text();
+    console.error("[IA] OpenAI respondeu", res.status, detail.slice(0, 500));
+    if (res.status === 401) throw new Error("Chave da IA inválida. Confira a chave configurada.");
+    if (res.status === 429) throw new Error("Limite da IA atingido. Tente de novo em alguns minutos.");
+    if (res.status === 404) throw new Error("Modelo de IA não encontrado. Confira o modelo configurado.");
+    throw new Error(`A IA não respondeu (erro ${res.status}).`);
+  }
   const json = await res.json();
   return json.choices?.[0]?.message?.content ?? "";
 }

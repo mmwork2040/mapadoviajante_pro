@@ -25,6 +25,7 @@ import { fetchLeads, fetchTasks } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
 import { NotificationBell } from "@/components/NotificationBell";
+import { ThayPanel } from "@/components/ThayPanel";
 
 const NAV = [
   { to: "/", label: "Painel", icon: LayoutDashboard },
@@ -66,6 +67,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const isAdmin = isAdminUser(member, session?.user?.email);
   const showAdmin = isAdmin;
   // Financeiro aparece para quem o admin liberou (Administração → Permissões de acesso).
+  const [thayOpen, setThayOpen] = useState(false);
   const { canView: showFinance } = useFinanceAccess();
   const nav = NAV.filter((i) => {
     if (i.to === "/admin") return isAdmin;
@@ -151,14 +153,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
         </nav>
 
         <div className="space-y-3 px-3 pb-4">
-          <div
-            className={`flex items-center gap-2 rounded-xl bg-accent px-3 py-2.5 text-sm font-semibold text-accent-foreground ${
+          <button
+            type="button"
+            onClick={() => setThayOpen(true)}
+            title="Conversar com a Thay"
+            className={`flex w-full items-center gap-2 rounded-xl bg-accent px-3 py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-90 ${
               collapsed ? "justify-center" : ""
             }`}
           >
             <Bot className="h-4 w-4 shrink-0" />
             {!collapsed && <span className="animate-fade-in whitespace-nowrap">Thay IA</span>}
-          </div>
+          </button>
           {collapsed ? (
             <div
               className="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
@@ -253,6 +258,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <p className="truncate text-sm font-semibold">{member?.name || "Usuário"}</p>
                       <p className="truncate text-xs text-muted-foreground">{session?.user?.email}</p>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMobileMenu(false);
+                        setThayOpen(true);
+                      }}
+                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted"
+                    >
+                      <Bot className="h-4 w-4" />
+                      Thay IA
+                    </button>
                     <Link
                       to="/perfil"
                       onClick={() => setMobileMenu(false)}
@@ -311,6 +327,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
           {children}
         </main>
       </div>
+
+      <ThayPanel open={thayOpen} onClose={() => setThayOpen(false)} />
 
       {/* Barra de navegação inferior (mobile) */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">

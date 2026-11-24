@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { loadAiSettings } from "@/lib/server/ai-settings";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
@@ -404,12 +405,9 @@ export const generateChecklistStructureFn = createServerFn({ method: "POST" })
     z.object({ context: z.string().min(1).max(2000) }).parse(d),
   )
   .handler(async ({ data, context }): Promise<{ text: string }> => {
-    const { data: cfg, error } = await context.supabase
-      .from("crm_ai_config")
-      .select("*")
-      .maybeSingle();
+    const { data: cfg, error } = await loadAiSettings(context.supabase);
     if (error) throw new Error("Não foi possível carregar a configuração de IA.");
-    if (!cfg || !cfg.api_key_encrypted) throw new Error("IA não configurada.");
+    if (!cfg || !cfg.api_key_encrypted) throw new Error("A IA ainda não está configurada. Falta a chave de IA da plataforma (OPENAI_API_KEY ou AI_GATEWAY_API_KEY na Vercel).");
     const ks = (cfg.knowledge_sources as { status?: string } | null) ?? null;
     if (ks?.status !== "connected") {
       throw new Error("A IA precisa ser testada e conectada nas configurações.");

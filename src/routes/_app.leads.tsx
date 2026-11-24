@@ -1063,10 +1063,7 @@ export function NewLeadModal({
       toast.error("Informe um e-mail válido.");
       return false;
     }
-    if (!editing && !email && !form.phone.trim()) {
-      toast.error("Informe o e-mail ou o WhatsApp.");
-      return false;
-    }
+    // E-mail e WhatsApp podem ser preenchidos depois.
     return true;
   }
 
@@ -1091,36 +1088,18 @@ export function NewLeadModal({
       setStep(0);
       return;
     }
-    const departure = form.departure.trim();
-    if (departure) {
-      if (departure.length > 120) {
-        toast.error("Ponto de partida muito longo (máx. 120 caracteres).");
-        setStep(1);
-        return;
-      }
-      // Aceita sigla-nome (ex.: "GRU - São Paulo/Guarulhos") ou texto livre.
-      const validDeparture = /^[\p{L}\p{N}\s./,'()°ºª-]+$/u.test(departure);
-      if (!validDeparture) {
-        toast.error("Ponto de partida contém caracteres inválidos.");
-        setStep(1);
-        return;
-      }
-    }
-    if (!editing && !form.trip_type.trim()) {
-      toast.error("Selecione o Tipo de Viagem.");
-      setStep(1);
-      return;
-    }
+    // Ponto de partida e tipo de viagem são opcionais: podem ser preenchidos depois.
+    const departure = form.departure.trim().slice(0, 120);
     const emailNorm = form.email.trim().toLowerCase();
     const originalEmail = (lead?.email || "").trim().toLowerCase();
     if (emailNorm && (!editing || emailNorm !== originalEmail)) {
       const dup = allLeads.some(
         (l) => l.id !== lead?.id && (l.email || "").trim().toLowerCase() === emailNorm,
       );
-      if (dup) {
-        toast.error("Já existe um lead cadastrado com este e-mail.");
-        setStep(0);
-        return;
+      // Cliente escolhido na busca já existe: não é duplicidade. Nos demais
+      // casos, só avisa — não impede o cadastro.
+      if (dup && !selectedLeadId && !clientId) {
+        toast.warning("Já existe um viajante com este e-mail. O cadastro foi feito mesmo assim.");
       }
     }
     setSaving(true);
@@ -1430,7 +1409,6 @@ export function NewLeadModal({
               )}
               <ModalField
                 label="Tipo de Viagem"
-                required
                 placeholder="Selecione ou digite um novo tipo"
                 value={form.trip_type}
                 onChange={(v) => set({ trip_type: v })}
