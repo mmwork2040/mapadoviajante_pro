@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
+import { appwriteAuthService } from "@/services/appwriteAuthService";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -16,7 +17,9 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { session, signIn, signUp, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  // forgot = pedir link por e-mail; reset = criar nova senha pelo link recebido
+  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "reset">("login");
+  const [recovery, setRecovery] = useState<{ userId: string; secret: string } | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -25,15 +28,55 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (session) navigate({ to: "/", replace: true });
-  }, [session, navigate]);
+    if (session && mode !== "reset") navigate({ to: "/", replace: true });
+  }, [session, mode, navigate]);
+
+  // O link de recuperação do Appwrite volta para /auth?mode=reset&userId=...&secret=...
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get("userId");
+    const secret = params.get("secret");
+    if (params.get("mode") === "reset" && userId && secret) {
+      setRecovery({ userId, secret });
+      setMode("reset");
+    }
+    if (params.get("error") === "oauth_failed") {
+      setError("Não foi possível entrar com o Google. Tente novamente.");
+    }
+  }, []);
+
+  function switchMode(next: "login" | "signup" | "forgot") {
+    setMode(next);
+    setError("");
+    setInfo("");
+    setPassword("");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     setInfo("");
     setLoading(true);
-    if (mode === "login") {
+    if (mode === "forgot") {
+      try {
+        await appwriteAuthService.requestPasswordRecovery(email);
+        setInfo("Se este e-mail tiver conta, enviamos um link para criar uma nova senha. Confira também o spam.");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Não foi possível enviar o e-mail.");
+      }
+    } else if (mode === "reset") {
+      try {
+        if (!recovery) throw new Error("Link inválido. Peça um novo link de recuperação.");
+        await appwriteAuthService.confirmPasswordRecovery(recovery.userId, recovery.secret, password);
+        window.history.replaceState(null, "", "/auth");
+        setRecovery(null);
+        setMode("login");
+        setPassword("");
+        setInfo("Senha criada! Agora entre com seu e-mail e a nova senha.");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Não foi possível criar a nova senha.");
+      }
+    } else if (mode === "login") {
       const { error } = await signIn(email, password);
       if (error) setError(error);
       else navigate({ to: "/", replace: true });
@@ -57,12 +100,26 @@ function AuthPage() {
           </span>
         </div>
 
-        <h1 className="text-2xl font-bold">{mode === "login" ? "Bem-vindo de volta" : "Criar conta"}</h1>
+        <h1 className="text-2xl font-bold">
+          {mode === "login"
+            ? "Bem-vindo de volta"
+            : mode === "signup"
+              ? "Criar conta"
+              : mode === "forgot"
+                ? "Recuperar senha"
+                : "Criar nova senha"}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {mode === "login"
             ? "Entre para gerenciar leads e roteiros com seu CRM Copilot."
-            : "Comece a usar o CRM Copilot para sua agência de turismo."}
+            : mode === "signup"
+              ? "Comece a usar o CRM Copilot para sua agência de turismo."
+              : mode === "forgot"
+                ? "Informe o e-mail da sua conta. Vale também para quem sempre entrou pelo Google e quer uma senha."
+                : "Escolha uma senha com pelo menos 8 caracteres."}
         </p>
+
+        {(mode === "login" || mode === "signup") && (<>
 
         {/* Botão Google OAuth Appwrite */}
         <div className="mt-6">
@@ -101,8 +158,9 @@ function AuthPage() {
             <span className="bg-card px-3 text-muted-foreground font-medium">ou com e-mail e senha</span>
           </div>
         </div>
+        </>)}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className={`space-y-4 ${mode === "forgot" || mode === "reset" ? "mt-6" : ""}`}>
           {mode === "signup" && (
             <Field label="Nome completo">
               <input
@@ -114,6 +172,7 @@ function AuthPage() {
               />
             </Field>
           )}
+          {mode !== "reset" && (
           <Field label="E-mail">
             <input
               type="email"
@@ -124,17 +183,32 @@ function AuthPage() {
               placeholder="voce@agencia.com"
             />
           </Field>
-          <Field label="Senha">
+          )}
+          {mode !== "forgot" && (
+          <Field label={mode === "reset" ? "Nova senha" : "Senha"}>
             <input
               type="password"
               className="input"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
+              minLength={mode === "login" ? 1 : 8}
+              autoComplete={mode === "login" ? "current-password" : "new-password"}
               placeholder="••••••••"
             />
           </Field>
+          )}
+          {mode === "login" && (
+            <div className="-mt-2 text-right">
+              <button
+                type="button"
+                onClick={() => switchMode("forgot")}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Esqueci minha senha / criar senha
+              </button>
+            </div>
+          )}
 
           {error && <p className="text-sm font-medium text-destructive">{error}</p>}
           {info && <p className="text-sm font-medium text-[var(--success)]">{info}</p>}
@@ -144,21 +218,25 @@ function AuthPage() {
             disabled={loading}
             className="w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground shadow transition hover:opacity-90 disabled:opacity-60 active:scale-[0.99]"
           >
-            {loading ? "Aguarde…" : mode === "login" ? "Entrar" : "Criar conta"}
+            {loading
+              ? "Aguarde…"
+              : mode === "login"
+                ? "Entrar"
+                : mode === "signup"
+                  ? "Criar conta"
+                  : mode === "forgot"
+                    ? "Enviar link"
+                    : "Salvar nova senha"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          {mode === "login" ? "Não tem conta?" : "Já tem conta?"}{" "}
+          {mode === "login" ? "Não tem conta?" : mode === "signup" ? "Já tem conta?" : ""}{" "}
           <button
-            onClick={() => {
-              setMode(mode === "login" ? "signup" : "login");
-              setError("");
-              setInfo("");
-            }}
+            onClick={() => switchMode(mode === "login" ? "signup" : "login")}
             className="font-semibold text-primary hover:underline"
           >
-            {mode === "login" ? "Cadastre-se" : "Entrar"}
+            {mode === "login" ? "Cadastre-se" : "Voltar para o login"}
           </button>
         </p>
         <p className="mt-4 text-center text-xs text-muted-foreground">
