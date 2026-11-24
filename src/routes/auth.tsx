@@ -15,7 +15,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { session, signIn, signUp, signInWithGoogle } = useAuth();
+  const { session, signIn, signUp, signInWithGoogle, refreshMember } = useAuth();
   const navigate = useNavigate();
   // forgot = pedir link por e-mail; reset = criar nova senha pelo link recebido
   const [mode, setMode] = useState<"login" | "signup" | "forgot" | "reset">("login");
@@ -27,9 +27,11 @@ function AuthPage() {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [verifying, setVerifying] = useState(false);
+
   useEffect(() => {
-    if (session && mode !== "reset") navigate({ to: "/", replace: true });
-  }, [session, mode, navigate]);
+    if (session && mode !== "reset" && !verifying) navigate({ to: "/", replace: true });
+  }, [session, mode, verifying, navigate]);
 
   // O link de recuperação do Appwrite volta para /auth?mode=reset&userId=...&secret=...
   useEffect(() => {
@@ -39,6 +41,24 @@ function AuthPage() {
     if (params.get("mode") === "reset" && userId && secret) {
       setRecovery({ userId, secret });
       setMode("reset");
+    }
+    // Link de confirmação de e-mail: /auth?mode=verify&userId=...&secret=...
+    if (params.get("mode") === "verify" && userId && secret) {
+      setVerifying(true);
+      void (async () => {
+        try {
+          const { account } = await import("@/integrations/appwrite/client");
+          await account.updateVerification(userId, secret);
+          window.history.replaceState(null, "", "/auth");
+          await refreshMember();
+          setInfo("E-mail confirmado!");
+          navigate({ to: "/", replace: true });
+        } catch {
+          setError("O link de confirmação é inválido ou expirou. Entre e peça um novo link.");
+        } finally {
+          setVerifying(false);
+        }
+      })();
     }
     if (params.get("error") === "oauth_failed") {
       setError("Não foi possível entrar com o Google. Tente novamente.");

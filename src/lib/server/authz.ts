@@ -8,6 +8,8 @@ export type Membership = {
   memberId: string;
   role: string;
   isSuperAdmin: boolean;
+  /** Liberação da agência suspensa (Hotmart ou super admin). */
+  suspended: boolean;
 };
 
 export type AuthedContext = {
@@ -67,11 +69,13 @@ export async function findMembership(user: { userId: string; userEmail?: string 
   }
 
   if (!row?.agency_id) return null;
+  const { isAgencySuspended } = await import('@/lib/server/access');
   return {
     agencyId: row.agency_id,
     memberId: row.id,
     role: row.role || '',
     isSuperAdmin: isSuperAdmin(user),
+    suspended: await isAgencySuspended(row.agency_id),
   };
 }
 
@@ -79,6 +83,7 @@ export async function findMembership(user: { userId: string; userEmail?: string 
 export async function getMembership(ctx: AuthedContext): Promise<Membership> {
   const m = ctx.membership !== undefined ? ctx.membership : await findMembership(ctx);
   if (!m) throw new Error('Sem agência ativa.');
+  if (m.suspended && !m.isSuperAdmin) throw new Error('O acesso da agência está suspenso.');
   return m;
 }
 

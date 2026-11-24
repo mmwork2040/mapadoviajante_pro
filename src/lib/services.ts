@@ -163,88 +163,9 @@ export async function loadAgencyContext(): Promise<AgencyMember | null> {
   return members[0] as AgencyMember;
 }
 
-// ── Auto provisionamento de agência (novo usuário) ─────────────
-export async function autoProvisionAgency(
-  userId: string,
-  userName: string,
-  userEmail: string,
-): Promise<AgencyMember | null> {
-  const agencyName = `Agência de ${userName || "Novo Usuário"}`;
-  const slug =
-    (userName || "novo-usuario")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") +
-    "-" +
-    Date.now().toString(36);
-
-  // Provisionamento atômico via RPC SECURITY DEFINER (cria agência + membro admin
-  // numa única transação, evitando agências órfãs e escalonamento de privilégio).
-  try {
-    const { data: member, error } = await supabase
-      .rpc("provision_agency", {
-        _name: agencyName,
-        _slug: slug,
-        _email: userEmail,
-        _user_name: userName || "Novo Usuário",
-        _avatar_color: "#ff7a1a",
-      })
-      .single();
-
-    if (!error && member) {
-      setAgencyContext(member as AgencyMember);
-      return member as AgencyMember;
-    }
-  } catch (rpcErr) {
-    console.warn("autoProvisionAgency RPC fallback:", rpcErr);
-  }
-
-  // Fallback direto via Appwrite / Supabase queries
-  try {
-    const { data: newAgencies, error: agencyErr } = await supabase
-      .from("agencies")
-      .insert({
-        name: agencyName,
-        slug,
-        email: userEmail,
-      })
-      .select();
-
-    const createdAgency = Array.isArray(newAgencies) ? newAgencies[0] : newAgencies;
-    if (agencyErr || !createdAgency) {
-      console.error("autoProvisionAgency fallback agency error:", agencyErr);
-      return null;
-    }
-
-    const { data: newMembers, error: memberErr } = await supabase
-      .from("agency_members")
-      .insert({
-        agency_id: createdAgency.id,
-        user_id: userId,
-        name: userName || "Novo Usuário",
-        email: userEmail,
-        role: "admin",
-        status: "active",
-        is_active: true,
-        avatar_color: "#ff7a1a",
-      })
-      .select();
-
-    const createdMember = Array.isArray(newMembers) ? newMembers[0] : newMembers;
-    if (memberErr || !createdMember) {
-      console.error("autoProvisionAgency fallback member error:", memberErr);
-      return null;
-    }
-
-    setAgencyContext(createdMember as AgencyMember);
-    return createdMember as AgencyMember;
-  } catch (fallbackErr) {
-    console.error("autoProvisionAgency fallback error:", fallbackErr);
-    return null;
-  }
-}
+// A criação da agência de um usuário novo acontece no servidor, e só com
+// liberação de acesso (Hotmart ou super admin): ver provisionMyAgency em
+// src/lib/access.functions.ts.
 
 // ── Team members ───────────────────────────────────────────────
 export async function fetchTeamMembers(): Promise<AgencyMember[]> {

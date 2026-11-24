@@ -41,6 +41,8 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
         supabase: createAgencyScopedBridge(membership?.agencyId ?? null) as any,
         userId: user.id,
         userEmail: user.email,
+        userEmailVerified: user.emailVerified,
+        userName: user.name,
         membership,
         claims: { sub: user.id, email: user.email },
       },

@@ -658,63 +658,9 @@ export function createAppwriteBridge(svc: BridgeServices) {
     const execute = async () => {
       try {
         if (fnName === 'provision_agency') {
-          const currentUser = await appwriteAuthService.getCurrentUser();
-          const userId = currentUser?.id || ID.unique();
-          const userEmail = args._email || currentUser?.email || '';
-          const userName = args._user_name || currentUser?.name || 'Administrador';
-
-          const agencyId = ID.unique();
-          const now = new Date().toISOString();
-
-          await databases.createDocument(
-            APPWRITE_DATABASE_ID,
-            'agencies',
-            agencyId,
-            {
-              name: args._name || `Agência de ${userName}`,
-              slug: args._slug || `agencia-${Date.now().toString(36)}`,
-              email: userEmail,
-              created_at: now,
-              updated_at: now,
-            }
-          );
-
-          const memberId = ID.unique();
-          const member = await databases.createDocument(
-            APPWRITE_DATABASE_ID,
-            'agency_members',
-            memberId,
-            {
-              agency_id: agencyId,
-              user_id: userId,
-              name: userName,
-              email: userEmail,
-              role: 'admin',
-              status: 'active',
-              is_active: true,
-              avatar_color: args._avatar_color || '#ff7a1a',
-              pref_leads_mine: false,
-              pref_tasks_mine: false,
-              pref_agenda_mine: false,
-              created_at: now,
-              updated_at: now,
-            }
-          );
-
-          const memberObj = {
-            id: member.$id,
-            agency_id: agencyId,
-            user_id: userId,
-            name: member.name,
-            email: member.email,
-            phone: member.phone || '',
-            role: member.role,
-            avatar_color: member.avatar_color,
-            is_active: member.is_active,
-            pref_leads_mine: member.pref_leads_mine,
-          };
-
-          return { data: memberObj, error: null };
+          // A agência só é criada pelo servidor, com liberação de acesso
+          // (src/lib/access.functions.ts → provisionMyAgency).
+          return { data: null, error: { message: 'Criação de agência só pelo servidor.' } };
         }
 
         if (fnName === 'get_user_agency_id') {

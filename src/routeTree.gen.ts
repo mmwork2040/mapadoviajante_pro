@@ -32,6 +32,7 @@ import { Route as AppClientesIdRouteImport } from './routes/_app.clientes.$id'
 import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
 import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
+import { Route as ApiPublicHotmartWebhookRouteImport } from './routes/api/public/hotmart-webhook'
 import { Route as ApiPublicItineraryRouteImport } from './routes/api/public/itinerary'
 import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
@@ -150,6 +151,11 @@ const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   path: '/api/public/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHotmartWebhookRoute = ApiPublicHotmartWebhookRouteImport.update({
+  id: '/api/public/hotmart-webhook',
+  path: '/api/public/hotmart-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicItineraryRoute = ApiPublicItineraryRouteImport.update({
   id: '/api/public/itinerary',
   path: '/api/public/itinerary',
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/clientes/$id': typeof AppClientesIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/hotmart-webhook': typeof ApiPublicHotmartWebhookRoute
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/clientes/$id': typeof AppClientesIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/hotmart-webhook': typeof ApiPublicHotmartWebhookRoute
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_app/clientes/$id': typeof AppClientesIdRoute
   '/_app/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/hotmart-webhook': typeof ApiPublicHotmartWebhookRoute
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/clientes/$id'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/hotmart-webhook'
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/clientes/$id'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/hotmart-webhook'
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
@@ -323,6 +334,7 @@ export interface FileRouteTypes {
     | '/_app/clientes/$id'
     | '/_app/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/hotmart-webhook'
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
@@ -338,6 +350,7 @@ export interface RootRouteChildren {
   ImprimirIdRoute: typeof ImprimirIdRoute
   ViajanteIdRoute: typeof ViajanteIdRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
+  ApiPublicHotmartWebhookRoute: typeof ApiPublicHotmartWebhookRoute
   ApiPublicItineraryRoute: typeof ApiPublicItineraryRoute
   ApiPublicN8nLeadRoute: typeof ApiPublicN8nLeadRoute
   ApiPublicPushDeliveryRoute: typeof ApiPublicPushDeliveryRoute
@@ -506,6 +519,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hotmart-webhook': {
+      id: '/api/public/hotmart-webhook'
+      path: '/api/public/hotmart-webhook'
+      fullPath: '/api/public/hotmart-webhook'
+      preLoaderRoute: typeof ApiPublicHotmartWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/itinerary': {
       id: '/api/public/itinerary'
       path: '/api/public/itinerary'
@@ -598,6 +618,7 @@ const rootRouteChildren: RootRouteChildren = {
   ImprimirIdRoute: ImprimirIdRoute,
   ViajanteIdRoute: ViajanteIdRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
+  ApiPublicHotmartWebhookRoute: ApiPublicHotmartWebhookRoute,
   ApiPublicItineraryRoute: ApiPublicItineraryRoute,
   ApiPublicN8nLeadRoute: ApiPublicN8nLeadRoute,
   ApiPublicPushDeliveryRoute: ApiPublicPushDeliveryRoute,

@@ -9,19 +9,24 @@ import {
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { appwriteAuthService } from "@/services/appwriteAuthService";
-import {
-  autoProvisionAgency,
-  loadAgencyContext,
-  setAgencyContext,
-} from "@/lib/services";
+import { loadAgencyContext, setAgencyContext } from "@/lib/services";
 import { acceptInvite, getMyPendingInvite, type PendingInvite } from "@/lib/invites";
 import { captureDeviceTokenOnLogin } from "@/lib/notifications";
 import type { AgencyMember } from "@/lib/types";
+
+/**
+ * Situação de acesso quando não há agência liberada:
+ * pending = sem liberação (compra na Hotmart ou liberação manual);
+ * verify_email = tem liberação, mas precisa confirmar o e-mail;
+ * blocked = membro bloqueado pela agência; suspended = agência suspensa.
+ */
+export type AccessStatus = "ok" | "pending" | "verify_email" | "blocked" | "suspended" | "invite" | "error";
 
 interface AuthContextValue {
   session: Session | null;
   member: AgencyMember | null;
   pendingInvite: PendingInvite | null;
+  accessStatus: AccessStatus | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (name: string, email: string, password: string) => Promise<{ error?: string; needsConfirmation?: boolean }>;
@@ -52,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [member, setMember] = useState<AgencyMember | null>(null);
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
+  const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   const hydrateMember = useCallback(async (sess: Session | null) => {
@@ -59,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAgencyContext(null);
       setMember(null);
       setPendingInvite(null);
+      setAccessStatus(null);
       return;
     }
     let m = await loadAgencyContext();
@@ -83,11 +90,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    // 3) Usuário novo, sem convite → provisiona a própria agência.
+    const access = await import("@/lib/access.functions");
+
+    // 3) Usuário sem agência: o servidor só cria a agência se o e-mail tiver
+    //    liberação (Hotmart ou super admin).
     if (!m && sess?.user) {
-      const meta = sess.user.user_metadata as { name?: string } | undefined;
-      m = await autoProvisionAgency(sess.user.id, meta?.name || sess.user.email || "Novo Usuário", sess.user.email || "");
+      try {
+        const res = await access.provisionMyAgency();
+        if (res.status === "ok") {
+          m = await loadAgencyContext();
+        } else if (res.status === "invite") {
+          const invite = await getMyPendingInvite();
+          setPendingInvite(invite);
+          setMember(null);
+          setAccessStatus(invite ? null : "invite");
+          return;
+        } else {
+          setPendingInvite(null);
+          setMember(null);
+          setAccessStatus(res.status);
+          return;
+        }
+      } catch (err) {
+        console.error("provisionMyAgency:", err);
+        setMember(null);
+        setAccessStatus("error");
+        return;
+      }
     }
+
+    // 4) Agência suspensa (reembolso, cancelamento ou decisão do super admin).
+    if (m) {
+      const st = await access.getMyAccessStatus().catch(() => ({ status: "ok" as const }));
+      if (st.status === "suspended") {
+        setPendingInvite(null);
+        setMember(null);
+        setAccessStatus("suspended");
+        return;
+      }
+    }
+    setAccessStatus(m ? "ok" : "error");
     setPendingInvite(null);
     setMember(m);
   }, []);
@@ -176,6 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         member,
         pendingInvite,
+        accessStatus,
         loading,
         signIn,
         signUp,
