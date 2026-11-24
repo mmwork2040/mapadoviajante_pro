@@ -19,6 +19,7 @@ import {
 
 } from "lucide-react";
 import { useAuth, isAdminUser } from "@/lib/auth";
+import { useFinanceAccess } from "@/lib/finance-access";
 import { useTheme, initials } from "@/lib/ui";
 import { fetchLeads, fetchTasks } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
@@ -38,7 +39,6 @@ const NAV = [
 ] as const;
 
 // Itens que exigem cargo de administrador
-const ADMIN_ONLY = ["/financeiro", "/admin"] as const;
 
 // Itens principais exibidos na barra de navegação inferior (mobile)
 const MOBILE_NAV = [
@@ -65,7 +65,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
   }).length;
   const isAdmin = isAdminUser(member, session?.user?.email);
   const showAdmin = isAdmin;
-  const nav = isAdmin ? NAV : NAV.filter((i) => !ADMIN_ONLY.includes(i.to as (typeof ADMIN_ONLY)[number]));
+  // Financeiro aparece para quem o admin liberou (Administração → Permissões de acesso).
+  const { canView: showFinance } = useFinanceAccess();
+  const nav = NAV.filter((i) => {
+    if (i.to === "/admin") return isAdmin;
+    if (i.to === "/financeiro") return showFinance;
+    return true;
+  });
   const mobileNav = MOBILE_NAV;
 
   useEffect(() => {
@@ -255,7 +261,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <UserCog className="h-4 w-4" />
                       Meu Perfil
                     </Link>
-                    {showAdmin && (
+                    {showFinance && (
                       <Link
                         to="/financeiro"
                         onClick={() => setMobileMenu(false)}

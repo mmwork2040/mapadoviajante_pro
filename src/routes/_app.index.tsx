@@ -31,7 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { QueryError } from "@/components/QueryError";
-import { useAuth, isAdminUser } from "@/lib/auth";
+import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_app/")({
   component: DashboardPage,
@@ -88,7 +88,6 @@ function timeAgo(value?: string | null): string {
 function DashboardPage() {
   const queryClient = useQueryClient();
   const { member, session } = useAuth();
-  const isMaster = isAdminUser(member, session?.user?.email);
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["dashboard"],
     queryFn: fetchDashboardStats,
@@ -185,13 +184,13 @@ function DashboardPage() {
   const activeLeads = data.totalLeads - data.closed - data.lost;
 
   const cards = [
-    {
+    ...(data.canViewFinance ? [{
       label: "Vendas do Mês",
       value: formatCurrency(monthRevenue),
       hint: "no mês atual",
       icon: CircleDollarSign,
       ring: "bg-amber-100 text-amber-600",
-    },
+    }] : []),
     {
       label: "Leads Ativos",
       value: String(activeLeads),
@@ -421,7 +420,7 @@ function DashboardPage() {
 
 
       {/* Chart */}
-      {isMaster && (
+      {data.canViewFinance && (
       <div>
         <div className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
           <div className="mb-6 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
