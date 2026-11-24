@@ -27,6 +27,7 @@ import {
   type NotifConfig,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
+import { getAccessPermissions, saveAccessPermissions } from "@/lib/finance.functions";
 import {
   getGmailConfig,
   saveGmailConfig,
@@ -401,6 +402,17 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
               <ListChecks className="h-4 w-4" /> Abrir gerenciador
             </Link>
           </div>
+        </CollapsibleSection>
+      )}
+
+      {isAdmin && (
+        <CollapsibleSection
+          icon={Shield}
+          color="#0f766e"
+          title="Permissões de acesso"
+          subtitle="Escolha quais cargos veem e editam o financeiro da agência"
+        >
+          <AccessPermissionsCard />
         </CollapsibleSection>
       )}
 
@@ -815,6 +827,116 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+const ROLE_LABELS: Record<string, string> = { gerente: "Gerente", consultor: "Consultor" };
+
+/** Permissões por cargo. O admin sempre tem acesso total; aqui se libera para os demais. */
+function AccessPermissionsCard() {
+  const qc = useQueryClient();
+  const permsQ = useQuery({ queryKey: ["access-permissions"], queryFn: () => getAccessPermissions() });
+  const [view, setView] = useState<string[]>([]);
+  const [edit, setEdit] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (permsQ.data) {
+      setView(permsQ.data.finance.view);
+      setEdit(permsQ.data.finance.edit);
+    }
+  }, [permsQ.data]);
+
+  const save = useMutation({
+    mutationFn: () =>
+      saveAccessPermissions({
+        data: {
+          finance: {
+            view: view as ("gerente" | "consultor")[],
+            edit: edit as ("gerente" | "consultor")[],
+          },
+        },
+      }),
+    onSuccess: () => {
+      toast.success("Permissões salvas.");
+      qc.invalidateQueries({ queryKey: ["access-permissions"] });
+      qc.invalidateQueries({ queryKey: ["finance-access"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    },
+    onError: (err) => toast.error(err instanceof Error ? err.message : "Erro ao salvar."),
+  });
+
+  function toggle(list: string[], setList: (v: string[]) => void, role: string, on: boolean) {
+    setList(on ? Array.from(new Set([...list, role])) : list.filter((r) => r !== role));
+  }
+
+  if (permsQ.isLoading) return <p className="text-sm text-muted-foreground">Carregando…</p>;
+  if (permsQ.isError) return <p className="text-sm text-destructive">Não foi possível carregar as permissões.</p>;
+
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        O <strong>administrador</strong> sempre vê e edita tudo. Marque o que os outros cargos podem
+        acessar no <strong>Financeiro</strong>: a tela de transações, os valores de vendas no painel
+        inicial e as informações financeiras usadas pela Thay.
+      </p>
+      <div className="overflow-hidden rounded-xl border border-border">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50 text-left text-xs uppercase text-muted-foreground">
+            <tr>
+              <th className="px-4 py-2 font-medium">Cargo</th>
+              <th className="px-4 py-2 text-center font-medium">Ver financeiro</th>
+              <th className="px-4 py-2 text-center font-medium">Lançar transações</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-t border-border">
+              <td className="px-4 py-3 font-medium">Administrador</td>
+              <td className="px-4 py-3 text-center text-muted-foreground">Sempre</td>
+              <td className="px-4 py-3 text-center text-muted-foreground">Sempre</td>
+            </tr>
+            {Object.entries(ROLE_LABELS).map(([role, label]) => {
+              const canEdit = edit.includes(role);
+              const canView = canEdit || view.includes(role);
+              return (
+                <tr key={role} className="border-t border-border">
+                  <td className="px-4 py-3 font-medium">{label}</td>
+                  <td className="px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`${label} pode ver o financeiro`}
+                      className="h-4 w-4 accent-[var(--primary)]"
+                      checked={canView}
+                      disabled={canEdit}
+                      onChange={(e) => toggle(view, setView, role, e.target.checked)}
+                    />
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <input
+                      type="checkbox"
+                      aria-label={`${label} pode lançar transações`}
+                      className="h-4 w-4 accent-[var(--primary)]"
+                      checked={canEdit}
+                      onChange={(e) => {
+                        toggle(edit, setEdit, role, e.target.checked);
+                        if (e.target.checked) toggle(view, setView, role, true);
+                      }}
+                    />
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <button
+        type="button"
+        onClick={() => save.mutate()}
+        disabled={save.isPending}
+        className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+      >
+        <Save className="h-4 w-4" /> {save.isPending ? "Salvando…" : "Salvar permissões"}
+      </button>
     </div>
   );
 }

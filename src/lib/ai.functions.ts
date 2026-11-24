@@ -548,6 +548,7 @@ type KnowledgeState = {
 async function buildKnowledgeContext(
   supabase: { from: (t: string) => any },
   ks: KnowledgeState | null,
+  allowFinance = false,
 ): Promise<string> {
   const blocks: string[] = [];
 
@@ -594,7 +595,8 @@ async function buildKnowledgeContext(
       );
     }
   }
-  if (sources.finance) {
+  // Dados financeiros só entram para quem tem acesso ao financeiro.
+  if (sources.finance && allowFinance) {
     const { data: txs } = await supabase
       .from("crm_transactions")
       .select("type, amount, category, description, transaction_date")
@@ -638,7 +640,9 @@ export const itineraryCopilot = createServerFn({ method: "POST" })
       cfg.system_prompt ||
       "Você é um copiloto especialista em planejamento de viagens. Ajude a elaborar roteiros detalhados, com sugestões de atividades por dia, horários, estimativas de custo e dicas práticas. Seja objetivo e use listas quando útil.";
 
-    const knowledge = await buildKnowledgeContext(context.supabase, ks);
+    const { resolveFinanceAccess } = await import("@/lib/finance.functions");
+    const financeAccess = await resolveFinanceAccess(context).catch(() => ({ canView: false }));
+    const knowledge = await buildKnowledgeContext(context.supabase, ks, financeAccess.canView);
     const systemPrompt = knowledge
       ? `${basePrompt}\n\nUse as informações abaixo como base de conhecimento ao responder:\n\n${knowledge}`
       : basePrompt;

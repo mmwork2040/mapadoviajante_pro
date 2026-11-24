@@ -19,7 +19,7 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, formatDate, maskCurrency, parseCurrency } from "@/lib/ui";
 import type { Transaction, TxType } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
-import { useAuth, isAdminUser } from "@/lib/auth";
+import { useFinanceAccess } from "@/lib/finance-access";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 
@@ -31,21 +31,23 @@ const CATEGORIES = ["pacote", "comissao", "operacional", "marketing"];
 const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 function FinancePage() {
-  const { member, session } = useAuth();
-  if (!isAdminUser(member, session?.user?.email)) {
+  const { canView, canEdit, isLoading } = useFinanceAccess();
+  if (isLoading) return <p className="text-muted-foreground">Carregando…</p>;
+  if (!canView) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center text-center">
         <h1 className="text-xl font-bold">Acesso restrito</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          A área Financeiro está disponível apenas para administradores.
+          Seu cargo não tem acesso ao Financeiro. O administrador da agência pode liberar em
+          Administração → Permissões de acesso.
         </p>
       </div>
     );
   }
-  return <FinanceContent />;
+  return <FinanceContent canEdit={canEdit} />;
 }
 
-function FinanceContent() {
+function FinanceContent({ canEdit }: { canEdit: boolean }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [typeFilter, setTypeFilter] = useState("");
@@ -124,12 +126,14 @@ function FinanceContent() {
               {hidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               <span className="hidden sm:inline">{hidden ? "Exibir" : "Ocultar"}</span>
             </button>
+            {canEdit && (
             <button
               onClick={() => setOpen(true)}
               className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:flex-none"
             >
               <Plus className="h-4 w-4" /> Nova Transação
             </button>
+            )}
           </div>
         }
       />

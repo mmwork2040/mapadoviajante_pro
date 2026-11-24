@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // chave `agency_cfg:{agencyId}:{scope}`. Leitura e escrita passam pelo
 // servidor: a agência vem da sessão (nunca do navegador) e senhas não voltam.
 
-const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive", "payments"] as const;
+const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive", "payments", "permissions"] as const;
 type Scope = (typeof SCOPES)[number];
 
 /**
@@ -55,6 +55,19 @@ async function readScope(agencyId: string, scope: Scope) {
 /** Lê a configuração completa de uma seção. Só para uso no servidor. */
 export async function readAgencyConfigServer(agencyId: string, scope: Scope) {
   return readScope(agencyId, scope);
+}
+
+/** Grava a configuração completa de uma seção. Só para uso no servidor, depois de conferir o papel. */
+export async function writeAgencyConfigServer(agencyId: string, scope: Scope, value: Record<string, unknown>) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("system_settings").upsert(
+    { key: settingsKey(agencyId, scope), value, updated_at: new Date().toISOString() },
+    { onConflict: "key" },
+  );
+  if (error) {
+    console.error("writeAgencyConfigServer:", error);
+    throw new Error("Não foi possível salvar a configuração.");
+  }
 }
 
 const scopeInput = z.object({ scope: z.enum(SCOPES) });

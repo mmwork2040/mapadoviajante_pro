@@ -373,4 +373,6 @@ export interface DashboardStats {
   tasks: Task[];
   transactions: Transaction[];
   chartData: { labels: string[]; revenue: number[]; count: number[] };
+  /** Se o usuário pode ver os números financeiros (configurável na Administração). */
+  canViewFinance: boolean;
 }

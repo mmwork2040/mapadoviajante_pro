@@ -297,6 +297,9 @@ async function countMemberActivity(id: string): Promise<number> {
     supabase.from("crm_transactions").select("id", { count: "exact", head: true }).eq("created_by", id),
   ];
   const results = await Promise.all(checks);
+  // Se alguma contagem falhar (ex.: tabela fechada ao navegador), trata como
+  // "tem histórico": o membro é bloqueado em vez de excluído.
+  if (results.some((r) => r.error)) return 1;
   return results.reduce((sum, r) => sum + (r.count ?? 0), 0);
 }
 
@@ -1069,6 +1072,8 @@ export async function deleteTask(taskId: string): Promise<boolean> {
 
 
 // ── Transactions ───────────────────────────────────────────────
+// O financeiro passa pelo servidor, que confere a permissão do cargo
+// (Administração → Permissões de acesso).
 export async function fetchTransactions(filters: {
   type?: string;
   status?: string;
@@ -1076,46 +1081,38 @@ export async function fetchTransactions(filters: {
   to?: string;
   lead_id?: string;
 } = {}): Promise<Transaction[]> {
-  if (!_agencyId) return [];
-  let query = supabase
-    .from("crm_transactions")
-    .select("*, lead:crm_leads!crm_transactions_lead_id_fkey(name)")
-    .eq("agency_id", _agencyId)
-    .order("transaction_date", { ascending: false });
-  if (filters.type) query = query.eq("type", filters.type);
-  if (filters.status) query = query.eq("status", filters.status);
-  if (filters.lead_id) query = query.eq("lead_id", filters.lead_id);
-  if (filters.from) query = query.gte("transaction_date", filters.from);
-  if (filters.to) query = query.lte("transaction_date", filters.to);
-  const { data, error } = await query;
-  if (error) {
-    console.error("fetchTransactions:", error);
-    throw new Error("Não foi possível carregar as transações.");
-  }
-  return (data as Transaction[]) || [];
+  const { listTransactionsFn } = await import("@/lib/finance.functions");
+  const rows = await listTransactionsFn({
+    data: {
+      type: filters.type === "income" || filters.type === "expense" ? filters.type : undefined,
+      status: filters.status || undefined,
+      from: filters.from || undefined,
+      to: filters.to || undefined,
+      lead_id: filters.lead_id || undefined,
+    },
+  });
+  return rows as unknown as Transaction[];
 }
 
 export async function createTransaction(txData: Partial<Transaction>): Promise<Transaction | null> {
-  const { data, error } = await supabase
-    .from("crm_transactions")
-    .insert({
-      agency_id: _agencyId,
-      lead_id: txData.lead_id || null,
-      type: txData.type,
-      amount: txData.amount,
-      description: txData.description || null,
-      category: txData.category || null,
-      transaction_date: txData.transaction_date,
-      status: txData.status || "pending",
-      created_by: _memberId,
-    })
-    .select()
-    .single();
-  if (error) {
-    console.error("createTransaction:", error);
+  try {
+    const { createTransactionFn } = await import("@/lib/finance.functions");
+    const row = await createTransactionFn({
+      data: {
+        type: txData.type === "expense" ? "expense" : "income",
+        amount: Number(txData.amount) || 0,
+        description: txData.description || null,
+        category: txData.category || null,
+        transaction_date: String(txData.transaction_date || "").slice(0, 10),
+        status: txData.status || "pending",
+        lead_id: txData.lead_id || null,
+      },
+    });
+    return row as unknown as Transaction;
+  } catch (err) {
+    console.error("createTransaction:", err);
     return null;
   }
-  return data as Transaction;
 }
 
 // ── Library ────────────────────────────────────────────────────
@@ -2433,7 +2430,13 @@ function buildMonthlyChartData(incomeTransactions: Transaction[]) {
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
-  const [leads, tasks, transactions] = await Promise.all([fetchLeads(), fetchTasks(), fetchTransactions()]);
+  const { getFinanceAccess } = await import("@/lib/finance.functions");
+  const access = await getFinanceAccess().catch(() => ({ canView: false, canEdit: false }));
+  const [leads, tasks, transactions] = await Promise.all([
+    fetchLeads(),
+    fetchTasks(),
+    access.canView ? fetchTransactions() : Promise.resolve([] as Transaction[]),
+  ]);
   const confirmedIncome = transactions.filter((t) => t.type === "income" && t.status === "confirmed");
   const totalSales = confirmedIncome.reduce((sum, t) => sum + Number(t.amount), 0);
   const totalPipeline = leads
@@ -2452,6 +2455,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
     tasks,
     transactions,
     chartData: buildMonthlyChartData(confirmedIncome),
+    canViewFinance: access.canView,
   };
 }
 
