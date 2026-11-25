@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "./styles/ds.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -61,7 +62,8 @@
   --color-sidebar-ring: var(--sidebar-ring);
 }
 
-:root {
+:root,
+.light {
   /* Identidade do produto · tema claro.
      White-label: a agência troca só a cor principal. `--brand` e
      `--brand-foreground` são definidas por src/lib/brand.ts; as outras cores de
@@ -107,6 +109,25 @@
   --sidebar-accent-foreground: #17130f;
   --sidebar-border: rgba(23, 19, 15, 0.1);
   --sidebar-ring: color-mix(in srgb, var(--brand) 78%, #000);
+
+  /* Tokens do design system que o shadcn não tem (nomes do protótipo entre parênteses). */
+  --background-top: #ffffff; /* bgtop */
+  --chip: #e8e4df; /* chip */
+  --surface-raised: #ffffff; /* solid */
+  --glass: rgba(252, 251, 250, 0.62); /* glass */
+  --foreground-soft: #3d3731; /* tb: texto de corpo */
+  --accent-line: color-mix(in srgb, color-mix(in srgb, var(--brand) 78%, #000) 45%, transparent); /* accl */
+  --glow-input: color-mix(in srgb, var(--brand) 14%, transparent); /* glowc */
+  --success-soft: rgba(23, 122, 68, 0.1); /* oks */
+  --on-success: #ffffff;
+  --glow-1: rgba(200, 169, 110, 0.06);
+  --glow-2: color-mix(in srgb, var(--brand) 5%, transparent);
+  --scrim: rgba(12, 10, 8, 0.45);
+  --r1: 10px;
+  --r2: 14px;
+  --r3: 20px;
+  --r4: 28px;
+  --pill: 999px;
 }
 
 .dark {
@@ -146,9 +167,27 @@
   --sidebar-accent-foreground: #fafaf9;
   --sidebar-border: rgba(255, 255, 255, 0.09);
   --sidebar-ring: var(--brand);
+
+  --background-top: #120e0b;
+  --chip: #2d261f;
+  --surface-raised: #1a1612;
+  --glass: rgba(16, 12, 9, 0.58);
+  --foreground-soft: #cfc7be;
+  --accent-line: color-mix(in srgb, var(--brand) 40%, transparent);
+  --glow-input: color-mix(in srgb, var(--brand) 18%, transparent);
+  --success-soft: rgba(47, 179, 107, 0.14);
+  --on-success: #04210f;
+  --glow-1: rgba(200, 169, 110, 0.05);
+  --glow-2: color-mix(in srgb, var(--brand) 9%, transparent);
+  --scrim: rgba(12, 10, 8, 0.62);
 }
 
 @theme inline {
+  --color-chip: var(--chip);
+  --color-surface-raised: var(--surface-raised);
+  --color-foreground-soft: var(--foreground-soft);
+  --color-accent-line: var(--accent-line);
+  --color-success-soft: var(--success-soft);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
@@ -180,11 +219,11 @@
   }
 
   /* Fundo com as duas luzes da plataforma: fria no topo, a cor principal subindo da base. */
-  .dark body {
+  body {
     background-image:
-      radial-gradient(110% 70% at 22% -12%, rgba(200, 169, 110, 0.05), transparent 58%),
-      radial-gradient(90% 60% at 65% 118%, color-mix(in srgb, var(--brand) 9%, transparent), transparent 70%),
-      linear-gradient(#120e0b 0, #0a0807 46%);
+      radial-gradient(110% 70% at 22% -12%, var(--glow-1), transparent 58%),
+      radial-gradient(90% 60% at 65% 118%, var(--glow-2), transparent 70%),
+      linear-gradient(var(--background-top) 0, var(--background) 46%);
     background-attachment: fixed;
   }
 }

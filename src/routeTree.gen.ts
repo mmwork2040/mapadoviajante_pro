@@ -25,6 +25,7 @@ import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppPlataformaRouteImport } from './routes/_app.plataforma'
 import { Route as AppRoteirosRouteImport } from './routes/_app.roteiros'
 import { Route as AppTarefasRouteImport } from './routes/_app.tarefas'
+import { Route as DevUiRouteImport } from './routes/dev.ui'
 import { Route as ImprimirIdRouteImport } from './routes/imprimir.$id'
 import { Route as ViajanteIdRouteImport } from './routes/viajante.$id'
 import { Route as AppClientesIndexRouteImport } from './routes/_app.clientes.index'
@@ -116,6 +117,11 @@ const AppTarefasRoute = AppTarefasRouteImport.update({
   path: '/tarefas',
   getParentRoute: () => AppRoute,
 } as any)
+const DevUiRoute = DevUiRouteImport.update({
+  id: '/dev/ui',
+  path: '/dev/ui',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ImprimirIdRoute = ImprimirIdRouteImport.update({
   id: '/imprimir/$id',
   path: '/imprimir/$id',
@@ -188,6 +194,7 @@ export interface FileRoutesByFullPath {
   '/plataforma': typeof AppPlataformaRoute
   '/roteiros': typeof AppRoteirosRouteWithChildren
   '/tarefas': typeof AppTarefasRoute
+  '/dev/ui': typeof DevUiRoute
   '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/clientes/$id': typeof AppClientesIdRoute
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/plataforma': typeof AppPlataformaRoute
   '/tarefas': typeof AppTarefasRoute
+  '/dev/ui': typeof DevUiRoute
   '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/': typeof AppIndexRoute
@@ -243,6 +251,7 @@ export interface FileRoutesById {
   '/_app/plataforma': typeof AppPlataformaRoute
   '/_app/roteiros': typeof AppRoteirosRouteWithChildren
   '/_app/tarefas': typeof AppTarefasRoute
+  '/dev/ui': typeof DevUiRoute
   '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/_app/': typeof AppIndexRoute
@@ -274,6 +283,7 @@ export interface FileRouteTypes {
     | '/plataforma'
     | '/roteiros'
     | '/tarefas'
+    | '/dev/ui'
     | '/imprimir/$id'
     | '/viajante/$id'
     | '/clientes/$id'
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plataforma'
     | '/tarefas'
+    | '/dev/ui'
     | '/imprimir/$id'
     | '/viajante/$id'
     | '/'
@@ -328,6 +339,7 @@ export interface FileRouteTypes {
     | '/_app/plataforma'
     | '/_app/roteiros'
     | '/_app/tarefas'
+    | '/dev/ui'
     | '/imprimir/$id'
     | '/viajante/$id'
     | '/_app/'
@@ -347,6 +359,7 @@ export interface RootRouteChildren {
   AceitarConviteRoute: typeof AceitarConviteRoute
   AuthRoute: typeof AuthRoute
   IntakeRoute: typeof IntakeRoute
+  DevUiRoute: typeof DevUiRoute
   ImprimirIdRoute: typeof ImprimirIdRoute
   ViajanteIdRoute: typeof ViajanteIdRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
@@ -469,6 +482,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/tarefas'
       preLoaderRoute: typeof AppTarefasRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/dev/ui': {
+      id: '/dev/ui'
+      path: '/dev/ui'
+      fullPath: '/dev/ui'
+      preLoaderRoute: typeof DevUiRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/imprimir/$id': {
       id: '/imprimir/$id'
@@ -615,6 +635,7 @@ const rootRouteChildren: RootRouteChildren = {
   AceitarConviteRoute: AceitarConviteRoute,
   AuthRoute: AuthRoute,
   IntakeRoute: IntakeRoute,
+  DevUiRoute: DevUiRoute,
   ImprimirIdRoute: ImprimirIdRoute,
   ViajanteIdRoute: ViajanteIdRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,

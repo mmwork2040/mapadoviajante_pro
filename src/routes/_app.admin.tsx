@@ -354,6 +354,9 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         )}
       </CollapsibleSection>
 
+      {/* Âncora do item "Configurações" do menu. */}
+      <div id="configuracoes" style={{ scrollMarginTop: 24 }} />
+
       {isAdmin && (
         <CollapsibleSection
           icon={Building2}

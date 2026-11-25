@@ -93,8 +93,10 @@ function waLink(phone: string | null | undefined, name: string | null | undefine
 
 export const Route = createFileRoute("/_app/clientes/")({
   component: ClientesPage,
-  validateSearch: (s: { edit?: unknown }): { edit?: string } =>
-    typeof s.edit === "string" ? { edit: s.edit } : {},
+  validateSearch: (s: { edit?: unknown; novo?: unknown }): { edit?: string; novo?: string } => ({
+    ...(typeof s.edit === "string" ? { edit: s.edit } : {}),
+    ...(s.novo ? { novo: "1" } : {}),
+  }),
 });
 
 const LEAD_STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
@@ -197,6 +199,7 @@ function ClientesPage() {
   const [openForm, setOpenForm] = useState(false);
   const [editing, setEditing] = useState<Client | null>(null);
   const editParam = Route.useSearch().edit as string | undefined;
+  const novoParam = Route.useSearch().novo as string | undefined;
 
   const { data: clients = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["clients", search],
@@ -231,6 +234,14 @@ function ClientesPage() {
       navigate({ to: "/clientes", search: (prev: any) => ({ ...prev, edit: undefined }), replace: true });
     }
   }, [editParam, clients, navigate]);
+
+  // Menu Criar → Nova pessoa: chega aqui com ?novo=1 e abre o formulário.
+  useEffect(() => {
+    if (!novoParam) return;
+    setEditing(null);
+    setOpenForm(true);
+    navigate({ to: "/clientes", search: (prev: any) => ({ ...prev, novo: undefined }), replace: true });
+  }, [novoParam, navigate]);
 
 
   const createMut = useMutation({
