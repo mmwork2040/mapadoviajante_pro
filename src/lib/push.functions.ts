@@ -1,19 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { base64url, googleAccessToken } from "@/lib/server/google-auth";
 
 interface ServiceAccount {
   client_email: string;
   private_key: string;
   project_id: string;
-}
-
-function base64url(input: ArrayBuffer | Uint8Array | string): string {
-  const bytes =
-    typeof input === "string" ? new TextEncoder().encode(input) : input instanceof Uint8Array ? input : new Uint8Array(input);
-  let str = "";
-  for (const b of bytes) str += String.fromCharCode(b);
-  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
 function randomSecret(): string {
@@ -22,51 +15,8 @@ function randomSecret(): string {
   return base64url(bytes);
 }
 
-function pemToArrayBuffer(pem: string): ArrayBuffer {
-  const body = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/, "")
-    .replace(/-----END PRIVATE KEY-----/, "")
-    .replace(/\s+/g, "");
-  const bin = atob(body);
-  const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  return buf.buffer;
-}
-
-async function getAccessToken(sa: ServiceAccount): Promise<string> {
-  const now = Math.floor(Date.now() / 1000);
-  const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const claim = base64url(
-    JSON.stringify({
-      iss: sa.client_email,
-      scope: "https://www.googleapis.com/auth/firebase.messaging",
-      aud: "https://oauth2.googleapis.com/token",
-      iat: now,
-      exp: now + 3600,
-    }),
-  );
-  const unsigned = `${header}.${claim}`;
-  const key = await crypto.subtle.importKey(
-    "pkcs8",
-    pemToArrayBuffer(sa.private_key),
-    { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" },
-    false,
-    ["sign"],
-  );
-  const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
-  const jwt = `${unsigned}.${base64url(sig)}`;
-
-  const res = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-  if (!res.ok) throw new Error(`OAuth falhou (${res.status})`);
-  const json = (await res.json()) as { access_token: string };
-  return json.access_token;
+function getAccessToken(sa: ServiceAccount): Promise<string> {
+  return googleAccessToken(sa, "https://www.googleapis.com/auth/firebase.messaging");
 }
 
 async function resolveFirebaseServiceAccount(supabase: any, userId?: string): Promise<ServiceAccount | null> {
@@ -237,7 +187,7 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
       .select("key, value")
       .like("key", "push_token:%");
     const staleKeys = (existingRows ?? [])
-      .filter((row) => {
+      .filter((row: any) => {
         const value = (row.value ?? {}) as { token?: string; userId?: string; deviceId?: string };
         return (
           row.key === `push_token:${context.userId}` ||

@@ -4,6 +4,12 @@ import type { Databases, Storage } from 'appwrite';
 
 export type BridgeServices = { databases: Databases; storage: Storage };
 
+/** Sessão do usuário logado, no formato que as telas usam. */
+export type AppSession = {
+  access_token: string;
+  user: { id: string; email: string; user_metadata: { name?: string } };
+};
+
 // Normaliza o documento do Appwrite para ser 100% compatível com a interface do Supabase
 function normalizeDoc(doc: any): any {
   if (!doc || typeof doc !== 'object') return doc;

@@ -1,7 +1,8 @@
 // Server-only helpers that let the AI assistant treat the agency library as a
 // memory bank: it searches open sources (Wikimedia / Wikipedia) for real photos
 // of the lead's destination and stores them in the library for future reuse.
-import type { SupabaseClient } from "@supabase/supabase-js";
+// Cliente de dados do servidor (ponte do Appwrite), já limitado à agência.
+type DataClient = any;
 
 const LIBRARY_BUCKET = "library-assets";
 
@@ -92,7 +93,7 @@ export interface StoredLibraryImage {
  * library items of type "image". Returns the titles of the images it added.
  */
 export async function ensureDestinationImages(params: {
-  supabase: SupabaseClient;
+  supabase: DataClient;
   agencyId: string;
   memberId: string | null;
   destination: string;

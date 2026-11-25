@@ -6,7 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session } from "@supabase/supabase-js";
+import type { AppSession as Session } from "@/integrations/appwrite/bridge";
 import { supabase } from "@/integrations/supabase/client";
 import { appwriteAuthService } from "@/services/appwriteAuthService";
 import {
