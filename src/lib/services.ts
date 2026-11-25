@@ -499,6 +499,7 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
     notes: leadData.notes || null,
     profile: leadData.profile || {},
     checklists,
+    client_id: leadData.client_id || null,
   };
 
 
@@ -2649,4 +2650,9 @@ export async function deleteTripExpense(id: string): Promise<boolean> {
     return false;
   }
   return true;
+}
+
+/** Registra que houve contato agora: zera os "dias sem contato" da viagem. */
+export async function marcarContato(leadId: string): Promise<void> {
+  await supabase.from("crm_leads").update({ last_activity_at: new Date().toISOString() }).eq("id", leadId);
 }

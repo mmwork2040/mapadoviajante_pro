@@ -32,6 +32,8 @@ import { diasSemContato, dinheiroCurto, estaAberta, etapaLabel, proximosPassos, 
 import { useViewPref } from "@/lib/view-prefs";
 import { fetchTasks } from "@/lib/services";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
+import { FichaComercial } from "@/components/viagens/Ficha";
+import { NovaViagem } from "@/components/viagens/NovaViagem";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
@@ -86,6 +88,11 @@ function LeadsPage() {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [completaId, setCompletaId] = useState<string | null>(null);
+  const fecharFicha = () => {
+    setDetailId(null);
+    if (leadParam) navigate({ search: {}, replace: true });
+  };
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
@@ -168,6 +175,7 @@ function LeadsPage() {
       qc.setQueryData<Lead[]>(key, (old) =>
         (old ?? []).map((l) => (l.id === id ? { ...l, status } : l)),
       );
+      qc.setQueryData<Lead | null>(["lead", id], (old) => (old ? { ...old, status } : old));
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
@@ -177,8 +185,9 @@ function LeadsPage() {
     onSuccess: (_res, vars) => {
       dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
     },
-    onSettled: () => {
+    onSettled: (_r, _e, vars) => {
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", vars.id] });
     },
   });
 
@@ -248,6 +257,7 @@ function LeadsPage() {
       toast(`${v.name}: marcada como perdida`);
       dispatchWebhook("lead.status_changed", { id: v.id, status: "lost" });
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", v.id] });
     },
     onError: () => toast.error("Não foi possível salvar. Tente de novo."),
   });
@@ -319,18 +329,16 @@ function LeadsPage() {
 
       <JanelaPerder viagem={perdendo} salvando={perder.isPending} onCancelar={() => setPerdendo(null)} onConfirmar={(motivo) => perdendo && perder.mutate({ v: perdendo, motivo })} />
 
-      {open && (
-        <NewLeadModal
-          allLeads={leads}
-          onClose={() => setOpen(false)}
-          onCreated={() => {
-            setOpen(false);
-            qc.invalidateQueries({ queryKey: ["leads"] });
-          }}
-        />
-      )}
+      <NovaViagem open={open} onClose={() => setOpen(false)} onCriada={(v) => setDetailId(v.id)} />
 
-      {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => { setDetailId(null); if (leadParam) navigate({ search: {}, replace: true }); }} />}
+      <FichaComercial
+        leadId={detailId}
+        onClose={fecharFicha}
+        onMover={mover}
+        onPerder={setPerdendo}
+        onFichaCompleta={(id) => { setDetailId(null); setCompletaId(id); }}
+      />
+      {completaId && <LeadDetailDrawer leadId={completaId} onClose={() => { setCompletaId(null); qc.invalidateQueries({ queryKey: ["lead", completaId] }); }} />}
       <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -43,6 +43,7 @@ import {
   semResposta,
   whatsappLink,
   type Periodo,
+  diaMes,
 } from "@/data/viagens";
 import type { Itinerary, Lead, Task } from "@/lib/types";
 
@@ -276,7 +277,7 @@ function LinhaAgenda({ tarefa: t, viagem, periodo, onAbrir, onConcluir, ocupado 
   const d = parseData(t.due_date);
   const atrasada = estaAtrasada(t);
   const temHora = !!d && /T\d{2}:\d{2}/.test(t.due_date || "") && !(d.getHours() === 0 && d.getMinutes() === 0) && !(d.getHours() === 12 && d.getMinutes() === 0);
-  const quando = !d ? "—" : atrasada ? d.toLocaleDateString("pt-BR", { day: "numeric", month: "short" }).replace(".", "") : periodo === "semana" ? d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "") : temHora ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "Hoje";
+  const quando = !d ? "—" : atrasada ? diaMes(t.due_date) : periodo === "semana" ? d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "") : temHora ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "Hoje";
   const sub = periodo === "semana" && temHora && d ? d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : t.itinerary ? "Viagem" : "Tarefa";
   const nota = cleanTaskDescription(t.description);
   return (

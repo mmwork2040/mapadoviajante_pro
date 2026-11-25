@@ -185,7 +185,7 @@ button.ds-chip[aria-pressed="true"] { background: var(--accent); color: var(--ac
 /* ── Dados e gráficos ──
    Séries em ordem fixa: chart-1 a chart-4; da quinta em diante vira "Outros" em chart-5.
    Texto nunca usa a cor da série. Verde, âmbar e vermelho são só de estado. */
-.ds-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ds-kpis { display: grid; grid-template-columns: repeat(var(--n, 4), minmax(0, 1fr)); }
 .ds-kpi { display: flex; flex-direction: column; gap: 6px; padding: 4px 22px; border-left: 1px solid var(--border); }
 .ds-kpi:first-child { border-left: 0; padding-left: 0; }
 .ds-kpi b { font: 700 34px/1 var(--font-display); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; color: var(--foreground); }
@@ -430,3 +430,61 @@ button.ds-chip[aria-pressed="true"] { background: var(--accent); color: var(--ac
   .ds-col { flex: 0 0 82%; scroll-snap-align: center; }
   .ds-vcard { cursor: pointer; }
 }
+
+/* ── Ficha da viagem (painel) e formulários curtos ─────────────────── */
+.ds-ficha-sub { margin: 0; color: var(--foreground-soft); font-size: 14.5px; }
+.ds-ficha-valor { font: 700 22px var(--font-display); font-variant-numeric: tabular-nums; color: var(--foreground); }
+.ds-ficha-valor.ds-nd { color: var(--muted-foreground); font-size: 18px; }
+.ds-etapas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: var(--pill); background: var(--muted); }
+.ds-etapas button { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; padding: 0 8px; border-radius: var(--pill); font-size: 13px; font-weight: 500; color: var(--muted-foreground); }
+.ds-etapas button:hover { color: var(--foreground); }
+.ds-etapas button:focus-visible { outline: 2px solid var(--accent-foreground); outline-offset: 2px; }
+.ds-etapas .ds-feita { color: var(--success); }
+.ds-etapas .ds-atual { background: var(--primary); color: var(--primary-foreground); font-weight: 700; }
+.ds-etapas button svg { width: 14px; height: 14px; }
+.ds-perder { align-self: flex-start; color: var(--muted-foreground); font-size: 13px; font-weight: 500; }
+.ds-perder:hover { color: var(--destructive); }
+.ds-proximo { display: flex; flex-direction: column; gap: 8px; padding: 18px; }
+.ds-proximo .ds-quando { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--muted-foreground); }
+.ds-proximo .ds-quando.ds-late { color: var(--destructive); }
+.ds-proximo .ds-row { margin-top: 6px; flex-wrap: wrap; gap: 8px; }
+.ds-acoes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.ds-acao { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 4px; border-radius: 16px; border: 1px solid var(--border); color: var(--foreground-soft); font-size: 12.5px; font-weight: 500; text-decoration: none; }
+.ds-acao svg { width: 20px; height: 20px; }
+.ds-acao:hover { background: var(--muted); color: var(--foreground); }
+.ds-acao[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+.ds-acao:focus-visible { outline: 2px solid var(--accent-foreground); outline-offset: 2px; }
+.ds-dados { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 10px 16px; margin: 0; font-size: 14px; }
+.ds-dados dt { color: var(--muted-foreground); }
+.ds-dados dd { margin: 0; color: var(--foreground); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; overflow-wrap: anywhere; }
+.ds-dados dd.ds-nd { color: var(--muted-foreground); }
+.ds-registro { display: flex; flex-direction: column; gap: 10px; padding-bottom: 6px; }
+.ds-form { display: flex; flex-direction: column; gap: 16px; }
+.ds-linha { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.ds-mais summary { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--foreground-soft); list-style: none; }
+.ds-mais summary::-webkit-details-marker { display: none; }
+.ds-mais summary svg { width: 14px; height: 14px; transition: transform 0.2s; }
+.ds-mais[open] summary svg { transform: rotate(90deg); }
+.ds-mais > div { padding-top: 14px; }
+.ds-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.ds-opcao { position: relative; display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--input); cursor: pointer; font-size: 14px; }
+.ds-opcao input { accent-color: var(--primary); width: 18px; height: 18px; margin: 0; }
+.ds-opcao:has(input:checked) { border-color: var(--accent-line); background: var(--accent); color: var(--accent-foreground); }
+.ds-opcao:has(input:focus-visible) { outline: 2px solid var(--accent-foreground); outline-offset: 2px; }
+.ds-opcao.ds-opcao-chip { padding: 8px 14px; border-radius: var(--pill); font-size: 13px; }
+.ds-opcao.ds-opcao-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.ds-sugestoes { display: flex; flex-direction: column; border: 1px solid var(--input); border-radius: 16px; overflow: hidden; margin-top: 6px; background: var(--card); }
+.ds-sugestoes button { display: flex; justify-content: space-between; gap: 10px; padding: 10px 14px; text-align: left; font-size: 14px; color: var(--foreground); }
+.ds-sugestoes button + button { border-top: 1px solid var(--border); }
+.ds-sugestoes button:hover, .ds-sugestoes button:focus-visible { background: var(--muted); outline: 0; }
+.ds-sugestoes small { color: var(--muted-foreground); }
+@media (max-width: 640px) {
+  .ds-etapas button { font-size: 12px; padding: 0 4px; }
+  .ds-etapas .ds-feita svg { display: none; }
+  .ds-linha { grid-template-columns: minmax(0, 1fr); }
+  .ds-dados { grid-template-columns: 110px minmax(0, 1fr); }
+}
+/* Painel e janela rolam por inteiro: nenhum bloco interno pode encolher. */
+.ds-painel > *, .ds-janela > * { flex-shrink: 0; }
+.ds-painel .ds-kpi b { font-size: 30px; white-space: nowrap; }
+.ds-painel .ds-kpi:first-child { padding-left: 0; border-left: 0; }

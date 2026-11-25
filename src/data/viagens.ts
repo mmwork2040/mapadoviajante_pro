@@ -208,3 +208,84 @@ export function whatsappLink(phone?: string | null): string | null {
   if (d.length < 10) return null;
   return `https://wa.me/${d.length <= 11 ? `55${d}` : d}`;
 }
+
+// ── Dados da ficha ─────────────────────────────────────────────────
+type Perfil = Record<string, unknown>;
+const perfil = (v: Lead): Perfil => (v.profile ?? {}) as Perfil;
+const texto = (x: unknown) => (typeof x === "string" ? x.trim() : typeof x === "number" ? String(x) : "");
+
+/** "12 a 24 mar de 2027" quando há datas; senão o texto livre ("julho"). */
+export function quandoTexto(v: Lead): string {
+  const raw = texto(perfil(v).travel_dates);
+  const m = /^(\d{4}-\d{2}-\d{2})\s*a\s*(\d{4}-\d{2}-\d{2})$/.exec(raw) || /^(\d{4}-\d{2}-\d{2})$/.exec(raw);
+  if (!m) return raw;
+  const curto = periodoCurto(m[1], m[2]);
+  const ano = parseData(m[2] || m[1])?.getFullYear();
+  return ano && ano !== new Date().getFullYear() ? `${curto} de ${ano}` : curto;
+}
+
+/** "2 adultos e 1 criança", ou "3 viajantes" quando só há o total. */
+export function passageirosTexto(v: Lead): string {
+  const p = perfil(v);
+  const total = Number(p.passengers) || 0;
+  const criancas = Number(p.children) || 0;
+  if (!total) return "";
+  if (!criancas) return `${total} ${total === 1 ? "viajante" : "viajantes"}`;
+  const adultos = Math.max(0, total - criancas);
+  return `${adultos} ${adultos === 1 ? "adulto" : "adultos"} e ${criancas} ${criancas === 1 ? "criança" : "crianças"}`;
+}
+
+export const ORIGENS = ["Instagram", "Indicação", "WhatsApp", "Site", "Google", "Formulário", "Outro"] as const;
+const ORIGEM_LABEL: Record<string, string> = { direto: "Direto", form: "Formulário", formulario: "Formulário", n8n: "Formulário", instagram: "Instagram", whatsapp: "WhatsApp", site: "Site", google: "Google", indicacao: "Indicação", "indicação": "Indicação" };
+export const origemTexto = (o?: string | null) => (o ? ORIGEM_LABEL[o.toLowerCase()] ?? o : "");
+
+export const TIPOS_VIAGEM = ["Lazer", "Família", "Lua de mel", "Negócios", "Aventura", "Cruzeiro"] as const;
+
+/** Campo de texto do perfil da viagem (saída, tipo, preferências...). */
+export const campoDoPerfil = (v: Lead, chave: string) => texto(perfil(v)[chave]);
+
+/** Situação do passaporte pela validade: vencido, vence em menos de 6 meses ou ok. */
+export function situacaoPassaporte(validade?: string | null): { texto: string; tom: "ok" | "warn" | "bad" } | null {
+  const d = parseData(validade);
+  if (!d) return null;
+  const dias = diasAte(validade) ?? 0;
+  const mesAno = d.toLocaleDateString("pt-BR", { month: "2-digit", year: "numeric" });
+  if (dias < 0) return { texto: `Venceu em ${mesAno}`, tom: "bad" };
+  if (dias < 183) return { texto: `Vence em ${mesAno}`, tom: "warn" };
+  return { texto: `Válido até ${mesAno}`, tom: "ok" };
+}
+
+/** Data de quando fazer a partir de "hoje", "amanha", "semana" ou de uma data escolhida. */
+export function dataDoPasso(quando: string, data?: string): string {
+  if (quando === "data" && data) return data;
+  const d = new Date();
+  if (quando === "amanha") d.setDate(d.getDate() + 1);
+  if (quando === "semana") {
+    // Até sexta desta semana; de sexta a sábado, fica para dois dias depois.
+    const ate = (5 - d.getDay() + 7) % 7;
+    d.setDate(d.getDate() + (ate === 0 || d.getDay() === 6 ? 2 : ate));
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+/** "Hoje", "Amanhã", "Ontem", "Venceu há 3 dias", "Sex, 27 nov". */
+export function quandoPasso(due?: string | null): string {
+  const dias = diasAte(due);
+  if (dias === null) return "Sem data";
+  if (dias === 0) return "Hoje";
+  if (dias === 1) return "Amanhã";
+  if (dias === -1) return "Ontem";
+  if (dias < 0) return `Venceu há ${-dias} dias`;
+  const d = parseData(due)!;
+  const sem = d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+  return `${sem.charAt(0).toUpperCase()}${sem.slice(1)}, ${diaMes(due)}`;
+}
+
+/** "27 nov", ou "27 nov 2027" fora do ano corrente. Sem o "de" do formato longo. */
+export function diaMes(iso?: string | null): string {
+  const d = parseData(iso);
+  if (!d) return "";
+  const mes = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+  return `${d.getDate()} ${mes}${d.getFullYear() !== new Date().getFullYear() ? ` ${d.getFullYear()}` : ""}`;
+}

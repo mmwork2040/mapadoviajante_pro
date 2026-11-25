@@ -36,7 +36,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { useBrand } from "@/hooks/useBrand";
 import { ActionSheet, Avatar, Button, IconButton, type SheetItem } from "@/components/ds";
-import { NewLeadModal } from "@/routes/_app.leads";
+import { NovaViagem } from "@/components/viagens/NovaViagem";
 
 // Menu agrupado: trabalho do dia, recursos e gestão.
 // Viagens reúne a fase comercial (/leads) e a preparação (/roteiros); Viajantes é a base de pessoas (/clientes).
@@ -233,16 +233,11 @@ export function AppLayout({ children }: { children: ReactNode }) {
       <ActionSheet open={createOpen} onOpenChange={setCreateOpen} title="Criar" items={createItems} />
       <ActionSheet open={moreOpen} onOpenChange={setMoreOpen} title="Mais" items={moreItems} />
 
-      {newTrip && (
-        <NewLeadModal
-          allLeads={leadsQ.data ?? []}
-          onClose={() => setNewTrip(false)}
-          onCreated={() => {
-            setNewTrip(false);
-            qc.invalidateQueries({ queryKey: ["leads"] });
-          }}
-        />
-      )}
+      <NovaViagem
+        open={newTrip}
+        onClose={() => setNewTrip(false)}
+        onCriada={(v) => navigate({ to: "/leads", search: { lead: v.id } })}
+      />
       <CreateTaskModal
         open={newTask !== null}
         onOpenChange={(v) => !v && setNewTask(null)}

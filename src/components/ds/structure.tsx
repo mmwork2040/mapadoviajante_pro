@@ -72,7 +72,7 @@ export type KpiItem = {
 /** Números em destaque: rótulo, valor e variação. */
 export function KpiRow({ items }: { items: KpiItem[] }) {
   return (
-    <div className="ds-kpis">
+    <div className="ds-kpis" style={{ "--n": items.length } as CSSProperties}>
       {items.map((k) => (
         <div className="ds-kpi" key={k.label}>
           <span className="ds-mono">{k.label}</span>

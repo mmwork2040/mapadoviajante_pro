@@ -43,7 +43,14 @@ export function SidePanel({ open, onOpenChange, title, eyebrow, description, chi
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="ds-veu" />
-        <Dialog.Content className="ds-painel">
+        <Dialog.Content
+          className="ds-painel"
+          // O foco vai para o painel, não para o botão de fechar: sem anel laranja ao abrir.
+          onOpenAutoFocus={(e) => {
+            e.preventDefault();
+            (e.currentTarget as HTMLElement).focus();
+          }}
+        >
           <Header title={title} eyebrow={eyebrow} description={description} />
           {children}
           {footer && <div className="ds-over-f">{footer}</div>}

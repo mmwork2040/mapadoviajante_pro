@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Archive, ArrowCounterClockwise, CalendarBlank, CheckCircle, DotsThree, Trash, Warning, XCircle } from "@phosphor-icons/react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, Button, Chip, DataTable, Janela, SelectField, TextField } from "@/components/ds";
-import { ETAPAS, diasSemContato, dinheiro, dinheiroCurto, etapaLabel, parseData, valorDe, type Etapa, type ProximoPasso } from "@/data/viagens";
+import { ETAPAS, diaMes, diasSemContato, passageirosTexto, quandoTexto, dinheiro, dinheiroCurto, etapaLabel, parseData, valorDe, type Etapa, type ProximoPasso } from "@/data/viagens";
 import type { AgencyMember, Lead } from "@/lib/types";
 
 export const MOTIVOS_PERDA = ["Preço acima do esperado", "Fechou com outra agência", "Adiou a viagem", "Não respondeu mais", "Outro"] as const;
@@ -14,16 +14,10 @@ export function motivoDaPerda(v: Lead): string | null {
 }
 
 function quandoViaja(v: Lead): string {
-  const p = (v.profile ?? {}) as { travel_dates?: unknown; passengers?: unknown };
-  const datas = typeof p.travel_dates === "string" ? p.travel_dates : "";
-  const pax = Number(p.passengers) || 0;
-  return [datas, pax ? `${pax} ${pax === 1 ? "viajante" : "viajantes"}` : ""].filter(Boolean).join(" · ");
+  return [quandoTexto(v), passageirosTexto(v)].filter(Boolean).join(" · ");
 }
 
-const dataCurta = (iso?: string | null) => {
-  const d = parseData(iso);
-  return d ? d.toLocaleDateString("pt-BR", { day: "numeric", month: "short" }).replace(".", "") : "";
-};
+const dataCurta = diaMes;
 
 export function SemContato({ dias }: { dias: number | null }) {
   if (dias === null || dias < 3) return null;
