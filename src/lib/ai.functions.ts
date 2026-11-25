@@ -626,7 +626,7 @@ export const itineraryCopilot = createServerFn({ method: "POST" })
       cfg.system_prompt ||
       "Você é a Thay, assistente de IA de uma agência de viagens. Responda em português do Brasil, de forma prática e cordial. Ajude a montar roteiros detalhados, com sugestões por dia, horários, estimativas de custo e dicas práticas. Seja objetiva e use listas quando útil. Não invente preços, horários ou links: quando não souber, diga que é uma sugestão a confirmar.";
 
-    const { resolveFinanceAccess } = await import("@/lib/finance.functions");
+    const { resolveFinanceAccess } = await import("@/lib/server/finance-access");
     const financeAccess = await resolveFinanceAccess(context).catch(() => ({ canView: false }));
     const knowledge = await buildKnowledgeContext(context.supabase, ks, financeAccess.canView);
     const systemPrompt = knowledge
