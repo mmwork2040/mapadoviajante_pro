@@ -184,11 +184,11 @@ function ItinerariesPage() {
       return archived;
     },
     onSuccess: (archived) => {
-      toast.success(archived ? "Venda arquivada." : "Venda desarquivada.");
+      toast.success(archived ? "Viagem arquivada." : "Viagem desarquivada.");
       qc.invalidateQueries({ queryKey: ["itineraries"] });
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
-    onError: () => toast.error("Não foi possível arquivar a venda."),
+    onError: () => toast.error("Não foi possível arquivar a viagem."),
   });
 
   const removeClient = useMutation({
@@ -208,7 +208,7 @@ function ItinerariesPage() {
   async function handleDeleteClient(it: Itinerary) {
     if (!it.lead_id) return;
     const ok = await confirm({
-      title: "Excluir cliente",
+      title: "Excluir viajante",
       description: `Isto remove permanentemente a venda/cliente "${it.lead?.name || it.client_name || ""}" e seus dados vinculados. Esta ação não pode ser desfeita. Se preferir manter o histórico, use "Arquivar".`,
       confirmLabel: "Excluir",
       destructive: true,
@@ -238,7 +238,7 @@ function ItinerariesPage() {
 
   function openDetail(it: Itinerary, tab?: LeadDetailTab) {
     if (!it.lead_id) {
-      toast.info("Esta viagem não está vinculada a uma venda.");
+      toast.info("Esta viagem não está vinculada a uma viagem.");
       return;
     }
     setDetail({ leadId: it.lead_id, tab });
@@ -293,7 +293,7 @@ function ItinerariesPage() {
               onClick={() => setOpen(true)}
               className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
             >
-              <Plus className="h-4 w-4" /> Nova Proposta
+              <Plus className="h-4 w-4" /> Nova viagem
             </button>
           </>
         }
@@ -431,7 +431,7 @@ function ItinerariesPage() {
                                 )
                               ) : (
                                 <p className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400">
-                                  Sem venda vinculada
+                                  Sem viagem vinculada
                                 </p>
                               )}
                             </div>
@@ -479,7 +479,7 @@ function ItinerariesPage() {
                             <Link
                               to="/clientes/$id"
                               params={{ id: it.lead.client_id }}
-                              title="Perfil do cliente"
+                              title="Perfil do viajante"
                               className="ml-auto flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
                             >
                               <User className="h-3.5 w-3.5" /> Cliente

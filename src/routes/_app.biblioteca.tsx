@@ -81,7 +81,7 @@ const TABS: { key: TabKey; label: string; icon: typeof Sparkles; hint: string }[
   { key: "package", label: "Pacotes", icon: Package, hint: "Pacotes prontos com preço e duração." },
   { key: "image", label: "Imagens", icon: ImageIcon, hint: "Banco de imagens de destinos." },
   { key: "itinerary", label: "Roteiros modelo", icon: Map, hint: "Roteiros reutilizáveis como base." },
-  { key: "documents", label: "Documentos", icon: Files, hint: "Arquivos enviados em leads e roteiros, agrupados por origem." },
+  { key: "documents", label: "Documentos", icon: Files, hint: "Arquivos enviados em viagens e roteiros, agrupados por origem." },
 ];
 
 function LibraryPage() {
@@ -295,7 +295,7 @@ function LibraryPage() {
     const ok = await confirm({
       title: `Excluir ${chosen.length} ${chosen.length === 1 ? "imagem" : "imagens"}?`,
       description:
-        "As imagens serão removidas da biblioteca e dos perfis de leads e roteiros que as utilizam. Esta ação não pode ser desfeita.",
+        "As imagens serão removidas da biblioteca e dos perfis de viagens e roteiros que as utilizam. Esta ação não pode ser desfeita.",
       confirmLabel: "Excluir tudo",
       destructive: true,
     });
@@ -1073,7 +1073,7 @@ function Fld({
 
 const ORIGIN_LABELS: Record<DocumentOrigin, string> = {
   roteiro: "Roteiros",
-  lead: "Leads",
+  lead: "Viagens",
   geral: "Gerais",
 };
 

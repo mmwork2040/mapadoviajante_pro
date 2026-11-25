@@ -269,7 +269,7 @@ function ChecklistTemplatesPage() {
   async function remove(id: string) {
     const ok = await confirm({
       title: "Excluir template?",
-      description: "Leads que já aplicaram este template continuarão com o checklist atual.",
+      description: "Viagens que já aplicaram este template continuarão com o checklist atual.",
       confirmLabel: "Excluir",
       destructive: true,
     });
@@ -401,7 +401,7 @@ function ChecklistTemplatesPage() {
         <PageHeader
           icon={ListChecks}
           title="Templates de Checklist"
-          subtitle="Crie e edite templates de checklist. O template padrão será pré-selecionado ao aplicar um checklist em novos leads."
+          subtitle="Crie e edite templates de checklist. O template padrão será pré-selecionado ao aplicar um checklist em novas viagens."
         />
       </div>
 

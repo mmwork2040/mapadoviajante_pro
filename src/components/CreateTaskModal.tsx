@@ -262,7 +262,7 @@ export function CreateTaskModal({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <FieldLabel>Cliente</FieldLabel>
+              <FieldLabel>Viajante</FieldLabel>
               <Select
                 value={leadId}
                 onValueChange={(v) => {
@@ -272,7 +272,7 @@ export function CreateTaskModal({
                 disabled={fromChecklist}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione cliente" />
+                  <SelectValue placeholder="Selecione viajante" />
                 </SelectTrigger>
                 <SelectContent>
                   {(leadsQ.data ?? []).map((l) => (
@@ -328,7 +328,7 @@ export function CreateTaskModal({
               </Select>
               {!itinerariesQ.isLoading && (itinerariesQ.data ?? []).length === 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Este cliente ainda não possui roteiros.
+                  Este viajante ainda não possui roteiros.
                 </p>
               )}
             </div>

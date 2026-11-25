@@ -158,7 +158,7 @@ function LeadsPage() {
   const move = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: LeadStatus }) => {
       const updated = await updateLead(id, { status });
-      if (!updated) throw new Error("Não foi possível mover o lead.");
+      if (!updated) throw new Error("Não foi possível mover a viagem.");
       return updated;
     },
     onMutate: async ({ id, status }) => {
@@ -416,7 +416,7 @@ function LeadCard({
       >
         <button
           type="button"
-          aria-label="Ver detalhes do lead"
+          aria-label="Ver detalhes da viagem"
           title="Ver detalhes"
           draggable={false}
           onPointerDown={(e) => e.stopPropagation()}
@@ -432,7 +432,7 @@ function LeadCard({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label="Mover lead"
+              aria-label="Mover viagem"
               title="Mover para outra etapa"
               onClick={(e) => e.stopPropagation()}
               className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
@@ -1045,7 +1045,7 @@ export function NewLeadModal({
       setDraftAlerted(true);
       const itineraries = await fetchItinerariesByLead(selectedLeadId);
       if (itineraries.some((it) => it.status === "draft")) {
-        toast.warning("Este lead já possui um roteiro em rascunho.");
+        toast.warning("esta viagem já possui um roteiro em rascunho.");
       }
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -1108,7 +1108,7 @@ export function NewLeadModal({
       if (payload.phone !== (lead.phone || null)) clientPatch.phone = payload.phone;
       if (Object.keys(clientPatch).length > 0) {
         const client = await updateClient(lead.client_id, clientPatch);
-        if (!client) toast.warning("Proposta salva, mas o cadastro do cliente não foi atualizado.");
+        if (!client) toast.warning("Viagem salva, mas o cadastro do viajante não foi atualizado.");
       }
     }
 
@@ -1157,11 +1157,11 @@ export function NewLeadModal({
                 <UserPlus className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold">{editing ? "Editar Proposta" : "Nova Proposta"}</h2>
+                <h2 className="text-lg font-bold">{editing ? "Editar viagem" : "Nova viagem"}</h2>
                 <p className="text-xs text-muted-foreground">
                   {editing
-                    ? "Revise e atualize todos os dados do cliente"
-                    : "Preencha os dados para criar o perfil completo do cliente"}
+                    ? "Revise e atualize todos os dados do viajante"
+                    : "Preencha os dados para criar o perfil completo do viajante"}
                 </p>
 
               </div>
@@ -1343,7 +1343,7 @@ export function NewLeadModal({
               {clientMembers.length > 0 && (
                 <div className="sm:col-span-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3">
                   <div className="mb-2 text-xs font-semibold text-foreground">
-                    Membros do cliente
+                    Membros do viajante
                   </div>
                   <p className="mb-2 text-xs text-muted-foreground">
                     Selecione quem também vai viajar para somar ao número de passageiros.
@@ -1392,7 +1392,7 @@ export function NewLeadModal({
               <ModalField label="Programas de Fidelidade" placeholder="Ex: Smiles, LATAM Pass" value={form.loyalty_programs} onChange={(v) => set({ loyalty_programs: v })} suggestions={LOYALTY_PROGRAMS} />
               <ModalField label="Pontos / Milhas" placeholder="Ex: 80.000" value={form.points_miles} onChange={(v) => set({ points_miles: maskMiles(v) })} />
               <ModalSelect label="Possui Passaporte?" value={form.has_passport} onChange={(v) => set({ has_passport: v })} options={["Sim", "Não", "Vencido"]} />
-              <ModalTextarea label="Preferências do cliente" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} presets={PREFERENCE_PRESETS} />
+              <ModalTextarea label="Preferências do viajante" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} presets={PREFERENCE_PRESETS} />
             </Section>
           )}
 

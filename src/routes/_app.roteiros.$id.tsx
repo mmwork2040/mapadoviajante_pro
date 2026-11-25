@@ -1333,10 +1333,10 @@ function ItineraryDetailPage() {
         <nav className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
           {clientIdForEdit ? (
             <Link to="/clientes/$id" params={{ id: clientIdForEdit }} className="truncate hover:text-foreground hover:underline">
-              {clientForEdit?.name || it.client_name || "Cliente"}
+              {clientForEdit?.name || it.client_name || "Viajante"}
             </Link>
           ) : (
-            <span className="truncate">{it.client_name || "Cliente"}</span>
+            <span className="truncate">{it.client_name || "Viajante"}</span>
           )}
           <span>›</span>
           {leadIdForClient ? (
@@ -1423,7 +1423,7 @@ function ItineraryDetailPage() {
               <button
                 type="button"
                 onClick={() => setClientEditOpen(true)}
-                title="Editar cadastro do cliente"
+                title="Editar cadastro do viajante"
                 className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-input text-muted-foreground hover:bg-muted hover:text-foreground"
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -1551,7 +1551,7 @@ function ItineraryDetailPage() {
               await updateClient(clientForEdit.id, payload);
               await qc.invalidateQueries({ queryKey: ["itinerary-client", clientForEdit.id] });
               await qc.invalidateQueries({ queryKey: ["clients"] });
-              toast.success("Cliente atualizado");
+              toast.success("Viajante atualizado");
               setClientEditOpen(false);
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Erro ao salvar");

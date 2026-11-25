@@ -196,7 +196,7 @@ export function LeadDetailDrawer({
       qc.invalidateQueries({ queryKey: ["clients"] });
       toast.success("Viagem atualizada!");
     },
-    onError: () => toast.error("Erro ao atualizar lead."),
+    onError: () => toast.error("Erro ao atualizar viagem."),
   });
 
   const assign = useMutation({
@@ -208,27 +208,27 @@ export function LeadDetailDrawer({
         await createNotification({
           recipientId: memberId,
           type: "lead_assigned",
-          title: "Lead atribuído a você",
+          title: "Viagem atribuída a você",
           body: lead?.name || "",
           link: `/leads?lead=${leadId}`,
           leadId,
         });
-        toast.success("Lead atribuído e notificação enviada.");
+        toast.success("Viagem atribuída e notificação enviada.");
       } else {
-        toast.success("Lead atribuído.");
+        toast.success("Viagem atribuída.");
       }
     },
-    onError: () => toast.error("Erro ao atribuir lead."),
+    onError: () => toast.error("Erro ao atribuir viagem."),
   });
 
   async function handleAssign(memberId: string) {
     if (memberId === (lead?.assigned_to || "")) return;
     const member = team.find((m) => m.id === memberId);
     const ok = await confirm({
-      title: "Atribuir lead",
+      title: "Atribuir viagem",
       description: member
         ? `Deseja atribuir este lead a ${member.name}?`
-        : "Deseja remover a atribuição deste lead?",
+        : "Deseja remover a atribuição deste viagem?",
       confirmLabel: "Confirmar",
       cancelLabel: "Cancelar",
     });
@@ -262,8 +262,8 @@ export function LeadDetailDrawer({
             await createNotification({
               recipientId: responsible,
               type: "lead_status",
-              title: "Status de lead atualizado",
-              body: `${lead?.name || "Lead"} — ${nextLabel}`,
+              title: "Etapa da viagem atualizada",
+              body: `${lead?.name || "Viagem"} — ${nextLabel}`,
               link: `/leads?lead=${leadId}`,
               leadId,
             });
@@ -360,7 +360,7 @@ export function LeadDetailDrawer({
     }
     const ok = await confirm({
       title: "Criar roteiro",
-      description: "Deseja criar um novo roteiro para este lead?",
+      description: "Deseja criar um novo roteiro para esta viagem?",
       confirmLabel: "Criar",
     });
     if (ok) createRoteiro.mutate();
@@ -444,7 +444,7 @@ export function LeadDetailDrawer({
   }, [p.cover_image]);
 
   function openWhatsApp() {
-    if (!phoneDigits) return toast.error("Lead sem telefone cadastrado.");
+    if (!phoneDigits) return toast.error("Viagem sem telefone cadastrado.");
     window.open(`https://wa.me/${phoneDigits.startsWith("55") ? phoneDigits : "55" + phoneDigits}`, "_blank");
   }
 
@@ -549,7 +549,7 @@ export function LeadDetailDrawer({
                   />
 
                   <label className="block text-xs font-medium text-muted-foreground">
-                    Cliente vinculado
+                    Viajante vinculado
                     <select
                       className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground"
                       value={lead.client_id ?? ""}
@@ -898,7 +898,7 @@ function TripSummaryStrip({
         {clientName && (
           <div className="flex items-center gap-1.5">
             <User className="h-3.5 w-3.5 text-primary" />
-            <span className="truncate"><span className="text-muted-foreground">Cliente: </span><span className="font-medium text-foreground">{clientName}</span></span>
+            <span className="truncate"><span className="text-muted-foreground">Viajante: </span><span className="font-medium text-foreground">{clientName}</span></span>
           </div>
         )}
         {destination && (
@@ -1166,7 +1166,7 @@ function ViagemTab({
               <Field label="Pontos / milhas" value={p.points_miles} />
               <Field label="Possui passaporte?" value={p.has_passport} />
             </div>
-            {p.preferences && <Field label="Preferências do cliente" value={p.preferences} wrap />}
+            {p.preferences && <Field label="Preferências do viajante" value={p.preferences} wrap />}
           </div>
         ) : (
           <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/50 p-6 text-center">
@@ -1265,7 +1265,7 @@ function ClientTripHistory({ lead }: { lead: Lead }) {
     queryFn: () => fetchClientTripHistory(lead),
   });
   return (
-    <CollapsibleSection icon={MapIcon} title="Histórico de viagens do cliente" count={data.length}>
+    <CollapsibleSection icon={MapIcon} title="Histórico de viagens do viajante" count={data.length}>
       {isLoading ? (
         <p className="text-sm text-muted-foreground">Carregando…</p>
       ) : data.length === 0 ? (
@@ -1896,7 +1896,7 @@ function ChecklistTab({
               const extrasCount = (state.extras || []).length;
               const tplName = state.templateName || "Checklist personalizado";
               const ok = await confirm({
-                title: "Remover checklist deste cliente?",
+                title: "Remover checklist deste viajante?",
                 description:
                   `Serão apagados:\n• Template: ${tplName}\n• Marcações: ${doneCount} de ${totalCount} itens concluídos\n• Itens extras: ${extrasCount}\n\nVocê poderá desfazer por alguns segundos após remover.`,
                 confirmLabel: "Remover",
@@ -2427,7 +2427,7 @@ function FinanceiroTab({
         ) : (
           <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-3">
             <BudgetLine label="Total planejado" value={total} />
-            <BudgetLine label="Valor trazido pelo cliente" value={client} />
+            <BudgetLine label="Valor trazido pelo viajante" value={client} />
             <BudgetLine label="Valor OSV" value={osv} />
           </div>
         )}
@@ -2577,7 +2577,7 @@ function BudgetsForm({
           />
         </label>
         <label className="block">
-          <span className="text-xs text-muted-foreground">Trazido pelo cliente</span>
+          <span className="text-xs text-muted-foreground">Trazido pelo viajante</span>
           <input
             value={client}
             onChange={(e) => setClient(maskCurrency(e.target.value))}

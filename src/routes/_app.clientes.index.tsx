@@ -247,8 +247,8 @@ function ClientesPage() {
   const createMut = useMutation({
     mutationFn: (payload: Partial<Client>) => createClientSvc(payload),
     onSuccess: (c) => {
-      if (!c) return toast.error("Erro ao criar cliente");
-      toast.success("Cliente criado");
+      if (!c) return toast.error("Erro ao criar viajante");
+      toast.success("Viajante criado");
       qc.invalidateQueries({ queryKey: ["clients"] });
       setOpenForm(false);
       setEditing(null);
@@ -259,7 +259,7 @@ function ClientesPage() {
     mutationFn: ({ id, patch }: { id: string; patch: Partial<Client> }) => updateClient(id, patch),
     onSuccess: (c) => {
       if (!c) return toast.error("Erro ao salvar");
-      toast.success("Cliente atualizado");
+      toast.success("Viajante atualizado");
       qc.invalidateQueries({ queryKey: ["clients"] });
       setOpenForm(false);
       setEditing(null);
@@ -269,7 +269,7 @@ function ClientesPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteClient(id),
     onSuccess: () => {
-      toast.success("Cliente removido");
+      toast.success("Viajante removido");
       qc.invalidateQueries({ queryKey: ["clients"] });
     },
   });
@@ -287,7 +287,7 @@ function ClientesPage() {
             <SearchBar
               value={search}
               onChange={setSearch}
-              placeholder="Buscar cliente…"
+              placeholder="Buscar viajante…"
               className="w-full sm:w-64"
             />
 
@@ -340,12 +340,12 @@ function ClientesPage() {
       {isLoading ? (
         <div className="py-16 text-center text-sm text-muted-foreground">Carregando...</div>
       ) : isError ? (
-        <QueryError message="Não foi possível carregar os clientes." onRetry={() => refetch()} />
+        <QueryError message="Não foi possível carregar os viajantes." onRetry={() => refetch()} />
       ) : filteredClients.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
           {clients.length === 0
-            ? "Nenhum cliente cadastrado ainda."
-            : "Nenhum cliente encontrado para este filtro."}
+            ? "Nenhum viajante cadastrado ainda."
+            : "Nenhum viajante encontrado para este filtro."}
         </div>
       ) : (
         <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -359,7 +359,7 @@ function ClientesPage() {
               }}
               onDelete={async () => {
                 const ok = await confirm({
-                  title: "Remover cliente?",
+                  title: "Remover viajante?",
                   description: `Deseja remover ${c.name}? As viagens vinculadas serão desvinculadas.`,
                   confirmLabel: "Remover",
                   destructive: true,
@@ -726,11 +726,11 @@ export function ClientFormDrawer({
                 <UserPlus className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold">{isEdit ? "Editar cliente" : "Novo cliente"}</h2>
+                <h2 className="text-lg font-bold">{isEdit ? "Editar viajante" : "Novo viajante"}</h2>
                 <p className="text-xs text-muted-foreground">
                   {isEdit
-                    ? "Revise e atualize os dados do cliente"
-                    : "Preencha os dados para criar o cadastro completo do cliente"}
+                    ? "Revise e atualize os dados do viajante"
+                    : "Preencha os dados para criar o cadastro completo do viajante"}
                 </p>
               </div>
             </div>
@@ -1015,7 +1015,7 @@ export function ClientFormDrawer({
             <Section icon={StickyNote} title="Anotações">
               <ModalTextarea
                 label="Anotações"
-                placeholder="Anotações gerais sobre o cliente…"
+                placeholder="Anotações gerais sobre o viajante…"
                 value={form.notes ?? ""}
                 onChange={(v) => set("notes", v)}
               />
@@ -1036,7 +1036,7 @@ export function ClientFormDrawer({
             className="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             <Save className="h-4 w-4" />
-            {saving ? "Salvando…" : isEdit ? "Salvar Alterações" : "Criar Cliente"}
+            {saving ? "Salvando…" : isEdit ? "Salvar Alterações" : "Criar Viajante"}
           </button>
         </div>
       </div>
@@ -1081,11 +1081,11 @@ function MembersTab({
     if (!rel) return toast.error("Informe o grau de parentesco");
     const id = globalThis.crypto?.randomUUID?.() ?? String(Math.random());
     if (mode === "existing") {
-      if (!selectedClientId) return toast.error("Selecione um cliente");
+      if (!selectedClientId) return toast.error("Selecione um viajante");
       if (currentClientId && selectedClientId === currentClientId)
-        return toast.error("O cliente principal não pode ser adicionado como membro");
+        return toast.error("O viajante principal não pode ser adicionado como membro");
       if (members.some((m) => m.client_id === selectedClientId))
-        return toast.error("Este cliente já é um membro");
+        return toast.error("Este viajante já é um membro");
       const c = allClients.find((x) => x.id === selectedClientId);
       if (!c) return;
       onChange([...members, { id, name: c.name, relationship: rel, client_id: c.id }]);
@@ -1144,7 +1144,7 @@ function MembersTab({
     try {
       const created = await createClientSvc(payload);
       if (!created) {
-        toast.error("Erro ao criar cliente");
+        toast.error("Erro ao criar viajante");
         return;
       }
       onChange(
@@ -1155,10 +1155,10 @@ function MembersTab({
         ),
       );
       qc.invalidateQueries({ queryKey: ["clients"] });
-      toast.success("Cliente criado e vinculado como membro");
+      toast.success("Viajante criado e vinculado como membro");
       setConverting(null);
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao criar cliente");
+      toast.error(e instanceof Error ? e.message : "Erro ao criar viajante");
     } finally {
       setConvertSaving(false);
     }
@@ -1168,7 +1168,7 @@ function MembersTab({
     <Section icon={Users} title="Membros da viagem">
       <div className="sm:col-span-2 space-y-4">
         <p className="text-xs text-muted-foreground">
-          Adicione familiares ou acompanhantes. Podem ser clientes já cadastrados ou nomes livres com o grau de parentesco.
+          Adicione familiares ou acompanhantes. Podem ser viajantes já cadastrados ou nomes livres com o grau de parentesco.
         </p>
 
         {members.length > 0 && (
@@ -1223,7 +1223,7 @@ function MembersTab({
                           <div className="truncate text-sm font-medium">{m.name}</div>
                           <div className="truncate text-xs text-muted-foreground">
                             {m.relationship}
-                            {m.client_id && <span className="ml-1 text-primary">· cliente vinculado</span>}
+                            {m.client_id && <span className="ml-1 text-primary">· viajante vinculado</span>}
                           </div>
                         </div>
                       </div>
@@ -1233,7 +1233,7 @@ function MembersTab({
                             type="button"
                             onClick={() => setConverting(m)}
                             className="rounded-md p-1.5 text-muted-foreground hover:bg-muted hover:text-primary"
-                            title="Transformar em cliente"
+                            title="Transformar em viajante"
                           >
                             <UserPlus className="h-4 w-4" />
                           </button>
@@ -1287,7 +1287,7 @@ function MembersTab({
 
           {mode === "existing" ? (
             <label className="block">
-              <span className="mb-1 block text-xs font-semibold">Selecionar cliente</span>
+              <span className="mb-1 block text-xs font-semibold">Selecionar viajante</span>
               <select
                 value={selectedClientId}
                 onChange={(e) => setSelectedClientId(e.target.value)}
@@ -1299,7 +1299,7 @@ function MembersTab({
                 ))}
               </select>
               {availableClients.length === 0 && (
-                <p className="mt-1 text-xs text-muted-foreground">Nenhum cliente disponível para vincular.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Nenhum viajante disponível para vincular.</p>
               )}
             </label>
           ) : (
