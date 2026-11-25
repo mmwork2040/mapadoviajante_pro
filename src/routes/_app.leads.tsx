@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Plus, X, UserPlus, User, Plane, Gift, Hotel, ArrowRight, ArrowLeft, Check, Info, MoreVertical, Sparkles, Loader2, CalendarRange, Trash2, ImageIcon, AlertCircle, RefreshCw, Upload, Images, Bot, Map as MapIcon, Save, Archive, ArchiveRestore } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { ViagensTabs } from "@/components/ViagensTabs";
 import { SearchBar } from "@/components/SearchBar";
 
 import { parseTravelPeriodFn } from "@/lib/ai.functions";
@@ -218,8 +219,9 @@ function LeadsPage() {
     <div className="space-y-6">
       <PageHeader
         icon={Plane}
-        title="Vendas"
-        subtitle={showArchived ? "Vendas arquivadas." : "Funil de vendas (arraste para mover)."}
+        title="Viagens"
+        subtitle={showArchived ? "Viagens arquivadas da fase comercial." : "Fase comercial: arraste o cartão para mudar a etapa."}
+        tabs={<ViagensTabs ativo="comercial" />}
         actions={
           <>
             <SearchBar

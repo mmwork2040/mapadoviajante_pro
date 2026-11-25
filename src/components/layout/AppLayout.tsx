@@ -3,20 +3,20 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  LayoutDashboard,
-  Users,
-  Route as RouteIcon,
+  Home,
+  Plane,
+  Contact,
+  CalendarDays,
   Images,
   Wallet,
   ShieldCheck,
-  ListChecks,
   Moon,
   Sun,
   LogOut,
-  Bot,
   ChevronLeft,
   UserCog,
   Gauge,
+  Bot,
 } from "lucide-react";
 import { useAuth, isAdminUser, isSuperAdminEmail } from "@/lib/auth";
 import { useFinanceAccess } from "@/lib/finance-access";
@@ -26,30 +26,29 @@ import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThayPanel } from "@/components/ThayPanel";
+import logoBranco from "@/assets/osv-logo-branco.svg";
+import logoPreto from "@/assets/osv-logo-preto.svg";
 
-const NAV = [
-  { to: "/", label: "Painel", icon: LayoutDashboard },
-  { to: "/leads", label: "Vendas", icon: Users },
-  { to: "/clientes", label: "Clientes", icon: UserCog },
-  { to: "/tarefas", label: "Tarefas", icon: ListChecks },
-  { to: "/roteiros", label: "Viagens", icon: RouteIcon },
-  { to: "/biblioteca", label: "Biblioteca", icon: Images },
-  { to: "/financeiro", label: "Financeiro", icon: Wallet },
-  { to: "/admin", label: "Administração", icon: ShieldCheck },
-  { to: "/plataforma", label: "Plataforma", icon: Gauge },
-  { to: "/perfil", label: "Meu Perfil", icon: UserCog },
-] as const;
+// Menu agrupado (identidade OSV): trabalho do dia, recursos e gestão.
+// Viagens reúne a fase comercial (/leads) e a preparação (/roteiros); Viajantes é a base de pessoas (/clientes).
+type NavItem = { to: string; label: string; icon: typeof Home; match: string[]; group: "Trabalho" | "Recursos" | "Gestão" };
+const NAV: NavItem[] = [
+  { to: "/", label: "Hoje", icon: Home, match: ["/"], group: "Trabalho" },
+  { to: "/leads", label: "Viagens", icon: Plane, match: ["/leads", "/roteiros"], group: "Trabalho" },
+  { to: "/clientes", label: "Viajantes", icon: Contact, match: ["/clientes"], group: "Trabalho" },
+  { to: "/tarefas", label: "Agenda", icon: CalendarDays, match: ["/tarefas"], group: "Trabalho" },
+  { to: "/biblioteca", label: "Biblioteca", icon: Images, match: ["/biblioteca"], group: "Recursos" },
+  { to: "/financeiro", label: "Financeiro", icon: Wallet, match: ["/financeiro"], group: "Gestão" },
+  { to: "/admin", label: "Equipe e configurações", icon: ShieldCheck, match: ["/admin", "/checklist-templates"], group: "Gestão" },
+  // Só para super admin (liberação de acesso e cota de IA das agências).
+  { to: "/plataforma", label: "Plataforma", icon: Gauge, match: ["/plataforma"], group: "Gestão" },
+];
 
-// Itens que exigem cargo de administrador
+// Barra inferior (mobile)
+const MOBILE_NAV = NAV.filter((i) => ["/", "/leads", "/clientes", "/tarefas"].includes(i.to));
 
-// Itens principais exibidos na barra de navegação inferior (mobile)
-const MOBILE_NAV = [
-  { to: "/", label: "Início", icon: LayoutDashboard },
-  { to: "/leads", label: "Vendas", icon: Users },
-  { to: "/clientes", label: "Clientes", icon: UserCog },
-  { to: "/tarefas", label: "Tarefas", icon: ListChecks },
-  { to: "/roteiros", label: "Viagens", icon: RouteIcon },
-] as const;
+const isActive = (item: NavItem, pathname: string) =>
+  item.match.some((m) => (m === "/" ? pathname === "/" : pathname.startsWith(m)));
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { session, member, signOut } = useAuth();
@@ -104,32 +103,42 @@ export function AppLayout({ children }: { children: ReactNode }) {
           collapsed ? "w-20" : "w-64"
         }`}
       >
-        <div className={`flex items-center gap-2 py-5 ${collapsed ? "justify-center px-2" : "px-5"}`}>
-          <img src="/mapapro-mark.svg" alt="MapaPRO" className="h-9 w-9 shrink-0 rounded-lg" />
+        <div className={`flex items-center gap-3 py-6 ${collapsed ? "justify-center px-2" : "px-6"}`}>
+          <img src={logoBranco} alt="O Segredo do Viajante" className={`hidden dark:block ${collapsed ? "h-6" : "h-9"} w-auto`} />
+          <img src={logoPreto} alt="O Segredo do Viajante" className={`block dark:hidden ${collapsed ? "h-6" : "h-9"} w-auto`} />
           {!collapsed && (
-            <span className="animate-fade-in whitespace-nowrap text-lg font-extrabold tracking-tight">
-              Mapa<span className="text-primary">PRO</span>
+            <span className="animate-fade-in border-l border-sidebar-border pl-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+              Consultoria
             </span>
           )}
         </div>
 
-        <nav className="flex-1 space-y-1 px-3">
-          {nav.map(({ to, label, icon: Icon }) => {
-            const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+        <nav className="flex-1 space-y-0.5 px-3">
+          {nav.map((item, idx) => {
+            const { to, label, icon: Icon } = item;
+            const active = isActive(item, pathname);
+            const header = !collapsed && (idx === 0 || nav[idx - 1].group !== item.group);
             return (
+              <div key={to}>
+              {header && (
+                <p className="px-3 pb-1.5 pt-4 text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+                  {item.group}
+                </p>
+              )}
               <Link
                 key={to}
                 to={to}
                 title={collapsed ? label : undefined}
-                className={`relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
+                aria-current={active ? "page" : undefined}
+                className={`relative flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm transition-colors ${
                   collapsed ? "justify-center" : ""
                 } ${
                   active
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/60"
+                    ? "bg-sidebar-accent font-bold text-sidebar-accent-foreground"
+                    : "font-medium text-sidebar-foreground hover:bg-muted"
                 }`}
               >
-                <Icon className="h-[18px] w-[18px] shrink-0" />
+                <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-accent-foreground" : "text-muted-foreground"}`} />
                 {!collapsed && <span className="animate-fade-in whitespace-nowrap">{label}</span>}
                 {to === "/leads" && leadsCount > 0 && (
                   <span
@@ -150,6 +159,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   </span>
                 )}
               </Link>
+              </div>
             );
           })}
         </nav>
@@ -159,7 +169,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             type="button"
             onClick={() => setThayOpen(true)}
             title="Conversar com a Thay"
-            className={`flex w-full items-center gap-2 rounded-xl bg-accent px-3 py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-90 ${
+            className={`flex w-full items-center gap-2 rounded-full bg-accent px-3.5 py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-90 ${
               collapsed ? "justify-center" : ""
             }`}
           >
@@ -167,16 +177,18 @@ export function AppLayout({ children }: { children: ReactNode }) {
             {!collapsed && <span className="animate-fade-in whitespace-nowrap">Thay IA</span>}
           </button>
           {collapsed ? (
-            <div
+            <Link
+              to="/perfil"
+              aria-label="Meu perfil"
               className="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
               style={{ backgroundColor: member?.avatar_color || "#ff7a1a" }}
-              title={member?.name || "Usuário"}
+              title={member?.name || "Meu perfil"}
             >
               {initials(member?.name)}
-            </div>
+            </Link>
           ) : (
             <div className="flex items-center justify-between rounded-xl border border-sidebar-border px-3 py-2.5">
-              <div className="flex items-center gap-2 overflow-hidden">
+              <Link to="/perfil" title="Meu perfil" className="flex min-w-0 items-center gap-2 overflow-hidden">
                 <div
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
                   style={{ backgroundColor: member?.avatar_color || "#ff7a1a" }}
@@ -189,7 +201,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     {member?.role || "agente"}
                   </p>
                 </div>
-              </div>
+              </Link>
               <button
                 onClick={toggle}
                 aria-label="Alternar tema"
@@ -207,10 +219,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-5">
           {/* Marca no mobile (a navegação fica na barra inferior) */}
           <div className="flex items-center gap-2 md:hidden">
-            <img src="/mapapro-mark.svg" alt="MapaPRO" className="h-8 w-8 shrink-0 rounded-lg" />
-            <span className="text-base font-extrabold tracking-tight">
-              Mapa<span className="text-primary">PRO</span>
-            </span>
+            <img src={logoBranco} alt="O Segredo do Viajante" className="hidden h-7 w-auto dark:block" />
+            <img src={logoPreto} alt="O Segredo do Viajante" className="block h-7 w-auto dark:hidden" />
           </div>
           <button
             onClick={() => setCollapsed((c) => !c)}
@@ -296,7 +306,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                         className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
                       >
                         <ShieldCheck className="h-4 w-4" />
-                        Administração
+                        Equipe e configurações
                       </Link>
                     )}
                     <button
@@ -334,8 +344,9 @@ export function AppLayout({ children }: { children: ReactNode }) {
 
       {/* Barra de navegação inferior (mobile) */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        {mobileNav.map(({ to, label, icon: Icon }) => {
-          const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+        {mobileNav.map((item) => {
+          const { to, label, icon: Icon } = item;
+          const active = isActive(item, pathname);
           return (
             <Link
               key={to}

@@ -127,7 +127,7 @@ function TarefasPage() {
     <div className="space-y-6">
       <PageHeader
         icon={ListChecks}
-        title="Tarefas"
+        title="Agenda"
         subtitle={`${pending.length} pendente${pending.length !== 1 ? "s" : ""}`}
         actions={
           <>

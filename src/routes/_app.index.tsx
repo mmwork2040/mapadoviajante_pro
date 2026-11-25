@@ -256,8 +256,8 @@ function DashboardPage() {
     <div className="space-y-6">
       <PageHeader
         icon={LayoutDashboard}
-        title="Painel"
-        subtitle="Visão geral das suas vendas e operações."
+        title="Hoje"
+        subtitle="O que pede atenção agora nas suas viagens e na sua agenda."
         actions={
           <Link
             to="/roteiros"

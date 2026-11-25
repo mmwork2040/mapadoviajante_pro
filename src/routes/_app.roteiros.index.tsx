@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { Plus, X, MapPin, Trash2, MoreVertical, Copy, Calendar, Users, Map, Image as ImageIcon, Images, Upload, Bot, Route as RouteIcon, Save, User, ClipboardList, ListChecks, CircleDollarSign, Archive, ArchiveRestore } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
+import { ViagensTabs } from "@/components/ViagensTabs";
 import { toast } from "sonner";
 import {
   createItinerary,
@@ -266,7 +267,8 @@ function ItinerariesPage() {
       <PageHeader
         icon={RouteIcon}
         title="Viagens"
-        subtitle="Cada viagem pertence a um cliente e a uma venda. O roteiro é o conteúdo dia a dia; checklist, financeiro e benefícios ficam nos detalhes da viagem."
+        subtitle="Preparação e viagem: roteiro, checklist, documentos e financeiro de cada viagem fechada."
+        tabs={<ViagensTabs ativo="preparacao" />}
         actions={
           <>
             <SearchBar
