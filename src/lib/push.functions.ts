@@ -195,7 +195,7 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
           (value.userId === context.userId && value.deviceId === data.deviceId && row.key !== tokenKey)
         );
       })
-      .map((row) => row.key);
+      .map((row: any) => row.key);
     if (staleKeys.length > 0) {
       await supabaseAdmin.from("system_settings").delete().in("key", staleKeys);
     }
@@ -255,7 +255,7 @@ export const listDeviceTokens = createServerFn({ method: "GET" })
       .like("key", "push_token:%");
     if (error) throw new Error(error.message);
 
-    return (data ?? [])
+    return ((data ?? []) as any[])
       .map((row) => {
         const v = (row.value ?? {}) as {
           token?: string;

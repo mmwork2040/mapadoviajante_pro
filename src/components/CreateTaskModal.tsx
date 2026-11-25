@@ -117,7 +117,7 @@ export function CreateTaskModal({
           .select("type")
           .eq("id", m[1])
           .maybeSingle()
-          .then(({ data }) => {
+          .then(({ data }: { data: unknown }) => {
             const t = (data as { type?: string } | null)?.type;
             if (t && ACTIVITY_TYPES.some((a) => a.key === t)) setActivityType(t);
           });

@@ -25,6 +25,7 @@ import {
   DEFAULT_CONFIG as DEFAULT_NOTIF_CONFIG,
   getDeviceId,
   type NotifConfig,
+  type NotifEventId,
 } from "@/lib/notifications";
 import { sendGmail, getGmailStatus } from "@/lib/gmail.functions";
 import { getAccessPermissions, saveAccessPermissions } from "@/lib/finance.functions";
@@ -34,6 +35,7 @@ import {
   saveGmailConfig,
   DEFAULT_CONFIG as DEFAULT_GMAIL_CONFIG,
   type GmailConfig,
+  type EmailConfig,
 } from "@/lib/gmail-config";
 import {
   getFormConfig,
