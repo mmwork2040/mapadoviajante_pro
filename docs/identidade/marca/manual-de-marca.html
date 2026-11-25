@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de Marca — O Segredo do Viajante</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;700;800;900&family=Inter:wght@400;500;600;700;800&family=Ms+Madi&display=swap" rel="stylesheet">
+<style>
+:root{
+  --laranja:#F58E26; --laranja-fundo:#C4700F; --laranja-claro:#F9A84A;
+  --noite:#0C0A08; --tinta:#17130F; --tinta-2:#57524C; --tinta-3:#77716A; --linha:#E8E6E3; --gelo:#FAFAF9; --branco:#FFFFFF;
+  --marrom:#4E3B31; --sepia:#C8A96E; --verde:#4CAF50;
+  --f-titulo:"League Spartan",system-ui,sans-serif; --f-texto:"Inter",system-ui,sans-serif; --f-manuscrita:"Ms Madi","Brittany Signature",cursive; /* peças gráficas; trocar por Brittany Signature quando houver o arquivo */
+}
+*{box-sizing:border-box;margin:0}
+html{scroll-behavior:smooth}
+body{font:400 16px/1.6 var(--f-texto);color:var(--tinta);background:var(--branco);-webkit-font-smoothing:antialiased}
+img{display:block;max-width:100%}
+a{color:inherit}
+/* palavra de destaque: laranja, na fonte e no peso do título. Não existe itálico na marca (24/11/2026). */
+.it{font-family:inherit;font-style:normal;font-weight:inherit;color:var(--laranja)}
+em,i,cite{font-style:normal}
+.escuro .it{color:var(--laranja)}
+
+/* Layout */
+.nav{position:sticky;top:0;z-index:10;display:flex;gap:4px 18px;flex-wrap:wrap;align-items:center;padding:12px clamp(16px,4vw,48px);background:rgba(255,255,255,.92);
+  backdrop-filter:blur(12px);border-bottom:1px solid var(--linha);font-size:13px}
+.nav img{height:30px;margin-right:auto}
+.nav a{text-decoration:none;color:var(--tinta-2)}.nav a:hover{color:var(--tinta)}
+.cap{padding:clamp(56px,8vw,112px) clamp(16px,4vw,48px);border-bottom:1px solid var(--linha)}
+.cap>.in{max-width:1120px;margin:0 auto}
+.num{font:700 12px/1 var(--f-texto);letter-spacing:.18em;text-transform:uppercase;color:var(--laranja)}
+.cap h2{font:800 clamp(34px,4.5vw,56px)/1 var(--f-titulo);letter-spacing:-.035em;margin:14px 0 14px}
+.cap .intro{max-width:62ch;color:var(--tinta-2);font-size:18px;margin-bottom:40px}
+h3{font:800 22px/1.15 var(--f-titulo);letter-spacing:-.02em;margin:48px 0 12px}
+h3:first-child{margin-top:0}
+p.nota{color:var(--tinta-2);max-width:68ch}
+.grade{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(var(--min,240px),100%),1fr))}
+.caixa{border:1px solid var(--linha);border-radius:18px;overflow:hidden;background:var(--branco)}
+.caixa .palco{display:grid;place-items:center;min-height:200px;padding:28px}
+.caixa .leg{padding:14px 18px;border-top:1px solid var(--linha);font-size:13px;color:var(--tinta-2)}
+.caixa .leg b{display:block;font:800 15px var(--f-titulo);color:var(--tinta)}
+.escuro{background:var(--noite);color:#fff}
+.mono{font-family:ui-monospace,Menlo,monospace;font-size:12px}
+
+/* Capa */
+.capa{position:relative;overflow:hidden;min-height:88vh;display:grid;align-items:end;padding:clamp(24px,5vw,64px);background:var(--noite);color:#fff;isolation:isolate}
+.capa::before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(60% 55% at 85% 0%,rgba(245,142,38,.35),transparent 70%),radial-gradient(45% 45% at 10% 100%,rgba(78,59,49,.6),transparent 70%)}
+.capa::after{content:"";position:absolute;inset:0;z-index:-1;background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);background-size:72px 72px;
+  -webkit-mask-image:radial-gradient(70% 60% at 50% 30%,#000,transparent);mask-image:radial-gradient(70% 60% at 50% 30%,#000,transparent)}
+.capa img{width:min(520px,80vw);margin-bottom:48px}
+.capa h1{font:800 clamp(40px,7vw,96px)/.95 var(--f-titulo);letter-spacing:-.045em}
+.capa p{display:flex;gap:24px;flex-wrap:wrap;margin-top:28px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+
+/* Essência */
+.pilares{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media(max-width:800px){.pilares{grid-template-columns:1fr}}
+.pilar{padding:24px;border-radius:18px;background:var(--gelo);border:1px solid var(--linha)}
+.pilar b{display:block;font:800 22px var(--f-titulo);margin-bottom:6px}
+.frase{font:800 clamp(28px,3.5vw,44px)/1.05 var(--f-titulo);letter-spacing:-.03em;max-width:20ch;margin:8px 0 24px}
+
+/* Logo */
+.protecao{position:relative;display:inline-block;padding:var(--x);outline:1.5px dashed var(--laranja);outline-offset:0;--x:34px;background:repeating-linear-gradient(45deg,rgba(245,142,38,.08) 0 6px,transparent 6px 12px)}
+.protecao img{width:300px;background:#fff}
+.protecao span{position:absolute;font:700 12px var(--f-texto);color:var(--laranja)}
+.protecao .t{top:6px;left:50%;translate:-50% 0}.protecao .l{left:8px;top:50%;translate:0 -50%}
+.minimo{display:flex;align-items:flex-end;gap:32px;flex-wrap:wrap}
+.minimo div{text-align:center;font-size:12px;color:var(--tinta-3)}
+.errado .palco{position:relative}
+.errado .palco::after{content:"✕";position:absolute;top:10px;right:12px;display:grid;place-items:center;width:26px;height:26px;border-radius:50%;background:#B4232A;color:#fff;font-size:13px}
+.errado .palco img{width:210px}
+
+/* Cores */
+.cor{border-radius:18px;overflow:hidden;border:1px solid var(--linha)}
+.cor i{display:block;height:130px}
+.cor div{padding:14px 16px;font-size:13px;color:var(--tinta-2)}
+.cor b{display:block;font:800 17px var(--f-titulo);color:var(--tinta);margin-bottom:4px}
+.proporcao{display:flex;height:64px;border-radius:14px;overflow:hidden;margin:12px 0 8px}
+.proporcao span{display:grid;place-items:center;font:700 13px var(--f-texto)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--linha)}
+th{font:700 11px/1 var(--f-texto);letter-spacing:.14em;text-transform:uppercase;color:var(--tinta-3)}
+.ok{color:#1E7B34;font-weight:700}.nao{color:#B4232A;font-weight:700}
+.chip{display:inline-block;width:16px;height:16px;border-radius:4px;vertical-align:-3px;margin-right:6px;border:1px solid rgba(0,0,0,.12)}
+.rolagem{overflow-x:auto}
+
+/* Tipografia */
+.fam{display:grid;grid-template-columns:1fr 1.4fr;gap:24px;padding:28px 0;border-top:1px solid var(--linha)}
+@media(max-width:800px){.fam{grid-template-columns:1fr}}
+.fam .amostra{font-size:clamp(56px,8vw,104px);line-height:1}
+.fam ul{padding-left:18px;color:var(--tinta-2);font-size:14px}
+.hier>*{margin-bottom:14px}
+.composicao{padding:40px;border-radius:20px}
+
+/* Elementos */
+.elem svg{width:100%;max-width:220px;height:auto}
+
+/* Fotografia */
+.fotos{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:800px){.fotos{grid-template-columns:repeat(2,1fr)}}
+.fotos figure{border-radius:14px;overflow:hidden;position:relative}
+.fotos img{aspect-ratio:4/5;object-fit:cover;width:100%}
+.fotos figcaption{position:absolute;left:8px;bottom:8px;padding:4px 10px;border-radius:99px;background:rgba(12,10,8,.75);color:#fff;font-size:11px}
+
+/* Aplicações — linguagem das capas da área de membros (v2) */
+.pecas{display:grid;gap:16px}
+.pecas--capas{grid-template-columns:repeat(4,minmax(0,1fr))}
+.pecas--mix{grid-template-columns:1fr 1fr}
+@media(max-width:900px){.pecas--capas{grid-template-columns:repeat(2,minmax(0,1fr))}.pecas--mix{grid-template-columns:1fr}}
+.peca{position:relative;overflow:hidden;isolation:isolate;border-radius:16px;color:#fff;display:flex;flex-direction:column;background:#0C0A08;
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.6)}
+.peca>.foto{position:absolute;inset:0;z-index:-3;width:100%;height:100%;object-fit:cover}
+.peca::before{content:"";position:absolute;inset:0;z-index:-2;
+  background:linear-gradient(180deg,rgba(12,10,8,.85) 0%,rgba(12,10,8,.35) 30%,transparent 50%,rgba(12,10,8,.15) 65%,rgba(12,10,8,.55) 100%)}
+.peca::after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:radial-gradient(90% 45% at 80% 105%,rgba(245,142,38,.95),rgba(245,142,38,.45) 40%,transparent 70%)}
+/* Mapa antigo (sem foto): marrom, sépia, rosa dos ventos, meridianos, grão */
+.peca--mapa{background:
+  radial-gradient(60% 80% at 78% 55%,rgba(200,169,110,.35),transparent 70%),
+  repeating-radial-gradient(ellipse 120% 60% at 75% 50%,transparent 0 46px,rgba(200,169,110,.12) 46px 47px),
+  repeating-linear-gradient(90deg,transparent 0 79px,rgba(200,169,110,.10) 79px 80px),
+  linear-gradient(115deg,#0C0A08 0%,#1E150F 45%,#4E3B31 100%)}
+.peca--mapa::before{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");mix-blend-mode:overlay}
+.rosa{position:absolute;z-index:-1;width:34%;max-width:240px;aspect-ratio:1;opacity:.22;color:#C8A96E}
+.peca .titulo{font:900 clamp(22px,2.6vw,34px)/.92 var(--f-titulo);letter-spacing:-.035em;color:#fff;
+  text-shadow:0 2px 0 rgba(0,0,0,.35),0 4px 0 rgba(0,0,0,.18),0 10px 26px rgba(0,0,0,.55)}
+.peca .titulo .it{display:block;color:var(--laranja);font-size:.92em;letter-spacing:-.01em;line-height:1;margin-top:.04em;text-shadow:0 2px 14px rgba(0,0,0,.65)}
+.peca .titulo .it.antes{margin:0 0 .08em}
+.peca .sobre{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75)}
+.peca .chip{position:absolute;right:14px;bottom:14px;display:grid;place-items:center;width:52px;height:52px;border-radius:50%;background:rgba(26,15,8,.85);color:#fff;
+  font:800 14px var(--f-titulo);box-shadow:0 0 0 1px rgba(255,255,255,.08)}
+.peca .chip svg{width:20px;height:20px}
+.peca .marca{width:96px}
+.peca .rotulo-peca{position:absolute;top:10px;right:10px;padding:3px 8px;border-radius:99px;background:rgba(0,0,0,.55);font:600 9px/1.4 var(--f-texto);letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.8)}
+.capa-curso{aspect-ratio:3/4.3;padding:22px 20px;justify-content:flex-start}
+.capa-curso .marca{position:absolute;left:18px;bottom:18px;width:84px}
+.banner{aspect-ratio:21/7;padding:clamp(18px,3vw,36px);justify-content:center;grid-column:1/-1}
+.banner .fundadores{position:absolute;right:0;bottom:0;height:100%;width:52%;object-fit:cover;object-position:center 20%;z-index:-1;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 35%);mask-image:linear-gradient(90deg,transparent,#000 35%)}
+.banner .logo-com{position:relative;width:min(46%,420px)}
+.banner .logo-com .it{position:absolute;left:30%;top:-.9em;font-size:clamp(18px,2.6vw,34px);transform:rotate(-4deg);color:var(--laranja)}
+.thumb{aspect-ratio:16/9;padding:clamp(16px,2.5vw,28px);justify-content:center}
+.thumb .pessoa{position:absolute;right:0;top:0;height:100%;width:55%;object-fit:cover;object-position:center 25%;z-index:-2;
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 40%);mask-image:linear-gradient(90deg,transparent,#000 40%)}
+.thumb .titulo{font-size:clamp(26px,3.4vw,46px);max-width:9ch}
+.thumb .marca{position:absolute;left:clamp(16px,2.5vw,28px);bottom:16px;width:90px}
+.post{aspect-ratio:1/1;padding:22px;justify-content:space-between}
+.post .numero{font:900 clamp(40px,5vw,64px)/.9 var(--f-titulo);letter-spacing:-.04em;text-shadow:0 2px 0 rgba(0,0,0,.35),0 10px 26px rgba(0,0,0,.55)}
+.story{aspect-ratio:9/16;padding:22px;justify-content:space-between}
+.story .cta{align-self:flex-start;padding:10px 16px;border-radius:99px;background:var(--laranja);color:#1A0F05;font:800 12px var(--f-texto)}
+.faixa-peca{aspect-ratio:21/5;padding:clamp(16px,2.5vw,30px);flex-direction:row;align-items:center;justify-content:space-between;gap:16px;grid-column:1/-1}
+.faixa-peca .cta{flex:none;padding:12px 20px;border-radius:99px;background:var(--laranja);color:#1A0F05;font:800 13px var(--f-texto);box-shadow:0 10px 30px -8px rgba(245,142,38,.7)}
+
+/* ── Kit de capas e banner (fiel às peças da área de membros) ── */
+.kit{position:relative;overflow:hidden;isolation:isolate;border-radius:10px;color:#fff;background:#120D09;box-shadow:0 30px 60px -30px rgba(0,0,0,.7)}
+.kit .manus{font-family:var(--f-manuscrita);font-weight:400;color:var(--laranja);line-height:.8;letter-spacing:0;
+  text-shadow:0 0 1px rgba(0,0,0,.9),0 0 2px rgba(0,0,0,.7),0 2px 12px rgba(0,0,0,.6)}
+.kit .forte{font:800 1em/0.95 var(--f-titulo);letter-spacing:-.025em;color:#fff;
+  text-shadow:0 2px 0 rgba(0,0,0,.28),0 4px 0 rgba(0,0,0,.14),0 10px 22px rgba(0,0,0,.55)}
+.kit .forte .lar{color:var(--laranja)}
+.kit .logo3d{filter:drop-shadow(0 3px 0 rgba(0,0,0,.35)) drop-shadow(0 8px 14px rgba(0,0,0,.5))}
+.kit .base-laranja{position:absolute;inset:auto 0 0 0;height:55%;z-index:-1;pointer-events:none;
+  background:linear-gradient(to top,rgba(245,142,38,.95) 0%,rgba(230,120,30,.6) 22%,rgba(196,112,15,.22) 50%,transparent 100%)}
+.kit .papel{position:absolute;inset:0;z-index:-3;background:
+  radial-gradient(70% 90% at 30% 40%,#3A281B 0%,#22170F 45%,#120D09 100%)}
+.kit .papel::after{content:"";position:absolute;inset:0;opacity:.35;mix-blend-mode:overlay;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.kit .mapa{position:absolute;z-index:-2;pointer-events:none}
+.kit .rosa-kit{position:absolute;z-index:-2;color:#C8A96E;opacity:.16}
+.kit .foto{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover}
+.kit .veu-topo{position:absolute;inset:0 0 auto 0;height:45%;z-index:-1;background:linear-gradient(rgba(12,8,5,.7),transparent)}
+/* Banner */
+.kit-banner{aspect-ratio:4/1;min-height:200px}
+.kit-banner .mapa{right:-2%;top:6%;width:62%;opacity:.85;filter:brightness(.85) saturate(.9);-webkit-mask-image:linear-gradient(90deg,transparent,#000 22%);mask-image:linear-gradient(90deg,transparent,#000 22%)}
+.kit-banner .rosa-kit{left:-4%;top:-30%;width:28%}
+.kit-banner .marca-bloco{position:absolute;left:11%;top:56%;translate:0 -50%;width:32%}
+.kit-banner .marca-bloco .manus{position:absolute;left:46%;top:-6%;font-size:clamp(26px,4.4vw,64px);transform:rotate(-6deg)}
+.kit-banner .fundadores{position:absolute;right:4%;bottom:0;height:100%;width:34%;object-fit:cover;object-position:center 18%;z-index:-1;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0%,#000 28%,#000 78%,transparent 100%),linear-gradient(to bottom,transparent 0%,#000 30%);-webkit-mask-composite:source-in;
+  mask-image:linear-gradient(90deg,transparent 0%,#000 28%,#000 78%,transparent 100%),linear-gradient(to bottom,transparent 0%,#000 30%);mask-composite:intersect}
+.kit-banner .base-laranja{height:70%;background:linear-gradient(to top,rgba(196,112,15,.55),transparent)}
+/* Capas */
+.kit-capas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+@media(max-width:900px){.kit-capas{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kit-capa{aspect-ratio:3/4.5;font-size:clamp(20px,2.4vw,30px)}
+.kit-capa .topo{position:absolute;left:8%;right:8%;top:7%;text-align:center}
+.kit-capa .icone{position:absolute;right:7%;bottom:6%;width:30%}
+.kit-capa .play{position:absolute;left:50%;bottom:7%;translate:-50% 0;width:32%;aspect-ratio:1;border-radius:50%;background:#3A2416;display:grid;place-items:center;box-shadow:0 10px 30px -8px rgba(0,0,0,.6)}
+.kit-capa .play::before{content:"";width:0;height:0;border-left:clamp(16px,2vw,24px) solid #fff;border-top:clamp(10px,1.3vw,15px) solid transparent;border-bottom:clamp(10px,1.3vw,15px) solid transparent;margin-left:12%}
+.kit-capa .logo-pe{position:absolute;left:50%;bottom:5%;translate:-50% 0;width:30%}
+.kit-capa .mapa{inset:auto -40% 18% -40%;width:180%;opacity:.28}
+.kit-capa .rosa-kit{width:70%;right:-15%;top:30%}
+.notion{display:grid;place-items:center;aspect-ratio:1;border-radius:18%;background:#fff;border:3px solid #111;box-shadow:4px 4px 0 #111,0 10px 24px -6px rgba(0,0,0,.6);
+  font:700 2.2em/1 Georgia,"Times New Roman",serif;color:#111;transform:rotate(-4deg)}
+.chip-ia{position:relative;display:grid;place-items:center;aspect-ratio:1;border-radius:22%;background:#1A120C;border:3px solid #fff;box-shadow:0 0 30px rgba(245,142,38,.6);
+  font:900 1.15em/1 var(--f-titulo);color:#fff}
+.chip-ia::before,.chip-ia::after{content:"";position:absolute;inset:-18%;
+  background:repeating-linear-gradient(90deg,transparent 0 22%,#fff 22% 30%,transparent 30% 46%) top/100% 14% no-repeat,repeating-linear-gradient(90deg,transparent 0 22%,#fff 22% 30%,transparent 30% 46%) bottom/100% 14% no-repeat;z-index:-1}
+.chip-ia::after{transform:rotate(90deg)}
+
+.receita{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:8px 0 28px;counter-reset:r}
+@media(max-width:900px){.receita{grid-template-columns:1fr 1fr}}
+.receita div{padding:14px;border-radius:14px;background:var(--gelo);border:1px solid var(--linha);font-size:13px;color:var(--tinta-2)}
+.receita div::before{counter-increment:r;content:counter(r);display:grid;place-items:center;width:24px;height:24px;margin-bottom:8px;border-radius:50%;background:var(--laranja);color:#1A0F05;font:800 12px var(--f-titulo)}
+.receita b{display:block;color:var(--tinta);font-size:14px}
+.downloads li{padding:8px 0;border-bottom:1px solid var(--linha);list-style:none;font-size:14px}
+.downloads ul{padding:0}
+.downloads a{font-weight:700}
+footer{padding:40px;text-align:center;font-size:12px;color:var(--tinta-3)}
+@media print{.nav{display:none}.cap{break-before:page}}
+</style>
+</head>
+<body>
+
+<nav class="nav" aria-label="Seções">
+  <img src="logos/osv-logo-preto-recortado.svg" alt="O Segredo do Viajante">
+  <a href="#essencia">Essência</a><a href="#logo">Logo</a><a href="#cores">Cores</a><a href="#tipografia">Tipografia</a><a href="#elementos">Elementos</a><a href="#fotografia">Fotografia</a><a href="#aplicacoes">Aplicações</a><a href="#arquivos">Arquivos</a>
+</nav>
+
+<header class="capa">
+  <div>
+    <img src="logos/osv-logo-branco-recortado.svg" alt="O Segredo do Viajante">
+    <h1>Manual de <span class="it">marca</span></h1>
+    <p><span>Versão 2026 · revisão de 24/11</span><span>Logo · Cores · Tipografia · Aplicações</span><span>Uso em qualquer criação</span></p>
+  </div>
+</header>
+
+<!-- 01 ESSÊNCIA -->
+<section class="cap" id="essencia"><div class="in">
+  <span class="num">01 · Essência</span>
+  <h2>Quem a marca <span class="it">é</span></h2>
+  <p class="frase">Viajar mais, com mais conforto, sem gastar mais.</p>
+  <p class="intro">O Segredo do Viajante ensina brasileiros a usar milhas, cartões e planejamento para viajar mais. A marca fala como um amigo viajante que já fez o caminho: perto, prática e inspiradora, nunca elitista.</p>
+  <div class="pilares">
+    <div class="pilar"><b>Acolhimento</b>Visual quente e convidativo. Gente real, viagem real.</div>
+    <div class="pilar"><b>Clareza</b>Uma ideia por vez. Hierarquia forte, sem enfeite que atrapalhe.</div>
+    <div class="pilar"><b>Elegância</b>Sofisticado sem ostentação: conforto como conquista, não como luxo distante.</div>
+  </div>
+  <h3>Tom de voz</h3>
+  <div class="grade" style="--min:220px">
+    <div class="pilar"><b style="font-size:16px">Somos</b>amigáveis · autênticos · motivadores · confiáveis · didáticos</div>
+    <div class="pilar"><b style="font-size:16px">Não somos</b>elitistas · corporativos · sensacionalistas · "fórmula mágica"</div>
+    <div class="pilar"><b style="font-size:16px">Falamos assim</b>"A gente ensina o que vive." · "Você não precisa virar especialista em milhas."</div>
+  </div>
+</div></section>
+
+<!-- 02 LOGO -->
+<section class="cap" id="logo"><div class="in">
+  <span class="num">02 · Logo</span>
+  <h2>A assinatura</h2>
+  <p class="intro">O logo une o título em negrito arredondado, o "do" manuscrito <b>sempre em laranja</b> e a rota pontilhada que sai do pin e chega ao avião: a viagem saindo do lugar. Use sempre os arquivos oficiais e nunca redesenhe o logo com uma fonte.</p>
+
+  <h3>Versões principais</h3>
+  <div class="grade" style="--min:300px">
+    <div class="caixa"><div class="palco escuro"><img src="logos/osv-logo-branco-recortado.svg" alt="Logo versão branca" style="width:280px"></div><div class="leg"><b>Principal · fundo escuro</b>Texto branco + "do" laranja. É a versão mais usada (site, redes, vídeos).</div></div>
+    <div class="caixa"><div class="palco"><img src="logos/osv-logo-preto-recortado.svg" alt="Logo versão preta" style="width:280px"></div><div class="leg"><b>Principal · fundo claro</b>Texto preto + "do" laranja. Para documentos, PDFs e fundos brancos.</div></div>
+  </div>
+
+  <h3>Variações permitidas</h3>
+  <div class="grade" style="--min:200px">
+    <div class="caixa"><div class="palco" style="background:var(--noite)"><img src="logos/osv-logo-branco-recortado.svg" alt="" style="width:200px"></div><div class="leg"><b>Sobre preto</b>A combinação principal da marca.</div></div>
+    <div class="caixa"><div class="palco" style="background:var(--marrom)"><img src="logos/osv-logo-branco-recortado.svg" alt="" style="width:200px"></div><div class="leg"><b>Sobre marrom</b>Fundo escuro quente da paleta.</div></div>
+    <div class="caixa"><div class="palco" style="background:url(fotos/viagem-noronha.jpg) center/cover;position:relative"><div style="position:absolute;inset:0;background:rgba(12,10,8,.55)"></div><img src="logos/osv-logo-branco-recortado.svg" alt="" style="width:200px;position:relative"></div><div class="leg"><b>Sobre foto</b>Sempre com véu escuro (mín. 50%) atrás.</div></div>
+    <div class="caixa"><div class="palco" style="background:var(--gelo)"><img src="logos/osv-logo-preto-recortado.svg" alt="" style="width:200px"></div><div class="leg"><b>Sobre claro</b>Branco ou cinza bem claro, nunca bege.</div></div>
+  </div>
+
+  <h3>Área de proteção e tamanho mínimo</h3>
+  <p class="nota">Ao redor do logo, deixe livre uma margem <b>x</b> igual à altura da letra "O". Nenhum texto, borda ou elemento entra nessa área.</p>
+  <div class="grade" style="--min:320px;align-items:center;margin-top:16px">
+    <div style="display:grid;place-items:center;padding:20px"><div class="protecao"><span class="t">x</span><span class="l">x</span><img src="logos/osv-logo-preto-recortado.svg" alt="Área de proteção do logo"></div></div>
+    <div class="minimo">
+      <div><img src="logos/osv-logo-preto-recortado.svg" alt="" style="width:120px"><br>Digital: 120 px de largura</div>
+      <div><img src="logos/osv-logo-preto-recortado.svg" alt="" style="width:96px"><br>Impresso: 30 mm</div>
+      <div><span style="display:inline-block;width:72px;height:34px;border:1.5px dashed #B4232A;border-radius:6px;line-height:34px;color:#B4232A">✕</span><br>Menor que isso: não use</div>
+    </div>
+  </div>
+
+  <h3>Submarca</h3>
+  <div class="grade" style="--min:300px">
+    <div class="caixa"><div class="palco" style="background:var(--gelo)"><img src="logos/submarca-mapa-do-viajante.png" alt="Logo O Mapa do Viajante" style="width:260px"></div><div class="leg"><b>O Mapa do Viajante</b>Produtos com nome próprio seguem a mesma estrutura: título em negrito + "do" manuscrito laranja + rota com avião. (Arquivo atual em PNG; pedir o SVG.)</div></div>
+  </div>
+
+  <h3>Usos incorretos</h3>
+  <div class="grade errado" style="--min:200px">
+    <div class="caixa"><div class="palco"><img src="logos/osv-logo-preto-recortado.svg" alt="" style="transform:scaleX(1.35)"></div><div class="leg"><b>Distorcer</b>Nunca estique nem achate.</div></div>
+    <div class="caixa"><div class="palco"><img src="logos/osv-logo-preto-recortado.svg" alt="" style="filter:hue-rotate(160deg) saturate(3)"></div><div class="leg"><b>Trocar as cores</b>O "do" é sempre laranja ou da cor do mono.</div></div>
+    <div class="caixa"><div class="palco"><img src="logos/osv-logo-preto-recortado.svg" alt="" style="transform:rotate(-12deg)"></div><div class="leg"><b>Girar</b>O logo fica sempre na horizontal.</div></div>
+    <div class="caixa"><div class="palco"><img src="logos/osv-logo-preto-recortado.svg" alt="" style="filter:drop-shadow(0 0 6px #3D6BA8) drop-shadow(0 0 2px #3D6BA8)"></div><div class="leg"><b>Brilho ou contorno colorido</b>Só vale a sombra em relevo (escura) das peças gráficas.</div></div>
+    <div class="caixa"><div class="palco" style="background:url(fotos/viagem-praia.jpg) center/cover"><img src="logos/osv-logo-preto-recortado.svg" alt=""></div><div class="leg"><b>Fundo poluído</b>Sobre foto, use véu escuro e a versão branca.</div></div>
+    <div class="caixa"><div class="palco"><img src="logos/osv-logo-preto-recortado.svg" alt="" style="filter:grayscale(1) brightness(0)"></div><div class="leg"><b>Logo de uma cor só</b>Não existe versão mono: o "do" é sempre laranja.</div></div>
+    <div class="caixa"><div class="palco" style="background:var(--laranja)"><img src="logos/osv-logo-branco-recortado.svg" alt=""></div><div class="leg"><b>Sobre fundo laranja</b>O "do" desaparece. Use fundo escuro, branco ou foto com véu.</div></div>
+    <div class="caixa"><div class="palco"><span style="font:800 30px/1 var(--f-titulo);letter-spacing:-.03em">O Segredo <span class="it">do</span> Viajante</span></div><div class="leg"><b>Recriar com fonte</b>Use o arquivo; nunca digite o logo.</div></div>
+  </div>
+</div></section>
+
+<!-- 03 CORES -->
+<section class="cap" id="cores"><div class="in">
+  <span class="num">03 · Cores</span>
+  <h2>Laranja <span class="it">que guia</span></h2>
+  <p class="intro">O laranja é o pôr do sol no horizonte: a única cor de ação da marca. Ele vive sobre pretos quentes e brancos limpos. Os tons de apoio criam atmosfera, mas nunca disputam com o laranja.</p>
+  <h3>Principais</h3>
+  <div class="grade" style="--min:200px">
+    <div class="cor"><i style="background:var(--laranja)"></i><div><b>Laranja Âmbar</b><span class="mono">#F58E26 · RGB 245 142 38<br>CMYK ≈ 0 42 84 4</span><br>Ação, destaque, palavra-chave.</div></div>
+    <div class="cor"><i style="background:var(--noite)"></i><div><b>Noite</b><span class="mono">#0C0A08 · RGB 12 10 8<br>CMYK ≈ 0 17 33 95</span><br>Fundo principal escuro.</div></div>
+    <div class="cor"><i style="background:var(--branco)"></i><div><b>Branco</b><span class="mono">#FFFFFF · RGB 255 255 255</span><br>Fundo claro. Branco puro, nunca bege.</div></div>
+    <div class="cor"><i style="background:var(--tinta)"></i><div><b>Tinta</b><span class="mono">#17130F · RGB 23 19 15<br>CMYK ≈ 0 17 35 91</span><br>Texto sobre branco.</div></div>
+  </div>
+  <h3>Apoio</h3>
+  <div class="grade" style="--min:170px">
+    <div class="cor"><i style="background:var(--laranja-fundo)"></i><div><b>Laranja Fundo</b><span class="mono">#C4700F</span><br>Gradientes, sombras.</div></div>
+    <div class="cor"><i style="background:var(--laranja-claro)"></i><div><b>Laranja Claro</b><span class="mono">#F9A84A</span><br>Hover, brilhos, degradês.</div></div>
+    <div class="cor"><i style="background:var(--marrom)"></i><div><b>Marrom Café</b><span class="mono">#4E3B31</span><br>Profundidade, fundos quentes.</div></div>
+    <div class="cor"><i style="background:var(--sepia)"></i><div><b>Sépia Mapa</b><span class="mono">#C8A96E</span><br>Rotas, linhas de mapa.</div></div>
+    <div class="cor"><i style="background:var(--verde)"></i><div><b>Verde Close Friends</b><span class="mono">#4CAF50</span><br>Exclusivo do Close Friends.</div></div>
+  </div>
+  <p class="nota" style="margin-top:16px"><b>Regra:</b> todo laranja de texto, inclusive o "do" do logo, é o <b>Laranja Âmbar #F58E26</b>. Não use tons escurecidos de laranja para texto.</p>
+  <h3>Proporção</h3>
+  <div class="proporcao"><span style="flex:60;background:var(--noite);color:#fff">60% Noite / Branco</span><span style="flex:30;background:var(--gelo);color:var(--tinta-2);border:1px solid var(--linha)">30% neutros e fotos</span><span style="flex:10;background:var(--laranja);color:#1A0F05">10%</span></div>
+  <p class="nota">O laranja funciona porque é pouco. Se tudo for laranja, nada é destaque.</p>
+  <h3>Combinações de texto aprovadas</h3>
+  <div class="rolagem"><table>
+    <thead><tr><th>Texto</th><th>Fundo</th><th>Contraste</th><th>Uso</th></tr></thead>
+    <tbody>
+      <tr><td><span class="chip" style="background:#fff"></span>Branco</td><td><span class="chip" style="background:var(--noite)"></span>Noite</td><td class="ok">19,8:1</td><td>Qualquer texto</td></tr>
+      <tr><td><span class="chip" style="background:var(--laranja)"></span>Laranja</td><td><span class="chip" style="background:var(--noite)"></span>Noite</td><td class="ok">8,3:1</td><td>Qualquer texto</td></tr>
+      <tr><td><span class="chip" style="background:#1A0F05"></span>Quase preto</td><td><span class="chip" style="background:var(--laranja)"></span>Laranja</td><td class="ok">7,9:1</td><td>Botões, faixas</td></tr>
+      <tr><td><span class="chip" style="background:var(--tinta)"></span>Tinta</td><td><span class="chip" style="background:#fff"></span>Branco</td><td class="ok">18,5:1</td><td>Qualquer texto</td></tr>
+            <tr><td><span class="chip" style="background:var(--laranja)"></span>Laranja</td><td><span class="chip" style="background:#fff"></span>Branco</td><td class="nao">2,4:1</td><td>Só títulos grandes e rótulos curtos em negrito; nunca texto corrido</td></tr>
+      <tr><td><span class="chip" style="background:#fff"></span>Branco</td><td><span class="chip" style="background:var(--laranja)"></span>Laranja</td><td class="nao">2,4:1</td><td>Evitar</td></tr>
+    </tbody>
+  </table></div>
+</div></section>
+
+<!-- 04 TIPOGRAFIA -->
+<section class="cap" id="tipografia"><div class="in">
+  <span class="num">04 · Tipografia</span>
+  <h2>Duas vozes, <span class="it">um tom</span></h2>
+  <p class="intro">Duas fontes gratuitas (Google Fonts). A assinatura tipográfica é a palavra de destaque: uma palavra em laranja, na mesma fonte e no mesmo peso do título. Não usamos itálico, nem em título nem em texto.</p>
+  <div class="fam">
+    <div><span class="num">Títulos e números</span><h3 style="margin:8px 0">League Spartan</h3><ul><li>Pesos 700 a 900</li><li>Entrelinha apertada (0,95–1,05)</li><li>Espaçamento −3% a −4,5%</li></ul></div>
+    <div class="amostra" style="font-family:var(--f-titulo);font-weight:800;letter-spacing:-.04em">Viaje mais.</div>
+  </div>
+  <div class="fam">
+    <div><span class="num">Texto, botões, rótulos</span><h3 style="margin:8px 0">Inter</h3><ul><li>Pesos 400, 500, 600 e 700</li><li>Entrelinha 1,6</li><li>Rótulos em CAIXA ALTA com espaçamento de 16%</li></ul></div>
+    <div class="amostra" style="font-family:var(--f-texto);font-size:clamp(40px,5vw,64px)">Aa Bb Cc 123</div>
+  </div>
+  <div class="fam">
+    <div><span class="num">Palavra de destaque</span><h3 style="margin:8px 0">League Spartan em laranja</h3><ul><li>Mesmo peso do título, sem itálico</li><li>Sempre laranja</li><li>Uma palavra por título, no máximo</li></ul></div>
+    <div class="amostra" style="font-family:var(--f-titulo);font-weight:800;letter-spacing:-.04em"><span style="opacity:.45">Gaste</span> <span class="it">menos</span></div>
+  </div>
+  <h3>Composição</h3>
+  <div class="grade" style="--min:320px">
+    <div class="composicao escuro hier">
+      <div style="font:700 12px var(--f-texto);letter-spacing:.16em;text-transform:uppercase;color:var(--laranja)">Rótulo da seção</div>
+      <div style="font:800 52px/.95 var(--f-titulo);letter-spacing:-.045em">Viaje mais.<br><span style="color:rgba(255,255,255,.5)">Gaste</span> <span class="it">menos</span></div>
+      <div style="color:rgba(255,255,255,.7);max-width:40ch">Subtítulo em Inter explicando a promessa em uma ou duas frases.</div>
+    </div>
+    <div class="composicao hier" style="background:var(--gelo);border:1px solid var(--linha)">
+      <div style="font:700 12px var(--f-texto);letter-spacing:.16em;text-transform:uppercase;color:var(--laranja)">Um ecossistema, um caminho</div>
+      <div style="font:800 44px/1 var(--f-titulo);letter-spacing:-.035em">Por onde você <span class="it">começa?</span></div>
+      <div style="color:var(--tinta-2);max-width:40ch">Uma ideia por título. Um único destaque. A parte menos importante pode ficar apagada.</div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 05 ELEMENTOS -->
+<section class="cap" id="elementos"><div class="in">
+  <span class="num">05 · Elementos gráficos</span>
+  <h2>Do logo para o <span class="it">mundo</span></h2>
+  <p class="intro">Os elementos de apoio nascem do próprio logo e da ideia de viagem. Use um ou dois por peça; eles acompanham, não protagonizam.</p>
+  <div class="grade elem" style="--min:240px">
+    <div class="caixa"><div class="palco escuro"><svg viewBox="0 0 324 60" aria-hidden="true"><path d="M14 18a8 8 0 0 1 8 8c0 6-8 13-8 13s-8-7-8-13a8 8 0 0 1 8-8z" fill="#F58E26"/><circle cx="14" cy="26" r="3" fill="#0C0A08"/><path d="M16 44 C 90 70, 150 0, 230 22 S 280 36, 306 24" fill="none" stroke="#C8A96E" stroke-width="1.5" stroke-linecap="round"/><circle cx="120.75" cy="34.5" r="3.5" fill="#0C0A08" stroke="#C8A96E" stroke-width="1.5"/><circle cx="230" cy="22" r="3.5" fill="#0C0A08" stroke="#C8A96E" stroke-width="1.5"/><path fill="#F58E26" d="M13 0c0-1.2-1-2-2.2-2H1l-6-7h-3l4 7h-5l-2-3h-2l1 5-1 5h2l2-3h5l-4 7h3l6-7h9.8c1.2 0 2.2-.8 2.2-2z"><animateMotion dur="4.5s" repeatCount="indefinite" rotate="auto" keyPoints="0;1" keyTimes="0;1" calcMode="spline" keySplines=".45 0 .55 1" path="M16 44 C 90 70, 150 0, 230 22 S 280 36, 306 24"/></path></svg></div><div class="leg"><b>Rota</b>Pin → linha contínua com paradas → avião. Divisor, destaque de jornada, passos. O pontilhado fica só dentro do logo.</div></div>
+    <div class="caixa"><div class="palco escuro" style="background:#0C0A08 radial-gradient(60% 60% at 80% 10%,rgba(245,142,38,.45),transparent 70%)"><span style="font:800 20px var(--f-titulo)">Brilho de pôr do sol</span></div><div class="leg"><b>Brilho laranja</b>Luz suave num canto do fundo escuro. Nunca no centro do texto.</div></div>
+    <div class="caixa"><div class="palco escuro" style="background-color:#0C0A08;background-image:linear-gradient(rgba(255,255,255,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.07) 1px,transparent 1px);background-size:28px 28px"><span style="font:800 20px var(--f-titulo)">Grade de mapa</span></div><div class="leg"><b>Grade / malha de mapa</b>Linhas finas que lembram carta náutica. Sempre sutis.</div></div>
+    <div class="caixa"><div class="palco" style="background:var(--gelo)"><span style="display:inline-flex;align-items:center;gap:10px;padding:8px 16px;border-radius:99px;border:1px solid var(--linha);background:#fff;font:600 12px var(--f-texto);letter-spacing:.14em;text-transform:uppercase"><i style="width:8px;height:8px;border-radius:50%;background:var(--laranja)"></i>Turma aberta</span></div><div class="leg"><b>Pílula de status</b>Para estados ao vivo: turma aberta, live, vagas.</div></div>
+  </div>
+  <h3>Formas</h3>
+  <p class="nota">Cantos arredondados: <b>pílula</b> para botões e etiquetas, <b>16–24px</b> para cards e fotos. Nada de cantos vivos misturados com arredondados na mesma peça.</p>
+</div></section>
+
+<!-- 06 FOTOGRAFIA -->
+<section class="cap" id="fotografia"><div class="in">
+  <span class="num">06 · Fotografia</span>
+  <h2>Gente real, <span class="it">viagem real</span></h2>
+  <p class="intro">A foto é a prova da promessa. Priorize grupos da comunidade nos destinos, os fundadores viajando e o conforto conquistado (sala VIP, executiva). Luz natural e cores quentes.</p>
+  <div class="fotos">
+    <figure><img src="fotos/viagem-peru.jpg" alt="Grupo em Machu Picchu"><figcaption>✓ Grupo no destino</figcaption></figure>
+    <figure><img src="fotos/fundadores-peru.jpg" alt="Lucas e Thay no Peru"><figcaption>✓ Fundadores viajando</figcaption></figure>
+    <figure><img src="fotos/lucas-executiva.jpg" alt="Lucas na executiva"><figcaption>✓ Conforto conquistado</figcaption></figure>
+    <figure><img src="fotos/viagem-jalapao.jpg" alt="Grupo no Jalapão"><figcaption>✓ Aventura e alegria</figcaption></figure>
+  </div>
+  <div class="grade" style="--min:260px;margin-top:20px">
+    <div class="pilar"><b style="font-size:16px">✓ Faça</b>Pessoas sorrindo, em movimento, com o lugar aparecendo. Bandeira OSV quando houver.</div>
+    <div class="pilar"><b style="font-size:16px">✕ Evite</b>Banco de imagem genérico, luxo ostensivo, fotos frias ou sem pessoas, filtros pesados.</div>
+    <div class="pilar"><b style="font-size:16px">Texto sobre foto</b>Sempre com véu escuro ou degradê da base para o topo.</div>
+  </div>
+</div></section>
+
+<!-- 07 APLICAÇÕES -->
+<section class="cap" id="aplicacoes"><div class="in">
+  <span class="num">07 · Aplicações</span>
+  <h2>A marca <span class="it">em uso</span></h2>
+  <p class="intro">Toda peça segue a linguagem das capas da área de membros, agora com regras fixas: o mesmo título, o mesmo destaque em laranja e o mesmo brilho. Assim, qualquer pessoa ou IA chega no mesmo resultado.</p>
+  <div class="receita">
+    <div><b>Foto real ou mapa antigo</b>Gente viajando, ou marrom com sépia, meridianos e rosa dos ventos.</div>
+    <div><b>Véu no topo</b>Escurece o topo para o título branco ler bem.</div>
+    <div><b>Título em relevo</b>League Spartan 900, branco, com sombra em degraus.</div>
+    <div><b>Manuscrita laranja</b>A palavra que dá emoção, sobrepondo o título (só nas capas, como no "do" do logo; em posts, anúncios, site e textos o destaque é a palavra em laranja na fonte do título, sem itálico).</div>
+    <div><b>Brilho laranja na base</b>Luz de pôr do sol subindo do canto inferior, com ícone redondo ou logo.</div>
+  </div>
+
+  <h3>Banner · área de membros</h3>
+  <div class="kit kit-banner">
+    <div class="papel"></div>
+    <svg class="rosa-kit" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width=".7"><circle cx="50" cy="50" r="47"/><circle cx="50" cy="50" r="40"/><circle cx="50" cy="50" r="12"/><path d="M50 1v98M1 50h98M15 15l70 70M85 15 15 85"/></g><path d="M50 4 57 50 50 96 43 50Z M4 50 50 43 96 50 50 57Z" fill="currentColor" opacity=".8"/></svg>
+    <img class="mapa" src="fotos/mapa-mundi.svg" alt="">
+    <img class="fundadores" src="fotos/fundadores-peru.jpg" alt="Lucas e Thay">
+    <div class="base-laranja"></div>
+    <div class="marca-bloco"><span class="manus">Comunidade</span><img class="logo3d" src="logos/osv-logo-branco-recortado.svg" alt="O Segredo do Viajante"></div>
+  </div>
+  <p class="nota" style="margin-top:10px">A foto de vocês entra recortada no arquivo final: aqui ela está suavizada nas bordas porque não temos o PNG sem fundo.</p>
+
+  <h3>Capas de curso</h3>
+  <div class="kit-capas">
+    <div class="kit kit-capa">
+      <div class="papel"></div><svg class="rosa-kit" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width=".7"><circle cx="50" cy="50" r="47"/><circle cx="50" cy="50" r="40"/><circle cx="50" cy="50" r="12"/><path d="M50 1v98M1 50h98M15 15l70 70M85 15 15 85"/></g><path d="M50 4 57 50 50 96 43 50Z M4 50 50 43 96 50 50 57Z" fill="currentColor" opacity=".8"/></svg><img class="mapa" src="fotos/mapa-mundi.svg" alt="">
+      <div class="base-laranja"></div>
+      <div class="topo" style="top:12%"><span class="manus" style="position:absolute;right:2%;top:-14%;font-size:1.5em;transform:rotate(-6deg)">Comunidade</span><img class="logo3d" src="logos/osv-logo-branco-recortado.svg" alt="O Segredo do Viajante"></div>
+      <span class="play" aria-hidden="true"></span>
+    </div>
+    <div class="kit kit-capa">
+      <img class="foto" src="fotos/lucas-executiva.jpg" alt="" style="object-position:40% 60%"><div class="veu-topo"></div><div class="base-laranja"></div>
+      <div class="topo forte" style="text-align:left;left:12%"><span class="lar">P</span>rimeira<br><span class="lar">V</span>iagem<br><span class="lar">I</span><span class="manus" style="font-size:1.7em;margin-left:-.02em">nternacional</span></div>
+      <img class="logo-pe logo3d" src="logos/osv-logo-branco-recortado.svg" alt="">
+    </div>
+    <div class="kit kit-capa">
+      <div class="papel"></div><svg class="rosa-kit" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width=".7"><circle cx="50" cy="50" r="47"/><circle cx="50" cy="50" r="40"/><circle cx="50" cy="50" r="12"/><path d="M50 1v98M1 50h98M15 15l70 70M85 15 15 85"/></g><path d="M50 4 57 50 50 96 43 50Z M4 50 50 43 96 50 50 57Z" fill="currentColor" opacity=".8"/></svg><img class="mapa" src="fotos/mapa-mundi.svg" alt="" style="opacity:.4">
+      <div class="base-laranja"></div>
+      <div class="topo" style="text-align:left;left:7%;top:9%"><span class="manus" style="display:block;font-size:1.5em;margin-left:4%;transform:rotate(-6deg)">Planner</span><span class="forte" style="font-size:1.35em;text-transform:uppercase;white-space:nowrap">O mapa do</span><span class="manus" style="display:block;font-size:1.7em;margin-top:2%;transform:rotate(-6deg)">Viajante</span></div>
+      <span class="icone"><span class="notion">N</span></span>
+    </div>
+    <div class="kit kit-capa">
+      <img class="foto" src="fotos/thay-executiva.jpg" alt="" style="object-position:center 35%"><div class="veu-topo" style="height:55%"></div><div class="base-laranja"></div>
+      <div class="topo" style="text-align:left;left:8%"><span class="forte" style="font-size:1.8em;text-transform:uppercase">Thay</span><span class="manus" style="font-size:2.2em;margin-left:.06em;vertical-align:-.3em">IA</span></div>
+      <span class="icone" style="width:26%"><span class="chip-ia">IA</span></span>
+    </div>
+  </div>
+  <p class="nota" style="margin-top:12px"><b>Regras das capas:</b> título no topo, em League Spartan, branco com sombra em relevo; a palavra manuscrita laranja sobrepõe ou completa o título; as iniciais podem vir em laranja; o brilho laranja ocupa toda a base; o ícone do produto fica grande no canto inferior direito (ou o play no centro); fundo com foto temática ou mapa acobreado.</p>
+
+  <h3>Redes sociais e vídeo</h3>
+  <div class="pecas pecas--capas" style="align-items:start">
+    <div class="peca post"><span class="rotulo-peca">Post 1:1</span><img class="foto" src="fotos/viagem-praia.jpg" alt=""><div class="sobre">Resultado de aluna</div><div><div class="numero">R$ 5.348</div><div class="titulo" style="font-size:22px"><span class="it" style="margin:0">de economia</span></div><div style="font-size:12px;margin-top:6px;opacity:.85">Érica · Turma 05 · Porto Velho → África</div></div><img class="marca" src="logos/osv-logo-branco-recortado.svg" alt="" style="width:80px"></div>
+    <div class="peca story"><span class="rotulo-peca">Story 9:16</span><img class="foto" src="fotos/fundadores-peru.jpg" alt=""><div class="sobre">Ao vivo</div><div><div class="titulo">Live hoje<span class="it">às 20h</span></div><span class="cta" style="display:inline-block;margin-top:14px">Toque para entrar</span></div></div>
+    <div class="peca thumb" style="grid-column:span 2"><span class="rotulo-peca">Thumbnail 16:9</span><svg class="rosa" viewBox="0 0 100 100" aria-hidden="true" style="top:-20px;left:30%"><g fill="none" stroke="currentColor" stroke-width=".8"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="38"/><path d="M50 2v96M2 50h96M16 16l68 68M84 16 16 84"/></g><path d="M50 6 56 50 50 94 44 50Z M6 50 50 44 94 50 50 56Z" fill="currentColor" opacity=".7"/></svg><img class="pessoa" src="fotos/lucas-executiva.jpg" alt=""><div class="titulo">Como voar de<span class="it">executiva</span></div><img class="marca" src="logos/osv-logo-branco-recortado.svg" alt=""></div>
+  </div>
+
+  <h3>Faixa / banner de anúncio (21:5)</h3>
+  <div class="pecas">
+    <div class="peca peca--mapa faixa-peca"><svg class="rosa" viewBox="0 0 100 100" aria-hidden="true" style="top:-50px;right:30%"><g fill="none" stroke="currentColor" stroke-width=".8"><circle cx="50" cy="50" r="46"/><circle cx="50" cy="50" r="38"/><path d="M50 2v96M2 50h96M16 16l68 68M84 16 16 84"/></g><path d="M50 6 56 50 50 94 44 50Z M6 50 50 44 94 50 50 56Z" fill="currentColor" opacity=".7"/></svg><div class="titulo" style="font-size:clamp(22px,3vw,40px)">Turma aberta<span class="it">até domingo</span></div><span class="cta">Quero minha vaga →</span></div>
+  </div>
+  <p class="nota" style="margin-top:20px"><b>O que mudou em relação às capas atuais:</b> título sempre em League Spartan (as capas misturavam 3 fontes); destaque sempre em laranja e sem itálico (a manuscrita fica só nas capas; antes era manuscrito variado); o brilho laranja vem sempre do mesmo canto; e as fotos azuis e frias ganham o véu e o brilho quentes da marca. O mapa-múndi em sépia das capas originais pode substituir o "mapa antigo" em código quando o arquivo da textura estiver disponível.</p>
+</div></section>
+
+<!-- 08 ARQUIVOS -->
+<section class="cap downloads" id="arquivos"><div class="in">
+  <span class="num">08 · Arquivos</span>
+  <h2>Kit da marca</h2>
+  <ul>
+    <li><a href="logos/osv-logo-branco.svg" download>osv-logo-branco.svg</a>: oficial, texto branco (canvas quadrado com margem). Nos arquivos deste kit, o "do" foi alinhado ao #F58E26; os originais estão no Drive, em "LOGO OSV 2026"</li>
+    <li><a href="logos/osv-logo-preto.svg" download>osv-logo-preto.svg</a>: oficial, texto preto (canvas quadrado com margem)</li>
+    <li><a href="logos/osv-logo-branco-recortado.svg" download>osv-logo-branco-recortado.svg</a>: mesmo desenho, recortado no limite do logo (para site)</li>
+    <li><a href="logos/osv-logo-preto-recortado.svg" download>osv-logo-preto-recortado.svg</a>: idem, versão preta</li>
+    <li><a href="logos/submarca-mapa-do-viajante.png" download>submarca-mapa-do-viajante.png</a>: O Mapa do Viajante (PNG; falta o SVG)</li>
+    <li>Fontes: <a href="https://fonts.google.com/specimen/League+Spartan" target="_blank" rel="noopener">League Spartan</a> · <a href="https://fonts.google.com/specimen/Inter" target="_blank" rel="noopener">Inter</a></li>
+  </ul>
+</div></section>
+
+<footer>O Segredo do Viajante · Manual de Marca 2026 · Para o design system de sites, veja <a href="design-system-v2.3/guia-visual.html">design-system-v2.3</a> · Revisão de 24/11/2026: sem itálico, Inter no lugar da DM Sans, rota em linha contínua</footer>
+</body>
+</html>

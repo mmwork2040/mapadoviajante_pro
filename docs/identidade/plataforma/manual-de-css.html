@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual de CSS OSV</title>
+<script>if(!document.documentElement.dataset.theme)document.documentElement.dataset.theme=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=League+Spartan:wght@600;700&display=swap" rel="stylesheet">
+<style id="osv-app">
+/* ═══ OSV · CSS de apps · v24 (nov/2026) ═══
+   Linha de sistema de O Segredo do Viajante. Mesma base do protótipo do app.
+   Fontes: League Spartan 600 e 700 (títulos), Inter 400 a 700 (texto).
+   Tema: escuro por padrão. Claro com <html data-theme="light">.
+   Regras: linha antes de caixa · controles em pílula · laranja só em ação, seleção e progresso ·
+   destaque é borda laranja, sem brilho · brilho laranja só em caixa de digitação · sem itálico. */
+
+/* ── 1 · TOKENS ── */
+:root{color-scheme:dark;
+ --bg:#0a0807;--bgtop:#120e0b;--side:#0f0c0a;--s:#17130f;--s2:#241e19;--chip:#2d261f;--solid:#1a1612;--glass:rgba(16,12,9,.58);
+ --line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.16);
+ --t:#fafaf9;--tb:#cfc7be;--tm:#a39a90;
+ --acc:#f58e26;--on:#1a0f05;--acct:#f9a84a;--accs:rgba(245,142,38,.12);--accl:rgba(245,142,38,.40);--glowc:rgba(245,142,38,.18);
+ --ok:#2fb36b;--oks:rgba(47,179,107,.14);--warn:#f5a524;--bad:#f0595c;
+ --c1:#d2700f;--c2:#3987e5;--c3:#d55181;--c4:#9085e9;--c0:#5a524b;
+ --glow1:rgba(200,169,110,.05);--glow2:rgba(245,142,38,.09);
+ --fd:"League Spartan",system-ui,sans-serif;--fm:"Inter",system-ui,sans-serif;
+ --r1:10px;--r2:14px;--r3:20px;--r4:28px;--pill:999px}
+:root[data-theme=light]{color-scheme:light;
+ --bg:#fafaf9;--bgtop:#ffffff;--side:#f3f1ee;--s:#ffffff;--s2:#f0ede9;--chip:#e8e4df;--solid:#ffffff;--glass:rgba(252,251,250,.62);
+ --line:rgba(23,19,15,.10);--line2:rgba(23,19,15,.18);
+ --t:#17130f;--tb:#3d3731;--tm:#6b645d;
+ --acct:#a3560a;--accl:rgba(196,112,15,.45);--glowc:rgba(245,142,38,.14);
+ --ok:#177a44;--oks:rgba(23,122,68,.10);--warn:#b97a00;--bad:#d13438;
+ --c1:#c4700f;--c2:#2a78d6;--c3:#d55181;--c4:#6250d6;--c0:#b4ada6;
+ --glow1:rgba(200,169,110,.06);--glow2:rgba(245,142,38,.05)}
+
+/* ── 2 · BASE ── */
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;background:var(--bg);color:var(--t);font:15px/1.5 var(--fm);overflow-x:clip}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+ background:radial-gradient(110% 70% at 22% -12%,var(--glow1),transparent 58%),radial-gradient(90% 60% at 65% 118%,var(--glow2),transparent 70%),linear-gradient(var(--bgtop) 0,var(--bg) 46%)}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--acct);outline-offset:2px}
+.i{flex:none;fill:currentColor}
+
+/* ── 3 · TIPOGRAFIA ── título a partir de 26 px usa peso 600; abaixo disso, 700 */
+.h1{font:600 36px/1.06 var(--fd);letter-spacing:-.035em;margin:0;text-wrap:balance}
+.h2{font:700 21px/1.25 var(--fd);letter-spacing:-.015em;margin:0}
+.h3{font:700 16px/1.3 var(--fm);margin:0}
+.mono{font:600 10.5px/16px var(--fm);letter-spacing:.11em;text-transform:uppercase;color:var(--tm);font-variant-numeric:tabular-nums}
+.muted{color:var(--tm);font-size:13px}
+.link{color:var(--t);font-weight:500;font-size:13.5px;white-space:nowrap}
+.link:hover{color:var(--acct)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ── 4 · LAYOUT ── */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px;padding:26px 16px 22px;background:var(--side);border-right:1px solid var(--line)}
+.app>main{width:100%;max-width:1200px;padding:34px 40px 72px;display:flex;flex-direction:column;gap:30px}
+.nav{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--pill);color:var(--tb);font-weight:500;font-size:14px}
+.nav .i{color:var(--tm)}
+.nav[aria-current=page]{background:var(--accs);color:var(--t);font-weight:700}
+.nav[aria-current=page] .i{color:var(--acct)}
+.tabbar{display:none}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:12px;align-items:center}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.side2{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:20px;align-items:start}
+.dash3{display:grid;grid-template-columns:27fr 50fr 23fr;gap:24px;align-items:start}
+/* cabeçalho de seção: título, fio de 1 px e ação à direita */
+.sec-h{display:flex;align-items:flex-end;gap:16px}
+.sec-h>div:first-child{flex:0 1 auto}
+.sec-h::after{content:"";order:2;flex:1 1 32px;min-width:24px;height:1px;background:var(--line);margin-bottom:10px}
+.sec-h>*:nth-child(n+2){order:3;flex:none}
+
+/* ── 5 · SUPERFÍCIES ── */
+.card{background:var(--s);border:1px solid var(--line);border-radius:var(--r3);padding:22px}
+.lv3{border-color:var(--accl)}                     /* destaque: só a borda, um por tela */
+.tip{display:flex;align-items:center;gap:14px;padding:16px;border-radius:var(--r2);background:var(--s2);border:1px solid var(--line)}
+.inrow{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.inrow>div{flex:1;display:flex;flex-direction:column;gap:2px}
+.ibox{display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r1);background:var(--s2);color:var(--tb);border:1px solid var(--line);flex:none}
+.av{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#4e3b31;color:#fafaf9;font-weight:700;font-size:12px;flex:none}
+/* vidro: só sobre foto ou conteúdo. A luz segue o cursor com --mx e --my (ver JS) */
+.glass{position:relative;border-radius:var(--r3);border:1px solid rgba(255,255,255,.12);background:linear-gradient(rgba(255,255,255,.045),transparent 44%),var(--glass);
+ backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 26px 60px -32px rgba(0,0,0,.8)}
+:root[data-theme=light] .glass{background:linear-gradient(rgba(255,255,255,.6),transparent 44%),var(--glass);border-color:rgba(23,19,15,.12);box-shadow:inset 0 1px 0 #fff,0 18px 44px -28px rgba(60,40,20,.3)}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(280px circle at var(--mx,50%) var(--my,0%),rgba(245,142,38,.10),transparent 65%);opacity:0;transition:opacity .3s}
+.glass:hover::before{opacity:1}
+/* primeira dobra: foto com véu, título à esquerda e card flutuante à direita */
+.phero{position:relative;min-height:400px;border-radius:var(--r4);overflow:hidden;display:flex;align-items:center;background:#4e3b31;color:#fafaf9}
+.phero>img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.phero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,8,6,.9),rgba(10,8,6,.55) 50%,rgba(10,8,6,.22))}
+.phero-in{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:36px;width:100%;padding:36px}
+.float{flex:4 1 300px;max-width:400px;display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:var(--r4);
+ --t:#fafaf9;--tb:#cfc7be;--tm:#a39a90;--s:rgba(255,255,255,.06);--line2:rgba(255,255,255,.16);color:var(--t);
+ background:linear-gradient(rgba(255,255,255,.07),transparent 44%),rgba(16,12,9,.6);border:1px solid rgba(255,255,255,.16);
+ backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 30px 70px -30px rgba(0,0,0,.9)}
+:root[data-theme=light] .float{--t:#17130f;--tb:#3d3731;--tm:#6b645d;--s:#ffffff;--line2:rgba(23,19,15,.18);background:#fff;border-color:rgba(23,19,15,.06);
+ backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 30px 70px -30px rgba(12,10,8,.5)}
+
+/* ── 6 · CONTROLES ── tudo em pílula */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 18px;border-radius:var(--pill);font-weight:600;font-size:14px;white-space:nowrap}
+.btn.p{background:linear-gradient(180deg,#ffa23f,var(--acc));color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.btn.p:hover{background:linear-gradient(180deg,#ffb25c,#f79a35)}
+.btn.s{background:transparent;border:1px solid var(--line2)}
+.btn.s:hover{background:var(--s2)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--pill);background:var(--chip);font:600 10.5px/14px var(--fm);letter-spacing:.06em;color:var(--tb);text-transform:uppercase;white-space:nowrap;font-variant-numeric:tabular-nums}
+.chip.ok{background:var(--oks);color:var(--ok)}
+.chip.now{background:var(--accs);color:var(--acct)}
+button.chip{text-transform:none;letter-spacing:0;font-size:12.5px;padding:7px 12px;background:transparent;border:1px solid var(--line2)}
+button.chip:hover{color:var(--t);background:var(--s2)}
+.seg{display:flex;flex:none;gap:4px;padding:4px;border-radius:var(--pill);background:var(--s2);max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg button{flex:none;padding:7px 16px;border-radius:var(--pill);font-size:13px;font-weight:500;color:var(--tm);white-space:nowrap}
+.seg button[aria-pressed=true]{background:var(--solid);color:var(--t);font-weight:700;box-shadow:inset 0 0 0 1px var(--line2)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{display:flex;align-items:center;gap:8px;padding:12px 16px;font-weight:500;color:var(--tm);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--t);font-weight:700;border-color:var(--acc);box-shadow:0 12px 16px -12px rgba(245,142,38,.9)}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld select,.fld input{min-height:46px;padding:0 18px;border-radius:var(--pill);background:var(--s2);border:1px solid var(--line2);color:var(--t);font:16px var(--fm);width:100%}
+.fld textarea{padding:14px 18px;border-radius:18px;background:var(--s2);border:1px solid var(--line2);color:var(--t);font:16px var(--fm);resize:vertical;width:100%}
+.fld :is(select,input,textarea):focus{outline:0;border-color:var(--accl);box-shadow:0 0 0 4px var(--accs)}
+.search{display:flex;align-items:center;gap:10px;width:300px;max-width:100%;padding:0 18px;min-height:44px;border-radius:var(--pill);background:var(--s);border:1px solid var(--line);color:var(--tm);transition:border-color .2s,box-shadow .2s}
+.search input{flex:1;background:none;border:0;outline:0;color:var(--t);font:15px var(--fm)}
+.search input::placeholder,.thaybar input::placeholder{color:var(--tm)}
+/* caixa de digitação: o único lugar com brilho laranja */
+.thaybar{display:flex;align-items:center;gap:14px;padding:6px 6px 6px 20px;border-radius:var(--pill);
+ background:radial-gradient(120% 160% at 100% 0%,var(--glowc),transparent 62%),var(--s);border:1px solid var(--accl);transition:box-shadow .2s}
+.thaybar input{flex:1;background:none;border:0;outline:0;color:var(--t);font:16px var(--fm);min-height:40px}
+.thaybar:focus-within,.search:focus-within{border-color:var(--accl);box-shadow:0 0 0 4px var(--accs)}
+.spark{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--acc);color:var(--on);flex:none}
+.sw{position:relative;width:46px;height:28px;border-radius:var(--pill);background:var(--chip);border:1px solid var(--line2);flex:none;transition:background .15s}
+.sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--t);transition:transform .15s}
+.sw[aria-checked=true]{background:var(--acc);border-color:var(--acc)}
+.sw[aria-checked=true] i{transform:translateX(18px);background:#fff}
+.tick{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--line2);flex:none;color:var(--bg)}
+.tick.on{background:var(--ok);border-color:var(--ok)}
+
+/* ── 7 · PROGRESSO ── a parte em andamento emite luz; a concluída não */
+.bar{height:4px;border-radius:2px;background:var(--s2);width:100%}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:2px;box-shadow:0 0 12px rgba(245,142,38,.55)}
+.bar.ok i{background:var(--ok);box-shadow:none}
+.lrow{position:relative;overflow:hidden;display:flex;gap:16px;align-items:center;padding:10px;border-radius:18px}
+.edge{position:absolute;left:0;bottom:0;height:2px;background:var(--acc);border-radius:0 2px 2px 0;box-shadow:0 0 14px 1px rgba(245,142,38,.7)}
+.heat{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));gap:4px}
+.heat i{aspect-ratio:1;border-radius:3px;background:var(--s2)}
+.heat i.a{background:rgba(245,142,38,.38)}
+.heat i.b{background:var(--acc);box-shadow:0 0 10px rgba(245,142,38,.65)}
+
+/* ── 8 · DADOS E GRÁFICOS ──
+   Séries em ordem fixa: --c1 laranja, --c2 azul, --c3 magenta, --c4 violeta. A quinta em diante vira "Outros" em --c0.
+   Texto nunca usa a cor da série. Verde, âmbar e vermelho são só de estado. */
+.viz{display:flex;flex-direction:column;gap:16px;margin:0}
+.viz-h{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.viz-h>div:first-child{flex:1;display:flex;flex-direction:column;gap:2px}
+.viz-t{font:700 16px/1.3 var(--fm);margin:0}
+.viz-s{font-size:12.5px;color:var(--tm)}
+/* número em destaque: rótulo, valor, variação e tendência */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpi{display:flex;flex-direction:column;gap:6px;padding:4px 22px;border-left:1px solid var(--line)}
+.kpi:first-child{border-left:0;padding-left:0}
+.kpi b{font:600 34px/1 var(--fd);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.kpi .delta{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--tm)}
+.kpi .delta.up{color:var(--ok)}
+.kpi .delta.down{color:var(--bad)}
+.sparkl{display:block;width:100%;height:36px;overflow:visible;margin-top:4px}
+.sparkl path{fill:none;stroke:var(--c0);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+/* barras horizontais ordenadas: uma cor, valor na ponta */
+.hbars{display:grid;grid-template-columns:minmax(90px,max-content) minmax(0,1fr) max-content;gap:12px 14px;align-items:center;font-size:13.5px}
+.hbars .n{color:var(--tb)}
+.hbars .v{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.hbars .t{height:10px;display:flex;border-radius:2px}
+.hbars .t i{display:block;height:100%;min-width:2px;border-radius:0 4px 4px 0;background:var(--c1);transition:opacity .15s}
+/* colunas: no máximo 24 px, ponta arredondada, base reta */
+.cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:end;gap:2px;height:180px;border-bottom:1px solid var(--line2);padding:0 4px}
+.cols .c{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;border-radius:4px}
+.cols .c i{display:block;width:min(24px,70%);border-radius:4px 4px 0 0;background:var(--c1);transition:opacity .15s}
+.cols .c i.mute,.hbars .t i.mute{background:var(--c0)}
+.cols .c span{font:600 11.5px var(--fm);font-variant-numeric:tabular-nums}
+.cols-x{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:6px 4px 0;font-size:11.5px;color:var(--tm);text-align:center}
+.cols:hover .c i,.hbars:hover .t i{opacity:.45}
+.cols .c:hover i,.cols .c:focus-visible i,.hbars .t:hover i,.hbars .t:focus-visible i{opacity:1}
+/* linha e área em SVG: traço de 2 px, área a 10%, grade de fio (ver osvLine no JS) */
+.line{display:block;width:100%;overflow:visible}
+.line .g{stroke:var(--line);stroke-width:1}
+.line .ax{fill:var(--tm);font:11px var(--fm);font-variant-numeric:tabular-nums}
+.line .l{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.line .l1{stroke:var(--c1)}.line .l2{stroke:var(--c2)}.line .l3{stroke:var(--c3)}.line .l4{stroke:var(--c4)}
+.line .a1{fill:var(--c1);opacity:.1}
+.line .d{stroke:var(--s);stroke-width:2}
+.line .d1{fill:var(--c1)}.line .d2{fill:var(--c2)}.line .d3{fill:var(--c3)}.line .d4{fill:var(--c4)}
+.line .lab{fill:var(--t);font:600 12px var(--fm)}
+.line .hit{fill:transparent;cursor:crosshair}
+.line .cross{stroke:var(--line2);stroke-width:1}
+/* barra segmentada: um todo em partes, com 2 px de respiro */
+.segbar{display:flex;gap:2px;height:20px}
+.segbar i{display:block;min-width:4px;border-radius:4px;transition:opacity .15s}
+.segbar:hover i{opacity:.45}.segbar i:hover,.segbar i:focus-visible{opacity:1}
+.k1{background:var(--c1)}.k2{background:var(--c2)}.k3{background:var(--c3)}.k4{background:var(--c4)}.k0{background:var(--c0)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12.5px;color:var(--tb)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:10px;height:10px;border-radius:3px;flex:none}
+.legend b{color:var(--t);font-weight:600;font-variant-numeric:tabular-nums}
+/* medidor: uma razão contra um limite; o trilho é um tom mais claro da mesma cor */
+.meter{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:6px 12px;align-items:center;font-size:13.5px}
+.meter .t{grid-column:1/-1;height:8px;border-radius:var(--pill);background:color-mix(in srgb,var(--mc,var(--c1)) 22%,transparent);overflow:hidden}
+.meter .t i{display:block;height:100%;border-radius:var(--pill);background:var(--mc,var(--c1))}
+.meter.ok{--mc:var(--ok)}.meter.warn{--mc:var(--warn)}.meter.bad{--mc:var(--bad)}
+.meter .v{font-variant-numeric:tabular-nums;color:var(--tm);font-size:12.5px}
+.meter .st{grid-column:1/-1;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tb)}
+.meter .st .i{color:var(--mc)}
+/* dica ao passar o cursor */
+.tipbox{position:fixed;z-index:80;pointer-events:none;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:var(--r1);background:var(--solid);border:1px solid var(--line2);box-shadow:0 12px 30px -14px rgba(0,0,0,.6);font-size:12.5px;color:var(--tb);white-space:nowrap;opacity:0;transition:opacity .12s}
+.tipbox.on{opacity:1}
+.tipbox b{color:var(--t);font-size:13.5px;font-variant-numeric:tabular-nums}
+.tipbox span{display:flex;align-items:center;gap:7px}
+.tipbox i{width:8px;height:8px;border-radius:2px;flex:none}
+/* tabela de dados e tabela equivalente ao gráfico */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font:600 10.5px var(--fm);letter-spacing:.08em;text-transform:uppercase;color:var(--tm);text-align:left;padding:12px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:12px 8px;border-bottom:1px solid var(--line);color:var(--tb);vertical-align:middle}
+.tbl td:first-child{color:var(--t);font-weight:600}
+.tbl .num{text-align:right}
+.tbl tbody tr:hover td{background:var(--s2)}
+.tview summary{cursor:pointer;color:var(--tm);font-size:12.5px;padding:4px 0}
+.tview .tbl{font-size:13px;margin-top:6px}
+.tview .tbl th,.tview .tbl td{padding:8px 6px}
+
+/* ── 9 · ESTADOS ── */
+.skel{border-radius:var(--r1);background:linear-gradient(90deg,var(--s2) 25%,var(--chip) 37%,var(--s2) 63%) 0 0/400% 100%;animation:skel 1.4s ease infinite}
+@keyframes skel{0%{background-position:100% 0}100%{background-position:0 0}}
+.empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 18px;border:1px dashed var(--line2);border-radius:16px;text-align:center;color:var(--tm)}
+.empty b{color:var(--t)}
+.lock{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--s2);color:var(--t);flex:none}
+
+/* ── 10 · CELULAR ── abaixo de 900 px: uma coluna, menu vira barra inferior */
+@media(max-width:900px){
+ .h1{font-size:28px}
+ .app{display:block}.side{display:none}
+ .app>main{padding:14px 18px 120px;gap:26px}
+ .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:50;padding:8px 8px calc(14px + env(safe-area-inset-bottom));background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+ .tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;font-weight:500;color:var(--tm);min-height:44px}
+ .tabbar a[aria-current=page]{color:var(--acct);font-weight:700}
+ .two,.three,.side2,.dash3{grid-template-columns:minmax(0,1fr)}
+ .sec-h::after{display:none}
+ .kpis{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:22px}
+ .kpi:nth-child(odd){border-left:0;padding-left:0}
+ .phero{border-radius:22px}.phero-in{padding:22px;gap:22px}.float{max-width:none;flex-basis:100%}
+ .card{padding:18px}
+}
+@media(prefers-reduced-motion:reduce){.skel{animation:none}.glass::before{display:none}*{transition:none!important}}
+
+</style>
+<style>
+/* ───── guia: só o que é da página do guia; as peças usam o CSS do app acima ─────
+   Tokens: os do app (--bg --s --s2 --line --t --tb --tm --acc --acct --ok), League Spartan nos títulos, Inter no texto.
+   Layout: uma coluna de leitura de 1120 px; cada efeito é uma linha com a demonstração à esquerda e a receita à direita. */
+.g-wrap{width:100%;max-width:1168px;margin:0 auto;padding:56px 24px 104px;display:flex;flex-direction:column;gap:84px}
+.g-sec{display:flex;flex-direction:column;gap:28px;scroll-margin-top:76px}
+.g-sub{display:flex;flex-direction:column;gap:16px}
+.g-h{font:600 clamp(30px,3.6vw,44px)/1.05 var(--fd);letter-spacing:-.035em;margin:0;text-wrap:balance}
+.g-lead{margin:0;max-width:66ch;font-size:16.5px;line-height:1.6;color:var(--tb)}
+.g-p{margin:0;max-width:66ch;color:var(--tb)}
+.g-rule{display:flex;align-items:flex-end;gap:16px}
+.g-rule::after{content:"";flex:1;height:1px;background:var(--line);margin-bottom:12px}
+.g-grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.g-pr{padding:22px 26px;border-left:1px solid var(--line);border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.g-pr:nth-child(3n+1){border-left:0;padding-left:0}.g-pr:nth-child(-n+3){border-top:0}
+.g-pr b{font:700 19px/1.2 var(--fd);letter-spacing:-.01em}
+.g-pr span{color:var(--tb);font-size:14.5px}
+.g-two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.g-four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.g-box{border:1px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:14px}
+.g-cap{font-size:13px;color:var(--tm);margin:0}
+.g-tok{display:grid;grid-template-columns:44px 130px minmax(0,1fr);gap:14px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);font-size:14px}
+.g-tok i{width:44px;height:28px;border-radius:8px;border:1px solid var(--line2)}
+.g-tok code,.g-code code{font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.g-tok span{color:var(--tb)}
+.g-type{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:20px;align-items:baseline;padding:16px 0;border-bottom:1px solid var(--line)}
+.g-type small{font-size:12.5px;color:var(--tm);text-align:right}
+.g-rad{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.g-rad i{display:block;width:100%;height:72px;border:1px solid var(--line2);background:var(--s2)}
+.g-stage{position:relative;overflow:hidden;border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:14px;background:#4e3b31;min-height:200px;justify-content:center}
+.g-stage>*:not(.art){position:relative;z-index:1}
+.g-fx{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);border-top:1px solid var(--line);padding-top:28px;gap:32px;align-items:start}
+.g-fx>.g-info{display:flex;flex-direction:column;gap:12px}
+.g-fx h3{font:700 21px/1.2 var(--fd);letter-spacing:-.015em;margin:0}
+.g-code{margin:0;padding:14px 16px;border-radius:14px;background:var(--s2);border:1px solid var(--line);overflow-x:auto;color:var(--tb);white-space:pre}
+.g-demo{display:flex;flex-direction:column;gap:14px;justify-content:center;min-height:180px}
+.g-dash{display:grid;grid-template-columns:27fr 50fr 23fr;gap:24px}
+.g-dash>div{position:relative;display:flex;flex-direction:column;gap:10px;min-height:150px}
+.g-dash>div+div::before{content:"";position:absolute;left:-12.5px;top:0;bottom:0;width:1px;background:var(--line)}
+.g-ph{border:1px dashed var(--line2);border-radius:14px;padding:14px;font-size:13px;color:var(--tm);flex:1;display:grid;place-items:center;text-align:center}
+.g-ol{margin:0;padding:0;list-style:none;counter-reset:n;display:flex;flex-direction:column}
+.g-ol li{counter-increment:n;display:grid;grid-template-columns:34px minmax(0,1fr);gap:8px;padding:13px 0;border-bottom:1px solid var(--line);color:var(--tb)}
+.g-ol li::before{content:counter(n,decimal-leading-zero);font:600 12px var(--fm);color:var(--tm);font-variant-numeric:tabular-nums;padding-top:3px}
+.g-ol b{color:var(--t)}
+.g-do{margin:0;padding:0;list-style:none;display:flex;flex-direction:column}
+.g-do li{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-bottom:1px solid var(--line);color:var(--tb)}
+.g-do .tick{margin-top:1px}
+.g-x{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--line2);flex:none;color:var(--tm);font-size:12px;font-weight:700;margin-top:1px}
+.proto small a{text-decoration:underline}
+@media(max-width:900px){
+ .g-wrap{padding:36px 18px 88px;gap:64px}
+ .g-grid3,.g-two,.g-fx,.g-dash{grid-template-columns:minmax(0,1fr)}
+ .g-four{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .g-pr,.g-pr:nth-child(3n+1){border-left:0;padding:18px 0}.g-pr:nth-child(-n+3){border-top:1px solid var(--line)}.g-pr:first-child{border-top:0}
+ .g-dash>div+div::before{display:none}
+ .g-type{grid-template-columns:minmax(0,1fr)}.g-type small{text-align:left}
+ .g-tok{grid-template-columns:44px minmax(0,1fr)}.g-tok span{grid-column:1/-1}
+}
+
+/* ───── manual: só o que é desta página (barra do topo, amostras e diagramas) ───── */
+.proto{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:16px;padding:10px 20px;background:var(--glass);backdrop-filter:blur(18px) saturate(140%);-webkit-backdrop-filter:blur(18px) saturate(140%);border-bottom:1px solid var(--line)}
+.proto b{font:700 13px var(--fd);letter-spacing:.02em;white-space:nowrap;color:var(--tm)}
+.proto nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.proto nav a{flex:none;padding:7px 12px;border-radius:999px;font-size:13px;font-weight:500;color:var(--tb);border:1px solid var(--line)}
+.proto nav a:hover{color:var(--t);border-color:var(--line2)}
+.proto small{margin-left:auto;color:var(--tm);font-size:12px;white-space:nowrap}
+.themebtn{flex:none;padding:7px 12px;border-radius:999px;border:1px solid var(--line2);font-size:13px;font-weight:600;color:var(--t);background:var(--s)}
+.m-c{font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:1px 5px;border-radius:6px;background:var(--s2);color:var(--t);white-space:nowrap}
+.g-ol li>span{min-width:0}
+.g-demo{min-height:0;justify-content:flex-start;gap:18px}
+.g-fx>.viz{align-self:start}
+.g-fx .viz-t{font:700 16px/1.3 var(--fm);letter-spacing:0}
+.g-rule+.g-fx,.g-rule+.m-ex{border-top:0;padding-top:0}
+.m-ex{display:flex;flex-direction:column;gap:18px;border-top:1px solid var(--line);padding-top:28px}
+.m-full{max-height:440px;overflow:auto}
+.m-scroll{overflow-x:auto}
+.m-scroll .tbl{min-width:560px}
+.m-space{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;font:12px ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--tm)}
+.m-space span{display:flex;flex-direction:column;align-items:flex-start;gap:8px}
+.m-space i{display:block;height:28px;border-radius:2px;background:var(--acc)}
+.m-shell{display:grid;grid-template-columns:22% minmax(0,1fr);height:220px;border:1px solid var(--line2);border-radius:16px;overflow:hidden}
+.m-side{display:flex;flex-direction:column;gap:8px;padding:16px 12px;background:var(--side);border-right:1px solid var(--line)}
+.m-side i{height:14px;border-radius:999px;background:var(--s2)}
+.m-side i.on{background:var(--accs);box-shadow:inset 0 0 0 1px var(--accl)}
+.m-main{display:flex;flex-direction:column;gap:12px;padding:16px 18px}
+.m-main b{width:38%;height:14px;border-radius:4px;background:var(--line2)}
+.m-hero{flex:1.3;border-radius:12px;background:#4e3b31}
+.m-cols{flex:1;display:grid;grid-template-columns:27fr 50fr 23fr;gap:10px}
+.m-cols i,.m-grid>div>i{border-radius:10px;background:var(--s2);border:1px solid var(--line)}
+.m-grid{display:grid;grid-template-columns:64px minmax(0,1fr);gap:12px;align-items:center}
+.m-grid>div{gap:8px!important}
+.m-grid>div>i{height:34px}
+.m-pick{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.m-pick>div{display:flex;flex-direction:column;gap:3px;padding:16px 22px;border-left:1px solid var(--line);border-top:1px solid var(--line)}
+.m-pick>div:nth-child(3n+1){border-left:0;padding-left:0}.m-pick>div:nth-child(-n+3){border-top:0}
+.m-pick span{color:var(--tb);font-size:14px}
+.m-pal{display:flex;flex-wrap:wrap;gap:18px}
+.m-pal span{display:flex;flex-direction:column;gap:6px;align-items:flex-start;font-size:12.5px;color:var(--tm)}
+.m-pal i{width:68px;height:44px;border-radius:10px}
+.phero>.art{position:absolute;inset:0;width:100%;height:100%;display:block}
+@media(max-width:900px){
+ .proto small,.proto b{display:none}.proto{padding:10px 14px}
+ .m-pick{grid-template-columns:minmax(0,1fr)}
+ .m-pick>div,.m-pick>div:nth-child(3n+1){border-left:0;padding:14px 0}.m-pick>div:nth-child(-n+3){border-top:1px solid var(--line)}.m-pick>div:first-child{border-top:0}
+ .m-grid>div{display:grid!important}.m-grid>.side2,.m-grid>.dash3,.m-grid>.two,.m-grid>.three{grid-template-columns:minmax(0,1fr)}
+}
+
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-home" viewBox="0 0 256 256"><path d="M219.31,108.68l-80-80a16,16,0,0,0-22.62,0l-80,80A15.87,15.87,0,0,0,32,120v96a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V160h32v56a8,8,0,0,0,8,8h64a8,8,0,0,0,8-8V120A15.87,15.87,0,0,0,219.31,108.68ZM208,208H160V152a8,8,0,0,0-8-8H104a8,8,0,0,0-8,8v56H48V120l80-80,80,80Z"/></symbol>
+<symbol id="i-plane" viewBox="0 0 256 256"><path d="M185.33,114.21l29.14-27.42.17-.17a32,32,0,0,0-45.26-45.26c0,.06-.11.11-.17.17L141.79,70.67l-83-30.2a8,8,0,0,0-8.39,1.86l-24,24a8,8,0,0,0,1.22,12.31l63.89,42.59L76.69,136H56a8,8,0,0,0-5.65,2.34l-24,24A8,8,0,0,0,29,175.42l36.82,14.73,14.7,36.75.06.16a8,8,0,0,0,13.18,2.47l23.87-23.88A8,8,0,0,0,120,200V179.31l14.76-14.76,42.59,63.89a8,8,0,0,0,12.31,1.22l24-24a8,8,0,0,0,1.86-8.39Zm-.07,97.23-42.59-63.88A8,8,0,0,0,136.8,144c-.27,0-.53,0-.79,0a8,8,0,0,0-5.66,2.35l-24,24A8,8,0,0,0,104,176v20.69L90.93,209.76,79.43,181A8,8,0,0,0,75,176.57l-28.74-11.5L59.32,152H80a8,8,0,0,0,5.66-2.34l24-24a8,8,0,0,0-1.22-12.32L44.56,70.74l13.5-13.49,83.22,30.26a8,8,0,0,0,8.56-2L180.78,52.6A16,16,0,0,1,203.4,75.23l-32.87,30.93a8,8,0,0,0-2,8.56l30.26,83.22Z"/></symbol>
+<symbol id="i-spark" viewBox="0 0 256 256"><path d="M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144ZM144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z"/></symbol>
+<symbol id="i-book" viewBox="0 0 256 256"><path d="M232,48H160a40,40,0,0,0-32,16A40,40,0,0,0,96,48H24a8,8,0,0,0-8,8V200a8,8,0,0,0,8,8H96a24,24,0,0,1,24,24,8,8,0,0,0,16,0,24,24,0,0,1,24-24h72a8,8,0,0,0,8-8V56A8,8,0,0,0,232,48ZM96,192H32V64H96a24,24,0,0,1,24,24V200A39.81,39.81,0,0,0,96,192Zm128,0H160a39.81,39.81,0,0,0-24,8V88a24,24,0,0,1,24-24h64Z"/></symbol>
+<symbol id="i-head" viewBox="0 0 256 256"><path d="M201.89,54.66A103.43,103.43,0,0,0,128.79,24H128A104,104,0,0,0,24,128v56a24,24,0,0,0,24,24H64a24,24,0,0,0,24-24V144a24,24,0,0,0-24-24H40.36A88,88,0,0,1,128,40h.67a87.71,87.71,0,0,1,87,80H192a24,24,0,0,0-24,24v40a24,24,0,0,0,24,24h16a24,24,0,0,0,24-24V128A103.41,103.41,0,0,0,201.89,54.66ZM64,136a8,8,0,0,1,8,8v40a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V136Zm152,48a8,8,0,0,1-8,8H192a8,8,0,0,1-8-8V144a8,8,0,0,1,8-8h24Z"/></symbol>
+<symbol id="i-wallet" viewBox="0 0 256 256"><path d="M216,64H56a8,8,0,0,1,0-16H192a8,8,0,0,0,0-16H56A24,24,0,0,0,32,56V184a24,24,0,0,0,24,24H216a16,16,0,0,0,16-16V80A16,16,0,0,0,216,64Zm0,128H56a8,8,0,0,1-8-8V78.63A23.84,23.84,0,0,0,56,80H216Zm-48-60a12,12,0,1,1,12,12A12,12,0,0,1,168,132Z"/></symbol>
+<symbol id="i-users" viewBox="0 0 256 256"><path d="M244.8,150.4a8,8,0,0,1-11.2-1.6A51.6,51.6,0,0,0,192,128a8,8,0,0,1-7.37-4.89,8,8,0,0,1,0-6.22A8,8,0,0,1,192,112a24,24,0,1,0-23.24-30,8,8,0,1,1-15.5-4A40,40,0,1,1,219,117.51a67.94,67.94,0,0,1,27.43,21.68A8,8,0,0,1,244.8,150.4ZM190.92,212a8,8,0,1,1-13.84,8,57,57,0,0,0-98.16,0,8,8,0,1,1-13.84-8,72.06,72.06,0,0,1,33.74-29.92,48,48,0,1,1,58.36,0A72.06,72.06,0,0,1,190.92,212ZM128,176a32,32,0,1,0-32-32A32,32,0,0,0,128,176ZM72,120a8,8,0,0,0-8-8A24,24,0,1,1,87.24,82a8,8,0,1,0,15.5-4A40,40,0,1,0,37,117.51,67.94,67.94,0,0,0,9.6,139.19a8,8,0,1,0,12.8,9.61A51.6,51.6,0,0,1,64,128,8,8,0,0,0,72,120Z"/></symbol>
+<symbol id="i-flag" viewBox="0 0 256 256"><path d="M42.76,50A8,8,0,0,0,40,56V224a8,8,0,0,0,16,0V179.77c26.79-21.16,49.87-9.75,76.45,3.41,16.4,8.11,34.06,16.85,53,16.85,13.93,0,28.54-4.75,43.82-18a8,8,0,0,0,2.76-6V56A8,8,0,0,0,218.76,50c-28,24.23-51.72,12.49-79.21-1.12C111.07,34.76,78.78,18.79,42.76,50ZM216,172.25c-26.79,21.16-49.87,9.74-76.45-3.41-25-12.35-52.81-26.13-83.55-8.4V59.79c26.79-21.16,49.87-9.75,76.45,3.4,25,12.35,52.82,26.13,83.55,8.4Z"/></symbol>
+<symbol id="i-lock" viewBox="0 0 256 256"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,208H48V96H208V208Z"/></symbol>
+<symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+<symbol id="i-play" viewBox="0 0 256 256"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 256 256"><path d="M221.8,175.94C216.25,166.38,208,139.33,208,104a80,80,0,1,0-160,0c0,35.34-8.26,62.38-13.81,71.94A16,16,0,0,0,48,200H88.81a40,40,0,0,0,78.38,0H208a16,16,0,0,0,13.8-24.06ZM128,216a24,24,0,0,1-22.62-16h45.24A24,24,0,0,1,128,216ZM48,184c7.7-13.24,16-43.92,16-80a64,64,0,1,1,128,0c0,36.05,8.28,66.73,16,80Z"/></symbol>
+<symbol id="i-search" viewBox="0 0 256 256"><path d="M229.66,218.34l-50.07-50.06a88.11,88.11,0,1,0-11.31,11.31l50.06,50.07a8,8,0,0,0,11.32-11.32ZM40,112a72,72,0,1,1,72,72A72.08,72.08,0,0,1,40,112Z"/></symbol>
+<symbol id="i-send" viewBox="0 0 256 256"><path d="M227.32,28.68a16,16,0,0,0-15.66-4.08l-.15,0L19.57,82.84a16,16,0,0,0-2.49,29.8L102,154l41.3,84.87A15.86,15.86,0,0,0,157.74,248q.69,0,1.38-.06a15.88,15.88,0,0,0,14-11.51l58.2-191.94c0-.05,0-.1,0-.15A16,16,0,0,0,227.32,28.68ZM157.83,231.85l-.05.14,0-.07-40.06-82.3,48-48a8,8,0,0,0-11.31-11.31l-48,48L24.08,98.25l-.07,0,.14,0L216,40Z"/></symbol>
+<symbol id="i-chev" viewBox="0 0 256 256"><path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/></symbol>
+<symbol id="i-plus" viewBox="0 0 256 256"><path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z"/></symbol>
+<symbol id="i-bed" viewBox="0 0 256 256"><path d="M216,72H32V48a8,8,0,0,0-16,0V208a8,8,0,0,0,16,0V176H240v32a8,8,0,0,0,16,0V112A40,40,0,0,0,216,72ZM32,88h72v72H32Zm88,72V88h96a24,24,0,0,1,24,24v48Z"/></symbol>
+<symbol id="i-doc" viewBox="0 0 256 256"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,136Zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,168Z"/></symbol>
+<symbol id="i-shield" viewBox="0 0 256 256"><path d="M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.26,47,25.53a8,8,0,0,0,4.2,0c1-.27,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0ZM82.34,141.66a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32l-56,56a8,8,0,0,1-11.32,0Z"/></symbol>
+<symbol id="i-car" viewBox="0 0 256 256"><path d="M240,104H229.2L201.42,41.5A16,16,0,0,0,186.8,32H69.2a16,16,0,0,0-14.62,9.5L26.8,104H16a8,8,0,0,0,0,16h8v80a16,16,0,0,0,16,16H64a16,16,0,0,0,16-16V184h96v16a16,16,0,0,0,16,16h24a16,16,0,0,0,16-16V120h8a8,8,0,0,0,0-16ZM69.2,48H186.8l24.89,56H44.31ZM64,200H40V184H64Zm128,0V184h24v16Zm24-32H40V120H216ZM56,144a8,8,0,0,1,8-8H80a8,8,0,0,1,0,16H64A8,8,0,0,1,56,144Zm112,0a8,8,0,0,1,8-8h16a8,8,0,0,1,0,16H176A8,8,0,0,1,168,144Z"/></symbol>
+<symbol id="i-train" viewBox="0 0 256 256"><path d="M184,24H72A32,32,0,0,0,40,56V184a32,32,0,0,0,32,32h8L65.6,235.2a8,8,0,1,0,12.8,9.6L100,216h56l21.6,28.8a8,8,0,1,0,12.8-9.6L176,216h8a32,32,0,0,0,32-32V56A32,32,0,0,0,184,24ZM56,120V80h64v40Zm80-40h64v40H136ZM72,40H184a16,16,0,0,1,16,16v8H56V56A16,16,0,0,1,72,40ZM184,200H72a16,16,0,0,1-16-16V136H200v48A16,16,0,0,1,184,200ZM96,172a12,12,0,1,1-12-12A12,12,0,0,1,96,172Zm88,0a12,12,0,1,1-12-12A12,12,0,0,1,184,172Z"/></symbol>
+<symbol id="i-map" viewBox="0 0 256 256"><path d="M228.92,49.69a8,8,0,0,0-6.86-1.45L160.93,63.52,99.58,32.84a8,8,0,0,0-5.52-.6l-64,16A8,8,0,0,0,24,56V200a8,8,0,0,0,9.94,7.76l61.13-15.28,61.35,30.68A8.15,8.15,0,0,0,160,224a8,8,0,0,0,1.94-.24l64-16A8,8,0,0,0,232,200V56A8,8,0,0,0,228.92,49.69ZM104,52.94l48,24V203.06l-48-24ZM40,62.25l48-12v127.5l-48,12Zm176,131.5-48,12V78.25l48-12Z"/></symbol>
+<symbol id="i-ship" viewBox="0 0 256 256"><path d="M247.21,172.53A8,8,0,0,0,240,168H144V144h72a8,8,0,0,0,5.92-13.38L144,44.91V8a8,8,0,0,0-14.21-5l-104,128A8,8,0,0,0,32,144h96v24H16a8,8,0,0,0-6.25,13l29.6,37a15.93,15.93,0,0,0,12.49,6H204.16a15.93,15.93,0,0,0,12.49-6l29.6-37A8,8,0,0,0,247.21,172.53ZM197.92,128H144V68.69ZM48.81,128,128,30.53V128Zm155.35,80H51.84l-19.2-24H223.36Z"/></symbol>
+<symbol id="i-link" viewBox="0 0 256 256"><path d="M165.66,90.34a8,8,0,0,1,0,11.32l-64,64a8,8,0,0,1-11.32-11.32l64-64A8,8,0,0,1,165.66,90.34ZM215.6,40.4a56,56,0,0,0-79.2,0L106.34,70.45a8,8,0,0,0,11.32,11.32l30.06-30a40,40,0,0,1,56.57,56.56l-30.07,30.06a8,8,0,0,0,11.31,11.32L215.6,119.6a56,56,0,0,0,0-79.2ZM138.34,174.22l-30.06,30.06a40,40,0,1,1-56.56-56.57l30.05-30.05a8,8,0,0,0-11.32-11.32L40.4,136.4a56,56,0,0,0,79.2,79.2l30.06-30.07a8,8,0,0,0-11.32-11.31Z"/></symbol>
+<symbol id="i-coin" viewBox="0 0 256 256"><path d="M184,89.57V84c0-25.08-37.83-44-88-44S8,58.92,8,84v40c0,20.89,26.25,37.49,64,42.46V172c0,25.08,37.83,44,88,44s88-18.92,88-44V132C248,111.3,222.58,94.68,184,89.57ZM232,132c0,13.22-30.79,28-72,28-3.73,0-7.43-.13-11.08-.37C170.49,151.77,184,139,184,124V105.74C213.87,110.19,232,122.27,232,132ZM72,150.25V126.46A183.74,183.74,0,0,0,96,128a183.74,183.74,0,0,0,24-1.54v23.79A163,163,0,0,1,96,152,163,163,0,0,1,72,150.25Zm96-40.32V124c0,8.39-12.41,17.4-32,22.87V123.5C148.91,120.37,159.84,115.71,168,109.93ZM96,56c41.21,0,72,14.78,72,28s-30.79,28-72,28S24,97.22,24,84,54.79,56,96,56ZM24,124V109.93c8.16,5.78,19.09,10.44,32,13.57v23.37C36.41,141.4,24,132.39,24,124Zm64,48v-4.17c2.63.1,5.29.17,8,.17,3.88,0,7.67-.13,11.39-.35A121.92,121.92,0,0,0,120,171.41v23.46C100.41,189.4,88,180.39,88,172Zm48,26.25V174.4a179.48,179.48,0,0,0,24,1.6,183.74,183.74,0,0,0,24-1.54v23.79a165.45,165.45,0,0,1-48,0Zm64-3.38V171.5c12.91-3.13,23.84-7.79,32-13.57V172C232,180.39,219.59,189.4,200,194.87Z"/></symbol>
+</defs></svg>
+
+<header class="proto">
+ <b>Manual de CSS</b>
+ <nav aria-label="Seções do manual">
+  <a href="#comeco">Começo</a><a href="#tokens">Tokens</a><a href="#tipografia">Tipografia</a><a href="#layout">Layout</a><a href="#superficies">Superfícies</a><a href="#controles">Controles</a><a href="#dados">Dados e gráficos</a><a href="#estados">Estados</a><a href="#css">CSS completo</a>
+ </nav>
+ <small>Plataforma OSV · v24</small>
+ <button class="themebtn" id="themebtn" aria-label="Alternar modo claro e escuro">Modo claro</button>
+</header>
+
+<div class="g-wrap" role="main">
+
+<section class="g-sec" style="gap:20px">
+ <span class="mono">Plataforma OSV · linha de sistema</span>
+ <h1 class="g-h" style="font-size:clamp(40px,6vw,76px)">Manual de CSS para apps</h1>
+ <p class="g-lead">Uma folha de estilo só, com tokens, layout, controles e gráficos, para construir qualquer app da OSV com a mesma cara do protótipo. Cada peça abaixo é o CSS real rodando, com o HTML para copiar ao lado.</p>
+ <div class="row" style="flex-wrap:wrap;gap:8px"><span class="chip">Escuro e claro</span><span class="chip">Sem dependências</span><span class="chip">Gráficos em CSS e SVG</span><span class="chip">Dados de exemplo</span></div>
+</section>
+
+<!-- ───────── começo ───────── -->
+<section class="g-sec" id="comeco">
+ <div class="g-rule"><h2 class="g-h">Começo</h2></div>
+ <div class="g-two" style="gap:40px">
+  <div class="g-sub">
+   <p class="g-p">O manual tem dois arquivos: <code class="m-c">osv-app.css</code>, com tudo que está nesta página, e <code class="m-c">osv-app.js</code>, pequeno, que cuida do tema, das dicas ao passar o cursor e do gráfico de linha.</p>
+   <ol class="g-ol">
+    <li><span><b>Carregue as fontes.</b> League Spartan 600 e 700 para títulos, Inter 400 a 700 para o resto.</span></li>
+    <li><span><b>Ligue a folha de estilo.</b> O tema escuro é o padrão. O claro entra com <code class="m-c">data-theme="light"</code> na tag html.</span></li>
+    <li><span><b>Monte com as classes.</b> Nada de cor ou raio escrito à mão: use sempre os tokens.</span></li>
+    <li><span><b>Confira nos dois temas</b> e em 390 px de largura antes de aprovar.</span></li>
+   </ol>
+  </div>
+  <div class="g-sub">
+<pre class="g-code"><code>&lt;!DOCTYPE html&gt;
+&lt;html lang="pt-BR" data-theme="dark"&gt;
+&lt;head&gt;
+ &lt;meta charset="utf-8"&gt;
+ &lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;
+ &lt;link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=League+Spartan:wght@600;700&amp;display=swap"&gt;
+ &lt;link rel="stylesheet" href="osv-app.css"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+ &lt;div class="app"&gt;
+  &lt;aside class="side"&gt;…menu…&lt;/aside&gt;
+  &lt;main&gt;…telas…&lt;/main&gt;
+ &lt;/div&gt;
+ &lt;script src="osv-app.js"&gt;&lt;/script&gt;
+&lt;/body&gt;
+&lt;/html&gt;</code></pre>
+   <p class="g-cap">Os ícones do protótipo são um sprite SVG. Cada ícone entra com a classe <code class="m-c">i</code> e herda a cor do texto.</p>
+  </div>
+ </div>
+ <div class="g-grid3">
+  <div class="g-pr"><b>Linha antes de caixa</b><span>Separe por espaço e por um fio de 1 px. Card só quando o bloco é clicável inteiro ou flutua sobre foto.</span></div>
+  <div class="g-pr"><b>Laranja com função</b><span>Ação principal, item selecionado e progresso. Destaque é só a borda. Brilho laranja, só na caixa de digitação.</span></div>
+  <div class="g-pr"><b>Texto em tinta, cor em marca</b><span>Em gráficos, a cor fica na barra e na linha. Números e rótulos usam sempre as cores de texto.</span></div>
+ </div>
+</section>
+
+<!-- ───────── tokens ───────── -->
+<section class="g-sec" id="tokens">
+ <div class="g-rule"><h2 class="g-h">Tokens</h2></div>
+ <p class="g-p">As amostras leem o tema ativo. Troque o tema no topo para ver o outro valor.</p>
+ <div class="g-two" style="gap:40px">
+  <div class="g-sub">
+   <h3 class="h2">Superfície e texto</h3>
+   <div>
+    <div class="g-tok"><i style="background:var(--bg)"></i><code>--bg</code><span>Fundo da página</span></div>
+    <div class="g-tok"><i style="background:var(--s)"></i><code>--s</code><span>Card, campo de busca</span></div>
+    <div class="g-tok"><i style="background:var(--s2)"></i><code>--s2</code><span>Trilho, campo de formulário, linha em foco</span></div>
+    <div class="g-tok"><i style="background:var(--chip)"></i><code>--chip</code><span>Etiqueta e interruptor desligado</span></div>
+    <div class="g-tok"><i style="background:var(--line2)"></i><code>--line · --line2</code><span>Fio de 1 px e borda de controle</span></div>
+    <div class="g-tok"><i style="background:var(--t)"></i><code>--t</code><span>Título, número e texto forte</span></div>
+    <div class="g-tok"><i style="background:var(--tb)"></i><code>--tb</code><span>Texto corrido</span></div>
+    <div class="g-tok"><i style="background:var(--tm)"></i><code>--tm</code><span>Rótulo, legenda, eixo de gráfico</span></div>
+   </div>
+  </div>
+  <div class="g-sub">
+   <h3 class="h2">Ação e estado</h3>
+   <div>
+    <div class="g-tok"><i style="background:var(--acc)"></i><code>--acc · --on</code><span>Botão principal, seleção, progresso. Texto por cima em <code class="m-c">--on</code></span></div>
+    <div class="g-tok"><i style="background:var(--acct)"></i><code>--acct</code><span>Laranja legível como texto ou ícone</span></div>
+    <div class="g-tok"><i style="background:var(--accs)"></i><code>--accs</code><span>Fundo do item selecionado e anel de foco</span></div>
+    <div class="g-tok"><i style="background:var(--accl)"></i><code>--accl</code><span>Borda de destaque e de campo em foco</span></div>
+    <div class="g-tok"><i style="background:var(--ok)"></i><code>--ok · --oks</code><span>Concluído, publicado, dentro do limite</span></div>
+    <div class="g-tok"><i style="background:var(--warn)"></i><code>--warn</code><span>Atenção. Sempre com ícone e texto</span></div>
+    <div class="g-tok"><i style="background:var(--bad)"></i><code>--bad</code><span>Erro ou acima do limite. Sempre com ícone e texto</span></div>
+   </div>
+  </div>
+ </div>
+ <div class="g-two" style="gap:40px">
+  <div class="g-sub">
+   <h3 class="h2">Raios</h3>
+   <div class="g-four">
+    <div class="g-rad"><i style="border-radius:var(--r1)"></i><code class="m-c">--r1 · 10</code><span class="g-cap">Ícone, dica</span></div>
+    <div class="g-rad"><i style="border-radius:var(--r2)"></i><code class="m-c">--r2 · 14</code><span class="g-cap">Aviso, miniatura</span></div>
+    <div class="g-rad"><i style="border-radius:var(--r3)"></i><code class="m-c">--r3 · 20</code><span class="g-cap">Card</span></div>
+    <div class="g-rad"><i style="border-radius:var(--r4)"></i><code class="m-c">--r4 · 28</code><span class="g-cap">Foto, card flutuante</span></div>
+   </div>
+   <p class="g-cap">Controles usam <code class="m-c">--pill</code> (999 px): botão, campo, busca, abas e item de menu.</p>
+  </div>
+  <div class="g-sub">
+   <h3 class="h2">Espaço</h3>
+   <div class="m-space">
+    <span><i style="width:4px"></i>4</span><span><i style="width:8px"></i>8</span><span><i style="width:12px"></i>12</span><span><i style="width:16px"></i>16</span><span><i style="width:20px"></i>20</span><span><i style="width:24px"></i>24</span><span><i style="width:30px"></i>30</span><span><i style="width:40px"></i>40</span>
+   </div>
+   <p class="g-cap">Dentro de um bloco, 8 a 16. Entre blocos de uma seção, 16 a 24. Entre seções da tela, 30. Margem lateral, 40 no computador e 18 no celular.</p>
+  </div>
+ </div>
+</section>
+
+<!-- ───────── tipografia ───────── -->
+<section class="g-sec" id="tipografia">
+ <div class="g-rule"><h2 class="g-h">Tipografia</h2></div>
+ <div class="g-fx">
+  <div>
+   <div class="g-type"><span class="h1">Lisboa e Porto</span><small>.h1 · League Spartan 600 · 36/1.06</small></div>
+   <div class="g-type"><span class="h2">Continue de onde parou</span><small>.h2 · League Spartan 700 · 21/1.25</small></div>
+   <div class="g-type"><span class="h3">Como emitir com milhas Smiles</span><small>.h3 · Inter 700 · 16/1.3</small></div>
+   <div class="g-type"><span>Texto corrido em Inter 400, 15 px, entrelinha 1,5.</span><small>body · Inter 400 · 15/1.5</small></div>
+   <div class="g-type"><span class="muted">Legenda e apoio, um tom abaixo.</span><small>.muted · Inter 400 · 13</small></div>
+   <div class="g-type"><span class="mono">Módulo 3 · Aula 4</span><small>.mono · Inter 600 · 10,5 · caixa alta</small></div>
+   <div class="g-type"><a class="link" href="#tipografia">Ver todas →</a><small>.link · Inter 500 · 13,5</small></div>
+  </div>
+  <div class="g-info">
+   <p class="g-p">Título a partir de 26 px usa peso 600. Abaixo disso, 700, para a League Spartan não perder a cara da marca. O peso 800 fica para as páginas de venda. Não existe itálico na interface.</p>
+<pre class="g-code"><code>&lt;span class="mono"&gt;Módulo 3 · Aula 4&lt;/span&gt;
+&lt;h1 class="h1"&gt;Lisboa e Porto&lt;/h1&gt;
+&lt;h2 class="h2"&gt;Continue de onde parou&lt;/h2&gt;
+&lt;h3 class="h3"&gt;Como emitir com milhas Smiles&lt;/h3&gt;
+&lt;p&gt;Texto corrido.&lt;/p&gt;
+&lt;p class="muted"&gt;Legenda e apoio.&lt;/p&gt;
+&lt;a class="link" href="#"&gt;Ver todas →&lt;/a&gt;
+&lt;b class="num"&gt;149.800&lt;/b&gt;  &lt;!-- algarismos alinhados --&gt;</code></pre>
+  </div>
+ </div>
+</section>
+
+<!-- ───────── layout ───────── -->
+<section class="g-sec" id="layout">
+ <div class="g-rule"><h2 class="g-h">Layout</h2></div>
+ <div class="g-fx">
+  <div class="g-demo">
+   <div class="m-shell" aria-hidden="true">
+    <div class="m-side"><i></i><i class="on"></i><i></i><i></i><i></i></div>
+    <div class="m-main"><b></b><div class="m-hero"></div><div class="m-cols"><i></i><i></i><i></i></div></div>
+   </div>
+   <p class="g-cap">Computador: menu fixo de 248 px e conteúdo com no máximo 1200 px. Abaixo de 900 px o menu some e entra a barra inferior <code class="m-c">tabbar</code>.</p>
+  </div>
+  <div class="g-info">
+   <h3>Casca do app</h3>
+<pre class="g-code"><code>&lt;div class="app"&gt;
+ &lt;aside class="side"&gt;
+  &lt;a class="nav" href="#vitrine" aria-current="page"&gt;
+   &lt;svg class="i" width="18" height="18"&gt;&lt;use href="#i-home"/&gt;&lt;/svg&gt;Vitrine
+  &lt;/a&gt;
+  &lt;a class="nav" href="#painel"&gt;…Meu painel&lt;/a&gt;
+ &lt;/aside&gt;
+ &lt;main&gt;
+  &lt;!-- seções com 30 px entre elas --&gt;
+ &lt;/main&gt;
+&lt;/div&gt;
+&lt;nav class="tabbar"&gt;…5 atalhos no celular…&lt;/nav&gt;</code></pre>
+  </div>
+ </div>
+ <div class="g-fx">
+  <div class="g-demo">
+   <div class="sec-h"><div><h3 class="h2">Últimos conteúdos</h3><span class="muted">Do mais recente ao mais antigo</span></div><a class="link" href="#layout">Ver tudo →</a></div>
+   <div class="m-grid"><span class="mono">.two</span><div class="two"><i></i><i></i></div></div>
+   <div class="m-grid"><span class="mono">.three</span><div class="three"><i></i><i></i><i></i></div></div>
+   <div class="m-grid"><span class="mono">.side2</span><div class="side2" style="grid-template-columns:minmax(0,1fr) 34%"><i></i><i></i></div></div>
+   <div class="m-grid"><span class="mono">.dash3</span><div class="dash3"><i></i><i></i><i></i></div></div>
+  </div>
+  <div class="g-info">
+   <h3>Cabeçalho de seção e grades</h3>
+   <p class="g-p">O cabeçalho já traz o fio entre o título e a ação. As grades viram uma coluna no celular. Para empilhar use <code class="m-c">stack</code>; para alinhar em linha, <code class="m-c">row</code>.</p>
+<pre class="g-code"><code>&lt;div class="sec-h"&gt;
+ &lt;div&gt;&lt;h2 class="h2"&gt;Últimos conteúdos&lt;/h2&gt;
+      &lt;span class="muted"&gt;Do mais recente ao mais antigo&lt;/span&gt;&lt;/div&gt;
+ &lt;a class="link" href="#"&gt;Ver tudo →&lt;/a&gt;
+&lt;/div&gt;
+
+&lt;div class="two"&gt;…2 colunas iguais…&lt;/div&gt;
+&lt;div class="three"&gt;…3 colunas iguais…&lt;/div&gt;
+&lt;div class="side2"&gt;…conteúdo + lateral de 372 px…&lt;/div&gt;
+&lt;div class="dash3"&gt;…painel 27 / 50 / 23…&lt;/div&gt;</code></pre>
+  </div>
+ </div>
+</section>
+
+<!-- ───────── superfícies ───────── -->
+<section class="g-sec" id="superficies">
+ <div class="g-rule"><h2 class="g-h">Superfícies</h2></div>
+ <div class="g-fx">
+  <div class="g-demo">
+   <div>
+    <div class="inrow"><span class="ibox"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-doc"/></svg></span><div><b>Checklist de emissão</b><span class="muted">PDF · 2 páginas</span></div><a class="link" href="#superficies">Abrir</a></div>
+    <div class="inrow"><span class="ibox"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-coin"/></svg></span><div><b>Calculadora de milhas</b><span class="muted">Planilha</span></div><a class="link" href="#superficies">Abrir</a></div>
+   </div>
+   <article class="card stack" style="gap:8px"><span class="mono">Card</span><b>Bloco clicável ou com conteúdo próprio</b><span class="muted">Fundo --s, borda de 1 px, raio de 20 px, sem sombra.</span></article>
+   <article class="card lv3 stack" style="gap:8px"><span class="mono" style="color:var(--acct)">Destaque</span><b>O bloco mais importante da tela</b><span class="muted">Só a borda laranja. Sem brilho, sem lavagem. Um por tela.</span></article>
+   <div class="tip"><span class="ibox"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-bell"/></svg></span><div style="flex:1"><b>Aviso neutro</b><div class="muted">4.200 pontos Livelo vencem em 12/12.</div></div><button class="btn s">Resolver</button></div>
+  </div>
+  <div class="g-info">
+   <h3>Linha, card, destaque e aviso</h3>
+   <p class="g-p">Comece pela linha. Suba para card só quando precisar. O destaque não tem brilho: a borda laranja já basta.</p>
+<pre class="g-code"><code>&lt;div class="inrow"&gt;
+ &lt;span class="ibox"&gt;…ícone…&lt;/span&gt;
+ &lt;div&gt;&lt;b&gt;Checklist de emissão&lt;/b&gt;
+      &lt;span class="muted"&gt;PDF · 2 páginas&lt;/span&gt;&lt;/div&gt;
+ &lt;a class="link" href="#"&gt;Abrir&lt;/a&gt;
+&lt;/div&gt;
+
+&lt;article class="card"&gt;…&lt;/article&gt;
+&lt;article class="card lv3"&gt;…um por tela…&lt;/article&gt;
+
+&lt;div class="tip"&gt;
+ &lt;span class="ibox"&gt;…&lt;/span&gt;
+ &lt;div&gt;…texto…&lt;/div&gt;
+ &lt;button class="btn s"&gt;Resolver&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+  </div>
+ </div>
+ <div class="g-fx">
+  <div class="g-demo">
+   <div class="phero" style="min-height:300px">
+    <svg class="art" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><defs><linearGradient id="ma1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5a2e16"/><stop offset=".62" stop-color="#f58e26" stop-opacity=".85"/><stop offset="1" stop-color="#ffd9a8"/></linearGradient></defs><rect width="400" height="300" fill="url(#ma1)"/><circle cx="250" cy="170" r="38" fill="#ffd9a8" opacity=".85"/><path d="M0 250 Q90 200 180 232 T400 220 V300 H0Z" fill="#1d120c" opacity=".75"/><rect x="20" y="204" width="60" height="98" fill="#1d120c"/><rect x="86" y="182" width="40" height="120" fill="#1d120c"/><rect x="132" y="216" width="52" height="86" fill="#1d120c"/><rect x="190" y="166" width="36" height="136" fill="#1d120c"/><rect x="232" y="200" width="58" height="102" fill="#1d120c"/><rect x="296" y="178" width="44" height="124" fill="#1d120c"/><rect x="346" y="210" width="54" height="92" fill="#1d120c"/></svg>
+    <div class="phero-shade"></div>
+    <div class="phero-in" style="padding:26px;gap:22px">
+     <div style="flex:5 1 150px" class="stack"><span class="mono" style="color:#cfc7be">Próxima viagem</span><span class="h1" style="font-size:30px">Lisboa e Porto</span></div>
+     <form class="float" onsubmit="return false">
+      <b>Pergunte à Thay</b>
+      <label class="thaybar"><input aria-label="Pergunta para a Thay" placeholder="Quantas milhas preciso?"><button class="spark" aria-label="Enviar"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-send"/></svg></button></label>
+     </form>
+    </div>
+   </div>
+   <p class="g-cap">No tema claro o card flutuante fica branco e sem desfoque.</p>
+  </div>
+  <div class="g-info">
+   <h3>Foto com card flutuante</h3>
+   <p class="g-p">A primeira dobra de uma tela. Foto com véu escuro, título à esquerda e a ação principal no card. O banner é limpo: o único brilho laranja está na caixa de digitação. Para card sobre foto fora do banner, use <code class="m-c">glass</code>.</p>
+<pre class="g-code"><code>&lt;section class="phero"&gt;
+ &lt;img src="lisboa.jpg" alt=""&gt;
+ &lt;div class="phero-shade"&gt;&lt;/div&gt;
+ &lt;div class="phero-in"&gt;
+  &lt;div&gt;
+   &lt;span class="mono"&gt;Próxima viagem&lt;/span&gt;
+   &lt;h1 class="h1"&gt;Lisboa e Porto&lt;/h1&gt;
+  &lt;/div&gt;
+  &lt;form class="float"&gt;
+   &lt;b&gt;Pergunte à Thay&lt;/b&gt;
+   &lt;label class="thaybar"&gt;
+    &lt;input placeholder="Quantas milhas preciso?"&gt;
+    &lt;button class="spark" aria-label="Enviar"&gt;…&lt;/button&gt;
+   &lt;/label&gt;
+  &lt;/form&gt;
+ &lt;/div&gt;
+&lt;/section&gt;</code></pre>
+  </div>
+ </div>
+</section>
+
+<!-- ───────── controles ───────── -->
+<section class="g-sec" id="controles">
+ <div class="g-rule"><h2 class="g-h">Controles</h2></div>
+ <div class="g-fx">
+  <div class="g-demo">
+   <div class="row" style="flex-wrap:wrap"><button class="btn p"><svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-play"/></svg>Continuar</button><button class="btn s">Ver módulos</button><button class="btn s" disabled>Indisponível</button></div>
+   <div class="row" style="flex-wrap:wrap"><span class="chip">Masterclass</span><span class="chip now">Em andamento</span><span class="chip ok"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-check"/></svg>Concluído</span><button class="chip">Preciso de seguro?</button></div>
+   <div class="row" style="flex-wrap:wrap"><div class="seg" role="group" aria-label="Formato"><button aria-pressed="true">Todos</button><button aria-pressed="false">Vídeo</button><button aria-pressed="false">Áudio</button><button aria-pressed="false">PDF</button></div></div>
+   <div class="tabs" role="tablist"><button role="tab" aria-selected="true">Resumo</button><button role="tab" aria-selected="false">Anotações</button><button role="tab" aria-selected="false">Comentários</button></div>
+  </div>
+  <div class="g-info">
+   <h3>Botão, etiqueta, seletor e abas</h3>
+   <p class="g-p">Um botão laranja por bloco. O seletor <code class="m-c">seg</code> troca a visão do mesmo conteúdo; as abas trocam o conteúdo.</p>
+<pre class="g-code"><code>&lt;button class="btn p"&gt;Continuar&lt;/button&gt;
+&lt;button class="btn s"&gt;Ver módulos&lt;/button&gt;
+
+&lt;span class="chip"&gt;Masterclass&lt;/span&gt;
+&lt;span class="chip now"&gt;Em andamento&lt;/span&gt;
+&lt;span class="chip ok"&gt;Concluído&lt;/span&gt;
+&lt;button class="chip"&gt;Preciso de seguro?&lt;/button&gt;
+
+&lt;div class="seg" role="group" aria-label="Formato"&gt;
+ &lt;button aria-pressed="true"&gt;Todos&lt;/button&gt;
+ &lt;button aria-pressed="false"&gt;Vídeo&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;div class="tabs" role="tablist"&gt;
+ &lt;button role="tab" aria-selected="true"&gt;Resumo&lt;/button&gt;
+ &lt;button role="tab" aria-selected="false"&gt;Anotações&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+  </div>
+ </div>
+ <div class="g-fx">
+  <div class="g-demo">
+   <label class="thaybar"><input aria-label="Pergunta" placeholder="Pergunte ou peça qualquer coisa"><button class="spark" aria-label="Enviar"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-send"/></svg></button></label>
+   <label class="search"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-search"/></svg><input aria-label="Buscar" placeholder="Buscar cursos, aulas e episódios"></label>
+   <div class="two" style="gap:14px">
+    <label class="fld"><span class="mono">Nome</span><input value="Lucas Gabriel"></label>
+    <label class="fld"><span class="mono">Tipo</span><select><option>Workshop</option><option>Masterclass</option></select></label>
+   </div>
+   <div class="row"><button class="sw" role="switch" aria-checked="true" aria-label="Avisos por e-mail"><i></i></button><span>Avisos por e-mail</span><span class="tick on" style="margin-left:auto"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"/></svg></span><span class="muted">Passaporte válido</span></div>
+  </div>
+  <div class="g-info">
+   <h3>Caixa de digitação, busca e formulário</h3>
+   <p class="g-p">A caixa de digitação <code class="m-c">thaybar</code> é o único lugar com brilho laranja no canto. Use quando digitar é a ação principal da tela. Busca e campos comuns ficam neutros e só acendem no foco.</p>
+<pre class="g-code"><code>&lt;label class="thaybar"&gt;
+ &lt;input placeholder="Pergunte ou peça qualquer coisa"&gt;
+ &lt;button class="spark" aria-label="Enviar"&gt;…&lt;/button&gt;
+&lt;/label&gt;
+
+&lt;label class="search"&gt;
+ &lt;svg class="i" width="16" height="16"&gt;&lt;use href="#i-search"/&gt;&lt;/svg&gt;
+ &lt;input placeholder="Buscar cursos, aulas e episódios"&gt;
+&lt;/label&gt;
+
+&lt;label class="fld"&gt;
+ &lt;span class="mono"&gt;Nome&lt;/span&gt;
+ &lt;input value="Lucas Gabriel"&gt;
+&lt;/label&gt;
+
+&lt;button class="sw" role="switch" aria-checked="true"&gt;&lt;i&gt;&lt;/i&gt;&lt;/button&gt;
+&lt;span class="tick on"&gt;…&lt;/span&gt;</code></pre>
+  </div>
+ </div>
+</section>
+
+<!-- ───────── dados ───────── -->
+<section class="g-sec" id="dados">
+ <div class="g-rule"><h2 class="g-h">Dados e gráficos</h2></div>
+ <p class="g-lead">Primeiro escolha a forma pelo trabalho do dado. A cor vem por último. Todos os números desta seção são dados de exemplo.</p>
+ <div class="m-pick">
+  <div><b>Um número que resume</b><span>Número em destaque</span></div>
+  <div><b>Comparar itens</b><span>Barras horizontais ordenadas</span></div>
+  <div><b>Evolução em poucos períodos</b><span>Colunas</span></div>
+  <div><b>Evolução contínua</b><span>Linha ou área</span></div>
+  <div><b>Partes de um todo</b><span>Barra segmentada</span></div>
+  <div><b>Quanto falta para um limite</b><span>Medidor ou barra de progresso</span></div>
+ </div>
+
+ <div class="g-fx">
+  <div class="g-demo">
+   <div class="m-pal">
+    <span><i class="k1"></i><code class="m-c">--c1</code>laranja</span><span><i class="k2"></i><code class="m-c">--c2</code>azul</span><span><i class="k3"></i><code class="m-c">--c3</code>magenta</span><span><i class="k4"></i><code class="m-c">--c4</code>violeta</span><span><i class="k0"></i><code class="m-c">--c0</code>outros</span>
+   </div>
+   <p class="g-cap">A ordem é fixa e a cor acompanha a série, não a posição. Filtrar não repinta quem ficou. A paleta foi validada para daltonismo e contraste nas duas superfícies.</p>
+  </div>
+  <div class="g-info">
+   <h3>Cores de série</h3>
+   <ul class="g-do">
+    <li><span class="tick on"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"/></svg></span><span>Uma série só: use <code class="m-c">--c1</code> e dispense a legenda.</span></li>
+    <li><span class="tick on"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"/></svg></span><span>Duas a quatro séries: legenda sempre, e o nome na ponta da linha.</span></li>
+    <li><span class="tick on"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"/></svg></span><span>Da quinta em diante, agrupe em Outros com <code class="m-c">--c0</code>.</span></li>
+    <li><span class="g-x" aria-hidden="true">×</span><span>Verde, âmbar e vermelho como cor de série. São só de estado.</span></li>
+    <li><span class="g-x" aria-hidden="true">×</span><span>Dois eixos verticais, pizza ou rosca, número em todo ponto.</span></li>
+   </ul>
+  </div>
+ </div>
+
+ <div class="m-ex">
+  <h3 class="h2">Número em destaque</h3>
+  <div class="kpis">
+   <div class="kpi"><span class="mono">Alunos ativos</span><b>1.284</b><span class="delta up">+96 este mês</span><svg class="sparkl" id="sp1"></svg></div>
+   <div class="kpi"><span class="mono">Produtos publicados</span><b>5</b><span class="delta">1 rascunho</span></div>
+   <div class="kpi"><span class="mono">Avisos ativos</span><b>3</b><span class="delta">1 agendado</span></div>
+   <div class="kpi"><span class="mono">Acessos avulsos</span><b>212</b><span class="delta up">+18 este mês</span></div>
+  </div>
+<pre class="g-code"><code>&lt;div class="kpis"&gt;
+ &lt;div class="kpi"&gt;
+  &lt;span class="mono"&gt;Alunos ativos&lt;/span&gt;
+  &lt;b&gt;1.284&lt;/b&gt;
+  &lt;span class="delta up"&gt;+96 este mês&lt;/span&gt;      &lt;!-- .up verde · .down vermelho · sem classe neutro --&gt;
+  &lt;svg class="sparkl" id="sp1"&gt;&lt;/svg&gt;             &lt;!-- opcional: osvSpark(sp1,[980,1010,1060,1120,1188,1284]) --&gt;
+ &lt;/div&gt;
+ &lt;div class="kpi"&gt;…&lt;/div&gt;
+&lt;/div&gt;</code></pre>
+ </div>
+
+ <div class="g-fx">
+  <figure class="viz">
+   <div class="viz-h"><div><h3 class="viz-t">Alunos por produto</h3><span class="viz-s">Total de alunos com acesso</span></div></div>
+   <div class="hbars" role="list">
+    <span class="n">Curso OSV</span><span class="t" tabindex="0" role="listitem" data-tip="Curso OSV|1.240 alunos"><i style="width:100%"></i></span><span class="v">1.240</span>
+    <span class="n">Calculadora de milhas</span><span class="t" tabindex="0" role="listitem" data-tip="Calculadora de milhas|980 alunos"><i style="width:79%"></i></span><span class="v">980</span>
+    <span class="n">Podcast OSV</span><span class="t" tabindex="0" role="listitem" data-tip="Podcast OSV|860 alunos"><i style="width:69.4%"></i></span><span class="v">860</span>
+    <span class="n">Lisboa e Porto em 12 dias</span><span class="t" tabindex="0" role="listitem" data-tip="Lisboa e Porto em 12 dias|540 alunos"><i style="width:43.5%"></i></span><span class="v">540</span>
+    <span class="n">Executiva com milhas</span><span class="t" tabindex="0" role="listitem" data-tip="Executiva com milhas|312 alunos"><i style="width:25.2%"></i></span><span class="v">312</span>
+   </div>
+  </figure>
+  <div class="g-info">
+   <h3>Barras horizontais</h3>
+   <p class="g-p">Para comparar itens com nome. Ordene do maior para o menor, use uma cor só e ponha o valor na ponta. A largura é o valor dividido pelo maior.</p>
+<pre class="g-code"><code>&lt;div class="hbars"&gt;
+ &lt;span class="n"&gt;Curso OSV&lt;/span&gt;
+ &lt;span class="t" tabindex="0" data-tip="Curso OSV|1.240 alunos"&gt;
+  &lt;i style="width:100%"&gt;&lt;/i&gt;
+ &lt;/span&gt;
+ &lt;span class="v"&gt;1.240&lt;/span&gt;
+
+ &lt;span class="n"&gt;Podcast OSV&lt;/span&gt;
+ &lt;span class="t" tabindex="0" data-tip="Podcast OSV|860 alunos"&gt;
+  &lt;i style="width:69.4%"&gt;&lt;/i&gt;
+ &lt;/span&gt;
+ &lt;span class="v"&gt;860&lt;/span&gt;
+&lt;/div&gt;</code></pre>
+  </div>
+ </div>
+
+ <div class="g-fx">
+  <figure class="viz">
+   <div class="viz-h"><div><h3 class="viz-t">Aulas concluídas por semana</h3><span class="viz-s">Últimas 8 semanas</span></div></div>
+   <div>
+    <div class="cols">
+     <div class="c" tabindex="0" data-tip="Semana 1|3 aulas"><i class="mute" style="height:27%"></i></div>
+     <div class="c" tabindex="0" data-tip="Semana 2|5 aulas"><i class="mute" style="height:45%"></i></div>
+     <div class="c" tabindex="0" data-tip="Semana 3|4 aulas"><i class="mute" style="height:36%"></i></div>
+     <div class="c" tabindex="0" data-tip="Semana 4|7 aulas"><i class="mute" style="height:64%"></i></div>
+     <div class="c" tabindex="0" data-tip="Semana 5|6 aulas"><i class="mute" style="height:55%"></i></div>
+     <div class="c" tabindex="0" data-tip="Semana 6|9 aulas"><i class="mute" style="height:82%"></i></div>
+     <div class="c" tabindex="0" data-tip="Semana 7|8 aulas"><i class="mute" style="height:73%"></i></div>
+     <div class="c" tabindex="0" data-tip="Esta semana|11 aulas"><span>11</span><i style="height:88%"></i></div>
+    </div>
+    <div class="cols-x"><span>S1</span><span>S2</span><span>S3</span><span>S4</span><span>S5</span><span>S6</span><span>S7</span><span>Esta</span></div>
+   </div>
+  </figure>
+  <div class="g-info">
+   <h3>Colunas</h3>
+   <p class="g-p">Para poucos períodos. Coluna fina, ponta arredondada e base reta. Para chamar atenção a um período, pinte só ele com <code class="m-c">--c1</code> e deixe os outros em <code class="m-c">mute</code>. Rotule só o que importa; o resto aparece na dica.</p>
+<pre class="g-code"><code>&lt;div class="cols"&gt;
+ &lt;div class="c" tabindex="0" data-tip="Semana 7|8 aulas"&gt;
+  &lt;i class="mute" style="height:73%"&gt;&lt;/i&gt;
+ &lt;/div&gt;
+ &lt;div class="c" tabindex="0" data-tip="Esta semana|11 aulas"&gt;
+  &lt;span&gt;11&lt;/span&gt;
+  &lt;i style="height:88%"&gt;&lt;/i&gt;
+ &lt;/div&gt;
+&lt;/div&gt;
+&lt;div class="cols-x"&gt;&lt;span&gt;S7&lt;/span&gt;&lt;span&gt;Esta&lt;/span&gt;&lt;/div&gt;</code></pre>
+  </div>
+ </div>
+
+ <div class="m-ex">
+  <figure class="viz">
+   <div class="viz-h"><div><h3 class="viz-t">Conteúdos concluídos por mês</h3><span class="viz-s">Dezembro de 2025 a novembro de 2026</span></div>
+    <div class="legend" style="flex:none"><span><i class="k1"></i>Vídeo</span><span><i class="k2"></i>Áudio</span></div></div>
+   <svg class="line" id="ln1" aria-label="Conteúdos concluídos por mês, vídeo e áudio. Use as setas para percorrer os meses."></svg>
+   <details class="tview"><summary>Ver como tabela</summary><table class="tbl" id="ln1t"></table></details>
+  </figure>
+  <p class="g-p">Para evolução contínua. Traço de 2 px, grade de fio, um eixo só. Com duas a quatro séries, o nome vai na ponta da linha e a legenda fica no topo. Passe o cursor, ou use as setas do teclado, para ler os valores de cada mês. Todo gráfico leva a tabela equivalente.</p>
+<pre class="g-code"><code>&lt;figure class="viz"&gt;
+ &lt;div class="viz-h"&gt;
+  &lt;div&gt;&lt;h3 class="viz-t"&gt;Conteúdos concluídos por mês&lt;/h3&gt;
+       &lt;span class="viz-s"&gt;Dezembro de 2025 a novembro de 2026&lt;/span&gt;&lt;/div&gt;
+  &lt;div class="legend"&gt;&lt;span&gt;&lt;i class="k1"&gt;&lt;/i&gt;Vídeo&lt;/span&gt;&lt;span&gt;&lt;i class="k2"&gt;&lt;/i&gt;Áudio&lt;/span&gt;&lt;/div&gt;
+ &lt;/div&gt;
+ &lt;svg class="line" id="ln1" aria-label="Conteúdos concluídos por mês"&gt;&lt;/svg&gt;
+ &lt;details class="tview"&gt;&lt;summary&gt;Ver como tabela&lt;/summary&gt;&lt;table class="tbl"&gt;…&lt;/table&gt;&lt;/details&gt;
+&lt;/figure&gt;
+
+&lt;script&gt;
+osvLine(document.getElementById('ln1'),{
+ labels:['dez','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov'],
+ series:[
+  {name:'Vídeo',values:[310,340,330,390,420,460,440,510,560,540,610,660]},
+  {name:'Áudio',values:[120,150,170,160,210,240,260,250,300,340,330,380]}
+ ],
+ area:false          // true pinta a área da primeira série a 10%
+});
+&lt;/script&gt;</code></pre>
+ </div>
+
+ <div class="g-fx">
+  <div class="g-demo" style="gap:30px">
+   <figure class="viz">
+    <div class="viz-h"><div><h3 class="viz-t">Milhas por programa</h3><span class="viz-s">149.800 pontos no total</span></div></div>
+    <div class="segbar" role="list">
+     <i class="k1" style="flex:64300" tabindex="0" role="listitem" data-tip="Livelo|64.300 pontos · 43%"></i>
+     <i class="k2" style="flex:41200" tabindex="0" role="listitem" data-tip="LATAM Pass|41.200 pontos · 28%"></i>
+     <i class="k3" style="flex:22000" tabindex="0" role="listitem" data-tip="Esfera|22.000 pontos · 15%"></i>
+     <i class="k4" style="flex:12800" tabindex="0" role="listitem" data-tip="Smiles|12.800 pontos · 9%"></i>
+     <i class="k0" style="flex:9500" tabindex="0" role="listitem" data-tip="Outros|9.500 pontos · 6%"></i>
+    </div>
+    <div class="legend"><span><i class="k1"></i>Livelo <b>64.300</b></span><span><i class="k2"></i>LATAM Pass <b>41.200</b></span><span><i class="k3"></i>Esfera <b>22.000</b></span><span><i class="k4"></i>Smiles <b>12.800</b></span><span><i class="k0"></i>Outros <b>9.500</b></span></div>
+   </figure>
+   <div class="stack" style="gap:20px">
+    <div class="meter"><span>Orçamento da viagem</span><span class="v">R$ 824 de R$ 6.500</span><span class="t"><i style="width:12.7%"></i></span></div>
+    <div class="meter ok"><span>Documentos da viagem</span><span class="v">4 de 4</span><span class="t"><i style="width:100%"></i></span><span class="st"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"/></svg>Tudo pronto</span></div>
+    <div class="meter warn"><span>Espaço para PDFs</span><span class="v">9,2 de 10 GB</span><span class="t"><i style="width:92%"></i></span><span class="st"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-bell"/></svg>Quase no limite</span></div>
+    <div class="meter bad"><span>Envios do mês</span><span class="v">52 de 50</span><span class="t"><i style="width:100%"></i></span><span class="st"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-flag"/></svg>Acima do limite</span></div>
+   </div>
+  </div>
+  <div class="g-info">
+   <h3>Barra segmentada e medidor</h3>
+   <p class="g-p">A barra segmentada mostra as partes de um todo no lugar da pizza. Cada parte usa <code class="m-c">flex</code> com o próprio valor e a legenda traz os números. O medidor mostra uma razão contra um limite. Estado nunca vai só na cor: leva ícone e texto.</p>
+<pre class="g-code"><code>&lt;div class="segbar"&gt;
+ &lt;i class="k1" style="flex:64300" tabindex="0"
+    data-tip="Livelo|64.300 pontos · 43%"&gt;&lt;/i&gt;
+ &lt;i class="k2" style="flex:41200" …&gt;&lt;/i&gt;
+ &lt;i class="k0" style="flex:9500" …&gt;&lt;/i&gt;
+&lt;/div&gt;
+&lt;div class="legend"&gt;
+ &lt;span&gt;&lt;i class="k1"&gt;&lt;/i&gt;Livelo &lt;b&gt;64.300&lt;/b&gt;&lt;/span&gt;
+ &lt;span&gt;&lt;i class="k0"&gt;&lt;/i&gt;Outros &lt;b&gt;9.500&lt;/b&gt;&lt;/span&gt;
+&lt;/div&gt;
+
+&lt;div class="meter warn"&gt;     &lt;!-- sem classe · ok · warn · bad --&gt;
+ &lt;span&gt;Espaço para PDFs&lt;/span&gt;
+ &lt;span class="v"&gt;9,2 de 10 GB&lt;/span&gt;
+ &lt;span class="t"&gt;&lt;i style="width:92%"&gt;&lt;/i&gt;&lt;/span&gt;
+ &lt;span class="st"&gt;…ícone… Quase no limite&lt;/span&gt;
+&lt;/div&gt;</code></pre>
+  </div>
+ </div>
+
+ <div class="g-fx">
+  <div class="g-demo" style="gap:26px">
+   <div class="stack" style="gap:8px"><div class="row"><b style="flex:1">Curso OSV</b><span class="muted num">62% concluído</span></div><div class="bar"><i style="width:62%"></i></div></div>
+   <div class="stack" style="gap:8px"><div class="row"><b style="flex:1">Fundamentos das milhas</b><span class="chip ok"><svg class="i" width="10" height="10" aria-hidden="true"><use href="#i-check"/></svg>Concluído</span></div><div class="bar ok"><i style="width:100%"></i></div></div>
+   <div class="card lrow" style="border-radius:18px"><span class="ibox"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-play"/></svg></span><div style="flex:1"><b>Como emitir com milhas Smiles</b><div class="muted">Aula 4 · 14 min</div></div><i class="edge" style="width:45%"></i></div>
+   <div class="stack" style="gap:10px"><div class="row"><span class="mono" style="flex:1">Sequência</span><b class="num">5 dias</b></div><div class="heat" role="img" aria-label="Sequência de estudo: 5 dias seguidos"><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="a"></i><i class="a"></i><i class="a"></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class=""></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i><i class="b"></i></div></div>
+  </div>
+  <div class="g-info">
+   <h3>Progresso e sequência</h3>
+   <p class="g-p">A barra em andamento emite luz; a concluída fica verde e apagada. Em listas, a barra pode colar na borda de baixo do card com <code class="m-c">edge</code>. O mapa de sequência marca os dias com estudo: <code class="m-c">a</code> para dias passados e <code class="m-c">b</code> para a sequência atual.</p>
+<pre class="g-code"><code>&lt;div class="bar"&gt;&lt;i style="width:62%"&gt;&lt;/i&gt;&lt;/div&gt;
+&lt;div class="bar ok"&gt;&lt;i style="width:100%"&gt;&lt;/i&gt;&lt;/div&gt;
+
+&lt;a class="card lrow"&gt;
+ …miniatura e título…
+ &lt;i class="edge" style="width:45%"&gt;&lt;/i&gt;
+&lt;/a&gt;
+
+&lt;div class="heat" role="img" aria-label="Sequência: 5 dias seguidos"&gt;
+ &lt;i&gt;&lt;/i&gt;&lt;i class="a"&gt;&lt;/i&gt;&lt;i&gt;&lt;/i&gt;…&lt;i class="b"&gt;&lt;/i&gt;&lt;i class="b"&gt;&lt;/i&gt;
+&lt;/div&gt;</code></pre>
+  </div>
+ </div>
+
+ <div class="m-ex">
+  <h3 class="h2">Tabela de dados</h3>
+  <div class="m-scroll">
+  <table class="tbl">
+   <thead><tr><th>Produto</th><th>Formato</th><th>Acesso</th><th>Status</th><th class="num">Alunos</th></tr></thead>
+   <tbody>
+    <tr><td>Curso OSV</td><td>Vídeo</td><td>Essencial e Completo</td><td><span class="chip ok">Publicado</span></td><td class="num">1.240</td></tr>
+    <tr><td>Podcast OSV</td><td>Áudio</td><td>Essencial e Completo</td><td><span class="chip ok">Publicado</span></td><td class="num">860</td></tr>
+    <tr><td>Executiva com milhas</td><td>Vídeo</td><td>Completo · avulso</td><td><span class="chip ok">Publicado</span></td><td class="num">312</td></tr>
+    <tr><td>Cruzeiros com milhas</td><td>Vídeo</td><td>Avulso</td><td><span class="chip">Rascunho</span></td><td class="num">—</td></tr>
+   </tbody>
+  </table>
+  </div>
+<pre class="g-code"><code>&lt;table class="tbl"&gt;
+ &lt;thead&gt;&lt;tr&gt;&lt;th&gt;Produto&lt;/th&gt;&lt;th&gt;Status&lt;/th&gt;&lt;th class="num"&gt;Alunos&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
+ &lt;tbody&gt;
+  &lt;tr&gt;&lt;td&gt;Curso OSV&lt;/td&gt;&lt;td&gt;&lt;span class="chip ok"&gt;Publicado&lt;/span&gt;&lt;/td&gt;&lt;td class="num"&gt;1.240&lt;/td&gt;&lt;/tr&gt;
+ &lt;/tbody&gt;
+&lt;/table&gt;</code></pre>
+ </div>
+</section>
+
+<!-- ───────── estados ───────── -->
+<section class="g-sec" id="estados">
+ <div class="g-rule"><h2 class="g-h">Estados</h2></div>
+ <div class="g-fx">
+  <div class="g-demo">
+   <div class="stack" style="gap:10px" aria-label="Carregando" role="status"><div class="skel" style="height:18px;width:46%"></div><div class="skel" style="height:12px;width:82%"></div><div class="skel" style="height:120px"></div></div>
+   <div class="empty"><span class="ibox"><svg class="i" width="16" height="16" aria-hidden="true"><use href="#i-plane"/></svg></span><b>Nenhuma viagem ainda</b><span>Crie a primeira para montar o roteiro com a Thay.</span><button class="btn p" style="margin-top:6px"><svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-plus"/></svg>Nova viagem</button></div>
+   <div class="inrow"><span class="lock"><svg class="i" width="14" height="14" aria-hidden="true"><use href="#i-lock"/></svg></span><div><b>Estratégias avançadas</b><span class="muted">Disponível no Plano Completo</span></div><button class="btn s">Ver planos</button></div>
+  </div>
+  <div class="g-info">
+   <h3>Carregando, vazio e bloqueado</h3>
+   <p class="g-p">Enquanto carrega, mostre a forma do conteúdo com <code class="m-c">skel</code>. Quando não há nada, diga o que fazer em uma frase e ofereça a ação. Conteúdo bloqueado aparece, com cadeado e o caminho para liberar.</p>
+<pre class="g-code"><code>&lt;div class="skel" style="height:18px;width:46%"&gt;&lt;/div&gt;
+&lt;div class="skel" style="height:120px"&gt;&lt;/div&gt;
+
+&lt;div class="empty"&gt;
+ &lt;b&gt;Nenhuma viagem ainda&lt;/b&gt;
+ &lt;span&gt;Crie a primeira para montar o roteiro com a Thay.&lt;/span&gt;
+ &lt;button class="btn p"&gt;Nova viagem&lt;/button&gt;
+&lt;/div&gt;
+
+&lt;div class="inrow"&gt;
+ &lt;span class="lock"&gt;…cadeado…&lt;/span&gt;
+ &lt;div&gt;&lt;b&gt;Estratégias avançadas&lt;/b&gt;
+      &lt;span class="muted"&gt;Disponível no Plano Completo&lt;/span&gt;&lt;/div&gt;
+ &lt;button class="btn s"&gt;Ver planos&lt;/button&gt;
+&lt;/div&gt;</code></pre>
+  </div>
+ </div>
+ <div class="g-two">
+  <ul class="g-do">
+   <li><span class="tick on"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"/></svg></span><span>Foco visível em tudo que é clicável: contorno de 2 px em <code class="m-c">--acct</code>.</span></li>
+   <li><span class="tick on"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"/></svg></span><span>Alvo de toque com pelo menos 40 px de altura.</span></li>
+   <li><span class="tick on"><svg class="i" width="12" height="12" aria-hidden="true"><use href="#i-check"/></svg></span><span>Gráfico com dica ao passar o cursor, navegável por teclado e com tabela.</span></li>
+  </ul>
+  <ul class="g-do">
+   <li><span class="g-x" aria-hidden="true">×</span><span>Cor ou raio escrito à mão em vez de token.</span></li>
+   <li><span class="g-x" aria-hidden="true">×</span><span>Brilho ou lavagem laranja em banner e card.</span></li>
+   <li><span class="g-x" aria-hidden="true">×</span><span>Número, preço ou depoimento inventado em tela publicada.</span></li>
+  </ul>
+ </div>
+</section>
+
+<!-- ───────── css completo ───────── -->
+<section class="g-sec" id="css">
+ <div class="g-rule"><h2 class="g-h">CSS completo</h2></div>
+ <p class="g-p">É a folha de estilo que desenha esta página. Copie daqui ou use os arquivos <code class="m-c">osv-app.css</code> e <code class="m-c">osv-app.js</code> enviados junto com o manual.</p>
+ <div class="row" style="flex-wrap:wrap"><button class="btn p" id="copycss">Copiar o CSS</button><button class="btn s" id="copyjs">Copiar o JS</button><span class="muted" id="copymsg" role="status"></span></div>
+ <pre class="g-code m-full" id="kitcss" tabindex="0"><code>/* ═══ OSV · CSS de apps · v24 (nov/2026) ═══
+   Linha de sistema de O Segredo do Viajante. Mesma base do protótipo do app.
+   Fontes: League Spartan 600 e 700 (títulos), Inter 400 a 700 (texto).
+   Tema: escuro por padrão. Claro com &lt;html data-theme="light"&gt;.
+   Regras: linha antes de caixa · controles em pílula · laranja só em ação, seleção e progresso ·
+   destaque é borda laranja, sem brilho · brilho laranja só em caixa de digitação · sem itálico. */
+
+/* ── 1 · TOKENS ── */
+:root{color-scheme:dark;
+ --bg:#0a0807;--bgtop:#120e0b;--side:#0f0c0a;--s:#17130f;--s2:#241e19;--chip:#2d261f;--solid:#1a1612;--glass:rgba(16,12,9,.58);
+ --line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.16);
+ --t:#fafaf9;--tb:#cfc7be;--tm:#a39a90;
+ --acc:#f58e26;--on:#1a0f05;--acct:#f9a84a;--accs:rgba(245,142,38,.12);--accl:rgba(245,142,38,.40);--glowc:rgba(245,142,38,.18);
+ --ok:#2fb36b;--oks:rgba(47,179,107,.14);--warn:#f5a524;--bad:#f0595c;
+ --c1:#d2700f;--c2:#3987e5;--c3:#d55181;--c4:#9085e9;--c0:#5a524b;
+ --glow1:rgba(200,169,110,.05);--glow2:rgba(245,142,38,.09);
+ --fd:"League Spartan",system-ui,sans-serif;--fm:"Inter",system-ui,sans-serif;
+ --r1:10px;--r2:14px;--r3:20px;--r4:28px;--pill:999px}
+:root[data-theme=light]{color-scheme:light;
+ --bg:#fafaf9;--bgtop:#ffffff;--side:#f3f1ee;--s:#ffffff;--s2:#f0ede9;--chip:#e8e4df;--solid:#ffffff;--glass:rgba(252,251,250,.62);
+ --line:rgba(23,19,15,.10);--line2:rgba(23,19,15,.18);
+ --t:#17130f;--tb:#3d3731;--tm:#6b645d;
+ --acct:#a3560a;--accl:rgba(196,112,15,.45);--glowc:rgba(245,142,38,.14);
+ --ok:#177a44;--oks:rgba(23,122,68,.10);--warn:#b97a00;--bad:#d13438;
+ --c1:#c4700f;--c2:#2a78d6;--c3:#d55181;--c4:#6250d6;--c0:#b4ada6;
+ --glow1:rgba(200,169,110,.06);--glow2:rgba(245,142,38,.05)}
+
+/* ── 2 · BASE ── */
+*{box-sizing:border-box;min-width:0}
+html,body{margin:0;background:var(--bg);color:var(--t);font:15px/1.5 var(--fm);overflow-x:clip}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+ background:radial-gradient(110% 70% at 22% -12%,var(--glow1),transparent 58%),radial-gradient(90% 60% at 65% 118%,var(--glow2),transparent 70%),linear-gradient(var(--bgtop) 0,var(--bg) 46%)}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--acct);outline-offset:2px}
+.i{flex:none;fill:currentColor}
+
+/* ── 3 · TIPOGRAFIA ── título a partir de 26 px usa peso 600; abaixo disso, 700 */
+.h1{font:600 36px/1.06 var(--fd);letter-spacing:-.035em;margin:0;text-wrap:balance}
+.h2{font:700 21px/1.25 var(--fd);letter-spacing:-.015em;margin:0}
+.h3{font:700 16px/1.3 var(--fm);margin:0}
+.mono{font:600 10.5px/16px var(--fm);letter-spacing:.11em;text-transform:uppercase;color:var(--tm);font-variant-numeric:tabular-nums}
+.muted{color:var(--tm);font-size:13px}
+.link{color:var(--t);font-weight:500;font-size:13.5px;white-space:nowrap}
+.link:hover{color:var(--acct)}
+.num{font-variant-numeric:tabular-nums}
+
+/* ── 4 · LAYOUT ── */
+.app{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px;padding:26px 16px 22px;background:var(--side);border-right:1px solid var(--line)}
+.app&gt;main{width:100%;max-width:1200px;padding:34px 40px 72px;display:flex;flex-direction:column;gap:30px}
+.nav{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--pill);color:var(--tb);font-weight:500;font-size:14px}
+.nav .i{color:var(--tm)}
+.nav[aria-current=page]{background:var(--accs);color:var(--t);font-weight:700}
+.nav[aria-current=page] .i{color:var(--acct)}
+.tabbar{display:none}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;gap:12px;align-items:center}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.side2{display:grid;grid-template-columns:minmax(0,1fr) 372px;gap:20px;align-items:start}
+.dash3{display:grid;grid-template-columns:27fr 50fr 23fr;gap:24px;align-items:start}
+/* cabeçalho de seção: título, fio de 1 px e ação à direita */
+.sec-h{display:flex;align-items:flex-end;gap:16px}
+.sec-h&gt;div:first-child{flex:0 1 auto}
+.sec-h::after{content:"";order:2;flex:1 1 32px;min-width:24px;height:1px;background:var(--line);margin-bottom:10px}
+.sec-h&gt;*:nth-child(n+2){order:3;flex:none}
+
+/* ── 5 · SUPERFÍCIES ── */
+.card{background:var(--s);border:1px solid var(--line);border-radius:var(--r3);padding:22px}
+.lv3{border-color:var(--accl)}                     /* destaque: só a borda, um por tela */
+.tip{display:flex;align-items:center;gap:14px;padding:16px;border-radius:var(--r2);background:var(--s2);border:1px solid var(--line)}
+.inrow{display:flex;align-items:center;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}
+.inrow&gt;div{flex:1;display:flex;flex-direction:column;gap:2px}
+.ibox{display:grid;place-items:center;width:36px;height:36px;border-radius:var(--r1);background:var(--s2);color:var(--tb);border:1px solid var(--line);flex:none}
+.av{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:#4e3b31;color:#fafaf9;font-weight:700;font-size:12px;flex:none}
+/* vidro: só sobre foto ou conteúdo. A luz segue o cursor com --mx e --my (ver JS) */
+.glass{position:relative;border-radius:var(--r3);border:1px solid rgba(255,255,255,.12);background:linear-gradient(rgba(255,255,255,.045),transparent 44%),var(--glass);
+ backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.10),0 26px 60px -32px rgba(0,0,0,.8)}
+:root[data-theme=light] .glass{background:linear-gradient(rgba(255,255,255,.6),transparent 44%),var(--glass);border-color:rgba(23,19,15,.12);box-shadow:inset 0 1px 0 #fff,0 18px 44px -28px rgba(60,40,20,.3)}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(280px circle at var(--mx,50%) var(--my,0%),rgba(245,142,38,.10),transparent 65%);opacity:0;transition:opacity .3s}
+.glass:hover::before{opacity:1}
+/* primeira dobra: foto com véu, título à esquerda e card flutuante à direita */
+.phero{position:relative;min-height:400px;border-radius:var(--r4);overflow:hidden;display:flex;align-items:center;background:#4e3b31;color:#fafaf9}
+.phero&gt;img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.phero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(10,8,6,.9),rgba(10,8,6,.55) 50%,rgba(10,8,6,.22))}
+.phero-in{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:center;gap:36px;width:100%;padding:36px}
+.float{flex:4 1 300px;max-width:400px;display:flex;flex-direction:column;gap:14px;padding:20px;border-radius:var(--r4);
+ --t:#fafaf9;--tb:#cfc7be;--tm:#a39a90;--s:rgba(255,255,255,.06);--line2:rgba(255,255,255,.16);color:var(--t);
+ background:linear-gradient(rgba(255,255,255,.07),transparent 44%),rgba(16,12,9,.6);border:1px solid rgba(255,255,255,.16);
+ backdrop-filter:blur(22px) saturate(170%);-webkit-backdrop-filter:blur(22px) saturate(170%);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 30px 70px -30px rgba(0,0,0,.9)}
+:root[data-theme=light] .float{--t:#17130f;--tb:#3d3731;--tm:#6b645d;--s:#ffffff;--line2:rgba(23,19,15,.18);background:#fff;border-color:rgba(23,19,15,.06);
+ backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:0 30px 70px -30px rgba(12,10,8,.5)}
+
+/* ── 6 · CONTROLES ── tudo em pílula */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 18px;border-radius:var(--pill);font-weight:600;font-size:14px;white-space:nowrap}
+.btn.p{background:linear-gradient(180deg,#ffa23f,var(--acc));color:var(--on);box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.btn.p:hover{background:linear-gradient(180deg,#ffb25c,#f79a35)}
+.btn.s{background:transparent;border:1px solid var(--line2)}
+.btn.s:hover{background:var(--s2)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:var(--pill);background:var(--chip);font:600 10.5px/14px var(--fm);letter-spacing:.06em;color:var(--tb);text-transform:uppercase;white-space:nowrap;font-variant-numeric:tabular-nums}
+.chip.ok{background:var(--oks);color:var(--ok)}
+.chip.now{background:var(--accs);color:var(--acct)}
+button.chip{text-transform:none;letter-spacing:0;font-size:12.5px;padding:7px 12px;background:transparent;border:1px solid var(--line2)}
+button.chip:hover{color:var(--t);background:var(--s2)}
+.seg{display:flex;flex:none;gap:4px;padding:4px;border-radius:var(--pill);background:var(--s2);max-width:100%;overflow-x:auto;scrollbar-width:none}
+.seg button{flex:none;padding:7px 16px;border-radius:var(--pill);font-size:13px;font-weight:500;color:var(--tm);white-space:nowrap}
+.seg button[aria-pressed=true]{background:var(--solid);color:var(--t);font-weight:700;box-shadow:inset 0 0 0 1px var(--line2)}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line)}
+.tabs button{display:flex;align-items:center;gap:8px;padding:12px 16px;font-weight:500;color:var(--tm);border-bottom:2px solid transparent;margin-bottom:-1px}
+.tabs button[aria-selected=true]{color:var(--t);font-weight:700;border-color:var(--acc);box-shadow:0 12px 16px -12px rgba(245,142,38,.9)}
+.fld{display:flex;flex-direction:column;gap:6px}
+.fld select,.fld input{min-height:46px;padding:0 18px;border-radius:var(--pill);background:var(--s2);border:1px solid var(--line2);color:var(--t);font:16px var(--fm);width:100%}
+.fld textarea{padding:14px 18px;border-radius:18px;background:var(--s2);border:1px solid var(--line2);color:var(--t);font:16px var(--fm);resize:vertical;width:100%}
+.fld :is(select,input,textarea):focus{outline:0;border-color:var(--accl);box-shadow:0 0 0 4px var(--accs)}
+.search{display:flex;align-items:center;gap:10px;width:300px;max-width:100%;padding:0 18px;min-height:44px;border-radius:var(--pill);background:var(--s);border:1px solid var(--line);color:var(--tm);transition:border-color .2s,box-shadow .2s}
+.search input{flex:1;background:none;border:0;outline:0;color:var(--t);font:15px var(--fm)}
+.search input::placeholder,.thaybar input::placeholder{color:var(--tm)}
+/* caixa de digitação: o único lugar com brilho laranja */
+.thaybar{display:flex;align-items:center;gap:14px;padding:6px 6px 6px 20px;border-radius:var(--pill);
+ background:radial-gradient(120% 160% at 100% 0%,var(--glowc),transparent 62%),var(--s);border:1px solid var(--accl);transition:box-shadow .2s}
+.thaybar input{flex:1;background:none;border:0;outline:0;color:var(--t);font:16px var(--fm);min-height:40px}
+.thaybar:focus-within,.search:focus-within{border-color:var(--accl);box-shadow:0 0 0 4px var(--accs)}
+.spark{display:grid;place-items:center;width:36px;height:36px;border-radius:50%;background:var(--acc);color:var(--on);flex:none}
+.sw{position:relative;width:46px;height:28px;border-radius:var(--pill);background:var(--chip);border:1px solid var(--line2);flex:none;transition:background .15s}
+.sw i{position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:var(--t);transition:transform .15s}
+.sw[aria-checked=true]{background:var(--acc);border-color:var(--acc)}
+.sw[aria-checked=true] i{transform:translateX(18px);background:#fff}
+.tick{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;border:1px solid var(--line2);flex:none;color:var(--bg)}
+.tick.on{background:var(--ok);border-color:var(--ok)}
+
+/* ── 7 · PROGRESSO ── a parte em andamento emite luz; a concluída não */
+.bar{height:4px;border-radius:2px;background:var(--s2);width:100%}
+.bar i{display:block;height:100%;background:var(--acc);border-radius:2px;box-shadow:0 0 12px rgba(245,142,38,.55)}
+.bar.ok i{background:var(--ok);box-shadow:none}
+.lrow{position:relative;overflow:hidden;display:flex;gap:16px;align-items:center;padding:10px;border-radius:18px}
+.edge{position:absolute;left:0;bottom:0;height:2px;background:var(--acc);border-radius:0 2px 2px 0;box-shadow:0 0 14px 1px rgba(245,142,38,.7)}
+.heat{display:grid;grid-template-columns:repeat(18,minmax(0,1fr));gap:4px}
+.heat i{aspect-ratio:1;border-radius:3px;background:var(--s2)}
+.heat i.a{background:rgba(245,142,38,.38)}
+.heat i.b{background:var(--acc);box-shadow:0 0 10px rgba(245,142,38,.65)}
+
+/* ── 8 · DADOS E GRÁFICOS ──
+   Séries em ordem fixa: --c1 laranja, --c2 azul, --c3 magenta, --c4 violeta. A quinta em diante vira "Outros" em --c0.
+   Texto nunca usa a cor da série. Verde, âmbar e vermelho são só de estado. */
+.viz{display:flex;flex-direction:column;gap:16px;margin:0}
+.viz-h{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.viz-h&gt;div:first-child{flex:1;display:flex;flex-direction:column;gap:2px}
+.viz-t{font:700 16px/1.3 var(--fm);margin:0}
+.viz-s{font-size:12.5px;color:var(--tm)}
+/* número em destaque: rótulo, valor, variação e tendência */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.kpi{display:flex;flex-direction:column;gap:6px;padding:4px 22px;border-left:1px solid var(--line)}
+.kpi:first-child{border-left:0;padding-left:0}
+.kpi b{font:600 34px/1 var(--fd);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.kpi .delta{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;color:var(--tm)}
+.kpi .delta.up{color:var(--ok)}
+.kpi .delta.down{color:var(--bad)}
+.sparkl{display:block;width:100%;height:36px;overflow:visible;margin-top:4px}
+.sparkl path{fill:none;stroke:var(--c0);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+/* barras horizontais ordenadas: uma cor, valor na ponta */
+.hbars{display:grid;grid-template-columns:minmax(90px,max-content) minmax(0,1fr) max-content;gap:12px 14px;align-items:center;font-size:13.5px}
+.hbars .n{color:var(--tb)}
+.hbars .v{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.hbars .t{height:10px;display:flex;border-radius:2px}
+.hbars .t i{display:block;height:100%;min-width:2px;border-radius:0 4px 4px 0;background:var(--c1);transition:opacity .15s}
+/* colunas: no máximo 24 px, ponta arredondada, base reta */
+.cols{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);align-items:end;gap:2px;height:180px;border-bottom:1px solid var(--line2);padding:0 4px}
+.cols .c{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;border-radius:4px}
+.cols .c i{display:block;width:min(24px,70%);border-radius:4px 4px 0 0;background:var(--c1);transition:opacity .15s}
+.cols .c i.mute,.hbars .t i.mute{background:var(--c0)}
+.cols .c span{font:600 11.5px var(--fm);font-variant-numeric:tabular-nums}
+.cols-x{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;padding:6px 4px 0;font-size:11.5px;color:var(--tm);text-align:center}
+.cols:hover .c i,.hbars:hover .t i{opacity:.45}
+.cols .c:hover i,.cols .c:focus-visible i,.hbars .t:hover i,.hbars .t:focus-visible i{opacity:1}
+/* linha e área em SVG: traço de 2 px, área a 10%, grade de fio (ver osvLine no JS) */
+.line{display:block;width:100%;overflow:visible}
+.line .g{stroke:var(--line);stroke-width:1}
+.line .ax{fill:var(--tm);font:11px var(--fm);font-variant-numeric:tabular-nums}
+.line .l{fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.line .l1{stroke:var(--c1)}.line .l2{stroke:var(--c2)}.line .l3{stroke:var(--c3)}.line .l4{stroke:var(--c4)}
+.line .a1{fill:var(--c1);opacity:.1}
+.line .d{stroke:var(--s);stroke-width:2}
+.line .d1{fill:var(--c1)}.line .d2{fill:var(--c2)}.line .d3{fill:var(--c3)}.line .d4{fill:var(--c4)}
+.line .lab{fill:var(--t);font:600 12px var(--fm)}
+.line .hit{fill:transparent;cursor:crosshair}
+.line .cross{stroke:var(--line2);stroke-width:1}
+/* barra segmentada: um todo em partes, com 2 px de respiro */
+.segbar{display:flex;gap:2px;height:20px}
+.segbar i{display:block;min-width:4px;border-radius:4px;transition:opacity .15s}
+.segbar:hover i{opacity:.45}.segbar i:hover,.segbar i:focus-visible{opacity:1}
+.k1{background:var(--c1)}.k2{background:var(--c2)}.k3{background:var(--c3)}.k4{background:var(--c4)}.k0{background:var(--c0)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:12.5px;color:var(--tb)}
+.legend span{display:inline-flex;align-items:center;gap:7px}
+.legend i{width:10px;height:10px;border-radius:3px;flex:none}
+.legend b{color:var(--t);font-weight:600;font-variant-numeric:tabular-nums}
+/* medidor: uma razão contra um limite; o trilho é um tom mais claro da mesma cor */
+.meter{display:grid;grid-template-columns:minmax(0,1fr) max-content;gap:6px 12px;align-items:center;font-size:13.5px}
+.meter .t{grid-column:1/-1;height:8px;border-radius:var(--pill);background:color-mix(in srgb,var(--mc,var(--c1)) 22%,transparent);overflow:hidden}
+.meter .t i{display:block;height:100%;border-radius:var(--pill);background:var(--mc,var(--c1))}
+.meter.ok{--mc:var(--ok)}.meter.warn{--mc:var(--warn)}.meter.bad{--mc:var(--bad)}
+.meter .v{font-variant-numeric:tabular-nums;color:var(--tm);font-size:12.5px}
+.meter .st{grid-column:1/-1;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tb)}
+.meter .st .i{color:var(--mc)}
+/* dica ao passar o cursor */
+.tipbox{position:fixed;z-index:80;pointer-events:none;display:flex;flex-direction:column;gap:3px;padding:8px 10px;border-radius:var(--r1);background:var(--solid);border:1px solid var(--line2);box-shadow:0 12px 30px -14px rgba(0,0,0,.6);font-size:12.5px;color:var(--tb);white-space:nowrap;opacity:0;transition:opacity .12s}
+.tipbox.on{opacity:1}
+.tipbox b{color:var(--t);font-size:13.5px;font-variant-numeric:tabular-nums}
+.tipbox span{display:flex;align-items:center;gap:7px}
+.tipbox i{width:8px;height:8px;border-radius:2px;flex:none}
+/* tabela de dados e tabela equivalente ao gráfico */
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{font:600 10.5px var(--fm);letter-spacing:.08em;text-transform:uppercase;color:var(--tm);text-align:left;padding:12px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:12px 8px;border-bottom:1px solid var(--line);color:var(--tb);vertical-align:middle}
+.tbl td:first-child{color:var(--t);font-weight:600}
+.tbl .num{text-align:right}
+.tbl tbody tr:hover td{background:var(--s2)}
+.tview summary{cursor:pointer;color:var(--tm);font-size:12.5px;padding:4px 0}
+.tview .tbl{font-size:13px;margin-top:6px}
+.tview .tbl th,.tview .tbl td{padding:8px 6px}
+
+/* ── 9 · ESTADOS ── */
+.skel{border-radius:var(--r1);background:linear-gradient(90deg,var(--s2) 25%,var(--chip) 37%,var(--s2) 63%) 0 0/400% 100%;animation:skel 1.4s ease infinite}
+@keyframes skel{0%{background-position:100% 0}100%{background-position:0 0}}
+.empty{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 18px;border:1px dashed var(--line2);border-radius:16px;text-align:center;color:var(--tm)}
+.empty b{color:var(--t)}
+.lock{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--s2);color:var(--t);flex:none}
+
+/* ── 10 · CELULAR ── abaixo de 900 px: uma coluna, menu vira barra inferior */
+@media(max-width:900px){
+ .h1{font-size:28px}
+ .app{display:block}.side{display:none}
+ .app&gt;main{padding:14px 18px 120px;gap:26px}
+ .tabbar{display:grid;grid-template-columns:repeat(5,1fr);position:fixed;left:0;right:0;bottom:0;z-index:50;padding:8px 8px calc(14px + env(safe-area-inset-bottom));background:var(--glass);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-top:1px solid var(--line)}
+ .tabbar a{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;font-size:11px;font-weight:500;color:var(--tm);min-height:44px}
+ .tabbar a[aria-current=page]{color:var(--acct);font-weight:700}
+ .two,.three,.side2,.dash3{grid-template-columns:minmax(0,1fr)}
+ .sec-h::after{display:none}
+ .kpis{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:22px}
+ .kpi:nth-child(odd){border-left:0;padding-left:0}
+ .phero{border-radius:22px}.phero-in{padding:22px;gap:22px}.float{max-width:none;flex-basis:100%}
+ .card{padding:18px}
+}
+@media(prefers-reduced-motion:reduce){.skel{animation:none}.glass::before{display:none}*{transition:none!important}}
+</code></pre>
+ <details class="tview"><summary>Ver o JS de apoio</summary><pre class="g-code m-full" id="kitjs" tabindex="0"><code>/* OSV · JS de apoio do CSS de apps · v24. Sem dependências. */
+
+/* tema: &lt;button id="themebtn"&gt; alterna data-theme em &lt;html&gt; */
+function osvTheme(btn){
+  const root=document.documentElement;
+  const set=m=&gt;{root.dataset.theme=m;btn.textContent=m==='light'?'Modo escuro':'Modo claro'};
+  set(root.dataset.theme==='light'?'light':'dark');
+  btn.addEventListener('click',()=&gt;set(root.dataset.theme==='light'?'dark':'light'));
+}
+
+/* luz que segue o cursor nos cards de vidro */
+if(matchMedia('(hover:hover) and (prefers-reduced-motion:no-preference)').matches)
+  document.addEventListener('pointermove',e=&gt;{
+    const g=e.target.closest&amp;&amp;e.target.closest('.glass');if(!g)return;
+    const r=g.getBoundingClientRect();
+    g.style.setProperty('--mx',(e.clientX-r.left)+'px');g.style.setProperty('--my',(e.clientY-r.top)+'px');
+  },{passive:true});
+
+/* dica: qualquer elemento com data-tip="Rótulo|Valor" */
+const osvTip=(()=&gt;{
+  const box=document.createElement('div');box.className='tipbox';box.setAttribute('role','status');
+  const ready=()=&gt;document.body.append(box);
+  document.body?ready():document.addEventListener('DOMContentLoaded',ready);
+  const row=(tag,txt,k)=&gt;{const e=document.createElement(tag);if(k){const i=document.createElement('i');i.className='k'+k;e.append(i)}e.append(txt);return e};
+  function show(rows,x,y){
+    box.replaceChildren(...rows.map(r=&gt;row(r.b?'b':'span',r.t,r.k)));box.classList.add('on');
+    const w=box.offsetWidth,h=box.offsetHeight;
+    box.style.left=Math.max(8,Math.min(innerWidth-w-8,x+14))+'px';
+    box.style.top=Math.max(8,y-h-12)+'px';
+  }
+  const hide=()=&gt;box.classList.remove('on');
+  const from=el=&gt;{const[a,b]=el.dataset.tip.split('|');return[{t:a},{t:b,b:1}]};
+  document.addEventListener('pointermove',e=&gt;{
+    if(e.target.closest&amp;&amp;e.target.closest('.line'))return;
+    const el=e.target.closest&amp;&amp;e.target.closest('[data-tip]');
+    el?show(from(el),e.clientX,e.clientY):hide();
+  },{passive:true});
+  document.addEventListener('focusin',e=&gt;{
+    const el=e.target.closest&amp;&amp;e.target.closest('[data-tip]');if(!el)return;
+    const r=el.getBoundingClientRect();show(from(el),r.left+r.width/2,r.top);
+  });
+  document.addEventListener('focusout',hide);
+  return{show,hide};
+})();
+
+/* linha e área: osvLine(svg,{labels:[…],series:[{name,values:[…]}],area:true,fmt:v=&gt;…}) — até 4 séries, um eixo só */
+function osvLine(svg,cfg){
+  const NS='http://www.w3.org/2000/svg';
+  const el=(n,a,t)=&gt;{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(t!=null)e.textContent=t;return e};
+  const fmt=cfg.fmt||(v=&gt;v.toLocaleString('pt-BR'));
+  const nice=m=&gt;{const p=10**Math.floor(Math.log10(m)),f=m/p;return[1,1.2,1.6,2,2.4,3,4,5,6,8,10].find(s=&gt;f&lt;=s)*p};
+  const S=cfg.series.slice(0,4),n=cfg.labels.length;
+  let geo,idx=-1,cross,dots;
+  function draw(){
+    const W=Math.max(260,svg.clientWidth||svg.parentNode.clientWidth),H=cfg.height||240;
+    const L=44,T=14,B=26,R=S.length&gt;1?Math.max(...S.map(s=&gt;s.name.length))*7+22:14;
+    const max=nice(Math.max(...S.flatMap(s=&gt;s.values)));
+    const x=i=&gt;L+(W-L-R)*i/(n-1),y=v=&gt;T+(H-T-B)*(1-v/max);
+    geo={W,L,R,x,y};
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('height',H);svg.replaceChildren();
+    for(let g=0;g&lt;=4;g++){const v=max*g/4;svg.append(el('line',{class:'g',x1:L,x2:W-R,y1:y(v),y2:y(v)}),el('text',{class:'ax',x:L-8,y:y(v)+4,'text-anchor':'end'},fmt(v)))}
+    const step=Math.max(1,Math.ceil(n/Math.max(2,Math.floor((W-L-R)/52))));
+    cfg.labels.forEach((l,i)=&gt;{if((n-1-i)%step===0)svg.append(el('text',{class:'ax',x:x(i),y:H-6,'text-anchor':'middle'},l))});
+    cross=el('line',{class:'cross',y1:T,y2:H-B,visibility:'hidden'});svg.append(cross);
+    const ends=S.map(s=&gt;y(s.values[n-1]));
+    for(let a=0;a&lt;ends.length;a++)for(let b=a+1;b&lt;ends.length;b++)if(Math.abs(ends[a]-ends[b])&lt;15){const up=ends[a]&lt;ends[b]?a:b,dn=up===a?b:a,mid=(ends[a]+ends[b])/2;ends[up]=mid-8;ends[dn]=mid+8}
+    S.forEach((s,k)=&gt;{
+      const d=s.values.map((v,i)=&gt;(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join('');
+      if(cfg.area&amp;&amp;k===0)svg.append(el('path',{class:'a1',d:d+`L${x(n-1)} ${y(0)}L${x(0)} ${y(0)}Z`}));
+      svg.append(el('path',{class:'l l'+(k+1),d}),el('circle',{class:'d d'+(k+1),r:4,cx:x(n-1),cy:y(s.values[n-1])}));
+      if(S.length&gt;1)svg.append(el('text',{class:'lab',x:x(n-1)+10,y:ends[k]+4},s.name));
+    });
+    dots=S.map((s,k)=&gt;{const c=el('circle',{class:'d d'+(k+1),r:5,visibility:'hidden'});svg.append(c);return c});
+    const hit=el('rect',{class:'hit',x:L,y:T,width:W-L-R,height:H-T-B});svg.append(hit);
+    if(idx&gt;=0)mark(idx);
+  }
+  function mark(i,cx,cy){
+    idx=Math.max(0,Math.min(n-1,i));const{x,y}=geo,r=svg.getBoundingClientRect();
+    cross.setAttribute('x1',x(idx));cross.setAttribute('x2',x(idx));cross.setAttribute('visibility','visible');
+    dots.forEach((c,k)=&gt;{c.setAttribute('cx',x(idx));c.setAttribute('cy',y(S[k].values[idx]));c.setAttribute('visibility','visible')});
+    osvTip.show([{t:cfg.labels[idx],b:1},...S.map((s,k)=&gt;({t:s.name+' · '+fmt(s.values[idx]),k:k+1}))],cx??r.left+x(idx),cy??r.top+y(Math.max(...S.map(s=&gt;s.values[idx]))));
+  }
+  function clear(){idx=-1;cross.setAttribute('visibility','hidden');dots.forEach(c=&gt;c.setAttribute('visibility','hidden'));osvTip.hide()}
+  svg.addEventListener('pointermove',e=&gt;{const r=svg.getBoundingClientRect(),{L,R,W}=geo;mark(Math.round((e.clientX-r.left-L)/(W-L-R)*(n-1)),e.clientX,e.clientY)});
+  svg.addEventListener('pointerleave',clear);
+  svg.setAttribute('tabindex','0');svg.setAttribute('role','img');
+  svg.addEventListener('keydown',e=&gt;{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();mark(idx&lt;0?n-1:idx+(e.key==='ArrowRight'?1:-1))}if(e.key==='Escape')clear()});
+  svg.addEventListener('blur',clear);
+  new ResizeObserver(draw).observe(svg.parentNode);draw();
+}
+
+/* tendência curta do número em destaque: osvSpark(svg,[…]) */
+function osvSpark(svg,v){
+  const min=Math.min(...v),max=Math.max(...v),W=100,H=36;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d',v.map((y,i)=&gt;(i?'L':'M')+(W*i/(v.length-1)).toFixed(1)+' '+(3+(H-6)*(1-(y-min)/(max-min||1))).toFixed(1)).join(''));
+  svg.replaceChildren(p);
+}
+</code></pre></details>
+ <p class="g-cap">Base: protótipo do app OSV, versão 24. Os exemplos usam dados de exemplo do protótipo.</p>
+</section>
+
+</div>
+
+<script>
+/* OSV · JS de apoio do CSS de apps · v24. Sem dependências. */
+
+/* tema: <button id="themebtn"> alterna data-theme em <html> */
+function osvTheme(btn){
+  const root=document.documentElement;
+  const set=m=>{root.dataset.theme=m;btn.textContent=m==='light'?'Modo escuro':'Modo claro'};
+  set(root.dataset.theme==='light'?'light':'dark');
+  btn.addEventListener('click',()=>set(root.dataset.theme==='light'?'dark':'light'));
+}
+
+/* luz que segue o cursor nos cards de vidro */
+if(matchMedia('(hover:hover) and (prefers-reduced-motion:no-preference)').matches)
+  document.addEventListener('pointermove',e=>{
+    const g=e.target.closest&&e.target.closest('.glass');if(!g)return;
+    const r=g.getBoundingClientRect();
+    g.style.setProperty('--mx',(e.clientX-r.left)+'px');g.style.setProperty('--my',(e.clientY-r.top)+'px');
+  },{passive:true});
+
+/* dica: qualquer elemento com data-tip="Rótulo|Valor" */
+const osvTip=(()=>{
+  const box=document.createElement('div');box.className='tipbox';box.setAttribute('role','status');
+  const ready=()=>document.body.append(box);
+  document.body?ready():document.addEventListener('DOMContentLoaded',ready);
+  const row=(tag,txt,k)=>{const e=document.createElement(tag);if(k){const i=document.createElement('i');i.className='k'+k;e.append(i)}e.append(txt);return e};
+  function show(rows,x,y){
+    box.replaceChildren(...rows.map(r=>row(r.b?'b':'span',r.t,r.k)));box.classList.add('on');
+    const w=box.offsetWidth,h=box.offsetHeight;
+    box.style.left=Math.max(8,Math.min(innerWidth-w-8,x+14))+'px';
+    box.style.top=Math.max(8,y-h-12)+'px';
+  }
+  const hide=()=>box.classList.remove('on');
+  const from=el=>{const[a,b]=el.dataset.tip.split('|');return[{t:a},{t:b,b:1}]};
+  document.addEventListener('pointermove',e=>{
+    if(e.target.closest&&e.target.closest('.line'))return;
+    const el=e.target.closest&&e.target.closest('[data-tip]');
+    el?show(from(el),e.clientX,e.clientY):hide();
+  },{passive:true});
+  document.addEventListener('focusin',e=>{
+    const el=e.target.closest&&e.target.closest('[data-tip]');if(!el)return;
+    const r=el.getBoundingClientRect();show(from(el),r.left+r.width/2,r.top);
+  });
+  document.addEventListener('focusout',hide);
+  return{show,hide};
+})();
+
+/* linha e área: osvLine(svg,{labels:[…],series:[{name,values:[…]}],area:true,fmt:v=>…}) — até 4 séries, um eixo só */
+function osvLine(svg,cfg){
+  const NS='http://www.w3.org/2000/svg';
+  const el=(n,a,t)=>{const e=document.createElementNS(NS,n);for(const k in a)e.setAttribute(k,a[k]);if(t!=null)e.textContent=t;return e};
+  const fmt=cfg.fmt||(v=>v.toLocaleString('pt-BR'));
+  const nice=m=>{const p=10**Math.floor(Math.log10(m)),f=m/p;return[1,1.2,1.6,2,2.4,3,4,5,6,8,10].find(s=>f<=s)*p};
+  const S=cfg.series.slice(0,4),n=cfg.labels.length;
+  let geo,idx=-1,cross,dots;
+  function draw(){
+    const W=Math.max(260,svg.clientWidth||svg.parentNode.clientWidth),H=cfg.height||240;
+    const L=44,T=14,B=26,R=S.length>1?Math.max(...S.map(s=>s.name.length))*7+22:14;
+    const max=nice(Math.max(...S.flatMap(s=>s.values)));
+    const x=i=>L+(W-L-R)*i/(n-1),y=v=>T+(H-T-B)*(1-v/max);
+    geo={W,L,R,x,y};
+    svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('height',H);svg.replaceChildren();
+    for(let g=0;g<=4;g++){const v=max*g/4;svg.append(el('line',{class:'g',x1:L,x2:W-R,y1:y(v),y2:y(v)}),el('text',{class:'ax',x:L-8,y:y(v)+4,'text-anchor':'end'},fmt(v)))}
+    const step=Math.max(1,Math.ceil(n/Math.max(2,Math.floor((W-L-R)/52))));
+    cfg.labels.forEach((l,i)=>{if((n-1-i)%step===0)svg.append(el('text',{class:'ax',x:x(i),y:H-6,'text-anchor':'middle'},l))});
+    cross=el('line',{class:'cross',y1:T,y2:H-B,visibility:'hidden'});svg.append(cross);
+    const ends=S.map(s=>y(s.values[n-1]));
+    for(let a=0;a<ends.length;a++)for(let b=a+1;b<ends.length;b++)if(Math.abs(ends[a]-ends[b])<15){const up=ends[a]<ends[b]?a:b,dn=up===a?b:a,mid=(ends[a]+ends[b])/2;ends[up]=mid-8;ends[dn]=mid+8}
+    S.forEach((s,k)=>{
+      const d=s.values.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+' '+y(v).toFixed(1)).join('');
+      if(cfg.area&&k===0)svg.append(el('path',{class:'a1',d:d+`L${x(n-1)} ${y(0)}L${x(0)} ${y(0)}Z`}));
+      svg.append(el('path',{class:'l l'+(k+1),d}),el('circle',{class:'d d'+(k+1),r:4,cx:x(n-1),cy:y(s.values[n-1])}));
+      if(S.length>1)svg.append(el('text',{class:'lab',x:x(n-1)+10,y:ends[k]+4},s.name));
+    });
+    dots=S.map((s,k)=>{const c=el('circle',{class:'d d'+(k+1),r:5,visibility:'hidden'});svg.append(c);return c});
+    const hit=el('rect',{class:'hit',x:L,y:T,width:W-L-R,height:H-T-B});svg.append(hit);
+    if(idx>=0)mark(idx);
+  }
+  function mark(i,cx,cy){
+    idx=Math.max(0,Math.min(n-1,i));const{x,y}=geo,r=svg.getBoundingClientRect();
+    cross.setAttribute('x1',x(idx));cross.setAttribute('x2',x(idx));cross.setAttribute('visibility','visible');
+    dots.forEach((c,k)=>{c.setAttribute('cx',x(idx));c.setAttribute('cy',y(S[k].values[idx]));c.setAttribute('visibility','visible')});
+    osvTip.show([{t:cfg.labels[idx],b:1},...S.map((s,k)=>({t:s.name+' · '+fmt(s.values[idx]),k:k+1}))],cx??r.left+x(idx),cy??r.top+y(Math.max(...S.map(s=>s.values[idx]))));
+  }
+  function clear(){idx=-1;cross.setAttribute('visibility','hidden');dots.forEach(c=>c.setAttribute('visibility','hidden'));osvTip.hide()}
+  svg.addEventListener('pointermove',e=>{const r=svg.getBoundingClientRect(),{L,R,W}=geo;mark(Math.round((e.clientX-r.left-L)/(W-L-R)*(n-1)),e.clientX,e.clientY)});
+  svg.addEventListener('pointerleave',clear);
+  svg.setAttribute('tabindex','0');svg.setAttribute('role','img');
+  svg.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();mark(idx<0?n-1:idx+(e.key==='ArrowRight'?1:-1))}if(e.key==='Escape')clear()});
+  svg.addEventListener('blur',clear);
+  new ResizeObserver(draw).observe(svg.parentNode);draw();
+}
+
+/* tendência curta do número em destaque: osvSpark(svg,[…]) */
+function osvSpark(svg,v){
+  const min=Math.min(...v),max=Math.max(...v),W=100,H=36;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);svg.setAttribute('preserveAspectRatio','none');svg.setAttribute('aria-hidden','true');
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('d',v.map((y,i)=>(i?'L':'M')+(W*i/(v.length-1)).toFixed(1)+' '+(3+(H-6)*(1-(y-min)/(max-min||1))).toFixed(1)).join(''));
+  svg.replaceChildren(p);
+}
+
+</script>
+<script>
+{
+osvTheme(document.getElementById('themebtn'));
+osvSpark(document.getElementById('sp1'),[980,1010,1060,1120,1188,1284]);
+const meses=['dez','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov'];
+const video=[310,340,330,390,420,460,440,510,560,540,610,660],audio=[120,150,170,160,210,240,260,250,300,340,330,380];
+osvLine(document.getElementById('ln1'),{labels:meses,series:[{name:'Vídeo',values:video},{name:'Áudio',values:audio}]});
+const tb=document.getElementById('ln1t');
+tb.innerHTML='<thead><tr><th>Mês</th><th class="num">Vídeo</th><th class="num">Áudio</th></tr></thead><tbody>'+meses.map((m,i)=>'<tr><td>'+m+'</td><td class="num">'+video[i]+'</td><td class="num">'+audio[i]+'</td></tr>').join('')+'</tbody>';
+document.querySelectorAll('.seg').forEach(s=>s.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;s.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b))}));
+document.querySelectorAll('.tabs').forEach(s=>s.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;s.querySelectorAll('button').forEach(x=>x.setAttribute('aria-selected',x===b))}));
+document.querySelectorAll('.sw').forEach(s=>s.addEventListener('click',()=>s.setAttribute('aria-checked',s.getAttribute('aria-checked')!=='true')));
+const msg=document.getElementById('copymsg');
+function copy(id,nome){
+  const pre=document.getElementById(id),txt=pre.textContent;
+  const fallback=()=>{if(pre.closest('details'))pre.closest('details').open=true;const r=document.createRange();r.selectNodeContents(pre);const s=getSelection();s.removeAllRanges();s.addRange(r);msg.textContent=nome+' selecionado. Use Ctrl+C ou Cmd+C para copiar.'};
+  try{navigator.clipboard.writeText(txt).then(()=>{msg.textContent=nome+' copiado.'},fallback)}catch(e){fallback()}
+}
+document.getElementById('copycss').addEventListener('click',()=>copy('kitcss','CSS'));
+document.getElementById('copyjs').addEventListener('click',()=>copy('kitjs','JS'));
+}
+</script>
+</body>
+</html>

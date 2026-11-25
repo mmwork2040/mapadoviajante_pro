@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM OSV · protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="osv-app.css">
+<link rel="stylesheet" href="crm.css">
+<script>try{const t=localStorage.getItem('crm-tema');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<div class="app">
+  <aside class="side" aria-label="Menu principal">
+    <div class="brand">
+      <img class="logo-dark" src="img/logo-branco.svg" alt="O Segredo do Viajante">
+      <img class="logo-light" src="img/logo-preto.svg" alt="O Segredo do Viajante">
+      <small>Consultoria</small>
+    </div>
+    <nav id="nav" style="display:flex;flex-direction:column;gap:2px"></nav>
+    <div class="foot">
+      <a class="me" href="#conta"><span class="av">ML</span><div><b>Mariana Lopes</b><span>Consultora</span></div></a>
+    </div>
+  </aside>
+
+  <main id="main">
+    <div class="top">
+      <label class="search"><svg class="i s"><use href="#i-magnifying-glass"/></svg><input placeholder="Buscar viajante ou viagem" aria-label="Buscar"><kbd class="hide-m">Ctrl K</kbd></label>
+      <span class="sp"></span>
+      <button class="ib" type="button" id="temaBtn" aria-label="Alternar tema"><svg class="i s"><use href="#i-sun"/></svg></button>
+      <button class="ib" type="button" aria-label="Notificações, 3 novas"><svg class="i s"><use href="#i-bell"/></svg><span class="dot"></span></button>
+      <button class="btn s hide-m" type="button" data-novo><svg class="i s"><use href="#i-plus"/></svg>Novo</button>
+    </div>
+    <div id="tela" class="stack" style="gap:30px"></div>
+    <p class="proto">Protótipo · dados de exemplo</p>
+  </main>
+</div>
+
+<nav class="tabbar" id="tabbar" aria-label="Menu do celular"></nav>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-label="Criar novo">
+  <div class="glass">
+    <div class="sec-h" style="padding:4px 12px 8px"><div><span class="h2">Criar</span></div><button class="mini" type="button" data-fechar aria-label="Fechar"><svg class="i s"><use href="#i-x"/></svg></button></div>
+    <a href="#vendas" data-nova-venda><span class="ibox"><svg class="i"><use href="#i-kanban"/></svg></span><div><b>Nova viagem</b><span>Começa pela negociação comercial</span></div></a>
+    <a href="#viajantes" data-nova-pessoa=""><span class="ibox"><svg class="i"><use href="#i-address-book"/></svg></span><div><b>Nova pessoa</b><span>Viajante, família ou grupo</span></div></a>
+    <a href="#agenda" data-nova-tarefa="24"><span class="ibox"><svg class="i"><use href="#i-check-square"/></svg></span><div><b>Nova tarefa</b><span>Com data, cliente e prioridade</span></div></a>
+    <a href="#agenda" data-nova-tarefa="24"><span class="ibox"><svg class="i"><use href="#i-calendar-blank"/></svg></span><div><b>Novo compromisso</b><span>Ligação, reunião ou retorno</span></div></a>
+  </div>
+</div>
+
+<div class="painel" id="painel" role="dialog" aria-modal="true" aria-label="Ficha"><div class="veu"></div><div class="painel__in"></div></div>
+<div class="janela" id="janela" role="dialog" aria-modal="true" aria-label="Formulário"><div class="veu"></div><div class="janela__in"></div></div>
+<div class="aviso" id="aviso" role="status" aria-live="polite"></div>
+
+<script src="icones.js"></script>
+<script src="js/app.js"></script>
+<script src="js/hoje.js"></script>
+<script src="js/termos.js"></script>
+<script src="js/proposta.js"></script>
+<script src="js/vendas.js"></script>
+<script src="js/viagens.js"></script>
+<script src="js/viagem.js"></script>
+<script src="js/viajantes.js"></script>
+<script src="js/agenda.js"></script>
+<script src="js/biblioteca.js"></script>
+<script src="js/gestao.js"></script>
+<script>CRM.iniciar()</script>
+</body>
+</html>

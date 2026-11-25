@@ -19,35 +19,20 @@ export const DEFAULT_ACCESS_PERMISSIONS: AccessPermissions = {
 
 export type FinanceAccess = { canView: boolean; canEdit: boolean };
 
+// A conferência do cargo fica em um módulo só de servidor, carregado dentro
+// dos handlers, para não entrar no código do navegador.
 type Ctx = { userId: string; userEmail?: string; membership?: unknown };
 
-function normalizePermissions(raw: unknown): AccessPermissions {
-  const finance = (raw as { finance?: { view?: unknown; edit?: unknown } } | null)?.finance ?? {};
-  const pick = (v: unknown) =>
-    Array.isArray(v) ? v.filter((r): r is string => CONFIGURABLE_ROLES.includes(r as never)) : [];
-  return { finance: { view: pick(finance.view), edit: pick(finance.edit) } };
-}
-
-/** Acesso do usuário ao financeiro. Só para uso no servidor. */
-export async function resolveFinanceAccess(ctx: Ctx): Promise<FinanceAccess & { agencyId: string; memberId: string }> {
-  const { getMembership } = await import("@/lib/server/authz");
-  const m = await getMembership(ctx as never);
-  if (m.role === "admin" || m.role === "owner" || m.isSuperAdmin) {
-    return { canView: true, canEdit: true, agencyId: m.agencyId, memberId: m.memberId };
-  }
-  const { readAgencyConfigServer } = await import("@/lib/settings.functions");
-  const perms = normalizePermissions(await readAgencyConfigServer(m.agencyId, "permissions"));
-  const canEdit = perms.finance.edit.includes(m.role);
-  const canView = canEdit || perms.finance.view.includes(m.role);
-  return { canView, canEdit, agencyId: m.agencyId, memberId: m.memberId };
+async function resolveFinanceAccess(ctx: Ctx) {
+  return (await import("@/lib/server/finance-access")).resolveFinanceAccess(ctx);
 }
 
 async function requireFinance(ctx: Ctx, need: "view" | "edit") {
-  const access = await resolveFinanceAccess(ctx);
-  if (need === "view" ? !access.canView : !access.canEdit) {
-    throw new Error("Sem permissão para o financeiro.");
-  }
-  return access;
+  return (await import("@/lib/server/finance-access")).requireFinance(ctx, need);
+}
+
+async function normalizePermissions(raw: unknown): Promise<AccessPermissions> {
+  return (await import("@/lib/server/finance-access")).normalizePermissions(raw);
 }
 
 /** O que o usuário logado pode fazer no financeiro (para esconder telas e botões). */
