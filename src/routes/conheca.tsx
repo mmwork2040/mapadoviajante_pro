@@ -1,37 +1,61 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import {
   AddressBook,
   AirplaneTilt,
+  ArrowLeft,
   ArrowRight,
+  Bell,
   CalendarBlank,
+  ChatCircleDots,
   Check,
+  CheckCircle,
   CheckSquare,
-  Clock,
+  CurrencyCircleDollar,
   FilePdf,
-  House,
   Images,
   Kanban,
   LinkSimple,
   MapPin,
+  Note,
+  PaperPlaneTilt,
   Play,
   Robot,
-  ShareNetwork,
   Sparkle,
-  UsersThree,
+  Table,
   Wallet,
-  Warning,
   WhatsappLogo,
   X,
   type Icon,
 } from "@phosphor-icons/react";
 import { BrandLogo } from "@/components/BrandLogo";
-import { applyBrandColor, PRODUCT } from "@/lib/brand";
+import { applyBrandColor, PRODUCT, readableOn } from "@/lib/brand";
+import {
+  Celular,
+  CascaApp,
+  Escala,
+  Navegador,
+  Surge,
+  type TelaId,
+} from "@/components/conheca/molduras";
+import {
+  DIAS,
+  FOTO_DESTINO,
+  TelaAgenda,
+  TelaBiblioteca,
+  TelaFinanceiro,
+  TelaHoje,
+  TelaPreparacao,
+  TelaRoteiro,
+  TelaViagens,
+  TelaViajantes,
+} from "@/components/conheca/telas";
+import { Demo } from "@/components/conheca/Demo";
 
 /**
- * Página pública de apresentação: mostra como o sistema ajuda o planejador de
- * viagens, apresenta as funcionalidades e oferece um modo demonstração com
- * dados fictícios (nada é salvo). Todas as chamadas levam ao cadastro.
+ * Página pública de apresentação do produto para planejadores de viagem.
+ * Alterna dobras escuras e claras, mostra prints interativos das telas do
+ * sistema e oferece um modo demonstração. Todas as chamadas levam ao cadastro.
  */
 export const Route = createFileRoute("/conheca")({
   head: () => ({
@@ -47,10 +71,9 @@ export const Route = createFileRoute("/conheca")({
   component: ConhecaPage,
 });
 
-const SIGNUP = { to: "/auth", search: { mode: "signup" } } as const;
-
 function ConhecaPage() {
-  const [demoOpen, setDemoOpen] = useState(false);
+  const [demo, setDemo] = useState(false);
+  const abrirDemo = () => setDemo(true);
 
   // Página do produto: usa a cor padrão, não a de uma agência em cache.
   useEffect(() => {
@@ -58,109 +81,149 @@ function ConhecaPage() {
   }, []);
 
   return (
-    <div className="min-h-screen">
-      <Header onDemo={() => setDemoOpen(true)} />
+    <div className="min-h-screen overflow-x-clip">
+      <Topo onDemo={abrirDemo} />
       <main>
-        <Hero onDemo={() => setDemoOpen(true)} />
-        <Dores />
-        <Funcionalidades />
-        <ComoFunciona />
-        <DemoTeaser onDemo={() => setDemoOpen(true)} />
-        <Faq />
-        <CtaFinal onDemo={() => setDemoOpen(true)} />
+        <Hero onDemo={abrirDemo} />
+        <AntesDepois />
+        <Tour />
+        <Thay />
+        <MarcaPropria />
+        <Jornada />
+        <ChamadaDemo onDemo={abrirDemo} />
+        <Perguntas />
+        <Final onDemo={abrirDemo} />
       </main>
-      <footer className="border-t border-border py-8 text-center text-sm text-muted-foreground">
+      <footer className="dark border-t border-border bg-background py-8 text-center text-sm text-muted-foreground">
         © {new Date().getFullYear()} {PRODUCT.name} · {PRODUCT.tagline}
       </footer>
-      {demoOpen && <Demo onClose={() => setDemoOpen(false)} />}
+      {demo && <Demo onClose={() => setDemo(false)} />}
     </div>
   );
 }
 
-// ── Peças de layout ───────────────────────────────────────────────────
+// ── Peças comuns ──────────────────────────────────────────────────────
 
-function Section({
+/** Dobra da página. `tom` define se ela usa o tema claro ou o escuro do sistema. */
+function Dobra({
+  tom,
   id,
   children,
   className = "",
+  fundo,
 }: {
+  tom: "clara" | "escura";
   id?: string;
   children: ReactNode;
   className?: string;
+  fundo?: ReactNode;
 }) {
   return (
     <section
       id={id}
-      className={`mx-auto w-full max-w-6xl scroll-mt-20 px-5 py-16 sm:py-24 ${className}`}
+      className={`${tom === "clara" ? "light" : "dark"} relative scroll-mt-16 overflow-hidden bg-background text-foreground`}
     >
-      {children}
+      {tom === "escura" && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(60% 50% at 15% 0%, rgba(200,169,110,.08), transparent 70%), radial-gradient(50% 60% at 90% 100%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 70%)",
+          }}
+        />
+      )}
+      {fundo}
+      <div className={`relative mx-auto w-full max-w-6xl px-5 py-20 sm:py-28 ${className}`}>
+        {children}
+      </div>
     </section>
   );
 }
 
-function Eyebrow({ children }: { children: ReactNode }) {
+function Rotulo({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
+    <p className="ds-mono mb-3" style={{ color: "var(--accent-foreground)" }}>
       {children}
     </p>
   );
 }
 
-function CtaButton({ children, className = "" }: { children: ReactNode; className?: string }) {
+function Titulo({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <h2 className={`text-3xl leading-[1.08] sm:text-[44px] ${className}`}>{children}</h2>;
+}
+
+function Cadastro({ children, grande = false }: { children: ReactNode; grande?: boolean }) {
   return (
     <Link
-      {...SIGNUP}
-      className={`inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition hover:opacity-90 active:scale-[0.99] ${className}`}
+      to="/auth"
+      search={{ mode: "signup" }}
+      className={`group inline-flex items-center justify-center gap-2 rounded-full bg-primary font-semibold text-primary-foreground shadow-[0_14px_34px_-12px_color-mix(in_srgb,var(--brand)_80%,transparent)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-12px_color-mix(in_srgb,var(--brand)_90%,transparent)] ${grande ? "px-7 py-4 text-base" : "px-5 py-3 text-sm"}`}
     >
       {children}
+      <ArrowRight weight="bold" className="transition group-hover:translate-x-0.5" />
     </Link>
   );
 }
 
-function GhostButton({ onClick, children }: { onClick: () => void; children: ReactNode }) {
+function BotaoDemo({
+  onClick,
+  children = "Ver demonstração",
+}: {
+  onClick: () => void;
+  children?: ReactNode;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-card/60 px-5 py-3 font-semibold backdrop-blur transition hover:bg-muted active:scale-[0.99]"
+      className="inline-flex items-center justify-center gap-2 rounded-full border border-input bg-card/50 px-5 py-3 text-sm font-semibold backdrop-blur transition hover:bg-muted"
     >
-      {children}
+      <Play weight="fill" className="text-primary" /> {children}
     </button>
   );
 }
 
-function Header({ onDemo }: { onDemo: () => void }) {
+// ── Topo ──────────────────────────────────────────────────────────────
+function Topo({ onDemo }: { onDemo: () => void }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-[var(--glass)] backdrop-blur-xl">
+    <header className="dark sticky top-0 z-40 border-b border-border bg-[var(--glass)] text-foreground backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-5">
         <Link to="/conheca" className="flex items-center gap-2.5">
           <BrandLogo heightClass="h-8" />
         </Link>
-        <nav className="hidden items-center gap-6 text-sm text-muted-foreground md:flex">
+        <nav className="hidden items-center gap-7 text-sm text-muted-foreground lg:flex">
           <a href="#funcionalidades" className="hover:text-foreground">
             Funcionalidades
           </a>
-          <a href="#como-funciona" className="hover:text-foreground">
-            Como funciona
+          <a href="#thay" className="hover:text-foreground">
+            Assistente com IA
+          </a>
+          <a href="#marca" className="hover:text-foreground">
+            Sua marca
           </a>
           <a href="#perguntas" className="hover:text-foreground">
             Perguntas
           </a>
         </nav>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={onDemo}
-            className="hidden rounded-lg px-3 py-2 text-sm font-semibold hover:bg-muted sm:block"
+            className="hidden rounded-full px-3.5 py-2 text-sm font-semibold hover:bg-muted sm:block"
           >
-            Ver demonstração
+            Demonstração
           </button>
-          <Link to="/auth" className="rounded-lg px-3 py-2 text-sm font-semibold hover:bg-muted">
+          <Link
+            to="/auth"
+            className="rounded-full px-3.5 py-2 text-sm font-semibold hover:bg-muted"
+          >
             Entrar
           </Link>
           <Link
-            {...SIGNUP}
-            className="rounded-lg bg-primary px-3.5 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            to="/auth"
+            search={{ mode: "signup" }}
+            className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
           >
             Criar conta
           </Link>
@@ -170,355 +233,953 @@ function Header({ onDemo }: { onDemo: () => void }) {
   );
 }
 
-// ── Seções ────────────────────────────────────────────────────────────
-
+// ── 1. Hero (escura) ─────────────────────────────────────────────────
 function Hero({ onDemo }: { onDemo: () => void }) {
   return (
-    <Section className="pb-10 pt-14 sm:pt-20">
-      <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_1fr]">
-        <div>
-          <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent-line)] bg-accent px-3 py-1 text-xs font-semibold text-accent-foreground">
-            <Sparkle weight="fill" /> Feito para planejadores e agências de viagem
-          </span>
-          <h1 className="mt-5 text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">
-            Menos planilha e WhatsApp perdido.{" "}
-            <span className="text-primary">Mais viagens bem planejadas.</span>
-          </h1>
-          <p className="mt-5 max-w-xl text-lg text-[var(--foreground-soft)]">
-            O {PRODUCT.name} organiza cada viagem do primeiro contato ao embarque: viajantes,
-            roteiro dia a dia, checklist de preparação, agenda e financeiro. Você entrega um
-            trabalho mais profissional e seu cliente sente a diferença.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <CtaButton>
-              Criar minha conta grátis <ArrowRight weight="bold" />
-            </CtaButton>
-            <GhostButton onClick={onDemo}>
-              <Play weight="fill" className="text-primary" /> Testar o modo demo
-            </GhostButton>
-          </div>
-          <p className="mt-4 text-sm text-muted-foreground">
-            A demonstração usa dados fictícios. Não precisa de cadastro para experimentar.
-          </p>
+    <Dobra tom="escura" className="pb-10 pt-16 sm:pb-16 sm:pt-24">
+      <Surge className="mx-auto max-w-3xl text-center">
+        <span className="inline-flex items-center gap-2 rounded-full border border-[var(--accent-line)] bg-accent px-3.5 py-1.5 text-xs font-semibold text-accent-foreground">
+          <Sparkle weight="fill" /> O sistema do planejador de viagens
+        </span>
+        <h1 className="mt-6 text-[40px] leading-[1.02] sm:text-6xl lg:text-[72px]">
+          Planeje viagens <span className="text-primary">incríveis</span>.
+          <br className="hidden sm:block" /> Deixe a organização com a gente.
+        </h1>
+        <p className="mx-auto mt-6 max-w-2xl text-lg text-[var(--foreground-soft)]">
+          Do primeiro contato ao embarque: viajantes, propostas, roteiro dia a dia, checklist,
+          agenda e financeiro no mesmo lugar. Menos tempo caçando informação, mais tempo criando
+          experiências.
+        </p>
+        <div className="mt-9 flex flex-wrap justify-center gap-3">
+          <Cadastro grande>Criar minha conta</Cadastro>
+          <BotaoDemo onClick={onDemo}>Testar sem cadastro</BotaoDemo>
         </div>
-        <HeroPreview />
-      </div>
-    </Section>
+      </Surge>
+
+      <Surge delay={150} className="relative mx-auto mt-16 max-w-5xl">
+        <div
+          aria-hidden
+          className="absolute -inset-x-10 -top-10 bottom-0 -z-0 rounded-[60px] opacity-70 blur-3xl"
+          style={{
+            background:
+              "radial-gradient(closest-side, color-mix(in srgb, var(--brand) 30%, transparent), transparent)",
+          }}
+        />
+        <Navegador endereco="mapadoviajante-pro.vercel.app" className="relative">
+          <Escala altura={770}>
+            {(c) => (
+              <CascaApp ativa="hoje" compacta={c}>
+                <TelaHoje compacta={c} />
+              </CascaApp>
+            )}
+          </Escala>
+        </Navegador>
+
+        {/* Avisos flutuando sobre o print */}
+        <Aviso
+          className="-left-8 top-24"
+          icon={WhatsappLogo}
+          cor="#25D366"
+          titulo="Família Souza respondeu"
+          texto="“Pode reservar os ingressos!”"
+          atraso={900}
+        />
+        <Aviso
+          className="-right-10 top-[46%]"
+          icon={CurrencyCircleDollar}
+          cor="var(--success)"
+          titulo="Pagamento confirmado"
+          texto="2ª parcela · Portugal · R$ 9.300"
+          atraso={2200}
+        />
+        <Aviso
+          className="-left-6 bottom-16"
+          icon={Bell}
+          cor="var(--brand)"
+          titulo="Embarque em 12 dias"
+          texto="Faltam 2 itens do checklist"
+          atraso={3500}
+        />
+        <p className="relative mt-5 text-center text-sm text-muted-foreground">
+          Este é um print interativo: clique nos compromissos para concluir.
+        </p>
+      </Surge>
+    </Dobra>
   );
 }
 
-function HeroPreview() {
-  return (
-    <div className="relative">
-      <div className="absolute -inset-6 -z-10 rounded-[40px] bg-[radial-gradient(closest-side,var(--glow-input),transparent)]" />
-      <div className="rounded-[var(--r4)] border border-border bg-card p-4 shadow-2xl sm:p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-xs text-muted-foreground">Hoje</p>
-            <p className="font-display text-lg font-bold">Bom dia, Carla</p>
-          </div>
-          <span className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-accent-foreground">
-            3 tarefas para hoje
-          </span>
-        </div>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          {[
-            ["Em negociação", "8"],
-            ["Fechadas no mês", "R$ 46 mil"],
-            ["Embarques em 30 dias", "4"],
-          ].map(([l, v]) => (
-            <div key={l} className="rounded-[var(--r2)] bg-muted p-3">
-              <p className="text-[11px] leading-tight text-muted-foreground">{l}</p>
-              <p className="mt-1 font-display text-lg font-bold">{v}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-3 space-y-2">
-          <PreviewRow
-            icon={AirplaneTilt}
-            title="Lua de mel em Portugal"
-            sub="Embarca em 12 dias · checklist 80%"
-            tone="ok"
-          />
-          <PreviewRow
-            icon={WhatsappLogo}
-            title="Família Souza · Orlando"
-            sub="Sem resposta há 4 dias"
-            tone="warn"
-          />
-          <PreviewRow
-            icon={Robot}
-            title="Roteiro de 10 dias na Itália"
-            sub="Rascunho gerado com IA"
-            tone="info"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-const TONE: Record<string, string> = {
-  ok: "bg-[var(--success-soft)] text-[var(--success)]",
-  warn: "bg-[color-mix(in_srgb,var(--warning)_14%,transparent)] text-[var(--warning)]",
-  info: "bg-[color-mix(in_srgb,var(--info)_14%,transparent)] text-[var(--info)]",
-  brand: "bg-accent text-accent-foreground",
-};
-
-function PreviewRow({
+function Aviso({
   icon: I,
-  title,
-  sub,
-  tone,
+  cor,
+  titulo,
+  texto,
+  className,
+  atraso,
 }: {
   icon: Icon;
-  title: string;
-  sub: string;
-  tone: keyof typeof TONE;
+  cor: string;
+  titulo: string;
+  texto: string;
+  className: string;
+  atraso: number;
 }) {
+  const [on, setOn] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setOn(true), atraso);
+    return () => window.clearTimeout(t);
+  }, [atraso]);
   return (
-    <div className="flex items-center gap-3 rounded-[var(--r2)] border border-border p-3">
+    <div
+      className={`absolute z-10 rounded-[var(--r3)] border border-white/15 bg-[rgba(16,12,9,0.72)] shadow-[0_26px_60px_-28px_rgba(0,0,0,0.9)] backdrop-blur-xl hidden w-[260px] items-center gap-3 p-3 transition-all duration-700 conheca-aviso lg:flex ${className} ${on ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"}`}
+      style={{ animation: on ? "conheca-flutua 6s ease-in-out infinite" : undefined }}
+    >
       <span
-        className={`grid h-9 w-9 shrink-0 place-items-center rounded-[var(--r1)] ${TONE[tone]}`}
+        className="grid h-10 w-10 shrink-0 place-items-center rounded-full"
+        style={{ background: `color-mix(in srgb, ${cor} 18%, transparent)`, color: cor }}
       >
-        <I size={18} weight="duotone" />
+        <I size={20} weight="fill" />
       </span>
       <div className="min-w-0">
-        <p className="truncate text-sm font-semibold">{title}</p>
-        <p className="truncate text-xs text-muted-foreground">{sub}</p>
+        <p className="truncate text-[13.5px] font-semibold">{titulo}</p>
+        <p className="truncate text-xs text-muted-foreground">{texto}</p>
       </div>
+      <style>{`@keyframes conheca-flutua{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}@media (prefers-reduced-motion: reduce){.conheca-aviso{animation:none!important}}`}</style>
     </div>
   );
 }
 
-const DORES = [
+// ── 2. Antes e depois (clara) ────────────────────────────────────────
+const CONTRASTE: { icon: Icon; antes: string; depois: string }[] = [
   {
-    antes: "Informações do cliente espalhadas entre WhatsApp, e-mail e caderno.",
-    depois: "Cada viajante com perfil, família, documentos e histórico de viagens em um só lugar.",
+    icon: WhatsappLogo,
+    antes: "Pedidos chegam pelo WhatsApp e se perdem entre as conversas.",
+    depois: "Cada pedido vira uma viagem no funil, com o próximo passo e quem cuida dela.",
   },
   {
-    antes: "Orçamentos esquecidos e clientes que somem sem retorno.",
-    depois:
-      "Funil de viagens que avisa quem está sem resposta há dias, com atalho para o WhatsApp.",
+    icon: Table,
+    antes: "Dados do cliente em planilhas, e-mails e no caderno.",
+    depois: "Viajantes, famílias, documentos e preferências em um perfil só.",
   },
   {
-    antes: "Roteiro montado no Word, refeito a cada mudança e enviado em PDF desatualizado.",
-    depois: "Roteiro dia a dia com a sua marca, link para o viajante e PDF sempre atualizado.",
+    icon: Note,
+    antes: "Roteiro refeito no Word a cada mudança, PDF desatualizado.",
+    depois: "Roteiro dia a dia com a sua marca. O link do cliente se atualiza sozinho.",
   },
   {
-    antes: "Medo de esquecer um seguro, um visto ou um check-in antes do embarque.",
-    depois: "Checklist de preparação por viagem e agenda que monta as datas sozinha.",
+    icon: Bell,
+    antes: "Medo de esquecer visto, seguro, parcela ou check-in.",
+    depois: "Checklist por viagem e agenda que lembra você no celular.",
   },
 ];
 
-function Dores() {
+function AntesDepois() {
+  const [com, setCom] = useState(true);
   return (
-    <Section className="pt-6">
-      <div className="max-w-2xl">
-        <Eyebrow>Por que usar</Eyebrow>
-        <h2 className="text-3xl sm:text-4xl">
-          Seu talento é planejar viagens, não caçar informação.
-        </h2>
-        <p className="mt-4 text-[var(--foreground-soft)]">
-          O planejador gasta horas em tarefas repetitivas que não aparecem para o cliente. O sistema
-          assume essa parte para você focar no que encanta: a experiência da viagem.
-        </p>
-      </div>
-      <div className="mt-10 grid gap-4 md:grid-cols-2">
-        {DORES.map((d) => (
-          <div key={d.antes} className="rounded-[var(--r3)] border border-border bg-card p-5">
-            <p className="flex gap-2.5 text-sm text-muted-foreground">
-              <X size={18} weight="bold" className="mt-0.5 shrink-0 text-destructive" />
-              <span className="line-through decoration-muted-foreground/40">{d.antes}</span>
-            </p>
-            <p className="mt-3 flex gap-2.5 font-medium">
-              <Check size={18} weight="bold" className="mt-0.5 shrink-0 text-[var(--success)]" />
-              {d.depois}
-            </p>
+    <Dobra tom="clara">
+      <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.1fr]">
+        <Surge>
+          <Rotulo>Por que usar</Rotulo>
+          <Titulo>Seu talento é planejar viagens, não caçar informação.</Titulo>
+          <p className="mt-5 max-w-lg text-lg text-[var(--foreground-soft)]">
+            O planejador perde horas em tarefas que o cliente nem vê. Veja a diferença quando o
+            sistema cuida dessa parte.
+          </p>
+          <div className="ds-seg mt-8 inline-flex" role="group" aria-label="Comparação">
+            <button type="button" aria-pressed={!com} onClick={() => setCom(false)}>
+              <X weight="bold" aria-hidden /> <span>Sem o sistema</span>
+            </button>
+            <button type="button" aria-pressed={com} onClick={() => setCom(true)}>
+              <Check weight="bold" aria-hidden /> <span>Com o {PRODUCT.shortName}</span>
+            </button>
           </div>
-        ))}
+        </Surge>
+        <div className="grid gap-3 sm:grid-cols-2">
+          {CONTRASTE.map((c, i) => (
+            <Surge key={c.antes} delay={i * 80}>
+              <div
+                className={`relative h-full overflow-hidden rounded-[var(--r3)] border p-5 transition-all duration-500 ${
+                  com
+                    ? "border-border bg-card shadow-[0_20px_40px_-28px_rgba(60,40,20,.35)]"
+                    : "border-dashed border-input bg-muted/60"
+                }`}
+                style={{
+                  transform: com ? "rotate(0deg)" : `rotate(${[-1.6, 1.2, 1.8, -1.1][i]}deg)`,
+                }}
+              >
+                <span
+                  className="grid h-10 w-10 place-items-center rounded-full transition-colors duration-500"
+                  style={
+                    com
+                      ? { background: "var(--accent)", color: "var(--accent-foreground)" }
+                      : {
+                          background: "color-mix(in srgb, var(--destructive) 12%, transparent)",
+                          color: "var(--destructive)",
+                        }
+                  }
+                >
+                  {com ? (
+                    <CheckCircle size={20} weight="fill" />
+                  ) : (
+                    <c.icon size={20} weight="duotone" />
+                  )}
+                </span>
+                <p
+                  key={String(com)}
+                  className={`mt-4 animate-in fade-in slide-in-from-bottom-1 duration-500 ${com ? "font-semibold" : "text-muted-foreground"}`}
+                >
+                  {com ? c.depois : c.antes}
+                </p>
+              </div>
+            </Surge>
+          ))}
+        </div>
       </div>
-    </Section>
+    </Dobra>
   );
 }
 
-const FUNCS: { icon: Icon; titulo: string; texto: string; ganho: string }[] = [
+// ── 3. Tour das funcionalidades (escura) ─────────────────────────────
+type Recurso = {
+  id: string;
+  icon: Icon;
+  nome: string;
+  tela: TelaId;
+  endereco: string;
+  resumo: string;
+  ganhos: string[];
+  render: (c: boolean) => ReactNode;
+};
+const RECURSOS: Recurso[] = [
   {
+    id: "viagens",
     icon: Kanban,
-    titulo: "Viagens do contato ao embarque",
-    texto:
-      "Acompanhe cada viagem pelas etapas Novo, Contatado, Negociando e Fechado, em lista ou quadro. Depois do fechamento, a preparação continua no mesmo lugar.",
-    ganho: "Nenhum orçamento fica esquecido.",
+    nome: "Viagens",
+    tela: "viagens",
+    endereco: "/viagens",
+    resumo:
+      "Todas as viagens em um funil: Novo, Contatado, Negociando e Fechado. Em quadro ou em lista.",
+    ganhos: [
+      "Arraste a viagem quando a etapa muda",
+      "Veja quanto está em negociação",
+      "Saiba qual cliente está sem resposta",
+    ],
+    render: (c) => <TelaViagens compacta={c} />,
   },
   {
+    id: "roteiros",
+    icon: MapPin,
+    nome: "Roteiros",
+    tela: "viagens",
+    endereco: "/roteiros/lua-de-mel-portugal",
+    resumo: "O roteiro dia a dia com horários, passeios, hotéis e fotos do destino.",
+    ganhos: [
+      "Monte cada dia em minutos",
+      "Envie por link ou PDF com a sua marca",
+      "Mudou algo? O link já mostra a versão nova",
+    ],
+    render: (c) => <TelaRoteiro compacta={c} />,
+  },
+  {
+    id: "preparacao",
+    icon: CheckSquare,
+    nome: "Preparação",
+    tela: "viagens",
+    endereco: "/viagens/preparacao",
+    resumo:
+      "Depois do fechamento, a jornada continua: contrato, pagamento, checklist e roteiro final.",
+    ganhos: [
+      "Modelos de checklist por tipo de viagem",
+      "Progresso de cada viagem até o embarque",
+      "Nada esquecido antes da partida",
+    ],
+    render: () => <TelaPreparacao />,
+  },
+  {
+    id: "viajantes",
     icon: AddressBook,
-    titulo: "Viajantes, famílias e grupos",
-    texto:
-      "Cadastre pessoas, monte famílias e grupos e veja tudo o que cada viajante já fez com você: preferências, documentos e viagens anteriores.",
-    ganho: "Atendimento personalizado sem depender da memória.",
+    nome: "Viajantes",
+    tela: "viajantes",
+    endereco: "/viajantes/ana-ribeiro",
+    resumo: "Pessoas, famílias e grupos com documentos, preferências e todo o histórico.",
+    ganhos: [
+      "Aviso de passaporte e visto vencendo",
+      "Histórico de cada conversa",
+      "Atendimento personalizado sem depender da memória",
+    ],
+    render: (c) => <TelaViajantes compacta={c} />,
+  },
+  {
+    id: "agenda",
+    icon: CalendarBlank,
+    nome: "Agenda",
+    tela: "agenda",
+    endereco: "/agenda",
+    resumo: "Retornos, prazos, pagamentos e embarques em lista, semana ou mês.",
+    ganhos: [
+      "Datas criadas a partir da viagem",
+      "Lembretes no celular",
+      "Você abre o sistema e sabe o que fazer",
+    ],
+    render: (c) => <TelaAgenda compacta={c} />,
+  },
+  {
+    id: "biblioteca",
+    icon: Images,
+    nome: "Biblioteca",
+    tela: "biblioteca",
+    endereco: "/biblioteca",
+    resumo: "Passeios, hotéis, transfers e fotos que você já usou, prontos para reaproveitar.",
+    ganhos: [
+      "Monte roteiros novos a partir dos antigos",
+      "Fotos e descrições sempre à mão",
+      "Padrão de qualidade em todas as viagens",
+    ],
+    render: (c) => <TelaBiblioteca compacta={c} />,
+  },
+  {
+    id: "financeiro",
+    icon: Wallet,
+    nome: "Financeiro",
+    tela: "financeiro",
+    endereco: "/financeiro",
+    resumo: "Vendas, comissões e parcelas a receber, mês a mês e por consultora.",
+    ganhos: [
+      "Saiba quanto cada viagem rende",
+      "Parcelas a receber em um lugar",
+      "Você decide quem da equipe vê os números",
+    ],
+    render: (c) => <TelaFinanceiro compacta={c} />,
+  },
+];
+
+function Tour() {
+  const [ativo, setAtivo] = useState(RECURSOS[0].id);
+  const r = RECURSOS.find((x) => x.id === ativo)!;
+  const i = RECURSOS.indexOf(r);
+  return (
+    <Dobra tom="escura" id="funcionalidades">
+      <Surge className="max-w-2xl">
+        <Rotulo>Funcionalidades</Rotulo>
+        <Titulo>Tudo o que o planejador precisa, conectado.</Titulo>
+        <p className="mt-5 text-lg text-[var(--foreground-soft)]">
+          Escolha uma parte do sistema e mexa no print: arraste viagens, troque de aba, marque o
+          checklist.
+        </p>
+      </Surge>
+
+      {/* Abas no celular */}
+      <div className="-mx-5 mt-10 flex gap-2 overflow-x-auto px-5 pb-2 lg:hidden">
+        {RECURSOS.map((x) => (
+          <button
+            key={x.id}
+            type="button"
+            onClick={() => setAtivo(x.id)}
+            className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold ${
+              x.id === ativo
+                ? "border-[var(--accent-line)] bg-accent text-accent-foreground"
+                : "border-border text-muted-foreground"
+            }`}
+          >
+            <x.icon weight={x.id === ativo ? "fill" : "regular"} /> {x.nome}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-6 grid gap-8 lg:mt-12 lg:grid-cols-[300px_minmax(0,1fr)]">
+        <ul className="hidden flex-col gap-1.5 lg:flex">
+          {RECURSOS.map((x) => {
+            const on = x.id === ativo;
+            return (
+              <li key={x.id}>
+                <button
+                  type="button"
+                  onClick={() => setAtivo(x.id)}
+                  aria-expanded={on}
+                  className={`w-full rounded-[var(--r3)] border p-4 text-left transition ${
+                    on
+                      ? "border-[var(--accent-line)] bg-card"
+                      : "border-transparent hover:bg-card/60"
+                  }`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span
+                      className={`grid h-9 w-9 place-items-center rounded-full ${on ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+                    >
+                      <x.icon size={18} weight={on ? "fill" : "regular"} />
+                    </span>
+                    <b className={on ? "" : "text-[var(--foreground-soft)]"}>{x.nome}</b>
+                  </span>
+                  {on && <p className="mt-3 text-sm text-[var(--foreground-soft)]">{x.resumo}</p>}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div className="min-w-0">
+          <Navegador endereco={`mapadoviajante-pro.vercel.app${r.endereco}`}>
+            <Escala altura={800}>
+              {(c) => (
+                <CascaApp key={r.id} ativa={r.tela} compacta={c}>
+                  <div className="h-full animate-in fade-in duration-500">{r.render(c)}</div>
+                </CascaApp>
+              )}
+            </Escala>
+          </Navegador>
+          <div className="mt-6 grid gap-4 sm:grid-cols-[1fr_auto] sm:items-start">
+            <div>
+              <p className="text-[var(--foreground-soft)] lg:hidden">{r.resumo}</p>
+              <ul className="mt-3 flex flex-wrap gap-x-6 gap-y-2 lg:mt-0">
+                {r.ganhos.map((g) => (
+                  <li key={g} className="flex items-center gap-2 text-sm font-medium">
+                    <CheckCircle weight="fill" className="text-primary" /> {g}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                aria-label="Funcionalidade anterior"
+                onClick={() => setAtivo(RECURSOS[(i - 1 + RECURSOS.length) % RECURSOS.length].id)}
+                className="grid h-10 w-10 place-items-center rounded-full border border-input hover:bg-muted"
+              >
+                <ArrowLeft />
+              </button>
+              <button
+                type="button"
+                aria-label="Próxima funcionalidade"
+                onClick={() => setAtivo(RECURSOS[(i + 1) % RECURSOS.length].id)}
+                className="grid h-10 w-10 place-items-center rounded-full border border-input hover:bg-muted"
+              >
+                <ArrowRight />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Dobra>
+  );
+}
+
+// ── 4. Thay, assistente com IA (clara) ───────────────────────────────
+const PEDIDOS = [
+  {
+    id: "roteiro",
+    pedido: "Monte 4 dias em Portugal para uma lua de mel",
+    resposta:
+      "Claro! Um ritmo tranquilo e romântico:\n\nDia 1 · Lisboa: chegada, Miradouro de Santa Luzia no fim da tarde e jantar com fado em Alfama.\nDia 2 · Belém: Torre, Jerónimos, pastéis e passeio de barco pelo Tejo.\nDia 3 · Sintra: Palácio da Pena, Quinta da Regaleira e pôr do sol no Cabo da Roca.\nDia 4 · Porto: trem pela manhã, Ribeira e degustação de vinho do Porto.",
+    acao: "Inserir no roteiro",
+  },
+  {
+    id: "mensagem",
+    pedido: "Escreva uma mensagem para um cliente que não respondeu a proposta",
+    resposta:
+      "Oi, Juliana! Tudo bem? Passando para saber se você conseguiu ver a proposta da Disney. Os ingressos dos parques costumam subir perto das férias, então, se fizer sentido, consigo segurar as condições até sexta. Quer que eu ajuste algo? 😊",
+    acao: "Copiar para o WhatsApp",
+  },
+  {
+    id: "mala",
+    pedido: "O que levar para a Patagônia em março?",
+    resposta:
+      "Março é fim do verão por lá: dias amenos e vento forte.\n\n• Roupas em camadas: segunda pele, fleece e corta-vento impermeável\n• Bota de trilha já amaciada\n• Gorro, luvas finas e óculos de sol\n• Protetor solar e labial\n• Mochila pequena para os passeios no glaciar",
+    acao: "Adicionar ao checklist",
+  },
+];
+
+function Thay() {
+  const [sel, setSel] = useState<(typeof PEDIDOS)[number] | null>(null);
+  const [texto, setTexto] = useState("");
+  const [feito, setFeito] = useState(false);
+  const timer = useRef<number | null>(null);
+
+  const pedir = (p: (typeof PEDIDOS)[number]) => {
+    if (timer.current) window.clearInterval(timer.current);
+    setSel(p);
+    setTexto("");
+    setFeito(false);
+    let n = 0;
+    // Pequena pausa de "pensando" e depois a resposta vai aparecendo.
+    window.setTimeout(() => {
+      timer.current = window.setInterval(() => {
+        n += 3;
+        setTexto(p.resposta.slice(0, n));
+        if (n >= p.resposta.length && timer.current) window.clearInterval(timer.current);
+      }, 16);
+    }, 700);
+  };
+  useEffect(() => () => void (timer.current && window.clearInterval(timer.current)), []);
+  const pronto = !!sel && texto.length >= sel.resposta.length;
+
+  return (
+    <Dobra tom="clara" id="thay">
+      <div className="grid items-center gap-12 lg:grid-cols-[1fr_1.15fr]">
+        <Surge>
+          <Rotulo>Assistente com IA</Rotulo>
+          <Titulo>Conheça a Thay, sua parceira de planejamento.</Titulo>
+          <p className="mt-5 text-lg text-[var(--foreground-soft)]">
+            A Thay faz o trabalho braçal: rascunha roteiros, escreve mensagens e sugere o que levar.
+            Você revisa, ajusta e mantém a palavra final, com o seu jeito de atender.
+          </p>
+          <ul className="mt-6 space-y-3">
+            {[
+              "Rascunho de roteiro por destino e perfil",
+              "Textos prontos para o WhatsApp e o e-mail",
+              "Dicas de bagagem, documentos e clima",
+            ].map((t) => (
+              <li key={t} className="flex items-center gap-3 font-medium">
+                <CheckCircle weight="fill" className="text-primary" size={20} /> {t}
+              </li>
+            ))}
+          </ul>
+        </Surge>
+
+        <Surge delay={120}>
+          <div className="overflow-hidden rounded-[var(--r4)] border border-border bg-card shadow-[0_40px_80px_-40px_rgba(60,40,20,.45)]">
+            <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-accent text-accent-foreground">
+                <Robot size={22} weight="duotone" />
+              </span>
+              <div>
+                <b>Thay</b>
+                <p className="text-xs text-muted-foreground">Assistente de planejamento</p>
+              </div>
+              <span className="ml-auto">
+                <span className="ds-chip ds-ok">Online</span>
+              </span>
+            </div>
+            <div className="flex min-h-[340px] flex-col gap-3 bg-background/60 p-5">
+              {!sel && (
+                <p className="m-auto max-w-xs text-center text-sm text-muted-foreground">
+                  Escolha um pedido abaixo para ver a Thay em ação.
+                </p>
+              )}
+              {sel && (
+                <>
+                  <div className="ml-auto max-w-[80%] rounded-[18px] rounded-br-md bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+                    {sel.pedido}
+                  </div>
+                  <div className="max-w-[88%] whitespace-pre-line rounded-[18px] rounded-bl-md border border-border bg-card px-4 py-3 text-sm leading-relaxed">
+                    {texto || (
+                      <span className="inline-flex gap-1 py-1">
+                        <i className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-.3s]" />
+                        <i className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:-.15s]" />
+                        <i className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground" />
+                      </span>
+                    )}
+                  </div>
+                  {pronto && (
+                    <button
+                      type="button"
+                      onClick={() => setFeito(true)}
+                      className={`inline-flex w-fit items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition animate-in fade-in ${
+                        feito
+                          ? "bg-[var(--success-soft)] text-[var(--success)]"
+                          : "border border-input hover:bg-muted"
+                      }`}
+                    >
+                      {feito ? <Check weight="bold" /> : <PaperPlaneTilt />}
+                      {feito ? "Feito! Você pode editar quando quiser." : sel.acao}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2 border-t border-border p-4">
+              {PEDIDOS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => pedir(p)}
+                  aria-pressed={sel?.id === p.id}
+                  className="ds-chip"
+                  style={{
+                    height: "auto",
+                    padding: "8px 14px",
+                    whiteSpace: "normal",
+                    textAlign: "left",
+                  }}
+                >
+                  <Sparkle weight="fill" aria-hidden /> {p.pedido}
+                </button>
+              ))}
+            </div>
+          </div>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Respostas de exemplo. No sistema, a Thay responde ao seu pedido.
+          </p>
+        </Surge>
+      </div>
+    </Dobra>
+  );
+}
+
+// ── 5. Marca própria e visão do viajante (escura) ────────────────────
+const CORES = ["#f58e26", "#2a78d6", "#177a44", "#d55181", "#6250d6", "#17130f"];
+
+function MarcaPropria() {
+  const [cor, setCor] = useState(CORES[0]);
+  const [nome, setNome] = useState("Sua Agência de Viagens");
+  const [modo, setModo] = useState<"link" | "pdf">("link");
+  return (
+    <Dobra tom="escura" id="marca">
+      <div className="grid items-center gap-14 lg:grid-cols-[1fr_auto]">
+        <Surge>
+          <Rotulo>O que o seu cliente recebe</Rotulo>
+          <Titulo>Um roteiro com a cara da sua agência.</Titulo>
+          <p className="mt-5 max-w-xl text-lg text-[var(--foreground-soft)]">
+            O viajante recebe um link bonito, que abre no celular e fica sempre atualizado, ou um
+            PDF pronto para imprimir. Tudo com o seu nome e a sua cor. Experimente:
+          </p>
+
+          <div className="mt-8 max-w-md space-y-6 rounded-[var(--r4)] border border-border bg-card p-6">
+            <div className="ds-fld">
+              <label htmlFor="conheca-agencia">Nome da agência</label>
+              <input
+                id="conheca-agencia"
+                value={nome}
+                maxLength={32}
+                onChange={(e) => setNome(e.target.value)}
+              />
+            </div>
+            <div>
+              <span className="mb-2 block text-sm font-medium">Cor principal</span>
+              <div className="flex flex-wrap items-center gap-2.5">
+                {CORES.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    aria-label={`Usar a cor ${c}`}
+                    aria-pressed={cor === c}
+                    onClick={() => setCor(c)}
+                    className="h-9 w-9 rounded-full border-2 transition hover:scale-110"
+                    style={{
+                      background: c,
+                      borderColor: cor === c ? "#fff" : "rgba(255,255,255,.22)",
+                      boxShadow: cor === c ? `0 0 0 3px ${c}` : undefined,
+                    }}
+                  />
+                ))}
+                <label
+                  className="relative grid h-9 w-9 cursor-pointer place-items-center rounded-full border border-dashed border-input text-xs text-muted-foreground"
+                  title="Outra cor"
+                >
+                  +
+                  <input
+                    type="color"
+                    value={cor}
+                    onChange={(e) => setCor(e.target.value)}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    aria-label="Escolher outra cor"
+                  />
+                </label>
+              </div>
+            </div>
+            <div className="ds-seg" role="group" aria-label="Formato">
+              <button type="button" aria-pressed={modo === "link"} onClick={() => setModo("link")}>
+                <LinkSimple aria-hidden /> <span>Link</span>
+              </button>
+              <button type="button" aria-pressed={modo === "pdf"} onClick={() => setModo("pdf")}>
+                <FilePdf aria-hidden /> <span>PDF</span>
+              </button>
+            </div>
+          </div>
+        </Surge>
+
+        <Surge delay={150} className="mx-auto">
+          <Celular>
+            <VisaoViajante cor={cor} agencia={nome || "Sua Agência"} modo={modo} />
+          </Celular>
+        </Surge>
+      </div>
+    </Dobra>
+  );
+}
+
+function VisaoViajante({
+  cor,
+  agencia,
+  modo,
+}: {
+  cor: string;
+  agencia: string;
+  modo: "link" | "pdf";
+}) {
+  const estilo = { "--brand": cor, "--brand-foreground": readableOn(cor) } as CSSProperties;
+  if (modo === "pdf") {
+    return (
+      <div className="light h-full overflow-hidden bg-[#e9e6e2] p-3 pt-12" style={estilo}>
+        <div className="h-full overflow-hidden rounded-md bg-white text-[#17130f] shadow-lg">
+          <div className="h-2" style={{ background: cor }} />
+          <div className="p-5">
+            <p
+              className="text-[9px] font-semibold uppercase tracking-[0.18em]"
+              style={{ color: cor }}
+            >
+              {agencia}
+            </p>
+            <p className="mt-2 font-display text-2xl font-bold leading-tight">
+              Lua de mel em Portugal
+            </p>
+            <p className="mt-1 text-[11px] text-[#6b645d]">Ana e Pedro · 12 a 20 de maio</p>
+            <img src={FOTO_DESTINO} alt="" className="mt-4 h-24 w-full rounded object-cover" />
+            {DIAS.slice(0, 3).map((d) => (
+              <div key={d.dia} className="mt-3 border-l-2 pl-3" style={{ borderColor: cor }}>
+                <p className="text-[10px] font-bold uppercase" style={{ color: cor }}>
+                  Dia {d.dia}
+                </p>
+                <p className="text-[12px] font-semibold">{d.titulo}</p>
+                <p className="text-[10px] text-[#6b645d]">{d.itens.map((x) => x[1]).join(" · ")}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="light h-full overflow-y-auto bg-background text-foreground [scrollbar-width:none]"
+      style={estilo}
+    >
+      <div className="relative h-60">
+        <img src={FOTO_DESTINO} alt="" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/10 to-black/30" />
+        <p className="absolute left-5 top-12 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/85">
+          {agencia}
+        </p>
+        <div className="absolute bottom-4 left-5 right-5 text-white">
+          <p className="font-display text-[26px] font-bold leading-[1.05]">
+            Lua de mel em Portugal
+          </p>
+          <p className="mt-1 text-xs text-white/80">Ana e Pedro · 12 a 20 de maio</p>
+        </div>
+      </div>
+      <div className="space-y-3 p-4">
+        <div className="flex gap-2">
+          <span
+            className="rounded-full px-3 py-1 text-[11px] font-semibold"
+            style={{ background: cor, color: readableOn(cor) }}
+          >
+            8 noites
+          </span>
+          <span className="rounded-full bg-muted px-3 py-1 text-[11px] font-semibold">
+            Lisboa · Sintra · Porto
+          </span>
+        </div>
+        {DIAS.map((d) => (
+          <div key={d.dia} className="rounded-[16px] border border-border bg-card p-3.5">
+            <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: cor }}>
+              Dia {d.dia}
+            </p>
+            <p className="text-[14px] font-semibold">{d.titulo}</p>
+            <ul className="mt-1.5 space-y-1">
+              {d.itens.map(([h, t]) => (
+                <li key={t} className="flex gap-2 text-[11.5px] text-[var(--foreground-soft)]">
+                  <span className="w-9 shrink-0 font-semibold text-muted-foreground">{h}</span> {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+        <div
+          className="rounded-full py-3 text-center text-[13px] font-semibold"
+          style={{ background: cor, color: readableOn(cor) }}
+        >
+          Falar com {agencia.split(" ")[0] === "Sua" ? "a agência" : agencia}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── 6. Jornada da viagem (clara) ─────────────────────────────────────
+const ETAPAS_JORNADA: { icon: Icon; nome: string; voce: string; sistema: string[] }[] = [
+  {
+    icon: ChatCircleDots,
+    nome: "Pedido",
+    voce: "Recebe o contato pelo site, WhatsApp ou indicação.",
+    sistema: [
+      "Formulário público de captação com a sua marca",
+      "Pedido vira viagem no funil, já com o viajante",
+      "Aviso no celular quando chega pedido novo",
+    ],
+  },
+  {
+    icon: Kanban,
+    nome: "Negociação",
+    voce: "Entende o perfil e apresenta a proposta.",
+    sistema: [
+      "Próximo passo obrigatório em toda viagem",
+      "Alerta de cliente sem resposta há dias",
+      "Atalho para o WhatsApp do viajante",
+    ],
+  },
+  {
+    icon: Check,
+    nome: "Fechamento",
+    voce: "O cliente aceita e assina.",
+    sistema: [
+      "Jornada de proposta, contrato e pagamento",
+      "Parcelas registradas no financeiro",
+      "Viagem passa para a preparação",
+    ],
   },
   {
     icon: MapPin,
-    titulo: "Roteiros dia a dia",
-    texto:
-      "Monte o roteiro com dias, atividades, horários, hotéis e fotos do destino. Reaproveite trechos da sua biblioteca em novas viagens.",
-    ganho: "Roteiros bonitos em minutos, não em horas.",
-  },
-  {
-    icon: Robot,
-    titulo: "Thay, sua assistente com IA",
-    texto:
-      "Peça um rascunho de roteiro, sugestões de passeios ou um texto para o cliente. Você revisa e ajusta, a IA faz o trabalho braçal.",
-    ganho: "Ponto de partida pronto para cada destino.",
-  },
-  {
-    icon: ShareNetwork,
-    titulo: "Link e PDF para o viajante",
-    texto:
-      "Envie ao cliente um link do roteiro com a identidade da sua agência ou gere o PDF para impressão. Mudou algo? O link já mostra a versão nova.",
-    ganho: "Entrega profissional que fideliza.",
+    nome: "Roteiro",
+    voce: "Monta a experiência dia a dia.",
+    sistema: [
+      "Rascunho com a Thay e itens da biblioteca",
+      "Link e PDF com a identidade da agência",
+      "Versão sempre atualizada para o cliente",
+    ],
   },
   {
     icon: CheckSquare,
-    titulo: "Checklist de preparação",
-    texto:
-      "Modelos de checklist por tipo de viagem: passaporte, visto, seguro, vacinas, check-in. Acompanhe o progresso de cada viagem até o embarque.",
-    ganho: "Zero esquecimentos antes da partida.",
+    nome: "Preparação",
+    voce: "Cuida dos detalhes antes da partida.",
+    sistema: [
+      "Checklist pelo tipo de viagem",
+      "Prazos de visto, seguro e check-in na agenda",
+      "Progresso visível até o embarque",
+    ],
   },
   {
-    icon: CalendarBlank,
-    titulo: "Agenda que se monta sozinha",
-    texto:
-      "Retornos, pagamentos e embarques viram compromissos com datas automáticas. Veja o dia, a semana ou o mês e receba lembretes no celular.",
-    ganho: "Você sabe o que fazer assim que abre o sistema.",
-  },
-  {
-    icon: Wallet,
-    titulo: "Financeiro da viagem",
-    texto:
-      "Registre valores, pagamentos e comissões de cada viagem e veja o resultado do mês. Você decide quem da equipe pode ver os números.",
-    ganho: "Clareza sobre quanto cada viagem rende.",
-  },
-  {
-    icon: UsersThree,
-    titulo: "Equipe e marca própria",
-    texto:
-      "Convide consultores, defina permissões e use a logo e a cor da sua agência. Cada agência tem seus dados separados e protegidos.",
-    ganho: "Cresça sem perder o controle.",
+    icon: AirplaneTilt,
+    nome: "Embarque",
+    voce: "O viajante parte tranquilo e volta querendo mais.",
+    sistema: [
+      "Histórico completo no perfil do viajante",
+      "Preferências guardadas para a próxima viagem",
+      "Base de clientes pronta para novas ofertas",
+    ],
   },
 ];
 
-function Funcionalidades() {
+function Jornada() {
+  const [i, setI] = useState(0);
+  const e = ETAPAS_JORNADA[i];
   return (
-    <Section id="funcionalidades">
-      <div className="max-w-2xl">
-        <Eyebrow>Funcionalidades</Eyebrow>
-        <h2 className="text-3xl sm:text-4xl">Tudo o que o planejador precisa, conectado.</h2>
-        <p className="mt-4 text-[var(--foreground-soft)]">
-          Cada parte conversa com a outra: o viajante leva à viagem, a viagem ao roteiro, o roteiro
-          à agenda. Você cadastra uma vez e usa em todo lugar.
+    <Dobra tom="clara">
+      <Surge className="mx-auto max-w-2xl text-center">
+        <Rotulo>Como funciona</Rotulo>
+        <Titulo>Do primeiro contato ao embarque, um caminho claro.</Titulo>
+        <p className="mt-5 text-lg text-[var(--foreground-soft)]">
+          Clique em cada etapa para ver o que o sistema faz por você.
         </p>
-      </div>
-      <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {FUNCS.map((f) => (
-          <article
-            key={f.titulo}
-            className="group flex flex-col rounded-[var(--r3)] border border-border bg-card p-6 transition hover:border-[var(--accent-line)]"
-          >
-            <span className="grid h-11 w-11 place-items-center rounded-[var(--r2)] bg-accent text-accent-foreground">
-              <f.icon size={22} weight="duotone" />
-            </span>
-            <h3 className="mt-4 text-lg">{f.titulo}</h3>
-            <p className="mt-2 flex-1 text-sm text-[var(--foreground-soft)]">{f.texto}</p>
-            <p className="mt-4 flex items-center gap-2 border-t border-border pt-4 text-sm font-semibold">
-              <Check size={16} weight="bold" className="text-primary" /> {f.ganho}
-            </p>
-          </article>
-        ))}
-      </div>
-    </Section>
-  );
-}
+      </Surge>
 
-const PASSOS = [
-  {
-    n: "1",
-    t: "O pedido chega",
-    d: "Pelo formulário de captação, WhatsApp ou indicação. Vira uma viagem com o viajante já vinculado.",
-  },
-  {
-    n: "2",
-    t: "Você negocia",
-    d: "Registra conversas, envia proposta e o sistema lembra de cobrar o retorno.",
-  },
-  {
-    n: "3",
-    t: "Monta o roteiro",
-    d: "Dia a dia, com ajuda da Thay e da sua biblioteca. Envia por link ou PDF.",
-  },
-  {
-    n: "4",
-    t: "Prepara o embarque",
-    d: "Checklist, pagamentos e datas na agenda até o viajante partir tranquilo.",
-  },
-];
+      <Surge delay={100} className="mt-12">
+        <div className="relative">
+          <div className="absolute left-0 right-0 top-6 hidden h-0.5 bg-border sm:block" />
+          <div
+            className="absolute left-0 top-6 hidden h-0.5 bg-primary transition-all duration-500 sm:block"
+            style={{ width: `${(i / (ETAPAS_JORNADA.length - 1)) * 100}%` }}
+          />
+          <ol className="relative grid grid-cols-3 gap-y-6 sm:grid-cols-6">
+            {ETAPAS_JORNADA.map((x, n) => (
+              <li key={x.nome} className="flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setI(n)}
+                  className="group flex flex-col items-center gap-2"
+                  aria-current={n === i ? "step" : undefined}
+                >
+                  <span
+                    className={`grid h-12 w-12 place-items-center rounded-full border-2 transition ${
+                      n <= i
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-input bg-card text-muted-foreground group-hover:border-[var(--accent-line)]"
+                    } ${n === i ? "scale-110 shadow-[0_0_0_6px_var(--accent)]" : ""}`}
+                  >
+                    <x.icon size={20} weight={n <= i ? "fill" : "regular"} />
+                  </span>
+                  <span
+                    className={`text-sm font-semibold ${n === i ? "" : "text-muted-foreground"}`}
+                  >
+                    {x.nome}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
 
-function ComoFunciona() {
-  return (
-    <Section id="como-funciona">
-      <div className="max-w-2xl">
-        <Eyebrow>Como funciona</Eyebrow>
-        <h2 className="text-3xl sm:text-4xl">Um caminho claro para cada viagem.</h2>
-      </div>
-      <ol className="mt-10 grid gap-4 md:grid-cols-4">
-        {PASSOS.map((p) => (
-          <li key={p.n} className="relative rounded-[var(--r3)] border border-border bg-card p-5">
-            <span className="font-display text-4xl font-bold text-primary">{p.n}</span>
-            <h3 className="mt-2 text-lg">{p.t}</h3>
-            <p className="mt-1.5 text-sm text-[var(--foreground-soft)]">{p.d}</p>
-          </li>
-        ))}
-      </ol>
-    </Section>
-  );
-}
-
-function DemoTeaser({ onDemo }: { onDemo: () => void }) {
-  return (
-    <Section className="py-8 sm:py-12">
-      <div className="relative overflow-hidden rounded-[var(--r4)] border border-[var(--accent-line)] bg-card p-8 sm:p-12">
-        <div className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-[radial-gradient(closest-side,var(--glow-input),transparent)]" />
-        <div className="relative grid items-center gap-8 md:grid-cols-[1.4fr_1fr]">
-          <div>
-            <Eyebrow>Modo demonstração</Eyebrow>
-            <h2 className="text-3xl sm:text-4xl">Experimente antes de se cadastrar.</h2>
-            <p className="mt-4 text-[var(--foreground-soft)]">
-              Abra uma agência de exemplo, mova viagens no funil, marque itens do checklist, gere um
-              roteiro com a Thay e veja o que o seu cliente recebe. Tudo com dados fictícios.
-            </p>
+        <div
+          key={i}
+          className="mt-10 grid gap-4 animate-in fade-in slide-in-from-bottom-2 duration-500 md:grid-cols-[1fr_1.4fr]"
+        >
+          <div className="rounded-[var(--r4)] border border-border bg-card p-7">
+            <span className="ds-mono">Você</span>
+            <p className="mt-3 font-display text-2xl font-bold leading-snug">{e.voce}</p>
           </div>
-          <div className="flex flex-col gap-3 md:items-end">
-            <GhostButton onClick={onDemo}>
-              <Play weight="fill" className="text-primary" /> Abrir a demonstração
-            </GhostButton>
-            <CtaButton>
-              Ou criar minha conta <ArrowRight weight="bold" />
-            </CtaButton>
+          <div className="rounded-[var(--r4)] border border-[var(--accent-line)] bg-card p-7">
+            <span className="ds-mono" style={{ color: "var(--accent-foreground)" }}>
+              O sistema
+            </span>
+            <ul className="mt-3 space-y-3">
+              {e.sistema.map((s) => (
+                <li key={s} className="flex items-start gap-3 text-[15px] font-medium">
+                  <CheckCircle weight="fill" size={20} className="mt-0.5 shrink-0 text-primary" />{" "}
+                  {s}
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
-      </div>
-    </Section>
+      </Surge>
+    </Dobra>
   );
 }
 
+// ── 7. Chamada para a demonstração (escura, com foto) ────────────────
+function ChamadaDemo({ onDemo }: { onDemo: () => void }) {
+  return (
+    <Dobra
+      tom="escura"
+      fundo={
+        <>
+          <img src={FOTO_DESTINO} alt="" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/30" />
+        </>
+      }
+    >
+      <Surge className="max-w-2xl text-white">
+        <p className="ds-mono mb-3" style={{ color: "rgba(255,255,255,.75)" }}>
+          Modo demonstração
+        </p>
+        <h2 className="text-3xl leading-[1.08] sm:text-[48px]">
+          Entre na agência de exemplo e use o sistema agora.
+        </h2>
+        <p className="mt-5 text-lg text-white/80">
+          Navegue pelas telas, mova viagens no funil, abra o perfil de um viajante, veja a agenda e
+          o financeiro. Sem cadastro e sem compromisso.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <button
+            type="button"
+            onClick={onDemo}
+            className="inline-flex items-center gap-2 rounded-full bg-white px-7 py-4 font-semibold text-[#17130f] transition hover:-translate-y-0.5"
+          >
+            <Play weight="fill" style={{ color: "var(--brand)" }} /> Abrir a demonstração
+          </button>
+          <Cadastro grande>Criar minha conta</Cadastro>
+        </div>
+      </Surge>
+    </Dobra>
+  );
+}
+
+// ── 8. Perguntas (clara) ─────────────────────────────────────────────
 const FAQ = [
   {
     q: "Funciona para quem trabalha sozinho?",
-    a: "Sim. O sistema serve tanto para o planejador autônomo quanto para agências com equipe. Você começa sozinho e convida pessoas quando quiser.",
+    a: "Sim. Serve tanto para o planejador autônomo quanto para agências com equipe. Você começa sozinho e convida pessoas quando quiser.",
   },
   {
     q: "Preciso instalar alguma coisa?",
-    a: "Não. Funciona no navegador do computador e do celular, e pode ser instalado como aplicativo na tela inicial, com notificações.",
+    a: "Não. Funciona no navegador do computador e do celular e pode ser instalado como aplicativo na tela inicial, com notificações.",
   },
   {
     q: "Posso usar a marca da minha agência?",
@@ -529,695 +1190,73 @@ const FAQ = [
     a: "Sim. Cada agência tem seus dados isolados, e as permissões de cada pessoa da equipe são definidas por você.",
   },
   {
-    q: "O que acontece com o que eu fizer no modo demo?",
-    a: "Nada é salvo. A demonstração roda só no seu navegador. Para guardar suas viagens de verdade, crie sua conta.",
+    q: "O que acontece com o que eu fizer na demonstração?",
+    a: "Nada é salvo. A demonstração roda só no seu navegador, com dados fictícios. Para guardar suas viagens, crie sua conta.",
   },
 ];
 
-function Faq() {
+function Perguntas() {
+  const [aberta, setAberta] = useState(0);
   return (
-    <Section id="perguntas">
+    <Dobra tom="clara" id="perguntas">
       <div className="grid gap-10 md:grid-cols-[1fr_1.5fr]">
-        <div>
-          <Eyebrow>Perguntas frequentes</Eyebrow>
-          <h2 className="text-3xl sm:text-4xl">Ficou alguma dúvida?</h2>
-        </div>
-        <div className="divide-y divide-border rounded-[var(--r3)] border border-border bg-card">
-          {FAQ.map((f) => (
-            <details key={f.q} className="group p-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">
-                {f.q}
-                <span className="text-xl text-primary transition group-open:rotate-45">+</span>
-              </summary>
-              <p className="mt-3 text-sm text-[var(--foreground-soft)]">{f.a}</p>
-            </details>
-          ))}
-        </div>
-      </div>
-    </Section>
-  );
-}
-
-function CtaFinal({ onDemo }: { onDemo: () => void }) {
-  return (
-    <Section className="text-center">
-      <h2 className="mx-auto max-w-3xl text-3xl sm:text-5xl">
-        Pronto para planejar viagens com{" "}
-        <span className="text-primary">mais tempo e menos correria</span>?
-      </h2>
-      <p className="mx-auto mt-4 max-w-xl text-[var(--foreground-soft)]">
-        Crie sua conta em menos de um minuto, com e-mail ou com o Google.
-      </p>
-      <div className="mt-8 flex flex-wrap justify-center gap-3">
-        <CtaButton>
-          Criar minha conta <ArrowRight weight="bold" />
-        </CtaButton>
-        <GhostButton onClick={onDemo}>
-          <Play weight="fill" className="text-primary" /> Ver demonstração
-        </GhostButton>
-      </div>
-    </Section>
-  );
-}
-
-// ── Modo demonstração ────────────────────────────────────────────────
-// Uma agência de exemplo que roda só no navegador. Nada é enviado ao servidor.
-
-type DemoTab = "hoje" | "viagens" | "roteiro" | "preparacao" | "viajante";
-const DEMO_TABS: { id: DemoTab; label: string; icon: Icon; dica: string }[] = [
-  {
-    id: "hoje",
-    label: "Hoje",
-    icon: House,
-    dica: "O que pede sua atenção hoje, assim que você abre o sistema.",
-  },
-  {
-    id: "viagens",
-    label: "Viagens",
-    icon: AirplaneTilt,
-    dica: "Avance as viagens pelas etapas e veja o valor em negociação mudar.",
-  },
-  {
-    id: "roteiro",
-    label: "Roteiro",
-    icon: MapPin,
-    dica: "Peça um rascunho à Thay e veja o roteiro dia a dia aparecer.",
-  },
-  {
-    id: "preparacao",
-    label: "Preparação",
-    icon: CheckSquare,
-    dica: "Marque os itens do checklist até a viagem ficar pronta para o embarque.",
-  },
-  {
-    id: "viajante",
-    label: "Visão do viajante",
-    icon: LinkSimple,
-    dica: "É isto que seu cliente recebe: o roteiro com a sua marca.",
-  },
-];
-
-type Etapa = "new" | "contacted" | "negotiating" | "closed";
-const ETAPAS: { id: Etapa; label: string }[] = [
-  { id: "new", label: "Novo" },
-  { id: "contacted", label: "Contatado" },
-  { id: "negotiating", label: "Negociando" },
-  { id: "closed", label: "Fechado" },
-];
-type DemoTrip = {
-  id: number;
-  titulo: string;
-  viajante: string;
-  valor: number;
-  etapa: Etapa;
-  quando: string;
-};
-const TRIPS_INICIAIS: DemoTrip[] = [
-  {
-    id: 1,
-    titulo: "Lua de mel em Portugal",
-    viajante: "Ana e Pedro",
-    valor: 28000,
-    etapa: "negotiating",
-    quando: "mai/27",
-  },
-  {
-    id: 2,
-    titulo: "Disney em família",
-    viajante: "Família Souza",
-    valor: 42000,
-    etapa: "contacted",
-    quando: "jul/27",
-  },
-  {
-    id: 3,
-    titulo: "Itália clássica · 10 dias",
-    viajante: "Marina Lopes",
-    valor: 19500,
-    etapa: "new",
-    quando: "set/27",
-  },
-  {
-    id: 4,
-    titulo: "Patagônia de aventura",
-    viajante: "Grupo Trilheiros",
-    valor: 36000,
-    etapa: "new",
-    quando: "nov/27",
-  },
-  {
-    id: 5,
-    titulo: "Réveillon em Fernando de Noronha",
-    viajante: "Rafael Dias",
-    valor: 14800,
-    etapa: "closed",
-    quando: "dez/26",
-  },
-];
-
-const brl = (v: number) =>
-  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
-
-function Demo({ onClose }: { onClose: () => void }) {
-  const [tab, setTab] = useState<DemoTab>("hoje");
-  const [trips, setTrips] = useState(TRIPS_INICIAIS);
-  const [checks, setChecks] = useState<Record<string, boolean>>({
-    Passaporte: true,
-    "Seguro viagem": true,
-  });
-  const [roteiroPronto, setRoteiroPronto] = useState(false);
-  const atual = DEMO_TABS.find((t) => t.id === tab)!;
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prev;
-    };
-  }, [onClose]);
-
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-stretch justify-center bg-[var(--scrim)] backdrop-blur-sm sm:items-center sm:p-6"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Demonstração do sistema"
-    >
-      <div className="flex h-full w-full max-w-6xl flex-col overflow-hidden bg-background shadow-2xl sm:h-[min(92vh,820px)] sm:rounded-[var(--r4)] sm:border sm:border-border">
-        {/* Faixa do modo demo */}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-border bg-accent px-4 py-2.5 text-sm">
-          <span className="inline-flex items-center gap-1.5 font-semibold text-accent-foreground">
-            <Play weight="fill" /> Modo demonstração
-          </span>
-          <span className="hidden text-muted-foreground md:inline">
-            Agência de exemplo · dados fictícios · nada é salvo
-          </span>
-          <div className="ml-auto flex items-center gap-2">
-            <Link
-              {...SIGNUP}
-              className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
-            >
-              Criar minha conta
-            </Link>
-            <button
-              type="button"
-              onClick={onClose}
-              aria-label="Fechar demonstração"
-              className="grid h-8 w-8 place-items-center rounded-lg hover:bg-muted"
-            >
-              <X size={18} weight="bold" />
-            </button>
-          </div>
-        </div>
-
-        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          {/* Menu */}
-          <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-border bg-sidebar p-2 md:w-56 md:flex-col md:border-b-0 md:border-r md:p-3">
-            <div className="mb-3 hidden items-center gap-2 px-2 md:flex">
-              <BrandLogo heightClass="h-7" nameClass="text-[13px]" />
-            </div>
-            {DEMO_TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setTab(t.id)}
-                className={`flex shrink-0 items-center gap-2.5 rounded-[var(--r1)] px-3 py-2 text-sm font-medium transition ${
-                  tab === t.id
-                    ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                    : "text-sidebar-foreground hover:bg-muted"
-                }`}
-              >
-                <t.icon
-                  size={18}
-                  weight={tab === t.id ? "fill" : "regular"}
-                  className={tab === t.id ? "text-primary" : ""}
-                />
-                {t.label}
-              </button>
-            ))}
-          </nav>
-
-          {/* Conteúdo */}
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="flex items-start gap-2.5 border-b border-border bg-card/50 px-5 py-3 text-sm text-[var(--foreground-soft)]">
-              <Sparkle weight="fill" className="mt-0.5 shrink-0 text-primary" />
-              {atual.dica}
-            </div>
-            <div className="p-5 sm:p-6">
-              {tab === "hoje" && <DemoHoje trips={trips} checks={checks} goTo={setTab} />}
-              {tab === "viagens" && <DemoViagens trips={trips} setTrips={setTrips} />}
-              {tab === "roteiro" && (
-                <DemoRoteiro
-                  pronto={roteiroPronto}
-                  onGerar={() => setRoteiroPronto(true)}
-                  goTo={setTab}
-                />
-              )}
-              {tab === "preparacao" && <DemoPreparacao checks={checks} setChecks={setChecks} />}
-              {tab === "viajante" && <DemoViajante pronto={roteiroPronto} goTo={setTab} />}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={`rounded-[var(--r3)] border border-border bg-card p-4 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-function DemoHoje({
-  trips,
-  checks,
-  goTo,
-}: {
-  trips: DemoTrip[];
-  checks: Record<string, boolean>;
-  goTo: (t: DemoTab) => void;
-}) {
-  const abertas = trips.filter((t) => t.etapa !== "closed");
-  const fechadas = trips.filter((t) => t.etapa === "closed");
-  const feitos = CHECKLIST.filter((c) => checks[c]).length;
-  return (
-    <div className="space-y-5">
-      <div>
-        <p className="text-sm text-muted-foreground">Quarta-feira</p>
-        <h3 className="text-2xl">Bom dia, Carla</h3>
-      </div>
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi label="Em negociação" valor={brl(abertas.reduce((s, t) => s + t.valor, 0))} />
-        <Kpi label="Fechadas" valor={brl(fechadas.reduce((s, t) => s + t.valor, 0))} />
-        <Kpi label="Viagens abertas" valor={String(abertas.length)} />
-        <Kpi
-          label="Checklist Portugal"
-          valor={`${Math.round((feitos / CHECKLIST.length) * 100)}%`}
-        />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <h4 className="mb-3 flex items-center gap-2 text-base">
-            <Clock weight="duotone" className="text-primary" /> Agenda de hoje
-          </h4>
-          <ul className="space-y-2 text-sm">
-            <AgendaItem hora="09:30" texto="Retornar Família Souza sobre os parques" />
-            <AgendaItem hora="14:00" texto="Enviar roteiro da Itália para Marina" />
-            <AgendaItem hora="17:00" texto="Cobrar 2ª parcela · Lua de mel em Portugal" />
-          </ul>
-        </Card>
-        <Card>
-          <h4 className="mb-3 flex items-center gap-2 text-base">
-            <Warning weight="duotone" className="text-[var(--warning)]" /> Sem resposta
-          </h4>
-          <div className="flex items-center justify-between gap-3 rounded-[var(--r2)] bg-muted p-3 text-sm">
-            <div>
-              <p className="font-semibold">Família Souza · Disney</p>
-              <p className="text-xs text-muted-foreground">Último contato há 4 dias</p>
-            </div>
-            <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#25D366] px-2.5 py-1.5 text-xs font-semibold text-white">
-              <WhatsappLogo weight="fill" /> Chamar
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => goTo("viagens")}
-            className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
-          >
-            Ver todas as viagens <ArrowRight />
-          </button>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function Kpi({ label, valor }: { label: string; valor: string }) {
-  return (
-    <div className="rounded-[var(--r2)] border border-border bg-card p-3.5">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="mt-1 font-display text-xl font-bold">{valor}</p>
-    </div>
-  );
-}
-
-function AgendaItem({ hora, texto }: { hora: string; texto: string }) {
-  const [feito, setFeito] = useState(false);
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={() => setFeito((f) => !f)}
-        className="flex w-full items-center gap-3 rounded-[var(--r1)] p-1.5 text-left hover:bg-muted"
-      >
-        <span
-          className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border ${feito ? "border-primary bg-primary text-primary-foreground" : "border-input"}`}
-        >
-          {feito && <Check size={12} weight="bold" />}
-        </span>
-        <span className="w-11 shrink-0 font-mono text-xs text-muted-foreground">{hora}</span>
-        <span className={feito ? "text-muted-foreground line-through" : ""}>{texto}</span>
-      </button>
-    </li>
-  );
-}
-
-function DemoViagens({
-  trips,
-  setTrips,
-}: {
-  trips: DemoTrip[];
-  setTrips: (f: (t: DemoTrip[]) => DemoTrip[]) => void;
-}) {
-  const avancar = (id: number) =>
-    setTrips((ts) =>
-      ts.map((t) => {
-        if (t.id !== id) return t;
-        const i = ETAPAS.findIndex((e) => e.id === t.etapa);
-        return { ...t, etapa: ETAPAS[Math.min(i + 1, ETAPAS.length - 1)].id };
-      }),
-    );
-  return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h3 className="text-xl">Viagens</h3>
-        <button
-          type="button"
-          onClick={() => setTrips(() => TRIPS_INICIAIS)}
-          className="text-sm font-medium text-muted-foreground hover:text-foreground"
-        >
-          Recomeçar
-        </button>
-      </div>
-      <div className="grid gap-3 md:grid-cols-4">
-        {ETAPAS.map((e) => {
-          const col = trips.filter((t) => t.etapa === e.id);
-          return (
-            <div key={e.id} className="rounded-[var(--r3)] bg-muted/60 p-2.5">
-              <div className="mb-2 flex items-center justify-between px-1 text-sm">
-                <span className="font-semibold">{e.label}</span>
-                <span className="text-xs text-muted-foreground">
-                  {brl(col.reduce((s, t) => s + t.valor, 0))}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {col.map((t) => (
-                  <div
-                    key={t.id}
-                    className="rounded-[var(--r2)] border border-border bg-card p-3 shadow-sm"
+        <Surge>
+          <Rotulo>Perguntas frequentes</Rotulo>
+          <Titulo>Ficou alguma dúvida?</Titulo>
+        </Surge>
+        <Surge delay={100}>
+          <div className="divide-y divide-border rounded-[var(--r4)] border border-border bg-card">
+            {FAQ.map((f, n) => {
+              const on = aberta === n;
+              return (
+                <div key={f.q}>
+                  <button
+                    type="button"
+                    onClick={() => setAberta(on ? -1 : n)}
+                    aria-expanded={on}
+                    className="flex w-full items-center justify-between gap-4 p-5 text-left font-semibold"
                   >
-                    <p className="text-sm font-semibold leading-snug">{t.titulo}</p>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      {t.viajante} · {t.quando}
+                    {f.q}
+                    <span
+                      className={`grid h-7 w-7 shrink-0 place-items-center rounded-full bg-muted text-primary transition ${on ? "rotate-45" : ""}`}
+                    >
+                      +
+                    </span>
+                  </button>
+                  <div
+                    className={`grid transition-all duration-300 ${on ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                  >
+                    <p className="overflow-hidden px-5 text-[var(--foreground-soft)]">
+                      <span className="block pb-5">{f.a}</span>
                     </p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm font-semibold">{brl(t.valor)}</span>
-                      {t.etapa !== "closed" ? (
-                        <button
-                          type="button"
-                          onClick={() => avancar(t.id)}
-                          className="inline-flex items-center gap-1 rounded-md bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground hover:opacity-80"
-                        >
-                          Avançar <ArrowRight size={12} weight="bold" />
-                        </button>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--success)]">
-                          <Check weight="bold" /> Fechada
-                        </span>
-                      )}
-                    </div>
                   </div>
-                ))}
-                {!col.length && (
-                  <p className="px-1 py-4 text-center text-xs text-muted-foreground">
-                    Nenhuma viagem
-                  </p>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-const ROTEIRO = [
-  {
-    dia: 1,
-    titulo: "Chegada a Lisboa",
-    itens: [
-      "Transfer do aeroporto ao hotel no Chiado",
-      "Fim de tarde no Miradouro de Santa Luzia",
-      "Jantar com fado em Alfama",
-    ],
-  },
-  {
-    dia: 2,
-    titulo: "Belém e Lisboa histórica",
-    itens: [
-      "Torre de Belém e Mosteiro dos Jerónimos",
-      "Pastéis de Belém",
-      "Pôr do sol no rio Tejo",
-    ],
-  },
-  {
-    dia: 3,
-    titulo: "Sintra",
-    itens: ["Palácio da Pena", "Quinta da Regaleira", "Cabo da Roca no fim da tarde"],
-  },
-  {
-    dia: 4,
-    titulo: "Rumo ao Porto",
-    itens: [
-      "Trem para o Porto",
-      "Ribeira e Ponte Luís I",
-      "Degustação em uma cave de vinho do Porto",
-    ],
-  },
-];
-
-function DemoRoteiro({
-  pronto,
-  onGerar,
-  goTo,
-}: {
-  pronto: boolean;
-  onGerar: () => void;
-  goTo: (t: DemoTab) => void;
-}) {
-  const [gerando, setGerando] = useState(false);
-  const gerar = () => {
-    setGerando(true);
-    window.setTimeout(() => {
-      setGerando(false);
-      onGerar();
-    }, 1400);
-  };
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <p className="text-sm text-muted-foreground">Ana e Pedro · 8 noites</p>
-          <h3 className="text-xl">Lua de mel em Portugal</h3>
-        </div>
-        {pronto && (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => goTo("viajante")}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-semibold hover:bg-muted"
-            >
-              <ShareNetwork /> Enviar ao viajante
-            </button>
-            <span className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-semibold text-muted-foreground">
-              <FilePdf /> PDF
-            </span>
+                </div>
+              );
+            })}
           </div>
-        )}
+        </Surge>
       </div>
-
-      <Card className="flex items-start gap-3">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
-          <Robot weight="duotone" size={20} />
-        </span>
-        <div className="flex-1 text-sm">
-          <p className="font-semibold">Thay</p>
-          {!pronto && !gerando && (
-            <>
-              <p className="mt-1 text-[var(--foreground-soft)]">
-                Quer que eu monte um rascunho de roteiro romântico por Lisboa, Sintra e Porto?
-              </p>
-              <button
-                type="button"
-                onClick={gerar}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-              >
-                <Sparkle weight="fill" /> Gerar rascunho com IA
-              </button>
-            </>
-          )}
-          {gerando && (
-            <p className="mt-1 animate-pulse text-muted-foreground">
-              Montando os dias, passeios e horários…
-            </p>
-          )}
-          {pronto && (
-            <p className="mt-1 text-[var(--foreground-soft)]">
-              Pronto! Revise os dias abaixo e ajuste o que quiser. Você tem a palavra final.
-            </p>
-          )}
-        </div>
-      </Card>
-
-      {pronto && (
-        <ol className="grid gap-3 md:grid-cols-2">
-          {ROTEIRO.map((d) => (
-            <li key={d.dia} className="rounded-[var(--r3)] border border-border bg-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary">
-                Dia {d.dia}
-              </p>
-              <p className="mt-0.5 font-display text-lg font-bold">{d.titulo}</p>
-              <ul className="mt-2 space-y-1.5 text-sm text-[var(--foreground-soft)]">
-                {d.itens.map((i) => (
-                  <li key={i} className="flex gap-2">
-                    <MapPin className="mt-0.5 shrink-0 text-muted-foreground" /> {i}
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ol>
-      )}
-    </div>
+    </Dobra>
   );
 }
 
-const CHECKLIST = [
-  "Passaporte",
-  "Seguro viagem",
-  "Passagens emitidas",
-  "Reserva dos hotéis",
-  "Trem Lisboa–Porto",
-  "Check-in online",
-  "Enviar roteiro final",
-];
-
-function DemoPreparacao({
-  checks,
-  setChecks,
-}: {
-  checks: Record<string, boolean>;
-  setChecks: (f: (c: Record<string, boolean>) => Record<string, boolean>) => void;
-}) {
-  const feitos = CHECKLIST.filter((c) => checks[c]).length;
-  const pct = Math.round((feitos / CHECKLIST.length) * 100);
+// ── 9. Chamada final (escura) ────────────────────────────────────────
+function Final({ onDemo }: { onDemo: () => void }) {
   return (
-    <div className="mx-auto max-w-xl space-y-4">
-      <div>
-        <p className="text-sm text-muted-foreground">Embarque em 12 dias</p>
-        <h3 className="text-xl">Preparação · Lua de mel em Portugal</h3>
-      </div>
-      <Card>
-        <div className="mb-2 flex justify-between text-sm">
-          <span className="font-semibold">
-            {feitos} de {CHECKLIST.length} itens
-          </span>
-          <span className="text-muted-foreground">{pct}%</span>
-        </div>
-        <div
-          className="h-2 overflow-hidden rounded-full bg-muted"
-          role="progressbar"
-          aria-valuenow={pct}
-          aria-valuemin={0}
-          aria-valuemax={100}
-        >
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${pct}%` }}
-          />
-        </div>
-        {pct === 100 && (
-          <p className="mt-3 text-sm font-semibold text-[var(--success)]">
-            Tudo pronto. Boa viagem para Ana e Pedro!
-          </p>
-        )}
-      </Card>
-      <ul className="divide-y divide-border rounded-[var(--r3)] border border-border bg-card">
-        {CHECKLIST.map((c) => (
-          <li key={c}>
-            <label className="flex cursor-pointer items-center gap-3 px-4 py-3 text-sm hover:bg-muted/50">
-              <input
-                type="checkbox"
-                checked={!!checks[c]}
-                onChange={(e) => setChecks((prev) => ({ ...prev, [c]: e.target.checked }))}
-                className="h-4 w-4 accent-[var(--primary)]"
-              />
-              <span className={checks[c] ? "text-muted-foreground line-through" : ""}>{c}</span>
-            </label>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function DemoViajante({ pronto, goTo }: { pronto: boolean; goTo: (t: DemoTab) => void }) {
-  if (!pronto) {
-    return (
-      <div className="mx-auto max-w-md py-10 text-center">
-        <Images size={40} weight="duotone" className="mx-auto text-muted-foreground" />
-        <p className="mt-3 font-semibold">O roteiro ainda está vazio.</p>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Gere o rascunho com a Thay para ver o que o viajante recebe.
+    <Dobra tom="escura" className="text-center">
+      <Surge>
+        <h2 className="mx-auto max-w-3xl text-4xl leading-[1.05] sm:text-6xl">
+          Mais tempo para criar viagens.{" "}
+          <span className="text-primary">Menos tempo organizando.</span>
+        </h2>
+        <p className="mx-auto mt-6 max-w-xl text-lg text-[var(--foreground-soft)]">
+          Crie sua conta em menos de um minuto, com e-mail ou com o Google.
         </p>
-        <button
-          type="button"
-          onClick={() => goTo("roteiro")}
-          className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
-        >
-          Ir para o roteiro <ArrowRight />
-        </button>
-      </div>
-    );
-  }
-  return (
-    <div className="mx-auto max-w-sm">
-      <div className="overflow-hidden rounded-[32px] border-[6px] border-[var(--chip)] bg-card shadow-xl">
-        <div className="relative h-40 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--brand)_70%,#000),#2a78d6)] p-4 text-white">
-          <p className="text-xs font-semibold uppercase tracking-widest opacity-80">
-            Sua Agência de Viagens
-          </p>
-          <p className="absolute bottom-4 left-4 right-4 font-display text-2xl font-bold leading-tight">
-            Lua de mel em Portugal
-          </p>
+        <div className="mt-10 flex flex-wrap justify-center gap-3">
+          <Cadastro grande>Criar minha conta</Cadastro>
+          <BotaoDemo onClick={onDemo} />
         </div>
-        <div className="space-y-3 p-4">
-          <p className="text-xs text-muted-foreground">Ana e Pedro · 12 a 20 de maio</p>
-          {ROTEIRO.slice(0, 3).map((d) => (
-            <div key={d.dia} className="rounded-[var(--r2)] bg-muted p-3">
-              <p className="text-[11px] font-semibold uppercase text-primary">Dia {d.dia}</p>
-              <p className="text-sm font-semibold">{d.titulo}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{d.itens.join(" · ")}</p>
-            </div>
-          ))}
-          <p className="text-center text-xs text-muted-foreground">
-            Link sempre atualizado · também em PDF
-          </p>
-        </div>
-      </div>
-      <div className="mt-6 text-center">
-        <p className="font-semibold">Gostou? Faça isso com os seus clientes.</p>
-        <CtaButton className="mt-3">
-          Criar minha conta <ArrowRight weight="bold" />
-        </CtaButton>
-      </div>
-    </div>
+      </Surge>
+    </Dobra>
   );
 }
