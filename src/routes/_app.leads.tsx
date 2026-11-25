@@ -26,7 +26,7 @@ import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, ma
 import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -133,7 +133,7 @@ function LeadsPage() {
 
   // Realtime: novos leads (ex.: criados via webhook do n8n) atualizam a lista.
   useEffect(() => {
-    const channel = supabase
+    const channel = db
       .channel("leads-realtime")
       .on(
         "postgres_changes",
@@ -144,7 +144,7 @@ function LeadsPage() {
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [qc]);
 
@@ -853,7 +853,7 @@ export function NewLeadModal({
     }
     let active = true;
     (async () => {
-      const { data } = await supabase
+      const { data } = await db
         .from("crm_clients")
         .select("preferences")
         .ilike("email", email)

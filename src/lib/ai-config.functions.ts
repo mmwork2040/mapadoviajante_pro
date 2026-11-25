@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/appwrite/auth-middleware";
 
 // Configuração de IA da agência, sempre pelo servidor. A chave nunca volta ao
 // navegador: no lugar dela vai STORED_KEY_MARKER, que significa "há uma chave
@@ -22,8 +22,8 @@ export type AiConfigView = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function readAgencyAiConfig(supabase: any) {
-  const { data, error } = await supabase.from("crm_ai_config").select("*").maybeSingle();
+async function readAgencyAiConfig(db: any) {
+  const { data, error } = await db.from("crm_ai_config").select("*").maybeSingle();
   if (error) throw new Error("Não foi possível carregar a configuração de IA.");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return data as any;
@@ -31,13 +31,13 @@ async function readAgencyAiConfig(supabase: any) {
 
 /** Configuração de IA da agência, sem a chave. Qualquer membro pode ler. */
 export const getAiConfigFn = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .handler(async ({ context }): Promise<AiConfigView | null> => {
     const { getMembership } = await import("@/lib/server/authz");
     await getMembership(context);
     const { platformAi } = await import("@/lib/server/ai-settings");
     const platform = platformAi();
-    const cfg = await readAgencyAiConfig(context.supabase);
+    const cfg = await readAgencyAiConfig(context.db);
     if (!cfg && !platform) return null;
     const ks = cfg?.knowledge_sources && typeof cfg.knowledge_sources === "object" ? cfg.knowledge_sources : {};
     return {
@@ -64,12 +64,12 @@ const saveSchema = z.object({
 
 /** Salva a configuração de IA da agência. Só admin. Chave vazia ou marcador = manter. */
 export const saveAiConfigFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((data) => saveSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { requireAdmin } = await import("@/lib/server/authz");
     await requireAdmin(context);
-    const existing = await readAgencyAiConfig(context.supabase);
+    const existing = await readAgencyAiConfig(context.db);
     const incomingKey = (data.api_key_encrypted || "").trim();
     const keepKey = !incomingKey || incomingKey === STORED_KEY_MARKER;
     const payload = {
@@ -82,8 +82,8 @@ export const saveAiConfigFn = createServerFn({ method: "POST" })
         data.knowledge_sources !== undefined ? data.knowledge_sources : existing?.knowledge_sources ?? null,
     };
     const query = existing?.id
-      ? context.supabase.from("crm_ai_config").update(payload).eq("id", existing.id)
-      : context.supabase.from("crm_ai_config").insert(payload);
+      ? context.db.from("crm_ai_config").update(payload).eq("id", existing.id)
+      : context.db.from("crm_ai_config").insert(payload);
     const { error } = await query.select().single();
     if (error) {
       console.error("saveAiConfigFn:", error);
@@ -102,7 +102,7 @@ export async function resolveProviderForAdmin(context: any, typed: { provider?: 
   }
   const platform = platformAi();
   if (platform) return { provider: "openai", model: platform.model, apiKey: platform.apiKey };
-  const existing = await readAgencyAiConfig(context.supabase);
+  const existing = await readAgencyAiConfig(context.db);
   if (!existing?.api_key_encrypted) throw new Error("Informe a chave da IA.");
   return {
     provider: typed.provider || existing.provider || "openai",

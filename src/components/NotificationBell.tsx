@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, CheckCheck, List, Trash2, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 import {
   fetchNotifications,
   markNotificationRead,
@@ -29,7 +29,7 @@ export function NotificationBell() {
   useEffect(() => {
     const memberId = getMemberId();
     if (!memberId) return;
-    const channel = supabase
+    const channel = db
       .channel("notifications-realtime")
       .on(
         "postgres_changes",
@@ -38,7 +38,7 @@ export function NotificationBell() {
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [qc]);
 

@@ -10,9 +10,9 @@ import { findMembership } from '@/lib/server/authz';
  *
  * Atenção: estar logado não basta para ações de admin ou de outra agência.
  * Use `getMembership` / `requireAdmin` de `@/lib/server/authz` para isso.
- * O `context.supabase` já vem limitado à agência do usuário.
+ * O `context.db` já vem limitado à agência do usuário.
  */
-export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server(
+export const requireAuth = createMiddleware({ type: 'function' }).server(
   async ({ next }) => {
     const authHeader = getRequest()?.headers.get('authorization') || '';
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
@@ -38,7 +38,7 @@ export const requireSupabaseAuth = createMiddleware({ type: 'function' }).server
 
     return next({
       context: {
-        supabase: createAgencyScopedBridge(membership?.agencyId ?? null) as any,
+        db: createAgencyScopedBridge(membership?.agencyId ?? null) as any,
         userId: user.id,
         userEmail: user.email,
         membership,

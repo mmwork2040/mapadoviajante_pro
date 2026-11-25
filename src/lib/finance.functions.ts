@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/appwrite/auth-middleware";
 
 // Financeiro da agência. Tudo passa pelo servidor, que confere o cargo do
 // usuário contra a configuração "Permissões de acesso" da Administração.
@@ -52,7 +52,7 @@ async function requireFinance(ctx: Ctx, need: "view" | "edit") {
 
 /** O que o usuário logado pode fazer no financeiro (para esconder telas e botões). */
 export const getFinanceAccess = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .handler(async ({ context }): Promise<FinanceAccess> => {
     try {
       const { canView, canEdit } = await resolveFinanceAccess(context);
@@ -72,11 +72,11 @@ const filtersSchema = z.object({
 
 /** Lista as transações da agência. Exige permissão de ver o financeiro. */
 export const listTransactionsFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((data) => filtersSchema.parse(data ?? {}))
   .handler(async ({ data, context }) => {
     await requireFinance(context, "view");
-    let query = context.supabase
+    let query = context.db
       .from("crm_transactions")
       .select("*, lead:crm_leads!crm_transactions_lead_id_fkey(name)")
       .order("transaction_date", { ascending: false });
@@ -96,7 +96,7 @@ export const listTransactionsFn = createServerFn({ method: "POST" })
 
 /** Registra uma transação. Exige permissão de editar o financeiro. */
 export const createTransactionFn = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -112,7 +112,7 @@ export const createTransactionFn = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const access = await requireFinance(context, "edit");
-    const { data: row, error } = await context.supabase
+    const { data: row, error } = await context.db
       .from("crm_transactions")
       .insert({
         lead_id: data.lead_id || null,
@@ -136,7 +136,7 @@ export const createTransactionFn = createServerFn({ method: "POST" })
 
 /** Lê a configuração de permissões de acesso (qualquer membro). */
 export const getAccessPermissions = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .handler(async ({ context }): Promise<AccessPermissions> => {
     const { getMembership } = await import("@/lib/server/authz");
     const m = await getMembership(context);
@@ -146,7 +146,7 @@ export const getAccessPermissions = createServerFn({ method: "GET" })
 
 /** Salva a configuração de permissões de acesso. Só admin. */
 export const saveAccessPermissions = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((data) =>
     z
       .object({

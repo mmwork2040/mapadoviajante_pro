@@ -21,10 +21,10 @@ export const Route = createFileRoute("/api/public/asaas-webhook")({
           return new Response("Invalid body", { status: 400 });
         }
 
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const { dbAdmin } = await import("@/integrations/appwrite/db.server");
 
         // Identifica a agência pelo token do webhook.
-        const { data: cfg } = await (supabaseAdmin as any)
+        const { data: cfg } = await (dbAdmin as any)
           .from("agency_payment_settings")
           .select("agency_id, is_active")
           .eq("asaas_webhook_token", token)

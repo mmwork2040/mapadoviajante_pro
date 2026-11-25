@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAuth } from "@/integrations/appwrite/auth-middleware";
 // email.server imported dynamically
 import { DEFAULT_CONFIG, type EmailConfig } from "@/lib/gmail-config";
 
@@ -8,14 +8,14 @@ const MEMBER_COLORS = ["#ff7a1a", "#2563eb", "#16a34a", "#db2777", "#9333ea", "#
 
 /** Verifica se o envio de e-mails está configurado e ativo. */
 export const getEmailConfigStatus = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .handler(async ({ context }) => {
     const { getMembership } = await import("@/lib/server/authz");
     const { agencyId } = await getMembership(context);
 
     try {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: row } = await supabaseAdmin
+      const { dbAdmin } = await import("@/integrations/appwrite/db.server");
+      const { data: row } = await dbAdmin
         .from("system_settings")
         .select("value")
         .eq("key", `agency_cfg:${agencyId}:gmail`)
@@ -83,7 +83,7 @@ function inviteHtml(opts: { name: string; agency: string; inviter: string; link:
 
 /** Envia um convite por e-mail para um novo membro da agência. */
 export const sendTeamInvite = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -101,7 +101,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { supabase } = context;
+    const { db } = context;
     const email = data.email.toLowerCase();
 
     // Só admin convida, e sempre para a própria agência.
@@ -109,7 +109,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     const { agencyId: activeAgencyId } = await requireAdmin(context);
 
     // Já é membro ativo?
-    const { data: existing } = await supabase
+    const { data: existing } = await db
       .from("agency_members")
       .select("id, is_active")
       .eq("agency_id", activeAgencyId)
@@ -127,7 +127,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
 
     let memberId = existing?.id as string | undefined;
     if (memberId) {
-      const { error } = await supabase
+      const { error } = await db
         .from("agency_members")
         .update({
           name: data.name,
@@ -139,7 +139,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
         .eq("id", memberId);
       if (error) return { ok: false, message: "Não foi possível atualizar o convite." };
     } else {
-      const { data: created, error } = await supabase
+      const { data: created, error } = await db
         .from("agency_members")
         .insert({
           agency_id: activeAgencyId,
@@ -161,13 +161,13 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     }
 
     // Nome da agência e de quem convidou
-    const { data: agency } = await supabase
+    const { data: agency } = await db
       .from("agencies")
       .select("name")
       .eq("id", activeAgencyId)
       .maybeSingle();
 
-    const { data: me } = await supabase
+    const { data: me } = await db
       .from("agency_members")
       .select("name")
       .eq("user_id", context.userId)
@@ -178,8 +178,8 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     const link = `${baseUrl}/aceitar-convite?token=${encodeURIComponent(token)}`;
 
     // Carrega configuração de e-mail da agência
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: row } = await supabaseAdmin
+    const { dbAdmin } = await import("@/integrations/appwrite/db.server");
+    const { data: row } = await dbAdmin
       .from("system_settings")
       .select("value")
       .eq("key", `agency_cfg:${activeAgencyId}:gmail`)

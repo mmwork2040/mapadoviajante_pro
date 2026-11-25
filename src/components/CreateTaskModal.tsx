@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead, cleanTaskDescription, CHECKLIST_ITEM_MARK } from "@/lib/services";
 import type { Task } from "@/lib/types";
 
@@ -112,13 +112,13 @@ export function CreateTaskModal({
       // Se a tarefa está ligada a uma atividade, busca o tipo atual.
       const m = (task.description ?? "").match(/\[atv:([0-9a-f-]+)\]/i);
       if (m) {
-        supabase
+        db
           .from("crm_lead_activities")
           .select("type")
           .eq("id", m[1])
           .maybeSingle()
-          .then(({ data }) => {
-            const t = (data as { type?: string } | null)?.type;
+          .then(({ data }: { data: { type?: string } | null }) => {
+            const t = data?.type;
             if (t && ACTIVITY_TYPES.some((a) => a.key === t)) setActivityType(t);
           });
       }

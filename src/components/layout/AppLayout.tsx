@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 import {
   Home,
   Plane,
@@ -77,7 +77,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const mobileNav = MOBILE_NAV;
 
   useEffect(() => {
-    const channel = supabase
+    const channel = db
       .channel("leads-badge")
       .on(
         "postgres_changes",
@@ -88,7 +88,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
       )
       .subscribe();
     return () => {
-      supabase.removeChannel(channel);
+      db.removeChannel(channel);
     };
   }, [qc]);
 

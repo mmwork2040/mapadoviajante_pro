@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 import { getAgencyId, loadAgencyContext } from "@/lib/services";
 
 export interface LeadDocument {
@@ -27,9 +27,9 @@ export const DOCUMENT_CATEGORIES = [
 ] as const;
 
 const BUCKET = "trip-attachments";
-// The new table is not yet in the generated Supabase types; cast to keep the build green.
-const db = () => supabase as unknown as {
-  from: (t: string) => ReturnType<typeof supabase.from>;
+// Tipagem mínima da coleção de documentos da viagem.
+const tables = () => db as unknown as {
+  from: (t: string) => ReturnType<typeof db.from>;
 };
 
 function sanitize(name: string): string {
@@ -54,7 +54,7 @@ export async function uploadLeadDocument(params: {
       : "geral";
   const path = `${agencyId}/${scope}/${id}-${sanitize(file.name)}`;
 
-  const { error: upErr } = await supabase.storage.from(BUCKET).upload(path, file, {
+  const { error: upErr } = await db.storage.from(BUCKET).upload(path, file, {
     contentType: file.type || undefined,
     upsert: false,
   });
@@ -63,7 +63,7 @@ export async function uploadLeadDocument(params: {
     throw new Error("Não foi possível enviar o arquivo.");
   }
 
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .insert({
       id,
@@ -82,7 +82,7 @@ export async function uploadLeadDocument(params: {
 
   if (error) {
     // rollback the uploaded file to avoid orphans
-    await supabase.storage.from(BUCKET).remove([path]);
+    await db.storage.from(BUCKET).remove([path]);
     console.error("insert doc", error);
     throw new Error("Não foi possível salvar o documento.");
   }
@@ -101,13 +101,13 @@ export async function attachLibraryDocumentToActivity(params: {
   const id = crypto.randomUUID();
   const path = `${agencyId}/${leadId || "geral"}/${id}-${sanitize(source.name)}`;
 
-  const { error: copyErr } = await supabase.storage.from(BUCKET).copy(source.file_path, path);
+  const { error: copyErr } = await db.storage.from(BUCKET).copy(source.file_path, path);
   if (copyErr) {
     console.error("copy doc", copyErr);
     throw new Error("Não foi possível copiar o arquivo da biblioteca.");
   }
 
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .insert({
       id,
@@ -125,7 +125,7 @@ export async function attachLibraryDocumentToActivity(params: {
     .single();
 
   if (error) {
-    await supabase.storage.from(BUCKET).remove([path]);
+    await db.storage.from(BUCKET).remove([path]);
     console.error("insert linked doc", error);
     throw new Error("Não foi possível anexar o documento.");
   }
@@ -133,7 +133,7 @@ export async function attachLibraryDocumentToActivity(params: {
 }
 
 export async function fetchActivityDocuments(activityId: string): Promise<LeadDocument[]> {
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .select("*")
     .eq("activity_id", activityId)
@@ -143,7 +143,7 @@ export async function fetchActivityDocuments(activityId: string): Promise<LeadDo
 }
 
 export async function fetchLeadDocuments(leadId: string): Promise<LeadDocument[]> {
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .select("*")
     .eq("lead_id", leadId)
@@ -153,7 +153,7 @@ export async function fetchLeadDocuments(leadId: string): Promise<LeadDocument[]
 }
 
 export async function fetchItineraryDocuments(itineraryId: string): Promise<LeadDocument[]> {
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .select("*")
     .eq("itinerary_id", itineraryId)
@@ -165,7 +165,7 @@ export async function fetchItineraryDocuments(itineraryId: string): Promise<Lead
 /** Documents attached directly to a client (uploaded from the client profile). */
 export async function fetchClientDocuments(clientId: string, agencyId: string): Promise<LeadDocument[]> {
   const prefix = `${agencyId}/client/${clientId}/`;
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .select("*")
     .is("lead_id", null)
@@ -202,7 +202,7 @@ export async function addLinkDocument(params: {
 }): Promise<LeadDocument | null> {
   const { url, name, agencyId, leadId, itineraryId, activityId, category } = params;
   const id = crypto.randomUUID();
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .insert({
       id,
@@ -226,20 +226,20 @@ export async function addLinkDocument(params: {
 }
 
 export async function deleteLeadDocument(doc: LeadDocument): Promise<boolean> {
-  if (!isLinkDoc(doc)) await supabase.storage.from(BUCKET).remove([doc.file_path]);
-  const { error } = await db().from("crm_lead_documents").delete().eq("id", doc.id);
+  if (!isLinkDoc(doc)) await db.storage.from(BUCKET).remove([doc.file_path]);
+  const { error } = await tables().from("crm_lead_documents").delete().eq("id", doc.id);
   return !error;
 }
 
 export async function getDocumentUrl(filePath: string): Promise<string | null> {
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(filePath, 3600);
+  const { data, error } = await db.storage.from(BUCKET).createSignedUrl(filePath, 3600);
   if (error) return null;
   return data?.signedUrl ?? null;
 }
 
 /** Signed URL that forces a download (Content-Disposition: attachment). */
 export async function getDownloadUrl(filePath: string, fileName?: string): Promise<string | null> {
-  const { data, error } = await supabase.storage
+  const { data, error } = await db.storage
     .from(BUCKET)
     .createSignedUrl(filePath, 3600, { download: fileName || true });
   if (error) return null;
@@ -252,7 +252,7 @@ export async function getDownloadUrl(filePath: string, fileName?: string): Promi
  * stop being locked as "in use".
  */
 export async function deleteItineraryDocuments(itineraryId: string): Promise<boolean> {
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .select("id, file_path")
     .eq("itinerary_id", itineraryId);
@@ -263,8 +263,8 @@ export async function deleteItineraryDocuments(itineraryId: string): Promise<boo
   const rows = (data as unknown as { id: string; file_path: string }[]) || [];
   if (rows.length === 0) return true;
   const paths = rows.map((r) => r.file_path).filter(Boolean);
-  if (paths.length) await supabase.storage.from(BUCKET).remove(paths);
-  const { error: delErr } = await db()
+  if (paths.length) await db.storage.from(BUCKET).remove(paths);
+  const { error: delErr } = await tables()
     .from("crm_lead_documents")
     .delete()
     .eq("itinerary_id", itineraryId);
@@ -305,7 +305,7 @@ export async function downloadDocument(doc: LeadDocument): Promise<boolean> {
  * Returns the titles of the roteiros where it is attached.
  */
 export async function findItineraryAttachments(doc: LeadDocument): Promise<string[]> {
-  let q = db()
+  let q = tables()
     .from("crm_lead_documents")
     .select("id, itinerary:crm_itineraries(title)")
     .eq("agency_id", doc.agency_id)
@@ -344,7 +344,7 @@ export interface ItineraryAttachment {
 export async function fetchItineraryAttachmentMap(): Promise<Record<string, ItineraryAttachment[]>> {
   const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
   if (!agencyId) return {};
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .select("name, size, itinerary_id, itinerary:crm_itineraries(title)")
     .eq("agency_id", agencyId)
@@ -388,7 +388,7 @@ export function documentOrigin(doc: AgencyDocument): DocumentOrigin {
 export async function fetchAgencyDocuments(): Promise<AgencyDocument[]> {
   const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
   if (!agencyId) throw new Error("Agência não encontrada.");
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .select("*, lead:crm_leads(name), itinerary:crm_itineraries(title)")
     .eq("agency_id", agencyId)
@@ -408,7 +408,7 @@ export async function findDuplicateGeneralDocument(
   name: string,
   size: number | null,
 ): Promise<LeadDocument | null> {
-  let q = db()
+  let q = tables()
     .from("crm_lead_documents")
     .select("*")
     .eq("agency_id", agencyId)
@@ -447,7 +447,7 @@ export function libraryImageName(item: { file_name?: string | null; title?: stri
 export async function fetchLibraryImageAttachmentMap(): Promise<Record<string, ItineraryAttachment[]>> {
   const agencyId = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
   if (!agencyId) return {};
-  const { data, error } = await db()
+  const { data, error } = await tables()
     .from("crm_lead_documents")
     .select("name, mime_type, itinerary_id, itinerary:crm_itineraries(title)")
     .eq("agency_id", agencyId)

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 
 // Personalização visual do PDF de roteiro (marca da agência): logo escolhida da
 // biblioteca, textos da página de abertura e cores douradas da paleta.
@@ -25,9 +25,9 @@ export const DEFAULT_BRANDING: AgencyBranding = {
 
 /** Carrega a personalização de marca da agência do usuário. */
 export async function getAgencyBranding(): Promise<AgencyBranding> {
-  const { data: agencyId } = await supabase.rpc("get_user_agency_id");
+  const { data: agencyId } = await db.rpc("get_user_agency_id");
   if (!agencyId) return { ...DEFAULT_BRANDING };
-  const { data } = await supabase
+  const { data } = await db
     .from("agencies")
     .select("settings")
     .eq("id", agencyId as string)
@@ -40,9 +40,9 @@ export async function getAgencyBranding(): Promise<AgencyBranding> {
 export async function saveAgencyBranding(
   branding: AgencyBranding,
 ): Promise<{ ok: boolean; error?: string }> {
-  const { data: agencyId } = await supabase.rpc("get_user_agency_id");
+  const { data: agencyId } = await db.rpc("get_user_agency_id");
   if (!agencyId) return { ok: false, error: "Agência não encontrada." };
-  const { data: current } = await supabase
+  const { data: current } = await db
     .from("agencies")
     .select("settings")
     .eq("id", agencyId as string)
@@ -51,7 +51,7 @@ export async function saveAgencyBranding(
     ...((current as { settings?: Record<string, unknown> } | null)?.settings ?? {}),
     branding,
   };
-  const { error } = await supabase
+  const { error } = await db
     .from("agencies")
     .update({ settings } as never)
     .eq("id", agencyId as string);
@@ -82,9 +82,9 @@ const EMPTY_ADDRESS: AgencyAddress = {};
 
 /** Carrega os dados da agência do usuário logado. */
 export async function getAgencyInfo(): Promise<AgencyInfo | null> {
-  const { data: agencyId } = await supabase.rpc("get_user_agency_id");
+  const { data: agencyId } = await db.rpc("get_user_agency_id");
   if (!agencyId) return null;
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("agencies")
     .select("id, name, phone, email, cnpj, settings")
     .eq("id", agencyId as string)
@@ -111,7 +111,7 @@ export async function getAgencyInfo(): Promise<AgencyInfo | null> {
 /** Salva os dados da agência. */
 export async function saveAgencyInfo(info: AgencyInfo): Promise<{ ok: boolean; error?: string }> {
   // Preserva outras chaves existentes em settings
-  const { data: current } = await supabase
+  const { data: current } = await db
     .from("agencies")
     .select("settings")
     .eq("id", info.id)
@@ -120,7 +120,7 @@ export async function saveAgencyInfo(info: AgencyInfo): Promise<{ ok: boolean; e
     ...((current as { settings?: Record<string, unknown> } | null)?.settings ?? {}),
     address: info.address,
   };
-  const { error } = await supabase
+  const { error } = await db
     .from("agencies")
     .update({
       name: info.name.trim(),

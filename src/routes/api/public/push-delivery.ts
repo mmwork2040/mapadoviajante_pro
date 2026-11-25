@@ -26,9 +26,9 @@ export const Route = createFileRoute("/api/public/push-delivery")({
             return json({ ok: false }, { status: 400 });
           }
 
-          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+          const { dbAdmin } = await import("@/integrations/appwrite/db.server");
           const key = `push_delivery:${body.traceId}`;
-          const { data: row } = await supabaseAdmin
+          const { data: row } = await dbAdmin
             .from("system_settings")
             .select("value")
             .eq("key", key)
@@ -40,7 +40,7 @@ export const Route = createFileRoute("/api/public/push-delivery")({
           }
 
           const receivedAt = new Date().toISOString();
-          const { error } = await supabaseAdmin
+          const { error } = await dbAdmin
             .from("system_settings")
             .update({
               value: {

@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Route as RouteIcon, ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import logoBranco from "@/assets/osv-logo-branco.svg";
+import logoPreto from "@/assets/osv-logo-preto.svg";
 import { getPublicFormEmbed } from "@/lib/form-embed.functions";
 
 export const Route = createFileRoute("/intake")({
@@ -15,25 +17,22 @@ export const Route = createFileRoute("/intake")({
   component: IntakePage,
 });
 
-// Formulário padrão caso nenhum tenha sido configurado na Administração.
-const FORM_SRC =
-  "https://vibeform-studio.vercel.app/f/5c10e7f7-7ee1-48bc-a138-0ac0d9a79844?db=https%3A%2F%2Fddulmdacvcnkdkzwmsbz.supabase.co&key=sb_publishable_YDG_GPuhlQSsI5PAtkNDYQ_2ti_rODr";
-
 function IntakePage() {
   const { a } = Route.useSearch();
-  const [freshSrc, setFreshSrc] = useState<string | null>(null);
+  // undefined = carregando; null = a agência ainda não configurou um formulário.
+  const [freshSrc, setFreshSrc] = useState<string | null | undefined>(undefined);
 
   // Sempre carrega o formulário configurado na Administração (com cache-buster),
-  // recriando o iframe do zero a cada abertura. Cai no padrão se não houver config.
+  // recriando o iframe do zero a cada abertura.
   useEffect(() => {
     let active = true;
     getPublicFormEmbed({ data: { agency: a || undefined } })
       .then((r) => {
-        const base = r.src || FORM_SRC;
-        if (active) setFreshSrc(`${base}${base.includes("?") ? "&" : "?"}_t=${Date.now()}`);
+        if (!active) return;
+        setFreshSrc(r.src ? `${r.src}${r.src.includes("?") ? "&" : "?"}_t=${Date.now()}` : null);
       })
       .catch(() => {
-        if (active) setFreshSrc(`${FORM_SRC}&_t=${Date.now()}`);
+        if (active) setFreshSrc(null);
       });
     return () => {
       active = false;
@@ -41,18 +40,14 @@ function IntakePage() {
   }, [a]);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4 py-10">
-      <div className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 shadow-xl sm:p-8">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <RouteIcon className="h-5 w-5" />
-          </div>
-          <span className="text-xl font-extrabold tracking-tight">
-            Mapa<span className="text-primary">PRO</span>
-          </span>
+    <div className="flex min-h-screen items-center justify-center px-4 py-10">
+      <div className="w-full max-w-2xl rounded-[28px] border border-border bg-card p-6 shadow-xl sm:p-8">
+        <div className="mb-8 flex items-center gap-3">
+          <img src={logoBranco} alt="O Segredo do Viajante" className="hidden h-11 w-auto dark:block" />
+          <img src={logoPreto} alt="O Segredo do Viajante" className="block h-11 w-auto dark:hidden" />
         </div>
 
-        <h1 className="text-2xl font-bold">Vamos planejar sua viagem ✈️</h1>
+        <h1 className="text-2xl font-bold">Vamos planejar a sua viagem</h1>
         <p className="mt-1 text-sm text-muted-foreground">Preencha e receba uma proposta personalizada.</p>
 
         {freshSrc ? (
@@ -65,9 +60,16 @@ function IntakePage() {
             className="mt-6 w-full rounded-[10px] border-none"
             style={{ overflow: "hidden" }}
           />
-        ) : (
+        ) : freshSrc === undefined ? (
           <div className="mt-6 flex h-[600px] w-full items-center justify-center rounded-[10px] bg-muted/40">
             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : (
+          <div className="mt-6 rounded-[18px] border border-dashed border-border px-6 py-12 text-center">
+            <p className="font-semibold">O formulário ainda não está disponível</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Fale com a sua consultora para planejar a viagem.
+            </p>
           </div>
         )}
 

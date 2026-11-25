@@ -6,8 +6,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 import { appwriteAuthService } from "@/services/appwriteAuthService";
 import {
   autoProvisionAgency,
@@ -17,6 +16,16 @@ import {
 import { acceptInvite, getMyPendingInvite, type PendingInvite } from "@/lib/invites";
 import { captureDeviceTokenOnLogin } from "@/lib/notifications";
 import type { AgencyMember } from "@/lib/types";
+
+/** Sessão do usuário logado no Appwrite, no formato que as telas usam. */
+export interface Session {
+  access_token: string;
+  user: {
+    id: string;
+    email?: string;
+    user_metadata?: { name?: string };
+  };
+}
 
 interface AuthContextValue {
   session: Session | null;
@@ -93,14 +102,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }: any) => {
+    db.auth.getSession().then(async ({ data }: any) => {
       setSession(data.session);
       await hydrateMember(data.session);
       setLoading(false);
       if (data.session) void captureDeviceTokenOnLogin();
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((event: string, sess: any) => {
+    const { data: sub } = db.auth.onAuthStateChange((event: string, sess: any) => {
       setSession(sess);
       if (event === "SIGNED_IN" || event === "USER_UPDATED" || event === "INITIAL_SESSION") {
         hydrateMember(sess);
@@ -114,15 +123,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [hydrateMember]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await db.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
-    const { data } = await supabase.auth.getSession();
+    const { data } = await db.auth.getSession();
     await hydrateMember(data.session);
     return {};
   }, [hydrateMember]);
 
   const signUp = useCallback(async (name: string, email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await db.auth.signUp({
       email,
       password,
       options: { data: { name }, emailRedirectTo: window.location.origin },
@@ -145,7 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     try {
-      await supabase.auth.signOut();
+      await db.auth.signOut();
     } catch (e) {
       console.warn("SignOut error:", e);
     }
@@ -157,7 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshMember = useCallback(async () => {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await db.auth.getSession();
     await hydrateMember(data.session);
   }, [hydrateMember]);
 
@@ -165,7 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!pendingInvite) return { ok: false, error: "Nenhum convite pendente." };
     const res = await acceptInvite("");
     if (!res.ok) return res;
-    const { data } = await supabase.auth.getSession();
+    const { data } = await db.auth.getSession();
     await hydrateMember(data.session);
     return { ok: true };
   }, [pendingInvite, hydrateMember]);

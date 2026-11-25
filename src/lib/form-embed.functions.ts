@@ -4,24 +4,23 @@ import { z } from "zod";
 /**
  * Leitura pública (sem autenticação) do código de formulário configurado na
  * Administração. Usada pela página de captação `/intake`. Retorna apenas a URL
- * do formulário (não há PII envolvida). Usa o cliente admin pois a página é
- * acessada por leads anônimos.
+ * do formulário (não há PII envolvida). Usa a chave do servidor no Appwrite,
+ * pois a página é aberta por visitantes sem conta.
  */
 export const getPublicFormEmbed = createServerFn({ method: "GET" })
   .inputValidator((data) => z.object({ agency: z.string().optional() }).parse(data ?? {}))
   .handler(async ({ data }): Promise<{ src: string | null }> => {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabaseAdmin = createClient(
-      process.env.SUPABASE_URL!,
-      process.env.SUPABASE_PUBLISHABLE_KEY!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
-
+    const { appwriteServerConfig, getServerBridge } = await import("@/integrations/appwrite/server");
+    if (!appwriteServerConfig().key) {
+      console.error("[intake] APPWRITE_API_KEY não configurada: sem acesso ao formulário da agência.");
+      return { src: null };
+    }
+    const dbAdmin = getServerBridge() as any;
 
     // Resolve a agência: por slug (param `a`) ou a primeira cadastrada.
     let agencyId: string | null = null;
     if (data.agency) {
-      const { data: ag } = await supabaseAdmin
+      const { data: ag } = await dbAdmin
         .from("agencies")
         .select("id")
         .eq("slug", data.agency)
@@ -30,7 +29,7 @@ export const getPublicFormEmbed = createServerFn({ method: "GET" })
       agencyId = ag?.id ?? null;
     }
     if (!agencyId) {
-      const { data: ag } = await supabaseAdmin
+      const { data: ag } = await dbAdmin
         .from("agencies")
         .select("id")
         .order("created_at", { ascending: true })
@@ -40,7 +39,7 @@ export const getPublicFormEmbed = createServerFn({ method: "GET" })
     }
     if (!agencyId) return { src: null };
 
-    const { data: row } = await supabaseAdmin
+    const { data: row } = await dbAdmin
       .from("system_settings")
       .select("value")
       .eq("key", `agency_cfg:${agencyId}:form`)

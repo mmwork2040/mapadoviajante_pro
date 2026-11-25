@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: Typecheck e build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Só o Appwrite é backend
+        run: |
+          if grep -rInE -i "supabase|lovable" src scripts package.json; then
+            echo "::error::Há referência a Supabase ou Lovable no código. O backend é só o Appwrite."
+            exit 1
+          fi
+      - run: npm run typecheck
+      - run: npm run build

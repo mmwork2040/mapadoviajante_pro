@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 
 export interface InviteInfo {
   valid: boolean;
@@ -18,7 +18,7 @@ export interface PendingInvite {
 /** Lê os dados de um convite a partir do token (não exige login). */
 export async function getInviteInfo(token: string): Promise<InviteInfo> {
   try {
-    const { data, error } = await (supabase.rpc as never as (
+    const { data, error } = await (db.rpc as never as (
       fn: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: unknown; error: unknown }>)("get_invite_info", { _token: token });
@@ -39,7 +39,7 @@ export async function getInviteInfo(token: string): Promise<InviteInfo> {
 /** Aceita o convite (usuário autenticado, e-mail precisa coincidir). */
 export async function acceptInvite(token: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    const { error } = await (supabase.rpc as never as (
+    const { error } = await (db.rpc as never as (
       fn: string,
       args: Record<string, unknown>,
     ) => Promise<{ error: { message?: string } | null }>)("accept_agency_invite", { _token: token });
@@ -53,7 +53,7 @@ export async function acceptInvite(token: string): Promise<{ ok: boolean; error?
 /** Convite pendente para o e-mail do usuário logado (se houver). */
 export async function getMyPendingInvite(): Promise<PendingInvite | null> {
   try {
-    const { data, error } = await (supabase.rpc as never as (
+    const { data, error } = await (db.rpc as never as (
       fn: string,
     ) => Promise<{ data: unknown; error: unknown }>)("my_pending_invite");
     if (error || !data) return null;

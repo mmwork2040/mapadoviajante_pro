@@ -4,7 +4,7 @@ import type { Databases, Storage } from 'appwrite';
 
 export type BridgeServices = { databases: Databases; storage: Storage };
 
-// Normaliza o documento do Appwrite para ser 100% compatível com a interface do Supabase
+// Normaliza o documento do Appwrite para o formato que as telas esperam (id, created_at, updated_at)
 function normalizeDoc(doc: any): any {
   if (!doc || typeof doc !== 'object') return doc;
   const normalized = { ...doc };
@@ -85,7 +85,7 @@ class AppwriteQueryBuilder {
   }
 
   select(_columns?: string, _options?: { count?: string; head?: boolean }) {
-    // Em Supabase, `.insert(...).select()` e `.update(...).select()` mantêm a
+    // `.insert(...).select()` e `.update(...).select()` mantêm a
     // escrita e apenas pedem o registro resultante. A ponte precisa preservar
     // a operação que já foi definida.
     return this;
@@ -94,7 +94,7 @@ class AppwriteQueryBuilder {
   /**
    * Restringe a operação a uma agência (uso no servidor, que tem acesso total
    * pela chave de API): filtra leituras, edições e exclusões por `agency_id` e
-   * grava `agency_id` nas inserções. Faz o papel que o RLS fazia no Supabase.
+   * grava `agency_id` nas inserções. É a separação entre agências no servidor.
    */
   withAgencyScope(agencyId: string) {
     this.scopeAgencyId = agencyId;
@@ -410,7 +410,7 @@ class AppwriteQueryBuilder {
     }
   }
 
-  // Permite uso com await direto: const { data } = await supabase.from('...').select()
+  // Permite uso com await direto: const { data } = await db.from('...').select()
   then<TResult1 = any, TResult2 = never>(
     onfulfilled?: ((value: { data: any; error: any; count?: number }) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
@@ -636,7 +636,7 @@ class AppwriteChannelBridge {
   }
 }
 
-// Cliente compatível com Supabase. O mesmo código atende o navegador (sessão do
+// Cliente de dados (consultas encadeadas). O mesmo código atende o navegador (sessão do
 // usuário) e o servidor (chave de API), mudando só os serviços do Appwrite.
 export function createAppwriteBridge(svc: BridgeServices) {
   const databases = svc.databases;
@@ -768,4 +768,4 @@ export function createAppwriteBridge(svc: BridgeServices) {
 }
 
 // Cliente do navegador, autenticado pela sessão do usuário no Appwrite.
-export const appwriteSupabaseClient = createAppwriteBridge({ databases, storage });
+export const appwriteDb = createAppwriteBridge({ databases, storage });

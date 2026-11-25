@@ -1,7 +1,7 @@
 import { createFileRoute, useLocation } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Route as RouteIcon } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 import { useAuth } from "@/lib/auth";
 import { getInviteInfo, acceptInvite, type InviteInfo } from "@/lib/invites";
 
@@ -103,7 +103,7 @@ function AcceptInvitePage() {
   useEffect(() => {
     if (!wrongUser || autoSignOutStarted.current) return;
     autoSignOutStarted.current = true;
-    void supabase.auth.signOut().then(() => {
+    void db.auth.signOut().then(() => {
       autoAcceptStarted.current = false;
       setError("");
     });
@@ -119,7 +119,7 @@ function AcceptInvitePage() {
     sessionStorage.removeItem("invite_token");
     try {
       if (mode === "signup") {
-        const { data, error: signErr } = await supabase.auth.signUp({
+        const { data, error: signErr } = await db.auth.signUp({
           email: info.email,
           password,
           options: { data: { name }, emailRedirectTo: `${window.location.origin}/aceitar-convite?token=${token}` },
@@ -138,7 +138,7 @@ function AcceptInvitePage() {
           return;
         }
       } else {
-        const { error: signErr } = await supabase.auth.signInWithPassword({
+        const { error: signErr } = await db.auth.signInWithPassword({
           email: info.email,
           password,
         });
@@ -206,7 +206,7 @@ function AcceptInvitePage() {
                     type="button"
                     disabled={busy}
                     onClick={async () => {
-                      await supabase.auth.signOut();
+                      await db.auth.signOut();
                       autoAcceptStarted.current = false;
                       setError("");
                     }}

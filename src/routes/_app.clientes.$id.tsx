@@ -63,7 +63,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate, initials } from "@/lib/ui";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
-import { supabase } from "@/integrations/supabase/client";
+import { db } from "@/integrations/appwrite/db";
 import { isImageDoc, isLinkDoc, type LeadDocument } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import {
@@ -213,7 +213,7 @@ function ClientProfilePage() {
     queryFn: async () => {
       const ctx = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
       const client = (
-        supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }
+        db as unknown as { from: (t: string) => ReturnType<typeof db.from> }
       ).from("crm_lead_documents");
       const results: LeadDocument[] = [];
       if (tripIds.length > 0) {
@@ -226,7 +226,7 @@ function ClientProfilePage() {
       if (ctx) {
         const prefix = `${ctx}/client/${id}/`;
         const { data } = await (
-          supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }
+          db as unknown as { from: (t: string) => ReturnType<typeof db.from> }
         )
           .from("crm_lead_documents")
           .select("*")
@@ -246,7 +246,7 @@ function ClientProfilePage() {
     queryKey: ["client-tasks", id, tripIds.join(",")],
     enabled: tripIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("crm_tasks")
         .select(
           "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name)",
@@ -522,7 +522,7 @@ function ClientProfilePage() {
         {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} onNew={openNew} />}
         {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} onNewTask={() => setOpenNewTask(true)} onToggle={async (t) => {
           const next = !t.completed;
-          const { error } = await supabase.from("crm_tasks").update({ completed: next, completed_at: next ? new Date().toISOString() : null }).eq("id", t.id);
+          const { error } = await db.from("crm_tasks").update({ completed: next, completed_at: next ? new Date().toISOString() : null }).eq("id", t.id);
           if (error) { toast.error("Não foi possível atualizar a tarefa"); return; }
           toast.success(next ? "Tarefa concluída" : "Tarefa reaberta");
           qc.invalidateQueries({ queryKey: ["client-tasks", id] });

@@ -1,4 +1,4 @@
-// Tipos centrais espelhando o schema do Supabase do repositório.
+// Tipos centrais das coleções do Appwrite usadas pelo app.
 
 export interface AgencyMember {
   id: string;

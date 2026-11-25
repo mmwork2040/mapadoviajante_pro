@@ -1,15 +1,15 @@
 # Segurança — versão Appwrite (produção)
 
-Este documento substitui, para o código em produção (`mapadoviajante_pro`,
-Vercel + Appwrite), as partes de banco do `PLANO_IMPLEMENTACAO.md`, que foi
-escrito para a versão Supabase (`crmosegredodoviajante`). Lá, o RLS do Supabase
-separava as agências; **no Appwrite essa proteção não existe** e precisa ser
-feita pelas permissões das coleções e pelo servidor.
+Vale para o código em produção (`mapadoviajante_pro`, Vercel + Appwrite). No
+Appwrite, a separação entre agências **não vem pronta**: precisa ser feita pelas
+permissões das coleções e pelo servidor. O plano completo está em
+`docs/migracao/PLANO-MESTRE.md` (fases F2 e F13).
 
 ## Como o sistema funciona hoje
 
 - O navegador fala direto com o Appwrite (`appwrite.agenc-ia.net`) por uma
-  "ponte" que imita o cliente do Supabase (`src/integrations/appwrite/bridge.ts`).
+  "ponte" de consultas encadeadas (`src/integrations/appwrite/bridge.ts`, usada
+  como `db` no código).
   Quase toda leitura e escrita de leads, roteiros, tarefas etc. acontece assim
   (`src/lib/services.ts`).
 - As server functions (`src/lib/*.functions.ts`) fazem IA, e-mail, convites,
@@ -36,6 +36,10 @@ feita pelas permissões das coleções e pelo servidor.
 | `APP_URL` | Recomendada | Endereço público usado nos links de convite (ex.: `https://mapadoviajante-pro.vercel.app`) |
 | `SUPER_ADMIN_EMAILS` | Opcional | Super admins, separados por vírgula. Sem ela, valem os dois e-mails atuais |
 | `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID` | Opcional | Usam os `VITE_APPWRITE_*` se ausentes |
+| `GOOGLE_DRIVE_SERVICE_ACCOUNT` | Opcional | JSON da conta de serviço do Google com leitura no Drive. A agência compartilha a pasta com o e-mail dessa conta |
+| `N8N_LEAD_WEBHOOK_SECRET`, `N8N_DEFAULT_AGENCY_ID` | Opcional | Entrada de viagens pelo n8n |
+
+A lista completa está em `.env.example`.
 
 ## O que falta — e precisa do console do Appwrite
 
@@ -82,7 +86,11 @@ Recomendação: (a) agora para estancar, (b) ao longo da Fase 2.
   todo usuário no `localStorage`. Só afeta telas, mas engana a interface.
 - Rotas públicas (`/api/public/n8n-lead`, `push-delivery`, `asaas-webhook`)
   ainda seguem o desenho antigo: ver F0-T8, F0-T9 e F0-T12 do plano.
-- Google Drive ainda usa o conector do Lovable (`LOVABLE_API_KEY`).
+- Google Drive: passou a chamar a API do Google direto, com conta de serviço
+  (`GOOGLE_DRIVE_SERVICE_ACCOUNT`). Falta configurar a conta e testar; as
+  funções ainda não conferem a agência dona da pasta.
+- `/api/public/n8n-lead` e o formulário de captação agora gravam e leem no
+  Appwrite com `APPWRITE_API_KEY`. Sem a chave, respondem "não configurado".
 
 ## Como testar a branch na prévia da Vercel
 

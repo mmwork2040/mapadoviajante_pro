@@ -1,24 +1,43 @@
-# Mapa do Viajante - PRO
+# CRM OSV (Mapa do Viajante PRO)
 
-Preciso implementar o sistema configurado através deste projeto no GitHub: https://github.com/mmwork2040/mapa-do-viajante.git
+CRM de consultoria de viagens d'O Segredo do Viajante. O único backend é o **Appwrite**
+(`https://appwrite.agenc-ia.net`): banco, login, arquivos e tempo real.
 
-Código hospedado no GitHub e publicado pela Vercel.
+- **Código:** GitHub. **Publicação:** Vercel, a partir da branch `main`.
+- **App em produção:** https://mapadoviajante-pro.vercel.app
+- **Plano da migração para o desenho novo:** `docs/migracao/PLANO-MESTRE.md`
+- **Protótipo aprovado (especificação visual):** `docs/prototipo-crm/index.html`
+- **Segurança e variáveis do servidor:** `docs/SEGURANCA_APPWRITE.md`
 
-**App em produção**: https://mapadoviajante-pro.vercel.app
+## Rodar no computador
 
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+Precisa de Node.js 22 e npm.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+npm ci
+cp .env.example .env   # os valores públicos já vêm preenchidos
+npm run dev            # http://localhost:8080
 ```
+
+Antes de abrir um pull request:
+
+```sh
+npm run typecheck
+npm run build
+```
+
+O CI (`.github/workflows/ci.yml`) roda os dois e recusa qualquer referência a outro backend.
+
+## Variáveis de ambiente
+
+Veja `.env.example`. As `VITE_*` são públicas. Os segredos (`APPWRITE_API_KEY`, chaves de IA,
+contas de serviço do Google, segredo do n8n) ficam **só no servidor**, configurados na Vercel.
 
 ## Roteiros compartilháveis
 
-O link do viajante usa uma rota de leitura no servidor para carregar o roteiro, seus dias e atividades após conferir o `share_token`. Configure `APPWRITE_API_KEY` **somente no ambiente do servidor** com permissão de leitura para `crm_itineraries`, `crm_itinerary_days` e `crm_itinerary_activities`. O endpoint, projeto e banco usam `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID` e `APPWRITE_DATABASE_ID`, com fallback para os respectivos valores `VITE_APPWRITE_*` já existentes. Não coloque a chave em variável `VITE_*` nem no navegador.
+O link do viajante usa uma rota de leitura no servidor para carregar o roteiro, seus dias e
+atividades depois de conferir o `share_token`. Ela precisa de `APPWRITE_API_KEY` com leitura em
+`crm_itineraries`, `crm_itinerary_days` e `crm_itinerary_activities`.
 
-O botão de compartilhar só copia ou abre o link depois de validar que a rota pública respondeu com sucesso. O PDF é salvo pelo diálogo de impressão do navegador. No cabeçalho do roteiro, o botão PDF abre uma página de impressão e inicia esse diálogo automaticamente; o botão na própria página permite reabri-lo.
+O botão de compartilhar só copia ou abre o link depois de validar que a rota pública respondeu.
+O PDF é salvo pelo diálogo de impressão do navegador.

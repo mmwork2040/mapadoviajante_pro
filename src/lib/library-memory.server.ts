@@ -1,7 +1,6 @@
 // Server-only helpers that let the AI assistant treat the agency library as a
 // memory bank: it searches open sources (Wikimedia / Wikipedia) for real photos
 // of the lead's destination and stores them in the library for future reuse.
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 const LIBRARY_BUCKET = "library-assets";
 
@@ -92,7 +91,8 @@ export interface StoredLibraryImage {
  * library items of type "image". Returns the titles of the images it added.
  */
 export async function ensureDestinationImages(params: {
-  supabase: SupabaseClient;
+  /** Cliente de dados do servidor, já limitado à agência. */
+  db: any;
   agencyId: string;
   memberId: string | null;
   destination: string;
@@ -100,7 +100,7 @@ export async function ensureDestinationImages(params: {
   existingTitles: string[];
   maxToAdd?: number;
 }): Promise<StoredLibraryImage[]> {
-  const { supabase, agencyId, memberId, destination, queries, existingTitles } = params;
+  const { db, agencyId, memberId, destination, queries, existingTitles } = params;
   const maxToAdd = params.maxToAdd ?? 4;
   const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const existing = new Set(existingTitles.map(norm));
@@ -131,12 +131,12 @@ export async function ensureDestinationImages(params: {
       const ext = mime.includes("png") ? "png" : "jpg";
       const title = cand.title.slice(0, 120);
       const path = `${agencyId}/${crypto.randomUUID()}-${slug(title)}.${ext}`;
-      const { error: upErr } = await supabase.storage
+      const { error: upErr } = await db.storage
         .from(LIBRARY_BUCKET)
         .upload(path, buf, { contentType: mime, upsert: false });
       if (upErr) continue;
       const normTag = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-      const { error: insErr } = await supabase.from("crm_library_items").insert({
+      const { error: insErr } = await db.from("crm_library_items").insert({
         agency_id: agencyId,
         type: "image",
         title,
@@ -149,7 +149,7 @@ export async function ensureDestinationImages(params: {
         created_by: memberId,
       });
       if (insErr) {
-        await supabase.storage.from(LIBRARY_BUCKET).remove([path]);
+        await db.storage.from(LIBRARY_BUCKET).remove([path]);
         continue;
       }
       added.push({ title });
