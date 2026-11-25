@@ -17,7 +17,7 @@ function InviteLoading() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
         <div className="mb-6 flex items-center gap-2">
-          <BrandLogo heightClass="h-10" nameClass="text-xl" />
+          <BrandLogo heightClass="h-10" nameClass="text-[30px]" />
         </div>
         <p className="text-sm text-muted-foreground">Carregando convite…</p>
       </div>
@@ -157,7 +157,7 @@ function AcceptInvitePage() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
         <div className="mb-6 flex items-center gap-2">
-          <BrandLogo heightClass="h-10" nameClass="text-xl" />
+          <BrandLogo heightClass="h-10" nameClass="text-[30px]" />
         </div>
 
         {loadingInfo ? (

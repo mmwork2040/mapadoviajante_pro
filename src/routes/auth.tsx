@@ -105,7 +105,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-[28px] border border-border bg-card p-8 shadow-xl">
         <div className="mb-8 flex items-center gap-3">
-          <BrandLogo heightClass="h-11" nameClass="text-xl" />
+          <BrandLogo heightClass="h-10" nameClass="text-[30px]" />
         </div>
 
         <h1 className="text-2xl font-bold">

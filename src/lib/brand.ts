@@ -8,7 +8,8 @@ export const PRODUCT = {
   name: "Mapa do Viajante PRO",
   shortName: "MapaPRO",
   tagline: "CRM para agências de viagem",
-  mark: "/mapapro-mark.svg",
+  /** Símbolo (mapa dobrado com bússola): uma versão para cada fundo. */
+  mark: { onLight: "/mapapro-simbolo-claro.svg", onDark: "/mapapro-simbolo-escuro.svg" },
   /** Cor principal padrão do produto. */
   primary: "#f58e26",
 } as const;

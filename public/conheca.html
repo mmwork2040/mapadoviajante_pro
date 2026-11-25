@@ -11,7 +11,9 @@
 <meta property="og:type" content="website" />
 <meta property="og:image" content="/pwa-icon.png" />
 <link rel="icon" href="/favicon.ico" sizes="any" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+<link rel="manifest" href="/manifest.webmanifest" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" />
@@ -609,9 +611,13 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .topo.on { transform: none; }
 .topo.rolou { background: rgba(12, 10, 8, 0.86); border-color: var(--border); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 .topo .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 12px; }
-.marca { display: flex; align-items: center; gap: 10px; font: 700 15px/1.1 var(--font-display); letter-spacing: -0.01em; }
-.marca img { width: 32px; height: 32px; border-radius: 8px; }
-.marca b { color: var(--primary); }
+.marca { display: flex; align-items: center; gap: 10px; font-size: 25px; }
+.marca img { height: 30px; width: auto; }
+.wordmark { font: 800 1em/1 var(--font-display); letter-spacing: -0.035em; padding-top: 0.08em; white-space: nowrap; color: transparent; background-image: linear-gradient(180deg, color-mix(in srgb, var(--brand) 70%, #fff) 0%, var(--brand) 48%, color-mix(in srgb, var(--brand) 76%, #000) 100%); -webkit-background-clip: text; background-clip: text; }
+/* Símbolo: versão para fundo claro ou escuro, conforme o tema em volta */
+.sim-c { display: block; } .sim-e { display: none; }
+.dark .sim-c { display: none; } .dark .sim-e { display: block; }
+.light .sim-c { display: block; } .light .sim-e { display: none; }
 .topo nav { display: none; gap: 28px; font-size: 14px; color: var(--muted-foreground); }
 .topo nav a:hover { color: var(--foreground); }
 .topo .lado { display: flex; align-items: center; gap: 4px; }
@@ -672,7 +678,8 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 /* App dentro do print */
 .app { display: flex; height: 100%; background: var(--background); color: var(--foreground); font-size: 15px; line-height: 1.5; text-align: left; }
 .app-side { width: 220px; flex: none; display: flex; flex-direction: column; gap: 4px; padding: 24px 14px; border-right: 1px solid var(--border); background: var(--sidebar); }
-.app-side .marca { padding: 0 8px 20px; font-size: 13px; white-space: nowrap; }
+.app-side .marca { padding: 0 8px 20px; font-size: 24px; }
+.app-side .marca img { height: 28px; }
 .app-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .app-top { padding: 20px 32px 0; }
 .app-body { flex: 1; min-height: 0; overflow: hidden; padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 24px; }
@@ -865,7 +872,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .passo.on .num { transform: scale(1.18); box-shadow: 0 0 0 8px var(--accent); }
 .passo span { font-size: 14px; font-weight: 600; color: var(--muted-foreground); }
 .passo.on span { color: var(--foreground); }
-@media (max-width: 640px) { .passo span { display: none; } .passo .num { width: 40px; height: 40px; font-size: 17px; } .passos .linha, .passos .cheia { top: 20px; } .topo .marca { font-size: 13px; } .topo .marca span { white-space: nowrap; } .topo .marca img { width: 28px; height: 28px; } .topo .lnk { padding: 8px 10px; } }
+@media (max-width: 640px) { .passo span { display: none; } .passo .num { width: 40px; height: 40px; font-size: 17px; } .passos .linha, .passos .cheia { top: 20px; } .topo .marca { font-size: 21px; gap: 8px; } .topo .marca img { height: 25px; } .topo .lnk { padding: 8px 10px; } }
 .jor-painel { display: grid; gap: 16px; margin-top: 40px; min-height: 250px; transition: opacity 0.4s var(--ease), transform 0.45s var(--ease), filter 0.4s; }
 @media (min-width: 768px) { .jor-painel { grid-template-columns: 1fr 1.4fr; } }
 .jor-painel.sai { opacity: 0; transform: translateY(-24px); filter: blur(8px); }
@@ -902,6 +909,9 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 .faq .resp p span { display: block; padding-bottom: 20px; }
 
 /* ── Final ── */
+.simbolo-final { display: grid; place-items: center; width: 104px; height: 104px; margin: 0 auto 36px; border-radius: 28px; background: #0c0a08; border: 1px solid rgba(255, 255, 255, 0.12); box-shadow: 0 0 0 10px color-mix(in srgb, var(--brand) 8%, transparent), 0 30px 80px -20px color-mix(in srgb, var(--brand) 55%, transparent); }
+.simbolo-final.on { animation: flutua 5s ease-in-out 1s infinite; }
+.simbolo-final img { width: 62px; }
 .gigante { margin-top: 96px; white-space: nowrap; font: 700 16vw/1 var(--font-display); letter-spacing: -0.04em; text-align: center; color: transparent; background: linear-gradient(180deg, color-mix(in srgb, var(--brand) 55%, transparent), transparent 85%); -webkit-background-clip: text; background-clip: text; user-select: none; }
 footer { padding: 32px 20px; border-top: 1px solid var(--border); text-align: center; font-size: 14px; color: var(--muted-foreground); }
 
@@ -946,7 +956,7 @@ footer { padding: 32px 20px; border-top: 1px solid var(--border); text-align: ce
 
 <header class="topo dark" id="topo">
   <div class="wrap">
-    <a href="/conheca.html" class="marca"><img src="/mapapro-mark.svg" alt="" /><span>Mapa do Viajante <b>PRO</b></span></a>
+    <a href="/conheca.html" class="marca" aria-label="Mapa do Viajante PRO"><img class="sim-c" src="/mapapro-simbolo-claro.svg" alt="" /><img class="sim-e" src="/mapapro-simbolo-escuro.svg" alt="" /><span class="wordmark">MapaPRO</span></a>
     <nav aria-label="Seções">
       <a href="#funcionalidades">Funcionalidades</a>
       <a href="#thay">Assistente com IA</a>
@@ -1183,6 +1193,7 @@ footer { padding: 32px 20px; border-top: 1px solid var(--border); text-align: ce
   <section class="sec dark" style="padding:160px 0 40px;text-align:center;overflow:hidden" data-luz>
     <div class="fundo"><div class="aur"><i></i><i></i><i></i></div><div class="grade"></div><div class="luz"></div></div>
     <div class="wrap">
+      <div class="simbolo-final" data-rv><img src="/mapapro-simbolo-escuro.svg" alt="" /></div>
       <h2 data-palavras style="font-size:clamp(40px,6vw,70px);line-height:1.03;max-width:900px;margin:0 auto">Mais tempo para criar viagens. <em>Menos tempo organizando.</em></h2>
       <p class="lead centro" data-rv style="--d:.3s;text-align:center">Crie sua conta em menos de um minuto, com e-mail ou com o Google.</p>
       <div class="acoes" data-rv style="--d:.4s;justify-content:center;margin-top:40px">
@@ -1194,7 +1205,7 @@ footer { padding: 32px 20px; border-top: 1px solid var(--border); text-align: ce
   </section>
 </main>
 
-<footer class="dark" style="background:var(--background)">© <span id="ano"></span> Mapa do Viajante PRO · CRM para agências de viagem</footer>
+<footer class="dark" style="background:var(--background)"><a href="/conheca.html" class="marca" style="justify-content:center;font-size:22px;margin-bottom:12px" aria-label="Mapa do Viajante PRO"><img class="sim-c" src="/mapapro-simbolo-claro.svg" alt="" /><img class="sim-e" src="/mapapro-simbolo-escuro.svg" alt="" /><span class="wordmark">MapaPRO</span></a>© <span id="ano"></span> Mapa do Viajante PRO · CRM para agências de viagem</footer>
 
 <!-- Demonstração -->
 <div class="demo dark" id="demo" hidden role="dialog" aria-modal="true" aria-label="Demonstração do sistema">
@@ -1444,7 +1455,7 @@ class Print {
   }
   render() {
     const ativo = MENU_DE[this.tela] || this.tela;
-    this.palco.innerHTML = `<div class="app ${this.compacta ? "compacta" : ""}"><aside class="app-side"><div class="marca"><img src="/mapapro-mark.svg" alt="" /><span>Mapa do Viajante <b>PRO</b></span></div><span class="ds-grp">Trabalho</span>${MENU.map(([id, l, i]) => `<button type="button" class="ds-nav" data-nav="${id}" ${id === ativo ? 'aria-current="page"' : ""} tabindex="${this.navegar ? 0 : -1}">${ic(i)}${l}${id === "viagens" ? '<span class="ds-cnt ds-acc">3</span>' : ""}</button>`).join("")}<div class="ds-foot"><div class="ds-me">${ds.av("Carla Mendes", "ds-sm")}<div><b>Carla Mendes</b><span>Administrador</span></div></div></div></aside><div class="app-main"><div class="app-top"><div class="ds-search" style="max-width:420px;width:auto">${ic("search")}<span style="font-size:14px">Buscar viajante, viagem ou roteiro</span></div></div><div class="app-body">${TELAS[this.tela](this.s, this.compacta)}</div></div></div>`;
+    this.palco.innerHTML = `<div class="app ${this.compacta ? "compacta" : ""}"><aside class="app-side"><div class="marca"><img class="sim-c" src="/mapapro-simbolo-claro.svg" alt="" /><img class="sim-e" src="/mapapro-simbolo-escuro.svg" alt="" /><span class="wordmark">MapaPRO</span></div><span class="ds-grp">Trabalho</span>${MENU.map(([id, l, i]) => `<button type="button" class="ds-nav" data-nav="${id}" ${id === ativo ? 'aria-current="page"' : ""} tabindex="${this.navegar ? 0 : -1}">${ic(i)}${l}${id === "viagens" ? '<span class="ds-cnt ds-acc">3</span>' : ""}</button>`).join("")}<div class="ds-foot"><div class="ds-me">${ds.av("Carla Mendes", "ds-sm")}<div><b>Carla Mendes</b><span>Administrador</span></div></div></div></aside><div class="app-main"><div class="app-top"><div class="ds-search" style="max-width:420px;width:auto">${ic("search")}<span style="font-size:14px">Buscar viajante, viagem ou roteiro</span></div></div><div class="app-body">${TELAS[this.tela](this.s, this.compacta)}</div></div></div>`;
   }
 }
 

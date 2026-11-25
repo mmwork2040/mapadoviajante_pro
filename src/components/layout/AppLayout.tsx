@@ -157,7 +157,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     <div className="ds-app">
       <aside className="ds-side" aria-label="Menu principal">
         <Link to="/" className="ds-brand" aria-label="Ir para Hoje">
-          <BrandLogo brand={brand} heightClass="h-[38px]" nameClass="text-[15px]" />
+          <BrandLogo brand={brand} heightClass="h-8" nameClass="text-[25px]" />
         </Link>
 
         <nav className="ds-navlist">
