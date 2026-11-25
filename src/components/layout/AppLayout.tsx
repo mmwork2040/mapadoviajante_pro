@@ -31,7 +31,7 @@ import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThayPanel } from "@/components/ThayPanel";
-import { CreateTaskModal } from "@/components/CreateTaskModal";
+import { NovoNaAgenda } from "@/components/agenda/NovoNaAgenda";
 import { BrandLogo } from "@/components/BrandLogo";
 import { GlobalSearch } from "@/components/layout/GlobalSearch";
 import { useBrand } from "@/hooks/useBrand";
@@ -238,10 +238,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
         onClose={() => setNewTrip(false)}
         onCriada={(v) => navigate({ to: "/leads", search: { lead: v.id } })}
       />
-      <CreateTaskModal
-        open={newTask !== null}
-        onOpenChange={(v) => !v && setNewTask(null)}
-        initial={newTask?.activityType ? { activityType: newTask.activityType } : null}
+      <NovoNaAgenda
+        aberto={newTask !== null}
+        tipoInicial={newTask?.activityType === "meeting" ? "meeting" : "tarefa"}
+        onFechar={() => setNewTask(null)}
       />
 
       <ThayPanel open={thayOpen} onClose={() => setThayOpen(false)} />

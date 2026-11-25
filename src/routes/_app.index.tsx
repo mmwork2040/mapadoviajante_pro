@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { cleanTaskDescription, fetchItineraries, fetchLeads, fetchTasks, getMemberId, updateTask } from "@/lib/services";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
-import { CreateTaskModal } from "@/components/CreateTaskModal";
+import { NovoNaAgenda } from "@/components/agenda/NovoNaAgenda";
 import {
   Avatar,
   Button,
@@ -251,7 +251,7 @@ function Hoje() {
       </div>
 
       {aberta && <LeadDetailDrawer leadId={aberta} onClose={() => setAberta(null)} />}
-      <CreateTaskModal open={nova} onOpenChange={setNova} />
+      <NovoNaAgenda aberto={nova} onFechar={() => setNova(false)} />
     </>
   );
 }

@@ -607,6 +607,7 @@ export function cleanTaskDescription(desc?: string | null): string {
   return desc
     .replace(/\s*\[atv:[0-9a-f-]+\]\s*/gi, "")
     .replace(/\s*\[chk:[^\]]+\]\s*/gi, "")
+    .replace(/\s*\[tp:[a-z]+\]\s*/gi, "")
     .trim();
 }
 
@@ -784,6 +785,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
   let linkedActivityId: string | null = null;
   // Preserva a marca de vínculo com item de checklist (se veio na descrição).
   const chkMark = (description?.match(/\[chk:[^\]]+\]/) ?? [])[0] || "";
+  const tpMark = (description?.match(/\[tp:[a-z]+\]/) ?? [])[0] || "";
 
   // Se a tarefa está vinculada a um lead, cria uma atividade correspondente
   // para aparecer na aba "Atividades" do lead. As duas ficam ligadas por marca.
@@ -808,6 +810,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
         cleanTaskDescription(description),
         ACTIVITY_TASK_MARK(linkedActivityId),
         chkMark,
+        tpMark,
       ]
         .filter(Boolean)
         .join("\n\n");
@@ -2487,4 +2490,12 @@ export async function deleteTripExpense(id: string): Promise<boolean> {
 /** Registra que houve contato agora: zera os "dias sem contato" da viagem. */
 export async function marcarContato(leadId: string): Promise<void> {
   await supabase.from("crm_leads").update({ last_activity_at: new Date().toISOString() }).eq("id", leadId);
+}
+
+/** Tipo de cada atividade ligada a tarefa ("[atv:<id>]" na descrição), para a Agenda. */
+export async function fetchActivityTypes(): Promise<Record<string, string>> {
+  if (!_agencyId) return {};
+  const { data, error } = await supabase.from("crm_lead_activities").select("id, type").eq("agency_id", _agencyId).limit(5000);
+  if (error) return {};
+  return Object.fromEntries(((data as { id: string; type: string }[]) || []).map((a) => [a.id, a.type]));
 }
