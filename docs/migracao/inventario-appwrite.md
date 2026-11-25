@@ -1,13 +1,13 @@
 # Inventário do Appwrite
 
-Atualizado em 25/11/2026 com leitura direta do servidor (chave de leitura). **Somente leitura:** nada foi criado, alterado ou apagado no Appwrite.
+Atualizado em 25/11/2026 com leitura direta do servidor. **Única mudança feita no Appwrite, com aprovação:** a coleção `crm_lead_documents` foi criada e seis limites de texto foram ampliados (seção 3). Nenhum registro foi alterado ou apagado.
 
 | Item | Valor |
 |---|---|
 | Servidor | `https://appwrite.agenc-ia.net/v1` (próprio, versão 2.3.0) |
 | Projeto | `6abdb8190017d98565f5` ("Mapa do Viajante PRO") |
 | Banco | `6abdb82f002c563b2ad3` (`mapa_viajante_pro`) |
-| Coleções | 17 |
+| Coleções | 18 (17 que já existiam e `crm_lead_documents`, criada nesta fase) |
 | Bucket | `trip-attachments` (1 arquivo) |
 | Usuários | 5 |
 | Functions | nenhuma |
@@ -16,7 +16,7 @@ Atualizado em 25/11/2026 com leitura direta do servidor (chave de leitura). **So
 
 ## 1. Segurança
 
-**Situação hoje:** as 17 coleções e o bucket aceitam só usuários logados, e a segurança por documento está desligada. Visitante sem login não lê nada. `crm_transactions` não tem nenhuma permissão para usuários: só o servidor acessa, como deve ser.
+**Situação hoje:** as 18 coleções e o bucket aceitam só usuários logados, e a segurança por documento está desligada. Visitante sem login não lê nada. `crm_transactions` não tem nenhuma permissão para usuários: só o servidor acessa, como deve ser.
 
 No primeiro teste desta fase, feito sem chave, `crm_clients` e o bucket responderam sem login. Na leitura seguinte as permissões já estavam corretas. Para conferir a qualquer momento: `node scripts/appwrite/fechar-banco.mjs` (sem `--aplicar` ele só mostra).
 
@@ -24,7 +24,7 @@ No primeiro teste desta fase, feito sem chave, `crm_clients` e o bucket responde
 
 ## 2. Coleções
 
-`*` marca campo obrigatório. O número entre colchetes é o limite de caracteres dos campos pequenos.
+`*` marca campo obrigatório. O número entre colchetes é o limite de caracteres que o campo tinha na leitura inicial; os ampliados estão na seção 3.
 
 | Coleção | Registros | Quem acessa | Campos | Coleção alvo |
 |---|---|---|---|---|
@@ -52,9 +52,9 @@ Nenhuma coleção do modelo alvo existe ainda. A Fase 2 cria todas do zero, sem 
 
 | O que falta | Efeito | Como resolver |
 |---|---|---|
-| Coleção `crm_lead_documents` | Anexos dos itens do roteiro, documentos da viagem e do cliente e a aba Documentos da Biblioteca não gravam. As listas aparecem vazias e o envio explica o motivo | `node scripts/appwrite/estrutura-que-falta.mjs` cria a coleção. Só acrescenta |
+| Coleção `crm_lead_documents` | Anexos dos itens do roteiro, documentos da viagem e do cliente e a aba Documentos da Biblioteca não gravavam | **Criada em 25/11/2026** por `scripts/appwrite/estrutura-que-falta.mjs`: 11 campos (agency_id*, lead_id, itinerary_id, activity_id, name*, category, file_path, mime_type, size, content, created_at), só usuários logados |
 | Bucket `library-assets` | Não é mais necessário: o app passou a usar o bucket `trip-attachments` para a Biblioteca também | Nada a fazer |
-| Limites de texto pequenos | Modelos de checklist acima de 10 mil caracteres, materiais de referência da IA acima de 3 mil e conteúdo da Biblioteca acima de 1.500 são recusados. O app agora avisa qual campo passou do limite | O mesmo script amplia os seis campos |
+| Limites de texto pequenos | Modelos de checklist acima de 10 mil caracteres, materiais de referência da IA acima de 3 mil e conteúdo da Biblioteca acima de 1.500 eram recusados | **Ampliados em 25/11/2026:** `system_settings.value` e `crm_ai_config.knowledge_sources` para 1 milhão; `crm_library_items.content` e `crm_leads.checklists` para 100 mil; `crm_ai_config.system_prompt` e `crm_leads.notes` para 20 mil |
 | Campos para os dados extras do item do roteiro | Resolvido no código: moeda, valor em reais, sugestões, valores por pessoa, fotos e "feito" vão junto da observação (`description`) | Na Fase 2 ganham campo próprio |
 | Campo `benefits` em `crm_leads` | Resolvido no código: os benefícios ficam dentro de `profile` | Na Fase 2 ganham campo próprio |
 

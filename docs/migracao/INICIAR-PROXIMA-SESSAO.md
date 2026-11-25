@@ -5,10 +5,9 @@ A Fase 0 foi feita em 25/11/2026, na branch `claude/epic-sagan-g4n8l2` do reposi
 ## Antes de abrir a sessão
 
 1. **Testar a prévia da Vercel com login de verdade.** As correções da camada de dados foram testadas lendo os dados reais e simulando as gravações; falta o teste logado. Roteiro do teste: abrir uma viagem e ver os itens nos dias, editar um item com moeda, marcar como feito, enviar duas fotos na Biblioteca, criar uma tarefa, convidar uma pessoa e aceitar o convite.
-2. **Rodar `scripts/appwrite/estrutura-que-falta.mjs`** (primeiro sem `--aplicar`) para criar a coleção de documentos e ampliar os limites de texto. Depois, `gerar-schema.mjs`.
-3. **Conferir na Vercel** as variáveis `APPWRITE_API_KEY` (as funções de servidor, o link do roteiro e o convite dependem dela) e `APP_URL`.
-4. **Juntar a branch da Fase 0 na `main`** depois do teste.
-5. Responder o que ficou aberto: P6 (multiagência e Hotmart), P7 (decisões D1 e D5), P8 (arquivos de referência das skills) e P9 (modelo de contrato e termos).
+2. **Conferir na Vercel** as variáveis `APPWRITE_API_KEY` (as funções de servidor, o link do roteiro e o convite dependem dela) e `APP_URL`.
+3. **Juntar a branch da Fase 0 na `main`** depois do teste.
+4. Responder o que ficou aberto: P6 (multiagência e Hotmart), P7 (decisões D1 e D5), P8 (arquivos de referência das skills) e P9 (modelo de contrato e termos).
 
 ## Texto para colar ao abrir a sessão
 

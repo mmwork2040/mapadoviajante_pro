@@ -83,7 +83,7 @@ Achados da Fase 0 que mudam o plano (detalhes em `inventario-appwrite.md` e na s
 
 - **O app atual tinha falhas de base na camada de dados** (relações ignoradas, arquivos com o mesmo código, campos que não cabiam). Foram corrigidas na Fase 0, antes de redesenhar as telas, e a lista está em `FUNCOES-ATUAIS.md`.
 - **Segurança:** as coleções e o bucket estão fechados para visitantes. Continua aberto que qualquer usuário logado lê os dados de todas as agências (F2-T2).
-- **Falta no Appwrite** a coleção `crm_lead_documents` e mais espaço em seis campos de texto. O script `scripts/appwrite/estrutura-que-falta.mjs` faz as duas coisas e só acrescenta.
+- **Faltava no Appwrite** a coleção `crm_lead_documents` e mais espaço em seis campos de texto. Criados em 25/11/2026 pelo script `scripts/appwrite/estrutura-que-falta.mjs`, com aprovação. Foi só acréscimo.
 - **Dados:** agências e membros repetidos, 19 fotos da Biblioteca sem arquivo e um roteiro com dias repetidos. A limpeza entra na migração da F2.
 - O app usava a marca "MapaPRO" no menu e no login. A fase visual trocou pelo logo OSV com o rótulo "Consultoria", como no protótipo. Se o produto for vendido a outras agências (P6), a marca por agência vira tarefa da F10.
 

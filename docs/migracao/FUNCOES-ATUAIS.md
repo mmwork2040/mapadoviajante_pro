@@ -424,8 +424,8 @@ Levantado na leitura do código e conferido contra o inventário real do Appwrit
 | 19 | Arquivos dependiam de cookie de outro site para abrir | Fotos e PDFs não abriam no Safari e no iPhone | **Corrigido** (abrem com a sessão do usuário) |
 | 20 | Venda vinda do n8n com o ponto de partida no campo errado | A ficha mostrava a partida vazia | **Corrigido**. A venda ainda chega sem responsável (a distribuição é da F10) |
 | 21 | Biblioteca e Plataforma sem acesso no celular | Só dava para abrir no computador | **Corrigido** |
-| 22 | Documentos da viagem gravam numa coleção que não existe | Anexos e documentos não são salvos | **Depende do Appwrite:** `scripts/appwrite/estrutura-que-falta.mjs` cria a coleção. O código já está pronto e testado contra ela |
-| 23 | Limites de texto pequenos em seis campos | Modelos de checklist grandes, materiais da IA e conteúdo longo da Biblioteca são recusados | **Depende do Appwrite:** o mesmo script amplia. O app já avisa qual campo passou do limite |
+| 22 | Documentos da viagem gravavam numa coleção que não existia | Anexos e documentos não eram salvos | **Corrigido:** a coleção `crm_lead_documents` foi criada no Appwrite em 25/11/2026, com aprovação |
+| 23 | Limites de texto pequenos em seis campos | Modelos de checklist grandes, materiais da IA e conteúdo longo da Biblioteca eram recusados | **Corrigido:** os seis limites foram ampliados no Appwrite em 25/11/2026. O app avisa se algum campo passar do limite |
 | 24 | 19 fotos da Biblioteca sem arquivo | Aparecem sem imagem | **Depende de dados:** os arquivos não vieram do sistema anterior. Enviar de novo |
 | 25 | Push por evento não existe: os eventos são salvos, mas nada envia | Só o push de teste chega | **Aberto** (função nova, F10) |
 | 26 | Asaas pela metade | Sem efeito | **Aberto por decisão** (D4, desligado) |
