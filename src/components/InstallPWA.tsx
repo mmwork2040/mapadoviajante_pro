@@ -74,7 +74,7 @@ export function InstallPWA() {
           <Download className="h-5 w-5" />
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-semibold">Instale o MapaPRO</p>
+          <p className="text-sm font-semibold">Instale o Mapa do Viajante PRO</p>
           {showIosHint ? (
             <p className="mt-1 text-xs text-muted-foreground">
               Toque em <Share className="inline h-3.5 w-3.5" /> e depois em{" "}

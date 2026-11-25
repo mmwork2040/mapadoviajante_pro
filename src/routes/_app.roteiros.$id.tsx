@@ -54,12 +54,14 @@ import {
   uploadLibraryAsset,
   createLibraryItem,
   updateItinerary,
+  updateLead,
   updateItineraryActivity,
   updateItineraryDay,
 } from "@/lib/services";
 import { ClientFormDrawer } from "@/routes/_app.clientes.index";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn, convertCurrencyFn, searchHotelsFn, searchSuggestionsFn } from "@/lib/ai.functions";
+import { connectGoogleDrive } from "@/lib/google-drive-auth";
 import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, previewDriveSheets, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
 
 // Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
@@ -97,10 +99,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Itinerary, ItineraryDay, ExtractedDocData, HotelOption, PassengerCost, ActivityImage, LibraryItem } from "@/lib/types";
 import roteiroFallback from "@/assets/roteiro-fallback.jpg";
+import { AbaChecklist, AbaDocumentos, AbaFinanceiro, AbaGuia, TopoViagem, useResumoViagem, type CompartilharModo } from "@/components/viagens/PaginaViagem";
+import { Button as DsButton, Tabs as DsTabs } from "@/components/ds";
+import { whatsappLink } from "@/data/viagens";
+import { ETAPAS_PREP, type EtapaPrep } from "@/data/preparacao";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 
 export const Route = createFileRoute("/_app/roteiros/$id")({
@@ -424,6 +431,21 @@ function ItineraryDetailPage() {
     enabled: !!clientIdForEdit,
   });
   const [tripDetailOpen, setTripDetailOpen] = useState<LeadDetailTab | null>(null);
+  const [aba, setAba] = useState<"roteiro" | "checklist" | "financeiro" | "documentos" | "guia">("roteiro");
+  const resumo = useResumoViagem(it, leadForClient);
+  // Etapa de preparação: fica no perfil da viagem comercial; o status do roteiro acompanha.
+  const mudarEtapa = useMutation({
+    mutationFn: async (etapa: EtapaPrep) => {
+      if (leadForClient && !(await updateLead(leadForClient.id, { profile: { ...(leadForClient.profile ?? {}), prep_stage: etapa } }))) throw new Error("falhou");
+      const st = etapa === "montando" ? "draft" : "active";
+      if (it && it.status !== st && !(await updateItinerary(id, { status: st }))) throw new Error("falhou");
+    },
+    onSuccess: (_r, etapa) => {
+      toast(`Etapa: ${ETAPAS_PREP.find((e) => e.id === etapa)?.label}`);
+      for (const k of [["itinerary", id], ["itinerary-lead", leadIdForClient], ["itineraries"], ["leads"]]) qc.invalidateQueries({ queryKey: k });
+    },
+    onError: () => toast.error("Não foi possível mudar a etapa."),
+  });
   const [clientEditOpen, setClientEditOpen] = useState(false);
   const [clientEditSaving, setClientEditSaving] = useState(false);
 
@@ -1040,8 +1062,9 @@ function ItineraryDetailPage() {
   });
 
   const [sharing, setSharing] = useState(false);
-  async function shareItinerary(open = false) {
+  async function shareItinerary(modo: CompartilharModo = "copiar") {
     if (!it || sharing) return;
+    const open = modo !== "copiar";
     const tab = open ? window.open("about:blank", "_blank") : null;
     setSharing(true);
     try {
@@ -1058,7 +1081,10 @@ function ItineraryDetailPage() {
       if (open) {
         if (!tab) throw new Error("O navegador bloqueou a abertura da nova aba.");
         tab.opener = null;
-        tab.location.href = url.toString();
+        const wa = modo === "whatsapp" ? whatsappLink(leadForClient?.phone) : null;
+        tab.location.href = wa
+          ? `${wa}?text=${encodeURIComponent(`Olá! Aqui está a página da sua viagem para ${it.destination || "o seu destino"}. Ela sempre mostra a versão mais nova do roteiro: ${url.toString()}`)}`
+          : url.toString();
       }
       else { await navigator.clipboard.writeText(url.toString()); toast.success("Link compartilhável copiado."); }
     } catch (error) {
@@ -1325,207 +1351,66 @@ function ItineraryDetailPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <Link to={(backTo as any) || "/roteiros"} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" /> Voltar
-        </Link>
-        <nav className="flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-          {clientIdForEdit ? (
-            <Link to="/clientes/$id" params={{ id: clientIdForEdit }} className="truncate hover:text-foreground hover:underline">
-              {clientForEdit?.name || it.client_name || "Cliente"}
-            </Link>
-          ) : (
-            <span className="truncate">{it.client_name || "Cliente"}</span>
-          )}
-          <span>›</span>
-          {leadIdForClient ? (
-            <button type="button" onClick={() => setTripDetailOpen("perfil")} className="truncate hover:text-foreground hover:underline">
-              Viagem
-            </button>
-          ) : (
-            <span>Viagem</span>
-          )}
-          <span>›</span>
-          <span className="truncate font-medium text-foreground">Roteiro</span>
-        </nav>
+      <TopoViagem
+        it={it}
+        viagem={leadForClient}
+        resumo={resumo}
+        capa={coverUrl && !coverFailed ? coverUrl : roteiroFallback}
+        voltar={(backTo as string) || "/roteiros"}
+        clientId={clientIdForEdit}
+        compartilhando={sharing}
+        onCompartilhar={(m) => void shareItinerary(m)}
+        pdf={<RoteiroPdfExport it={it} coverUrl={coverUrl} />}
+        acoes={
+          <>
+            <DsButton icon={<ImageIcon className="h-4 w-4" />} onClick={() => setCoverPickerOpen(true)}>Capa</DsButton>
+            {leadIdForClient && <DsButton onClick={() => setTripDetailOpen("perfil")}>Dados da viagem</DsButton>}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button type="button" disabled={advanceStatus.isPending || mudarEtapa.isPending} className="ds-btn">
+                  {resumo?.situacao ?? "Etapa"} <ChevronDown className="h-4 w-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-52">
+                {ETAPAS_PREP.filter((e) => e.id !== "viajando").map((e) => (
+                  <DropdownMenuItem key={e.id} disabled={resumo?.etapa === e.id} onSelect={() => mudarEtapa.mutate(e.id)}>
+                    {e.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem disabled={it.status === "completed"} onSelect={() => advanceStatus.mutate("completed")}>Marcar como concluída</DropdownMenuItem>
+                <DropdownMenuItem disabled={it.status === "cancelled"} onSelect={() => advanceStatus.mutate("cancelled")}>Cancelar viagem</DropdownMenuItem>
+                {(it.days?.length || 0) > 0 && (
+                  <DropdownMenuItem className="text-destructive" disabled={clearItinerary.isPending} onSelect={() => void handleClear()}>
+                    <Eraser className="h-4 w-4" /> Limpar roteiro
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </>
+        }
+      />
+
+      <div className="ds-row" style={{ justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap" }}>
+        <DsTabs
+          label="Seções da viagem"
+          value={aba}
+          onChange={setAba}
+          options={[
+            { value: "roteiro" as const, label: "Roteiro" },
+            { value: "checklist" as const, label: resumo?.checklist ? `Checklist · ${resumo.checklist.feitos}/${resumo.checklist.total}` : "Checklist" },
+            { value: "financeiro" as const, label: "Financeiro" },
+            { value: "documentos" as const, label: "Documentos" },
+            { value: "guia" as const, label: "Guia" },
+          ]}
+        />
+        <CompleteWithAI it={it} onDone={refresh} />
       </div>
 
-
-      <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-[0_1px_0_rgba(255,255,255,0.6)_inset,0_2px_4px_rgba(0,0,0,0.06),0_8px_16px_-8px_rgba(0,0,0,0.12)] sm:flex-row sm:items-stretch">
-        <div className="relative h-40 w-full shrink-0 overflow-hidden bg-muted/60 sm:h-auto sm:w-56">
-          {it.cover_image ? (
-            <>
-              {coverUrl && (
-                <>
-                  {/* Fundo desfocado para preencher sem cortar */}
-                  <img
-                    src={coverUrl}
-                    alt=""
-                    aria-hidden
-                    className="absolute inset-0 h-full w-full object-cover scale-110 blur-xl opacity-60"
-                  />
-                  <img
-                    src={coverUrl}
-                    alt={it.destination || "Destino"}
-                    onLoad={() => setCoverLoaded(true)}
-                    onError={(e) => {
-                      onCoverError();
-                      // Mantém o skeleton enquanto tentamos revalidar.
-                      (e.currentTarget as HTMLImageElement).style.opacity = "0";
-                    }}
-                    className={`absolute inset-0 h-full w-full object-contain transition-opacity ${coverLoaded ? "opacity-100" : "opacity-0"}`}
-                  />
-                </>
-              )}
-              {!coverLoaded && !coverFailed && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  <span className="text-xs">Carregando…</span>
-                </div>
-              )}
-              {coverFailed && (
-                <img
-                  src={roteiroFallback}
-                  alt={it.destination || "Destino"}
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              )}
-            </>
-          ) : (
-            <img
-              src={roteiroFallback}
-              alt={it.destination || "Destino"}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-
-          <div className="absolute bottom-3 left-3 flex items-center gap-1.5 text-sm font-bold text-white">
-            <MapPin className="h-4 w-4 shrink-0" />
-            <span className="truncate">{it.destination || "—"}</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setCoverPickerOpen(true)}
-            className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-black/50 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur hover:bg-black/70"
-          >
-            <ImageIcon className="h-3.5 w-3.5" /> Capa
-          </button>
-
-        </div>
-        <div className="flex flex-1 flex-wrap items-start justify-between gap-4 bg-card p-5">
-        <div className="min-w-0">
-          <div className="flex items-start gap-2">
-            <h1 className="text-2xl font-bold">{it.title}</h1>
-            {clientForEdit && (
-              <button
-                type="button"
-                onClick={() => setClientEditOpen(true)}
-                title="Editar cadastro do cliente"
-                className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-input text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <Pencil className="h-3.5 w-3.5" />
-              </button>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground">
-            {it.client_name} · {formatCurrency(it.budget)} · <span>{STATUS_LABELS[it.status || "draft"] || it.status}</span>
-          </p>
-          {(() => {
-            const fmt = (d: string) =>
-              new Date(d + (d.length === 10 ? "T00:00:00" : "")).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
-            let label: string | null = null;
-            if (it.start_date && it.end_date) label = `${fmt(it.start_date)} — ${fmt(it.end_date)}`;
-            else if (it.start_date) label = fmt(it.start_date);
-            else if (it.end_date) label = fmt(it.end_date);
-            const parts: React.ReactNode[] = [];
-            if (label) parts.push(
-              <span key="date" className="inline-flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-muted-foreground" /> {label}
-              </span>,
-            );
-            if (it.passengers) parts.push(
-              <span key="pax" className="inline-flex items-center gap-1.5">
-                <Users className="h-4 w-4 text-muted-foreground" /> {it.passengers} viajante{it.passengers > 1 ? "s" : ""}
-              </span>,
-            );
-            if (!parts.length) return null;
-            return <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-foreground">{parts}</p>;
-          })()}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {leadIdForClient && (
-            <>
-              <button
-                type="button"
-                onClick={() => setTripDetailOpen("perfil")}
-                className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
-              >
-                <ClipboardList className="h-4 w-4" /> Detalhes da viagem
-              </button>
-              <button
-                type="button"
-                onClick={() => setTripDetailOpen("checklist")}
-                className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
-              >
-                <ListChecks className="h-4 w-4" /> Checklist
-              </button>
-              <button
-                type="button"
-                onClick={() => setTripDetailOpen("financeiro")}
-                className="flex items-center gap-1 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted"
-              >
-                <CircleDollarSign className="h-4 w-4" /> Financeiro
-              </button>
-            </>
-          )}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                disabled={advanceStatus.isPending}
-                className="flex items-center gap-2 rounded-full border border-border bg-muted/40 py-1.5 pl-3 pr-2 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-60"
-              >
-                <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_DOTS[it.status || "draft"] || "bg-muted-foreground"}`} />
-                {STATUS_LABELS[it.status || "draft"] || it.status}
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-40">
-              {STATUS_OPTIONS.map((s) => (
-                <DropdownMenuItem
-                  key={s}
-                  disabled={advanceStatus.isPending || s === (it.status || "draft")}
-                  onSelect={() => advanceStatus.mutate(s)}
-                  className={s === (it.status || "draft") ? "font-semibold" : ""}
-                >
-                  <span className={`mr-2 h-2.5 w-2.5 shrink-0 rounded-full ${STATUS_DOTS[s] || "bg-muted-foreground"}`} />
-                  {STATUS_LABELS[s] || s}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {it.status === "draft" && (it.days?.length || 0) > 0 && (
-            <button
-              onClick={handleClear}
-              disabled={clearItinerary.isPending}
-              className="flex items-center gap-1 rounded-lg border border-destructive px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
-            >
-              <Eraser className="h-4 w-4" /> Limpar roteiro
-            </button>
-          )}
-          <CompleteWithAI it={it} onDone={refresh} />
-          <button type="button" disabled={sharing} onClick={() => shareItinerary()} className="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60">
-            {sharing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Copy className="h-4 w-4" />} Copiar link
-          </button>
-          <button type="button" disabled={sharing} onClick={() => shareItinerary(true)} className="inline-flex items-center gap-2 rounded-lg border border-input px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60">
-            <ExternalLink className="h-4 w-4" /> Abrir roteiro
-          </button>
-          <RoteiroPdfExport it={it} coverUrl={coverUrl} />
-        </div>
-        </div>
-      </div>
+      {aba === "checklist" && <AbaChecklist leadId={leadIdForClient} />}
+      {aba === "financeiro" && <AbaFinanceiro leadId={leadIdForClient} />}
+      {aba === "documentos" && <AbaDocumentos it={it} />}
+      {aba === "guia" && <AbaGuia onCompartilhar={(m) => void shareItinerary(m)} pdf={<RoteiroPdfExport it={it} coverUrl={coverUrl} />} />}
 
       {tripDetailOpen && leadIdForClient && (
         <LeadDetailDrawer
@@ -1550,7 +1435,7 @@ function ItineraryDetailPage() {
               await updateClient(clientForEdit.id, payload);
               await qc.invalidateQueries({ queryKey: ["itinerary-client", clientForEdit.id] });
               await qc.invalidateQueries({ queryKey: ["clients"] });
-              toast.success("Cliente atualizado");
+              toast.success("Viajante atualizado");
               setClientEditOpen(false);
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Erro ao salvar");
@@ -1582,6 +1467,7 @@ function ItineraryDetailPage() {
       )}
 
 
+      {aba === "roteiro" && (
       <DndContext
         sensors={sensors}
         collisionDetection={kanbanCollisionDetection}
@@ -1694,6 +1580,7 @@ function ItineraryDetailPage() {
 
 
       </DndContext>
+      )}
 
 
       {importOpen && (
@@ -2299,7 +2186,7 @@ function ActivityRow({
   const qc = useQueryClient();
   const confirm = useConfirm();
 
-  const done = activity.done === true;
+  const done = activity.type === "done";
 
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -2658,7 +2545,7 @@ function ActivityRow({
     setETime(activity.time || "");
     setELocation(activity.location || "");
     setEDescription(activity.description || "");
-    setEType(activity.type || "activity");
+    setEType(done ? "activity" : activity.type || "activity");
     setECost(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
     setECurrency(activity.currency || "BRL");
     setECostBrl(activity.cost_brl ?? null);
@@ -2850,7 +2737,7 @@ function ActivityRow({
   }
 
   async function toggleDone() {
-    await updateItineraryActivity(activity.id, { done: !done });
+    await updateItineraryActivity(activity.id, { type: done ? null : "done" });
     onChange();
   }
 
@@ -5310,9 +5197,18 @@ function DriveImportModal({
             </p>
           )}
           {conn.data && !conn.data.connected && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Conector do Google Drive indisponível. Verifique a conexão nas configurações do projeto.
-            </p>
+            <div className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Para importar do Drive, entre com sua conta Google e autorize a leitura dos arquivos.
+              </p>
+              <button
+                type="button"
+                onClick={() => connectGoogleDrive()}
+                className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                Conectar Google Drive
+              </button>
+            </div>
           )}
           {conn.data?.connected && filesQ.isLoading && (
             <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Funções da plataforma (super admin) e do consumo de IA da agência.
 
@@ -15,7 +15,7 @@ export type AgencyAiUsageRow = {
 
 /** Consumo de IA da agência do usuário no mês (para o admin da agência). */
 export const getMyAiUsage = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { getMembership } = await import("@/lib/server/authz");
     const { platformAi } = await import("@/lib/server/ai-settings");
@@ -35,7 +35,7 @@ export const getMyAiUsage = createServerFn({ method: "GET" })
 
 /** Visão geral do consumo de IA de todas as agências (super admin). */
 export const getAiUsageOverview = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { requireSuperAdmin } = await import("@/lib/server/authz");
     requireSuperAdmin(context);
@@ -84,7 +84,7 @@ export const getAiUsageOverview = createServerFn({ method: "GET" })
 
 /** Altera o limite padrão ou o limite de uma agência (super admin). */
 export const saveAiQuota = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
       .object({

@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Configuração de pagamentos (Asaas) por agência.
 // A chave de API NUNCA é devolvida ao cliente — apenas o indicador `hasApiKey`.
@@ -33,7 +33,7 @@ export const DEFAULT_PAYMENT_CONFIG: AgencyPaymentConfig = {
 };
 
 /** Pagamentos são só do admin, sempre na agência do próprio usuário. */
-async function resolveAgencyId(context: { db: any; userId: string; userEmail?: string }): Promise<string> {
+async function resolveAgencyId(context: { supabase: any; userId: string; userEmail?: string }): Promise<string> {
   const { requireAdmin } = await import("@/lib/server/authz");
   const { agencyId } = await requireAdmin(context);
   return agencyId;
@@ -41,12 +41,12 @@ async function resolveAgencyId(context: { db: any; userId: string; userEmail?: s
 
 /** Lê a configuração de pagamentos da agência do usuário (admin). */
 export const getAgencyPaymentConfig = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AgencyPaymentConfig> => {
     const agencyId = await resolveAgencyId(context);
     if (!agencyId) return DEFAULT_PAYMENT_CONFIG;
     const key = `agency_cfg:${agencyId}:payments`;
-    const { data: row } = await (context.db as any)
+    const { data: row } = await (context.supabase as any)
       .from("system_settings")
       .select("value")
       .eq("key", key)
@@ -82,7 +82,7 @@ const saveSchema = z.object({
 
 /** Salva a configuração de pagamentos da agência do usuário (admin). */
 export const saveAgencyPaymentConfig = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => saveSchema.parse(data))
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
     const agencyId = await resolveAgencyId(context);
@@ -106,7 +106,7 @@ export const saveAgencyPaymentConfig = createServerFn({ method: "POST" })
     }
 
     const key = `agency_cfg:${agencyId}:payments`;
-    const { error } = await (context.db as any)
+    const { error } = await (context.supabase as any)
       .from("system_settings")
       .upsert({ key, value: row, updated_at: new Date().toISOString() }, { onConflict: "key" });
     if (error) throw new Error(error.message);
@@ -125,13 +125,13 @@ const chargeSchema = z.object({
 
 /** Cria uma cobrança no Asaas usando as credenciais da própria agência (admin). */
 export const createAsaasCharge = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => chargeSchema.parse(data))
   .handler(async ({ data, context }) => {
     const agencyId = await resolveAgencyId(context);
     if (!agencyId) throw new Error("Agência não encontrada para o usuário.");
 
-    const { data: cfg } = await (context.db as any)
+    const { data: cfg } = await (context.supabase as any)
       .from("agency_payment_settings")
       .select("asaas_api_key, asaas_environment, is_active")
       .eq("agency_id", agencyId)

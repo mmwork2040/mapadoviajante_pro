@@ -115,7 +115,7 @@ export function ThayPanel({ open, onClose }: { open: boolean; onClose: () => voi
           {messages.length === 0 && (
             <div className="rounded-xl bg-muted/60 p-4 text-sm text-muted-foreground">
               Olá! Sou a Thay. Posso sugerir roteiros, ideias de passeios, dicas de destino e textos
-              para seus clientes. Como posso ajudar?
+              para seus viajantes. Como posso ajudar?
             </div>
           )}
           {messages.map((m, i) => (

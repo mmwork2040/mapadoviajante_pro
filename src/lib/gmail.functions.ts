@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { DEFAULT_CONFIG, type EmailConfig } from "@/lib/gmail-config";
 
 async function resolveAgencyEmailConfig(agencyId: string): Promise<EmailConfig> {
@@ -11,7 +11,7 @@ async function resolveAgencyEmailConfig(agencyId: string): Promise<EmailConfig> 
 
 /** Verifica o status da conexão de e-mail (Gmail ou Appwrite). */
 export const getGmailStatus = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ connected: boolean; provider?: string; email: string | null }> => {
     const { getMembership } = await import("@/lib/server/authz");
     const m = await getMembership(context);
@@ -39,7 +39,7 @@ export const getGmailStatus = createServerFn({ method: "GET" })
 
 /** Envia um e-mail de teste ou notificação usando o provedor ativo (Gmail ou Appwrite). */
 export const sendGmail = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
       .object({

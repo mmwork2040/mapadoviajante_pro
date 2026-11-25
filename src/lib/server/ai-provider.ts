@@ -1,6 +1,7 @@
-// Escolha da chave de IA nas telas de administração. Só para código de servidor.
+// Resolve a chave de IA de quem é administrador. Só servidor.
 import { platformAi } from "@/lib/server/ai-settings";
-import { STORED_KEY_MARKER } from "@/lib/ai-config.functions";
+
+const STORED_KEY_MARKER = "__chave_salva__";
 
 /** Resolve a chave para testar/extrair: a digitada agora, a salva ou a da plataforma. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,7 +12,7 @@ export async function resolveProviderForAdmin(context: any, typed: { provider?: 
   }
   const platform = platformAi();
   if (platform) return { provider: "openai", model: platform.model, apiKey: platform.apiKey };
-  const { data: existing, error } = await context.db.from("crm_ai_config").select("*").maybeSingle();
+  const { data: existing, error } = await context.supabase.from("crm_ai_config").select("*").maybeSingle();
   if (error) throw new Error("Não foi possível carregar a configuração de IA.");
   if (!existing?.api_key_encrypted) throw new Error("Informe a chave da IA.");
   return {

@@ -109,7 +109,7 @@ export const AGENCY_SCOPED_COLLECTIONS = new Set([
 ]);
 
 /**
- * Cliente do servidor limitado a uma agência.
+ * Cliente do servidor limitado a uma agência: equivale ao RLS do Supabase.
  * Coleções sem `agency_id` (ex.: dias e atividades de roteiro) não são
  * filtradas aqui; quem as usa precisa conferir o roteiro dono antes.
  */

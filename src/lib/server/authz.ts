@@ -1,4 +1,4 @@
-// Autorização das server functions. O middleware `requireAuth` garante
+// Autorização das server functions. O middleware `requireSupabaseAuth` garante
 // que há um usuário logado e já descobre a agência dele; estas funções
 // conferem agência e papel antes de ações restritas.
 import { getServerBridge } from '@/integrations/appwrite/server';

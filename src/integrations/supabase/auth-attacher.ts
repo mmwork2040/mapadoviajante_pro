@@ -40,7 +40,7 @@ async function getAppwriteJwt(): Promise<string | null> {
   return pending
 }
 
-export const attachAuth = createMiddleware({ type: 'function' }).client(
+export const attachSupabaseAuth = createMiddleware({ type: 'function' }).client(
   async ({ next }) => {
     const token = typeof window === 'undefined' ? null : await getAppwriteJwt()
     return next({

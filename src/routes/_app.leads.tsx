@@ -25,9 +25,16 @@ import { dispatchWebhook } from "@/lib/webhook";
 import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, maskMiles, initials } from "@/lib/ui";
 import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
+import { MagnifyingGlass, Kanban as KanbanIcon, ListBullets, Plus as PlusIcon } from "@phosphor-icons/react";
+import { Button as DsButton, Empty, ErrorBox, FilterChip, PageTitle, SearchInput, Seg, Skeleton, ViewSwitcher } from "@/components/ds";
+import { JanelaPerder, ListaComercial, QuadroComercial } from "@/components/viagens/Comercial";
+import { diasSemContato, dinheiroCurto, estaAberta, etapaLabel, proximosPassos, valorDe, type Etapa } from "@/data/viagens";
+import { useViewPref } from "@/lib/view-prefs";
+import { fetchTasks } from "@/lib/services";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
-import { useConfirm } from "@/components/ConfirmDialog";
-import { db } from "@/integrations/appwrite/db";
+import { FichaComercial } from "@/components/viagens/Ficha";
+import { NovaViagem } from "@/components/viagens/NovaViagem";
+import { supabase } from "@/integrations/supabase/client";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -76,12 +83,16 @@ function CoverImage({ value, className, alt }: { value: string; className?: stri
 
 function LeadsPage() {
   const qc = useQueryClient();
-  const confirm = useConfirm();
   const { lead: leadParam } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [completaId, setCompletaId] = useState<string | null>(null);
+  const fecharFicha = () => {
+    setDetailId(null);
+    if (leadParam) navigate({ search: {}, replace: true });
+  };
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
   const [overCol, setOverCol] = useState<LeadStatus | null>(null);
@@ -135,7 +146,7 @@ function LeadsPage() {
 
   // Realtime: novos leads (ex.: criados via webhook do n8n) atualizam a lista.
   useEffect(() => {
-    const channel = db
+    const channel = supabase
       .channel("leads-realtime")
       .on(
         "postgres_changes",
@@ -146,7 +157,7 @@ function LeadsPage() {
       )
       .subscribe();
     return () => {
-      db.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [qc]);
 
@@ -154,7 +165,7 @@ function LeadsPage() {
   const move = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: LeadStatus }) => {
       const updated = await updateLead(id, { status });
-      if (!updated) throw new Error("Não foi possível mover o lead.");
+      if (!updated) throw new Error("Não foi possível mover a viagem.");
       return updated;
     },
     onMutate: async ({ id, status }) => {
@@ -164,14 +175,19 @@ function LeadsPage() {
       qc.setQueryData<Lead[]>(key, (old) =>
         (old ?? []).map((l) => (l.id === id ? { ...l, status } : l)),
       );
+      qc.setQueryData<Lead | null>(["lead", id], (old) => (old ? { ...old, status } : old));
       return { prev };
     },
     onError: (_err, _vars, ctx) => {
       if (ctx?.prev) qc.setQueryData(["leads", { search, archived: showArchived }], ctx.prev);
-      toast.error("Não foi possível mover o lead.");
+      toast.error("Não foi possível mudar a etapa.");
     },
-    onSettled: () => {
+    onSuccess: (_res, vars) => {
+      dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
+    },
+    onSettled: (_r, _e, vars) => {
       qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", vars.id] });
     },
   });
 
@@ -182,11 +198,11 @@ function LeadsPage() {
       return id;
     },
     onSuccess: () => {
-      toast.success("Venda excluída.");
+      toast("Viagem excluída.");
       setConfirmDeleteId(null);
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
-    onError: () => toast.error("Não foi possível excluir a venda."),
+    onError: () => toast.error("Não foi possível excluir a viagem."),
   });
 
   const archiveMut = useMutation({
@@ -196,10 +212,10 @@ function LeadsPage() {
       return archived;
     },
     onSuccess: (archived) => {
-      toast.success(archived ? "Venda arquivada." : "Venda desarquivada.");
+      toast(archived ? "Viagem arquivada." : "Viagem tirada do arquivo.");
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
-    onError: () => toast.error("Não foi possível arquivar a venda."),
+    onError: () => toast.error("Não foi possível arquivar a viagem."),
   });
 
 
@@ -208,185 +224,128 @@ function LeadsPage() {
     setOverCol(null);
     setDragId(null);
     const id = e.dataTransfer.getData("text/plain") || dragId;
-    if (id) void requestMove(id, status);
+    if (id) {
+      const current = leads.find((l) => l.id === id);
+      if (current && current.status !== status) move.mutate({ id, status });
+    }
   }
 
-  // Tirar uma viagem de Fechado ou Perdido reabre a negociação: pede
-  // confirmação, como a ficha da viagem já fazia.
-  async function requestMove(id: string, status: LeadStatus) {
-    const current = leads.find((l) => l.id === id);
-    if (!current || current.status === status) return;
-    if (current.status === "closed" || current.status === "lost") {
-      const from = COLUMNS.find((c) => c.key === current.status)?.label ?? current.status;
-      const to = COLUMNS.find((c) => c.key === status)?.label ?? status;
-      const ok = await confirm({
-        title: "Reabrir viagem?",
-        description: `Esta viagem está em "${from}". Ao mover para "${to}", ela volta a ser editável.`,
-        confirmLabel: "Reabrir",
-        cancelLabel: "Cancelar",
-      });
-      if (!ok) return;
-    }
-    move.mutate({ id, status });
+  // ── Tela ──
+  const [vista, setVista] = useViewPref("viagens-comercial", ["quadro", "lista"] as const, "quadro");
+  const [soParadas, setSoParadas] = useState(false);
+  const [perdendo, setPerdendo] = useState<Lead | null>(null);
+  const { data: tarefas = [] } = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
+  const passos = useMemo(() => proximosPassos(tarefas), [tarefas]);
+  const visiveis = soParadas ? leads.filter((l) => estaAberta(l) && (diasSemContato(l) ?? 0) >= 3) : leads;
+  const emNegociacao = leads.filter(estaAberta);
+  const emJogo = emNegociacao.reduce((s, l) => s + valorDe(l), 0);
+
+  function mover(v: Lead, etapa: Etapa) {
+    if (etapa === "lost") return setPerdendo(v); // perder pede o motivo
+    move.mutate({ id: v.id, status: etapa });
+    toast(`${v.name}: ${etapaLabel(v.status)} → ${etapaLabel(etapa)}`);
   }
+
+  const perder = useMutation({
+    mutationFn: async ({ v, motivo }: { v: Lead; motivo: string }) => {
+      const updated = await updateLead(v.id, { status: "lost", profile: { ...(v.profile ?? {}), lost_reason: motivo } });
+      if (!updated) throw new Error("falhou");
+      return updated;
+    },
+    onSuccess: (_r, { v }) => {
+      setPerdendo(null);
+      toast(`${v.name}: marcada como perdida`);
+      dispatchWebhook("lead.status_changed", { id: v.id, status: "lost" });
+      qc.invalidateQueries({ queryKey: ["leads"] });
+      qc.invalidateQueries({ queryKey: ["lead", v.id] });
+    },
+    onError: () => toast.error("Não foi possível salvar. Tente de novo."),
+  });
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        icon={Plane}
+    <>
+      <PageTitle
         title="Viagens"
-        subtitle={showArchived ? "Viagens arquivadas da fase comercial." : "Fase comercial: arraste o cartão para mudar a etapa."}
-        tabs={<ViagensTabs ativo="comercial" />}
+        summary={
+          showArchived
+            ? "Viagens arquivadas da fase comercial."
+            : isLoading
+              ? "Carregando…"
+              : `${emNegociacao.length} em negociação${emJogo > 0 ? ` · ${dinheiroCurto(emJogo)} em jogo` : ""}`
+        }
         actions={
-          <>
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="Buscar nome, e-mail, destino…"
-              className="w-full sm:w-56"
-            />
-
-
-            {isManager && (
-              <button
-                onClick={toggleOnlyMine}
-                className={`flex w-full items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition sm:w-auto ${
-                  onlyMine
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-input hover:bg-muted"
-                }`}
-              >
-                <User className="h-4 w-4" /> {onlyMine ? "Minhas vendas" : "Todas as vendas"}
-              </button>
-            )}
-            <div className="flex w-full rounded-lg border border-input p-1 sm:w-auto" role="tablist" aria-label="Vendas">
-              <button
-                type="button"
-                role="tab"
-                aria-selected={!showArchived}
-                onClick={() => setShowArchived(false)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition sm:flex-none ${
-                  !showArchived ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                Ativas
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={showArchived}
-                onClick={() => setShowArchived(true)}
-                className={`flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-1.5 text-sm font-semibold transition sm:flex-none ${
-                  showArchived ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                <Archive className="h-4 w-4" /> Arquivadas
-              </button>
-            </div>
-            <button
-              onClick={() => setOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-            >
-              <Plus className="h-4 w-4" /> Nova Proposta
-            </button>
-          </>
+          <DsButton variant="primary" icon={<PlusIcon weight="bold" aria-hidden />} onClick={() => setOpen(true)}>
+            Nova viagem
+          </DsButton>
         }
       />
+      <ViagensTabs ativo="comercial" comercial={emNegociacao.length} />
 
-
+      <div className="ds-filtros">
+        <SearchInput icon={<MagnifyingGlass aria-hidden />} label="Buscar por viajante ou destino" placeholder="Buscar por viajante ou destino" value={search} onChange={(e) => setSearch(e.target.value)} />
+        {isManager && (
+          <Seg
+            label="De quem são as viagens"
+            value={onlyMine ? "minhas" : "todas"}
+            onChange={(v) => { if ((v === "minhas") !== onlyMine) void toggleOnlyMine(); }}
+            options={[{ value: "minhas", label: "Minhas" }, { value: "todas", label: "Toda a equipe" }]}
+          />
+        )}
+        <FilterChip pressed={soParadas} onPressedChange={setSoParadas}>Sem contato há 3+ dias</FilterChip>
+        <FilterChip pressed={showArchived} onPressedChange={setShowArchived}>Arquivadas</FilterChip>
+        <span className="ds-filtros-sp" />
+        <ViewSwitcher
+          value={vista}
+          onChange={setVista}
+          options={[{ value: "quadro", label: "Quadro", icon: <KanbanIcon aria-hidden /> }, { value: "lista", label: "Lista", icon: <ListBullets aria-hidden /> }]}
+        />
+      </div>
 
       {isError ? (
-        <QueryError message="Não foi possível carregar os leads." onRetry={() => refetch()} />
+        <ErrorBox onRetry={() => refetch()}>Não foi possível carregar as viagens.</ErrorBox>
       ) : isLoading ? (
-        <p className="text-muted-foreground">Carregando…</p>
+        <div className="ds-three"><Skeleton height={160} radius={16} /><Skeleton height={160} radius={16} /><Skeleton height={160} radius={16} /></div>
+      ) : leads.length === 0 && !search ? (
+        <Empty title={showArchived ? "Nenhuma viagem arquivada" : "Nenhuma viagem por aqui ainda"} action={!showArchived ? <DsButton variant="primary" onClick={() => setOpen(true)}>Nova viagem</DsButton> : undefined}>
+          {showArchived ? "O que você arquivar aparece aqui." : "Toda viagem começa pela negociação. Crie a primeira ou aguarde um pedido pelo formulário."}
+        </Empty>
+      ) : visiveis.length === 0 ? (
+        <Empty title="Nada encontrado">{soParadas ? "Nenhuma viagem aberta está há 3 dias ou mais sem contato." : `Nenhuma viagem para “${search}”.`}</Empty>
+      ) : vista === "lista" ? (
+        <ListaComercial viagens={visiveis} passos={passos} onAbrir={setDetailId} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-5">
-          {COLUMNS.map((col) => {
-            const items = leads.filter((l) => l.status === col.key);
-            return (
-              <div
-                key={col.key}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  e.dataTransfer.dropEffect = "move";
-                  if (overCol !== col.key) setOverCol(col.key);
-                }}
-                onDragLeave={(e) => {
-                  if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverCol(null);
-                }}
-                onDrop={(e) => onDrop(e, col.key)}
-                className="flex flex-col"
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <span className="flex items-center gap-2 text-sm font-semibold">
-                    <span className={`h-2.5 w-2.5 rounded-full ${col.dot}`} />
-                    {col.label}
-                  </span>
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                    {items.length}
-                  </span>
-                </div>
-                <div className="mb-3 h-px bg-border" />
-                <div
-                  className={`flex-1 space-y-2 rounded-2xl p-1 transition ${
-                    overCol === col.key ? "bg-primary/10 ring-2 ring-primary/40" : ""
-                  }`}
-                >
-                  {items.length === 0 ? (
-                    <div className="flex min-h-[120px] items-center justify-center rounded-2xl border-2 border-dashed border-primary/50 bg-primary/5 p-4 text-center text-sm font-medium text-primary">
-                      {overCol === col.key ? "Solte aqui" : "Nenhum lead nesta etapa"}
-                    </div>
-                  ) : (
-                    items.map((l) => (
-                      <LeadCard
-                        key={l.id}
-                        lead={l}
-                        assignee={team.find((m) => m.id === l.assigned_to) || null}
-                        itineraryStatus={itineraryStatuses[l.id]}
-                        dragging={dragId === l.id}
-                        onDragStart={() => setDragId(l.id)}
-                        onDragEnd={() => {
-                          setDragId(null);
-                          setOverCol(null);
-                        }}
-                        onMove={(status) => void requestMove(l.id, status)}
-                        onOpen={() => setDetailId(l.id)}
-                        archived={showArchived}
-                        onToggleArchive={() =>
-                          archiveMut.mutate({ id: l.id, archived: !showArchived })
-                        }
-                        onDelete={() => setConfirmDeleteId(l.id)}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-
-      )}
-
-      {open && (
-        <NewLeadModal
-          allLeads={leads}
-          onClose={() => setOpen(false)}
-          onCreated={() => {
-            setOpen(false);
-            qc.invalidateQueries({ queryKey: ["leads"] });
-          }}
+        <QuadroComercial
+          viagens={visiveis}
+          passos={passos}
+          equipe={team}
+          comViagemCriada={itineraryStatuses}
+          arquivadas={showArchived}
+          onAbrir={setDetailId}
+          onMover={mover}
+          onArquivar={(id) => archiveMut.mutate({ id, archived: !showArchived })}
+          onExcluir={setConfirmDeleteId}
         />
       )}
 
-      {detailId && <LeadDetailDrawer leadId={detailId} onClose={() => { setDetailId(null); if (leadParam) navigate({ search: {}, replace: true }); }} />}
+      <JanelaPerder viagem={perdendo} salvando={perder.isPending} onCancelar={() => setPerdendo(null)} onConfirmar={(motivo) => perdendo && perder.mutate({ v: perdendo, motivo })} />
+
+      <NovaViagem open={open} onClose={() => setOpen(false)} onCriada={(v) => setDetailId(v.id)} />
+
+      <FichaComercial
+        leadId={detailId}
+        onClose={fecharFicha}
+        onMover={mover}
+        onPerder={setPerdendo}
+        onFichaCompleta={(id) => { setDetailId(null); setCompletaId(id); }}
+      />
+      {completaId && <LeadDetailDrawer leadId={completaId} onClose={() => { setCompletaId(null); qc.invalidateQueries({ queryKey: ["lead", completaId] }); }} />}
       <AlertDialog open={!!confirmDeleteId} onOpenChange={(o) => !o && setConfirmDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir venda?</AlertDialogTitle>
+            <AlertDialogTitle>Excluir viagem?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A venda e seus dados vinculados serão removidos
-              permanentemente. Se preferir mantê-la no histórico, use "Arquivar venda".
+              Esta ação não pode ser desfeita. A viagem e os dados ligados a ela serão removidos
+              para sempre. Se preferir mantê-la no histórico, use Arquivar.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -404,7 +363,7 @@ function LeadsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </>
   );
 }
 
@@ -465,7 +424,7 @@ function LeadCard({
       >
         <button
           type="button"
-          aria-label="Ver detalhes do lead"
+          aria-label="Ver detalhes da viagem"
           title="Ver detalhes"
           draggable={false}
           onPointerDown={(e) => e.stopPropagation()}
@@ -481,7 +440,7 @@ function LeadCard({
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label="Mover lead"
+              aria-label="Mover viagem"
               title="Mover para outra etapa"
               onClick={(e) => e.stopPropagation()}
               className="flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground transition hover:bg-primary/10 hover:text-primary"
@@ -868,7 +827,7 @@ export function NewLeadModal({
     }
     let active = true;
     (async () => {
-      const { data } = await db
+      const { data } = await supabase
         .from("crm_clients")
         .select("preferences")
         .ilike("email", email)
@@ -1094,7 +1053,7 @@ export function NewLeadModal({
       setDraftAlerted(true);
       const itineraries = await fetchItinerariesByLead(selectedLeadId);
       if (itineraries.some((it) => it.status === "draft")) {
-        toast.warning("Este lead já possui um roteiro em rascunho.");
+        toast.warning("esta viagem já possui um roteiro em rascunho.");
       }
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
@@ -1157,7 +1116,7 @@ export function NewLeadModal({
       if (payload.phone !== (lead.phone || null)) clientPatch.phone = payload.phone;
       if (Object.keys(clientPatch).length > 0) {
         const client = await updateClient(lead.client_id, clientPatch);
-        if (!client) toast.warning("Proposta salva, mas o cadastro do cliente não foi atualizado.");
+        if (!client) toast.warning("Viagem salva, mas o cadastro do viajante não foi atualizado.");
       }
     }
 
@@ -1206,11 +1165,11 @@ export function NewLeadModal({
                 <UserPlus className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-bold">{editing ? "Editar Proposta" : "Nova Proposta"}</h2>
+                <h2 className="text-lg font-bold">{editing ? "Editar viagem" : "Nova viagem"}</h2>
                 <p className="text-xs text-muted-foreground">
                   {editing
-                    ? "Revise e atualize todos os dados do cliente"
-                    : "Preencha os dados para criar o perfil completo do cliente"}
+                    ? "Revise e atualize todos os dados do viajante"
+                    : "Preencha os dados para criar o perfil completo do viajante"}
                 </p>
 
               </div>
@@ -1392,7 +1351,7 @@ export function NewLeadModal({
               {clientMembers.length > 0 && (
                 <div className="sm:col-span-2 rounded-xl border border-dashed border-primary/30 bg-primary/5 p-3">
                   <div className="mb-2 text-xs font-semibold text-foreground">
-                    Membros do cliente
+                    Membros do viajante
                   </div>
                   <p className="mb-2 text-xs text-muted-foreground">
                     Selecione quem também vai viajar para somar ao número de passageiros.
@@ -1441,7 +1400,7 @@ export function NewLeadModal({
               <ModalField label="Programas de Fidelidade" placeholder="Ex: Smiles, LATAM Pass" value={form.loyalty_programs} onChange={(v) => set({ loyalty_programs: v })} suggestions={LOYALTY_PROGRAMS} />
               <ModalField label="Pontos / Milhas" placeholder="Ex: 80.000" value={form.points_miles} onChange={(v) => set({ points_miles: maskMiles(v) })} />
               <ModalSelect label="Possui Passaporte?" value={form.has_passport} onChange={(v) => set({ has_passport: v })} options={["Sim", "Não", "Vencido"]} />
-              <ModalTextarea label="Preferências do cliente" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} presets={PREFERENCE_PRESETS} />
+              <ModalTextarea label="Preferências do viajante" placeholder="Assento, alimentação, acessibilidade…" value={form.preferences} onChange={(v) => set({ preferences: v })} presets={PREFERENCE_PRESETS} />
             </Section>
           )}
 

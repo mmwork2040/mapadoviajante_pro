@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Configurações por agência ficam na coleção global `system_settings`, com a
 // chave `agency_cfg:{agencyId}:{scope}`. Leitura e escrita passam pelo
 // servidor: a agência vem da sessão (nunca do navegador) e senhas não voltam.
 
-const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive", "payments", "permissions"] as const;
+const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive", "payments", "permissions", "brand"] as const;
 type Scope = (typeof SCOPES)[number];
 
 /**
@@ -39,8 +39,8 @@ function parseValue(raw: unknown): Record<string, unknown> | null {
 }
 
 async function readScope(agencyId: string, scope: Scope) {
-  const { dbAdmin } = await import("@/integrations/appwrite/db.server");
-  const { data: row, error } = await dbAdmin
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: row, error } = await supabaseAdmin
     .from("system_settings")
     .select("value")
     .eq("key", settingsKey(agencyId, scope))
@@ -59,8 +59,8 @@ export async function readAgencyConfigServer(agencyId: string, scope: Scope) {
 
 /** Grava a configuração completa de uma seção. Só para uso no servidor, depois de conferir o papel. */
 export async function writeAgencyConfigServer(agencyId: string, scope: Scope, value: Record<string, unknown>) {
-  const { dbAdmin } = await import("@/integrations/appwrite/db.server");
-  const { error } = await dbAdmin.from("system_settings").upsert(
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { error } = await supabaseAdmin.from("system_settings").upsert(
     { key: settingsKey(agencyId, scope), value, updated_at: new Date().toISOString() },
     { onConflict: "key" },
   );
@@ -74,7 +74,7 @@ const scopeInput = z.object({ scope: z.enum(SCOPES) });
 
 /** Lê a configuração de uma seção da Administração para a agência do usuário. */
 export const getAgencyConfig = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => scopeInput.parse(data))
   .handler(async ({ data, context }): Promise<{ value: string | null }> => {
     const { getMembership } = await import("@/lib/server/authz");
@@ -104,7 +104,7 @@ export async function getPublicNotificationConfig(): Promise<{ value: string | n
 
 /** Salva a configuração de uma seção da Administração. Só admin. */
 export const saveAgencyConfig = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z.object({ scope: z.enum(SCOPES), value: z.string().max(100_000) }).parse(data),
   )
@@ -130,8 +130,8 @@ export const saveAgencyConfig = createServerFn({ method: "POST" })
       if (!next[field] && current[field]) next[field] = current[field];
     }
 
-    const { dbAdmin } = await import("@/integrations/appwrite/db.server");
-    const { error } = await dbAdmin.from("system_settings").upsert(
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.from("system_settings").upsert(
       {
         key: settingsKey(m.agencyId, data.scope),
         value: next,
@@ -148,7 +148,7 @@ export const saveAgencyConfig = createServerFn({ method: "POST" })
 
 /** Dispara um evento para o webhook configurado da agência (no servidor). */
 export const dispatchWebhookFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z.object({ event: z.string().min(1).max(60), payload: z.unknown() }).parse(data),
   )
@@ -169,7 +169,7 @@ export const dispatchWebhookFn = createServerFn({ method: "POST" })
 
 /** Envia um evento de teste. Só admin. Segredo vazio = usa o já salvo. */
 export const sendTestWebhookFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z.object({ url: z.string().trim().url().max(500), secret: z.string().max(500).optional() }).parse(data),
   )

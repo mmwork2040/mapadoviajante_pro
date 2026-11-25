@@ -1,6 +1,5 @@
-// Token de acesso do Google a partir de uma conta de serviço (JWT assinado no
-// servidor). Usado pelo push (Firebase) e pelo Google Drive. Só para código de
-// servidor: a chave privada nunca vai ao navegador.
+// Token de acesso do Google a partir de uma conta de serviço (JWT assinado).
+// Só para código de servidor: a chave privada nunca vai ao navegador.
 
 export interface GoogleServiceAccount {
   client_email: string;
@@ -27,21 +26,8 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
   return buf.buffer;
 }
 
-/** Lê o JSON da conta de serviço guardado em uma variável de ambiente. */
-export function parseServiceAccount(raw: string | undefined): GoogleServiceAccount | null {
-  if (!raw) return null;
-  try {
-    const sa = JSON.parse(raw) as GoogleServiceAccount;
-    if (!sa.client_email || !sa.private_key) return null;
-    sa.private_key = sa.private_key.replace(/\\n/g, "\n");
-    return sa;
-  } catch {
-    return null;
-  }
-}
-
-/** Troca a conta de serviço por um token de acesso válido por 1 hora para o escopo pedido. */
-export async function getGoogleAccessToken(sa: GoogleServiceAccount, scope: string): Promise<string> {
+/** Troca a conta de serviço por um token de acesso válido por 1 hora, no escopo pedido. */
+export async function googleAccessToken(sa: GoogleServiceAccount, scope: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
   const claim = base64url(

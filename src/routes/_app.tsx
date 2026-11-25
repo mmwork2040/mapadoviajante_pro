@@ -1,8 +1,8 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Toaster } from "sonner";
 import { useAuth } from "@/lib/auth";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Avisos } from "@/components/ds/aviso";
 import { ConfirmProvider } from "@/components/ConfirmDialog";
 
 export const Route = createFileRoute("/_app")({
@@ -72,7 +72,7 @@ function ProtectedLayout() {
       <AppLayout>
         <Outlet />
       </AppLayout>
-      <Toaster richColors position="top-right" />
+      <Avisos />
     </ConfirmProvider>
   );
 }

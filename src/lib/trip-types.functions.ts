@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Persiste os tipos de viagem personalizados por agência na tabela
 // `system_settings`, para que fiquem disponíveis em todos os dispositivos.
@@ -10,10 +10,10 @@ function settingsKey(agencyId: string) {
 }
 
 async function resolveAgency(
-  db: { from: (t: string) => any },
+  supabase: { from: (t: string) => any },
   userId: string,
 ): Promise<string | null> {
-  const { data } = await db
+  const { data } = await supabase
     .from("agency_members")
     .select("agency_id")
     .eq("user_id", userId)
@@ -35,11 +35,11 @@ export function normalizeTripType(v: string): string {
 
 /** Lê os tipos de viagem personalizados da agência do usuário. */
 export const getTripTypes = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ types: string[] }> => {
-    const agencyId = await resolveAgency(context.db, context.userId);
+    const agencyId = await resolveAgency(context.supabase, context.userId);
     if (!agencyId) return { types: [] };
-    const { data: row } = await context.db
+    const { data: row } = await context.supabase
       .from("system_settings")
       .select("value")
       .eq("key", settingsKey(agencyId))
@@ -53,16 +53,16 @@ export const getTripTypes = createServerFn({ method: "GET" })
 
 /** Adiciona um novo tipo de viagem (evita duplicados ignorando caixa/acento/espaços). */
 export const addTripType = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ type: z.string() }).parse(data))
   .handler(async ({ data, context }): Promise<{ types: string[] }> => {
-    const agencyId = await resolveAgency(context.db, context.userId);
+    const agencyId = await resolveAgency(context.supabase, context.userId);
     if (!agencyId) throw new Error("Agência não encontrada para o usuário.");
     const value = data.type.trim().replace(/\s+/g, " ");
     if (!value) throw new Error("Tipo de viagem inválido.");
 
     const key = settingsKey(agencyId);
-    const { data: row } = await context.db
+    const { data: row } = await context.supabase
       .from("system_settings")
       .select("value")
       .eq("key", key)
@@ -77,7 +77,7 @@ export const addTripType = createServerFn({ method: "POST" })
       return { types: current };
     }
     const next = [...current, value];
-    const { error } = await context.db.from("system_settings").upsert(
+    const { error } = await context.supabase.from("system_settings").upsert(
       { key, value: { types: next } as never, updated_at: new Date().toISOString() },
       { onConflict: "key" },
     );

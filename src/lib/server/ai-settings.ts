@@ -44,7 +44,7 @@ export function openAiBaseUrlFor(apiKey: string): string {
  */
 type AiContext = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  db: any;
+  supabase: any;
   userId: string;
   membership?: { agencyId: string } | null;
 };
@@ -62,7 +62,7 @@ export async function loadAiSettings(ctx: AiContext): Promise<{ data: any; error
     await assertWithinQuota(agencyId);
   }
 
-  const { data: cfg, error } = await ctx.db.from("crm_ai_config").select("*").maybeSingle();
+  const { data: cfg, error } = await ctx.supabase.from("crm_ai_config").select("*").maybeSingle();
   if (!platform) return { data: cfg, error };
   const ks = cfg?.knowledge_sources && typeof cfg.knowledge_sources === "object" ? cfg.knowledge_sources : {};
   return {

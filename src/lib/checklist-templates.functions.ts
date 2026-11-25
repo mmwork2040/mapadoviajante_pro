@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { loadAiSettings } from "@/lib/server/ai-settings";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 // Templates de checklist são armazenados na tabela `system_settings` sob a chave
 // `agency_cfg:{agencyId}:checklists`. Isso evita a necessidade de uma nova
@@ -164,10 +164,10 @@ const DEFAULT_TEMPLATE: ChecklistTemplate = {
 };
 
 async function resolveMember(
-  db: { from: (t: string) => any },
+  supabase: { from: (t: string) => any },
   userId: string,
 ): Promise<{ agencyId: string; role: string } | null> {
-  const { data } = await db
+  const { data } = await supabase
     .from("agency_members")
     .select("agency_id, role")
     .eq("user_id", userId)
@@ -180,8 +180,8 @@ async function resolveMember(
 
 type SupaLike = { from: (t: string) => any };
 
-async function readValue(db: SupaLike, agencyId: string): Promise<StoredValue> {
-  const { data } = await db
+async function readValue(supabase: SupaLike, agencyId: string): Promise<StoredValue> {
+  const { data } = await supabase
     .from("system_settings")
     .select("value")
     .eq("key", KEY(agencyId))
@@ -193,8 +193,8 @@ async function readValue(db: SupaLike, agencyId: string): Promise<StoredValue> {
   return raw;
 }
 
-async function writeValue(db: SupaLike, agencyId: string, value: StoredValue): Promise<void> {
-  const { error } = await db.from("system_settings").upsert(
+async function writeValue(supabase: SupaLike, agencyId: string, value: StoredValue): Promise<void> {
+  const { error } = await supabase.from("system_settings").upsert(
     {
       key: KEY(agencyId),
       value: value as never,
@@ -207,20 +207,20 @@ async function writeValue(db: SupaLike, agencyId: string, value: StoredValue): P
 
 /** Lista templates de checklist da agência do usuário (qualquer membro ativo). */
 export const listChecklistTemplates = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<StoredValue> => {
-    const m = await resolveMember(context.db, context.userId);
+    const m = await resolveMember(context.supabase, context.userId);
     if (!m) return { templates: [DEFAULT_TEMPLATE], defaultId: DEFAULT_TEMPLATE.id };
-    return await readValue(context.db, m.agencyId);
+    return await readValue(context.supabase, m.agencyId);
   });
 
 /** Contagem de leads que usam cada template (por templateId). */
 export const getChecklistTemplatesUsage = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<Record<string, number>> => {
-    const m = await resolveMember(context.db, context.userId);
+    const m = await resolveMember(context.supabase, context.userId);
     if (!m) return {};
-    const { data, error } = await context.db
+    const { data, error } = await context.supabase
       .from("crm_leads")
       .select("checklists")
       .eq("agency_id", m.agencyId)
@@ -245,12 +245,12 @@ export type LeadByTemplate = {
 
 /** Lista leads/viagens que aplicaram um determinado template. */
 export const listLeadsByChecklistTemplate = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ templateId: z.string().min(1) }).parse(d))
   .handler(async ({ data, context }): Promise<LeadByTemplate[]> => {
-    const m = await resolveMember(context.db, context.userId);
+    const m = await resolveMember(context.supabase, context.userId);
     if (!m) return [];
-    const { data: rows, error } = await context.db
+    const { data: rows, error } = await context.supabase
       .from("crm_leads")
       .select("id, name, status, destination, profile, updated_at, checklists")
       .eq("agency_id", m.agencyId)
@@ -301,33 +301,33 @@ const templateSchema = z.object({
 
 /** Salva um template (upsert por id). Apenas admin. */
 export const saveChecklistTemplate = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ template: templateSchema }).parse(data))
   .handler(async ({ data, context }): Promise<StoredValue> => {
-    const m = await resolveMember(context.db, context.userId);
+    const m = await resolveMember(context.supabase, context.userId);
     if (!m) throw new Error("Agência não encontrada.");
     if (m.role !== "admin") throw new Error("Sem permissão.");
-    const current = await readValue(context.db, m.agencyId);
+    const current = await readValue(context.supabase, m.agencyId);
     const now = new Date().toISOString();
     const idx = current.templates.findIndex((t) => t.id === data.template.id);
     const incoming: ChecklistTemplate = { ...data.template, updatedAt: now };
     if (idx >= 0) current.templates[idx] = { ...current.templates[idx], ...incoming };
     else current.templates.push({ ...incoming, createdAt: now });
     if (!current.defaultId) current.defaultId = current.templates[0]?.id ?? null;
-    await writeValue(context.db, m.agencyId, current);
+    await writeValue(context.supabase, m.agencyId, current);
     return current;
   });
 
 /** Remove um template. Apenas admin. */
 export const deleteChecklistTemplate = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().min(1) }).parse(data))
   .handler(async ({ data, context }): Promise<StoredValue> => {
-    const m = await resolveMember(context.db, context.userId);
+    const m = await resolveMember(context.supabase, context.userId);
     if (!m) throw new Error("Agência não encontrada.");
     if (m.role !== "admin") throw new Error("Sem permissão.");
     // Bloqueia exclusão se algum lead já usa este template
-    const { count, error: countErr } = await context.db
+    const { count, error: countErr } = await context.supabase
       .from("crm_leads")
       .select("id", { count: "exact", head: true })
       .eq("agency_id", m.agencyId)
@@ -338,46 +338,46 @@ export const deleteChecklistTemplate = createServerFn({ method: "POST" })
         `Este template já foi aplicado em ${count} lead(s) e não pode ser excluído.`,
       );
     }
-    const current = await readValue(context.db, m.agencyId);
+    const current = await readValue(context.supabase, m.agencyId);
     current.templates = current.templates.filter((t) => t.id !== data.id);
     if (current.defaultId === data.id) current.defaultId = current.templates[0]?.id ?? null;
     if (current.templates.length === 0) {
       current.templates = [DEFAULT_TEMPLATE];
       current.defaultId = DEFAULT_TEMPLATE.id;
     }
-    await writeValue(context.db, m.agencyId, current);
+    await writeValue(context.supabase, m.agencyId, current);
     return current;
   });
 
 /** Define o template padrão. Apenas admin. */
 export const setDefaultChecklistTemplate = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ id: z.string().min(1) }).parse(data))
   .handler(async ({ data, context }): Promise<StoredValue> => {
-    const m = await resolveMember(context.db, context.userId);
+    const m = await resolveMember(context.supabase, context.userId);
     if (!m) throw new Error("Agência não encontrada.");
     if (m.role !== "admin") throw new Error("Sem permissão.");
-    const current = await readValue(context.db, m.agencyId);
+    const current = await readValue(context.supabase, m.agencyId);
     if (!current.templates.some((t) => t.id === data.id)) {
       throw new Error("Template não encontrado.");
     }
     current.defaultId = data.id;
-    await writeValue(context.db, m.agencyId, current);
+    await writeValue(context.supabase, m.agencyId, current);
     return current;
   });
 
 /** Ativa/desativa um template. Bloqueia desativação se estiver em uso. Apenas admin. */
 export const setChecklistTemplateActive = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z.object({ id: z.string().min(1), active: z.boolean() }).parse(data),
   )
   .handler(async ({ data, context }): Promise<StoredValue> => {
-    const m = await resolveMember(context.db, context.userId);
+    const m = await resolveMember(context.supabase, context.userId);
     if (!m) throw new Error("Agência não encontrada.");
     if (m.role !== "admin") throw new Error("Sem permissão.");
     if (!data.active) {
-      const { count, error: countErr } = await context.db
+      const { count, error: countErr } = await context.supabase
         .from("crm_leads")
         .select("id", { count: "exact", head: true })
         .eq("agency_id", m.agencyId)
@@ -389,18 +389,18 @@ export const setChecklistTemplateActive = createServerFn({ method: "POST" })
         );
       }
     }
-    const current = await readValue(context.db, m.agencyId);
+    const current = await readValue(context.supabase, m.agencyId);
     const idx = current.templates.findIndex((t) => t.id === data.id);
     if (idx < 0) throw new Error("Template não encontrado.");
     current.templates[idx] = { ...current.templates[idx], active: data.active };
-    await writeValue(context.db, m.agencyId, current);
+    await writeValue(context.supabase, m.agencyId, current);
     return current;
   });
 
 
 /** Gera estrutura de checklist (formato Markdown ##/###/-) via IA. */
 export const generateChecklistStructureFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d) =>
     z.object({ context: z.string().min(1).max(2000) }).parse(d),
   )

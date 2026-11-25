@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { loadAiSettings } from "@/lib/server/ai-settings";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import type { ExtractedDocData } from "@/lib/types";
 
 type TestInput = { provider: string; model: string; apiKey: string };
@@ -8,7 +8,7 @@ type ExtractInput = { fileBase64: string; mime: string };
 type ExtractActivitiesInput = { fileBase64: string; mime: string; context?: string };
 
 export const testAiConnection = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: TestInput) => {
     if (!d?.provider) throw new Error("Dados de conexão incompletos.");
     return d;
@@ -16,7 +16,7 @@ export const testAiConnection = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ ok: boolean; message: string }> => {
     const { requireAdmin } = await import("@/lib/server/authz");
     const m = await requireAdmin(context);
-    const { resolveProviderForAdmin } = await import("@/lib/server/ai-admin");
+    const { resolveProviderForAdmin } = await import("@/lib/server/ai-provider");
     const provider = await resolveProviderForAdmin(context, data);
     const { platformAi } = await import("@/lib/server/ai-settings");
     const usage = await import("@/lib/server/ai-usage");
@@ -30,7 +30,7 @@ export const testAiConnection = createServerFn({ method: "POST" })
   });
 
 export const extractDocumentData = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: ExtractInput) => {
     if (!d?.fileBase64 || !d?.mime) throw new Error("Arquivo inválido.");
     return d;
@@ -58,7 +58,7 @@ export const extractDocumentData = createServerFn({ method: "POST" })
   });
 
 export const extractDocumentActivitiesData = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: ExtractActivitiesInput) => {
     if (!d?.fileBase64 || !d?.mime) throw new Error("Arquivo inválido.");
     return d;
@@ -90,7 +90,7 @@ type ExtractActivitiesTextInput = { text: string; context?: string };
 
 // Extrai atividades a partir de texto (ex.: planilhas do Drive já convertidas).
 export const extractActivitiesFromTextData = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: ExtractActivitiesTextInput) => {
     if (!d?.text?.trim()) throw new Error("Documento sem conteúdo legível.");
     return d;
@@ -128,7 +128,7 @@ type ExtractKnowledgeInput = {
 
 // Extrai o texto de um documento para a base de conhecimento da IA.
 export const extractKnowledgeDoc = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: ExtractKnowledgeInput) => {
     if (!d?.fileBase64 || !d?.mime) throw new Error("Arquivo inválido.");
     return d;
@@ -136,7 +136,7 @@ export const extractKnowledgeDoc = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<{ text: string }> => {
     const { requireAdmin } = await import("@/lib/server/authz");
     const m = await requireAdmin(context);
-    const { resolveProviderForAdmin } = await import("@/lib/server/ai-admin");
+    const { resolveProviderForAdmin } = await import("@/lib/server/ai-provider");
     const provider = await resolveProviderForAdmin(context, data);
     const { platformAi } = await import("@/lib/server/ai-settings");
     const usage = await import("@/lib/server/ai-usage");
@@ -152,7 +152,7 @@ type ParsePeriodInput = { text: string };
 
 // Interpreta um período de viagem em texto livre e retorna datas de início/fim.
 export const parseTravelPeriodFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: ParsePeriodInput) => {
     if (!d?.text?.trim()) throw new Error("Informe o período da viagem.");
     return { text: d.text.trim() };
@@ -181,7 +181,7 @@ type ConvertCurrencyInput = { amount: number; currency: string };
 
 // Converte um valor em moeda estrangeira para Real (BRL) usando a IA.
 export const convertCurrencyFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: ConvertCurrencyInput) => {
     const amount = Number(d?.amount);
     if (!Number.isFinite(amount) || amount <= 0) throw new Error("Informe um valor válido.");
@@ -221,7 +221,7 @@ type SearchHotelsInput = { city: string; neighborhood?: string; filters?: HotelS
 
 // Pesquisa sugestões de hospedagem na cidade informada usando a IA.
 export const searchHotelsFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: SearchHotelsInput) => {
     if (!d?.city?.trim()) throw new Error("Informe a cidade para pesquisar hospedagens.");
     const limit = Math.min(6, Math.max(1, Math.round(Number(d.limit) || 5)));
@@ -270,7 +270,7 @@ type SearchSuggestionsInput = {
 
 // Pesquisa sugestões genéricas (transfer, restaurante, passeio) na cidade informada.
 export const searchSuggestionsFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: SearchSuggestionsInput) => {
     const kinds: SuggestionKind[] = ["transfer", "restaurant", "activity"];
     if (!d?.kind || !kinds.includes(d.kind)) throw new Error("Tipo de sugestão inválido.");
@@ -336,7 +336,7 @@ type AnalyzeImageInput = {
 // Interpreta uma imagem anexada a um dia do roteiro e avalia se é coerente
 // com o destino/roteiro, retornando o tipo de atividade identificado.
 export const analyzeImageActivityFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: AnalyzeImageInput) => {
     if (!d?.fileBase64 || !d?.mime) throw new Error("Imagem inválida.");
     if (!d.mime.startsWith("image/")) throw new Error("O arquivo enviado não é uma imagem.");
@@ -355,7 +355,7 @@ export const analyzeImageActivityFn = createServerFn({ method: "POST" })
     let itineraryTitle = "";
     let existingContext = "";
     if (data.itineraryId) {
-      const { data: it } = await context.db
+      const { data: it } = await context.supabase
         .from("crm_itineraries")
         .select("title, destination")
         .eq("id", data.itineraryId)
@@ -364,7 +364,7 @@ export const analyzeImageActivityFn = createServerFn({ method: "POST" })
       itineraryTitle = (it as { title?: string } | null)?.title ?? "";
       // Dias não têm agency_id: só lê se o roteiro for da agência do usuário.
       const { data: days } = it
-        ? await context.db
+        ? await context.supabase
             .from("crm_itinerary_days")
             .select("day_number, title, crm_itinerary_activities(title, type, location)")
             .eq("itinerary_id", data.itineraryId)
@@ -425,7 +425,7 @@ type LibraryContentInput = {
 // Gera/ajuda a redigir a descrição curta ou o conteúdo (base de conhecimento)
 // de um item da biblioteca. Requer IA configurada e conectada.
 export const generateLibraryContent = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: LibraryContentInput) => {
     if (!d?.title?.trim()) throw new Error("Informe um título para o item.");
     if (d?.field !== "description" && d?.field !== "content") {
@@ -535,7 +535,7 @@ type KnowledgeState = {
 };
 
 async function buildKnowledgeContext(
-  db: { from: (t: string) => any },
+  supabase: { from: (t: string) => any },
   ks: KnowledgeState | null,
   allowFinance = false,
 ): Promise<string> {
@@ -551,7 +551,7 @@ async function buildKnowledgeContext(
 
   const sources = ks?.data_sources ?? {};
   if (sources.library) {
-    const { data: itineraries } = await db
+    const { data: itineraries } = await supabase
       .from("crm_itineraries")
       .select("title, destination, start_date, end_date")
       .limit(30);
@@ -568,7 +568,7 @@ async function buildKnowledgeContext(
     }
   }
   if (sources.leads) {
-    const { data: leads } = await db
+    const { data: leads } = await supabase
       .from("crm_leads")
       .select("name, email, phone, status, destination")
       .limit(40);
@@ -586,7 +586,7 @@ async function buildKnowledgeContext(
   }
   // Dados financeiros só entram para quem tem acesso ao financeiro.
   if (sources.finance && allowFinance) {
-    const { data: txs } = await db
+    const { data: txs } = await supabase
       .from("crm_transactions")
       .select("type, amount, category, description, transaction_date")
       .order("transaction_date", { ascending: false })
@@ -608,7 +608,7 @@ async function buildKnowledgeContext(
 }
 
 export const itineraryCopilot = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: CopilotInput) => {
     if (!d?.prompt?.trim()) throw new Error("Mensagem vazia.");
     return d;
@@ -628,7 +628,7 @@ export const itineraryCopilot = createServerFn({ method: "POST" })
 
     const { resolveFinanceAccess } = await import("@/lib/server/finance-access");
     const financeAccess = await resolveFinanceAccess(context).catch(() => ({ canView: false }));
-    const knowledge = await buildKnowledgeContext(context.db, ks, financeAccess.canView);
+    const knowledge = await buildKnowledgeContext(context.supabase, ks, financeAccess.canView);
     const systemPrompt = knowledge
       ? `${basePrompt}\n\nUse as informações abaixo como base de conhecimento ao responder:\n\n${knowledge}`
       : basePrompt;
@@ -810,7 +810,7 @@ function parsePlannerJson(text: string): PlannerResult {
 }
 
 export const itineraryPlanner = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: PlannerInput) => {
     if (!d?.message?.trim() && !(d?.files?.length)) throw new Error("Envie uma mensagem ou um documento.");
     return { message: d.message || "", context: d.context || "", files: d.files || [], leadId: d.leadId ?? null, itineraryId: d.itineraryId ?? null };
@@ -827,7 +827,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
     let leadKnowledge = "";
     let leadDestination = "";
     if (data.leadId) {
-      const { data: lead } = await context.db
+      const { data: lead } = await context.supabase
         .from("crm_leads")
         .select("*")
         .eq("id", data.leadId)
@@ -898,7 +898,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
 
     let pastItineraries = "";
     if (data.leadId) {
-      const { data: its } = await context.db
+      const { data: its } = await context.supabase
         .from("crm_itineraries")
         .select("id,title,status,start_date,end_date,passengers,notes,crm_itinerary_days(title,description,crm_itinerary_activities(title,description,location,time))")
         .eq("lead_id", data.leadId)
@@ -926,7 +926,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
 
     let leadDocuments = "";
     if (data.leadId) {
-      const { data: docs } = await (context.db as any)
+      const { data: docs } = await (context.supabase as any)
         .from("crm_lead_documents")
         .select("name,category,content,created_at")
         .eq("lead_id", data.leadId)
@@ -947,7 +947,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
     const attachedFiles: PlannerFile[] = [];
     let attachmentsIndex = "";
     if (data.itineraryId) {
-      const { data: atts } = await (context.db as any)
+      const { data: atts } = await (context.supabase as any)
         .from("crm_lead_documents")
         .select("name,category,file_path,mime_type,activity_id")
         .eq("itinerary_id", data.itineraryId)
@@ -958,11 +958,15 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
         const lines: string[] = [];
         for (const a of atts as any[]) {
           try {
-            const { data: blob } = await context.db.storage.from("trip-attachments").download(a.file_path);
-            if (!blob) continue;
-            const buf = await blob.arrayBuffer();
+            const { data: signed } = await context.supabase.storage
+              .from("trip-attachments")
+              .createSignedUrl(a.file_path, 600);
+            if (!signed?.signedUrl) continue;
+            const res = await fetch(signed.signedUrl);
+            if (!res.ok) continue;
+            const buf = await res.arrayBuffer();
             const base64 = Buffer.from(buf).toString("base64");
-            const mime = a.mime_type || blob.type || "application/octet-stream";
+            const mime = a.mime_type || res.headers.get("content-type") || "application/octet-stream";
             attachedFiles.push({ base64, mime, name: a.name });
             lines.push(`- "${a.name}"${a.category ? ` [${a.category}]` : ""} → atividade [id:${a.activity_id}]`);
           } catch {
@@ -982,13 +986,13 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
     let libraryMemoryNote = "";
     if (leadDestination) {
       try {
-        const { data: member } = await context.db
+        const { data: member } = await context.supabase
           .from("agency_members")
           .select("agency_id,id")
           .eq("user_id", context.userId)
           .maybeSingle();
         if (member?.agency_id) {
-          const { data: destImgs } = await (context.db as any)
+          const { data: destImgs } = await (context.supabase as any)
             .from("crm_library_items")
             .select("title")
             .eq("agency_id", member.agency_id)
@@ -999,7 +1003,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
             const first = leadDestination.split(",")[0].trim();
             const { ensureDestinationImages } = await import("./library-memory.server");
             const added = await ensureDestinationImages({
-              db: context.db as any,
+              supabase: context.supabase as any,
               agencyId: member.agency_id,
               memberId: member.id ?? null,
               destination: leadDestination,
@@ -1026,7 +1030,7 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
 
     let library = "";
     {
-      const { data: libItems } = await (context.db as any)
+      const { data: libItems } = await (context.supabase as any)
         .from("crm_library_items")
         .select("type,title,location,description,content,price,days,tags")
         .order("created_at", { ascending: false })

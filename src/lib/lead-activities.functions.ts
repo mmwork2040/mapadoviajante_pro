@@ -1,18 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
- * Exclui uma atividade da viagem. O cliente de dados do servidor já vem
- * limitado à agência do usuário, então só remove atividade da própria agência.
+ * Exclui uma atividade de lead usando a sessão autenticada do usuário.
+ * A política de RLS no banco restringe a remoção à própria agência.
  */
 export const deleteLeadActivityFn = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
-  // O ID pode ser um UUID (registros migrados) ou o ID curto do Appwrite.
-  .inputValidator((data) => z.object({ id: z.string().trim().regex(/^[A-Za-z0-9._-]{1,36}$/) }).parse(data))
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
   .handler(async ({ data, context }) => {
-    // Confirma que a atividade é da agência do usuário.
-    const { data: row, error: selErr } = await context.db
+    // Confirma que a atividade é visível para o usuário (mesma agência via RLS).
+    const { data: row, error: selErr } = await context.supabase
       .from("crm_lead_activities")
       .select("id")
       .eq("id", data.id)
@@ -20,7 +19,7 @@ export const deleteLeadActivityFn = createServerFn({ method: "POST" })
     if (selErr) throw new Error("Falha ao verificar a atividade.");
     if (!row) throw new Error("Atividade não encontrada.");
 
-    const { error } = await context.db
+    const { error } = await context.supabase
       .from("crm_lead_activities")
       .delete()
       .eq("id", data.id);

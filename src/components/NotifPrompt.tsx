@@ -48,7 +48,7 @@ export function NotifPrompt() {
       <Bell className="h-5 w-5 shrink-0 text-primary" />
       <div className="flex-1 text-sm">
         <p className="font-medium">Ativar notificações</p>
-        <p className="text-muted-foreground">{msg ?? "Receba avisos de leads, tarefas e mais neste dispositivo."}</p>
+        <p className="text-muted-foreground">{msg ?? "Receba avisos de viagens, tarefas e mais neste dispositivo."}</p>
       </div>
       <div className="flex items-center gap-2">
         <button

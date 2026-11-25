@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, CheckCheck, List, Trash2, X } from "lucide-react";
-import { db } from "@/integrations/appwrite/db";
+import { supabase } from "@/integrations/supabase/client";
 import {
   fetchNotifications,
   markNotificationRead,
@@ -29,7 +29,7 @@ export function NotificationBell() {
   useEffect(() => {
     const memberId = getMemberId();
     if (!memberId) return;
-    const channel = db
+    const channel = supabase
       .channel("notifications-realtime")
       .on(
         "postgres_changes",
@@ -38,7 +38,7 @@ export function NotificationBell() {
       )
       .subscribe();
     return () => {
-      db.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [qc]);
 
@@ -66,16 +66,15 @@ export function NotificationBell() {
   return (
     <div className="relative">
       <button
+        type="button"
         onClick={() => setOpen((o) => !o)}
-        aria-label="Notificações"
-        className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted"
+        aria-label={unread > 0 ? `Notificações, ${unread} ${unread === 1 ? "nova" : "novas"}` : "Notificações"}
+        title="Notificações"
+        aria-expanded={open}
+        className="ds-ib"
       >
-        <Bell className="h-5 w-5" />
-        {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-            {unread > 9 ? "9+" : unread}
-          </span>
-        )}
+        <Bell aria-hidden />
+        {unread > 0 && <span className="ds-dot" />}
       </button>
 
       {open && (

@@ -1,15 +1,15 @@
 # Segurança — versão Appwrite (produção)
 
-Vale para o código em produção (`mapadoviajante_pro`, Vercel + Appwrite). No
-Appwrite, a separação entre agências **não vem pronta**: precisa ser feita pelas
-permissões das coleções e pelo servidor. O plano completo está em
-`docs/migracao/PLANO-MESTRE.md` (fases F2 e F13).
+Este documento substitui, para o código em produção (`mapadoviajante_pro`,
+Vercel + Appwrite), as partes de banco do `PLANO_IMPLEMENTACAO.md`, que foi
+escrito para a versão Supabase (`crmosegredodoviajante`). Lá, o RLS do Supabase
+separava as agências; **no Appwrite essa proteção não existe** e precisa ser
+feita pelas permissões das coleções e pelo servidor.
 
 ## Como o sistema funciona hoje
 
 - O navegador fala direto com o Appwrite (`appwrite.agenc-ia.net`) por uma
-  "ponte" de consultas encadeadas (`src/integrations/appwrite/bridge.ts`, usada
-  como `db` no código).
+  "ponte" que imita o cliente do Supabase (`src/integrations/appwrite/bridge.ts`).
   Quase toda leitura e escrita de leads, roteiros, tarefas etc. acontece assim
   (`src/lib/services.ts`).
 - As server functions (`src/lib/*.functions.ts`) fazem IA, e-mail, convites,
@@ -36,17 +36,8 @@ permissões das coleções e pelo servidor. O plano completo está em
 | `APP_URL` | Recomendada | Endereço público usado nos links de convite (ex.: `https://mapadoviajante-pro.vercel.app`) |
 | `SUPER_ADMIN_EMAILS` | Opcional | Super admins, separados por vírgula. Sem ela, valem os dois e-mails atuais |
 | `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID` | Opcional | Usam os `VITE_APPWRITE_*` se ausentes |
-| `GOOGLE_DRIVE_SERVICE_ACCOUNT` | Opcional | JSON da conta de serviço do Google com leitura no Drive. A agência compartilha a pasta com o e-mail dessa conta |
-| `N8N_LEAD_WEBHOOK_SECRET`, `N8N_DEFAULT_AGENCY_ID` | Opcional | Entrada de viagens pelo n8n |
-
-A lista completa está em `.env.example`.
 
 ## O que falta — e precisa do console do Appwrite
-
-**Situação em 25/11/2026:** lidas direto no servidor, as 17 coleções e o bucket
-aceitam só usuários logados (`crm_transactions`, só o servidor). Visitante não lê
-nada. Para conferir de novo: `node scripts/appwrite/fechar-banco.mjs`. Continua
-aberto o item 2 abaixo (separação por agência).
 
 **1. Permissões das coleções (urgente).** As server functions agora estão
 protegidas, mas o navegador continua lendo e gravando direto no Appwrite. Quem
@@ -82,8 +73,7 @@ Recomendação: (a) agora para estancar, (b) ao longo da Fase 2.
 
 **3. Outros pontos encontrados (próximas tarefas):**
 
-- `rpc("has_role")` devolvia sempre verdadeiro. Agora confere o cargo do usuário
-  (ainda no navegador; a conferência que vale é a do servidor).
+- `rpc("has_role")` na ponte **sempre devolve verdadeiro**.
 - A criação de agência (`provision_agency`) roda no navegador, sem controle.
   Com a decisão de liberar acesso pela Hotmart (F0-T7/F0-T11 do plano), isso
   passa para o servidor.
@@ -92,11 +82,12 @@ Recomendação: (a) agora para estancar, (b) ao longo da Fase 2.
   todo usuário no `localStorage`. Só afeta telas, mas engana a interface.
 - Rotas públicas (`/api/public/n8n-lead`, `push-delivery`, `asaas-webhook`)
   ainda seguem o desenho antigo: ver F0-T8, F0-T9 e F0-T12 do plano.
-- Google Drive: passou a chamar a API do Google direto, com conta de serviço
-  (`GOOGLE_DRIVE_SERVICE_ACCOUNT`). Falta configurar a conta e testar; as
-  funções ainda não conferem a agência dona da pasta.
-- `/api/public/n8n-lead` e o formulário de captação agora gravam e leem no
-  Appwrite com `APPWRITE_API_KEY`. Sem a chave, respondem "não configurado".
+- Google Drive: deixou de usar o conector do Lovable. Agora lê direto no Google com
+  o token do login do Google de cada pessoa (OAuth do Appwrite, escopo
+  `drive.readonly`). Não há chave do Drive no servidor nem no navegador.
+- A entrada de leads do n8n (`/api/public/n8n-lead`) e o formulário de captação
+  (`/intake`) deixaram de chamar o Supabase e passaram a usar a chave de API do
+  Appwrite no servidor. Sem `APPWRITE_API_KEY` os dois respondem com erro.
 
 ## Como testar a branch na prévia da Vercel
 

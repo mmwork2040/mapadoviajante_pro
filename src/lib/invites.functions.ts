@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // email.server imported dynamically
 import { DEFAULT_CONFIG, type EmailConfig } from "@/lib/gmail-config";
 
@@ -8,14 +8,14 @@ const MEMBER_COLORS = ["#ff7a1a", "#2563eb", "#16a34a", "#db2777", "#9333ea", "#
 
 /** Verifica se o envio de e-mails está configurado e ativo. */
 export const getEmailConfigStatus = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { getMembership } = await import("@/lib/server/authz");
     const { agencyId } = await getMembership(context);
 
     try {
-      const { dbAdmin } = await import("@/integrations/appwrite/db.server");
-      const { data: row } = await dbAdmin
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: row } = await supabaseAdmin
         .from("system_settings")
         .select("value")
         .eq("key", `agency_cfg:${agencyId}:gmail`)
@@ -59,7 +59,7 @@ function inviteHtml(opts: { name: string; agency: string; inviter: string; link:
         <p style="margin:0 0 14px;font-size:16px;">Olá, <strong>${name}</strong>!</p>
         <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">
           <strong>${inviter}</strong> convidou você para participar da equipe da agência
-          <strong>${agency}</strong> no sistema O Mapa do Viajante.
+          <strong>${agency}</strong> no Mapa do Viajante PRO.
         </p>
         <p style="margin:0 0 24px;font-size:15px;line-height:1.6;">
           Para começar a usar o sistema, aceite o convite clicando no botão abaixo.
@@ -82,44 +82,8 @@ function inviteHtml(opts: { name: string; agency: string; inviter: string; link:
 }
 
 /** Envia um convite por e-mail para um novo membro da agência. */
-/**
- * Dados de um convite a partir do código do link. Pública: quem abre o link
- * ainda não tem conta. Devolve só o necessário para a tela (e-mail, nome e
- * agência) e só de convites ainda pendentes.
- */
-export const getInviteInfoFn = createServerFn({ method: "POST" })
-  .inputValidator((data) => z.object({ token: z.string().trim().min(8).max(255) }).parse(data))
-  .handler(async ({ data }) => {
-    const invalid = { valid: false, email: null, name: null, agency_name: null } as {
-      valid: boolean;
-      email: string | null;
-      name: string | null;
-      agency_name: string | null;
-    };
-    const { appwriteServerConfig, getServerBridge } = await import("@/integrations/appwrite/server");
-    if (!appwriteServerConfig().key) {
-      console.error("[convite] APPWRITE_API_KEY não configurada: não é possível ler o convite.");
-      return invalid;
-    }
-    const dbAdmin = getServerBridge() as any;
-    const { data: rows, error } = await dbAdmin
-      .from("agency_members")
-      .select("*")
-      .eq("invite_token", data.token)
-      .limit(1);
-    const row = !error && Array.isArray(rows) ? rows[0] : null;
-    if (!row || row.status !== "pending") return invalid;
-    const { data: agency } = await dbAdmin.from("agencies").select("name").eq("id", row.agency_id).maybeSingle();
-    return {
-      valid: true,
-      email: (row.email as string | null) ?? null,
-      name: (row.name as string | null) ?? null,
-      agency_name: (agency?.name as string | null) ?? null,
-    };
-  });
-
 export const sendTeamInvite = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -137,7 +101,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }) => {
-    const { db } = context;
+    const { supabase } = context;
     const email = data.email.toLowerCase();
 
     // Só admin convida, e sempre para a própria agência.
@@ -145,7 +109,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     const { agencyId: activeAgencyId } = await requireAdmin(context);
 
     // Já é membro ativo?
-    const { data: existing } = await db
+    const { data: existing } = await supabase
       .from("agency_members")
       .select("id, is_active")
       .eq("agency_id", activeAgencyId)
@@ -163,7 +127,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
 
     let memberId = existing?.id as string | undefined;
     if (memberId) {
-      const { error } = await db
+      const { error } = await supabase
         .from("agency_members")
         .update({
           name: data.name,
@@ -175,7 +139,7 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
         .eq("id", memberId);
       if (error) return { ok: false, message: "Não foi possível atualizar o convite." };
     } else {
-      const { data: created, error } = await db
+      const { data: created, error } = await supabase
         .from("agency_members")
         .insert({
           agency_id: activeAgencyId,
@@ -197,13 +161,13 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     }
 
     // Nome da agência e de quem convidou
-    const { data: agency } = await db
+    const { data: agency } = await supabase
       .from("agencies")
       .select("name")
       .eq("id", activeAgencyId)
       .maybeSingle();
 
-    const { data: me } = await db
+    const { data: me } = await supabase
       .from("agency_members")
       .select("name")
       .eq("user_id", context.userId)
@@ -214,8 +178,8 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     const link = `${baseUrl}/aceitar-convite?token=${encodeURIComponent(token)}`;
 
     // Carrega configuração de e-mail da agência
-    const { dbAdmin } = await import("@/integrations/appwrite/db.server");
-    const { data: row } = await dbAdmin
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("key", `agency_cfg:${activeAgencyId}:gmail`)

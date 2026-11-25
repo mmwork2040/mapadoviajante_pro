@@ -25,6 +25,7 @@ import { Route as AppPerfilRouteImport } from './routes/_app.perfil'
 import { Route as AppPlataformaRouteImport } from './routes/_app.plataforma'
 import { Route as AppRoteirosRouteImport } from './routes/_app.roteiros'
 import { Route as AppTarefasRouteImport } from './routes/_app.tarefas'
+import { Route as DevUiRouteImport } from './routes/dev.ui'
 import { Route as ImprimirIdRouteImport } from './routes/imprimir.$id'
 import { Route as ViajanteIdRouteImport } from './routes/viajante.$id'
 import { Route as AppClientesIndexRouteImport } from './routes/_app.clientes.index'
@@ -32,6 +33,7 @@ import { Route as AppClientesIdRouteImport } from './routes/_app.clientes.$id'
 import { Route as AppRoteirosIndexRouteImport } from './routes/_app.roteiros.index'
 import { Route as AppRoteirosIdRouteImport } from './routes/_app.roteiros.$id'
 import { Route as ApiPublicAsaasWebhookRouteImport } from './routes/api/public/asaas-webhook'
+import { Route as ApiPublicBrandLogoRouteImport } from './routes/api/public/brand-logo'
 import { Route as ApiPublicItineraryRouteImport } from './routes/api/public/itinerary'
 import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
@@ -115,6 +117,11 @@ const AppTarefasRoute = AppTarefasRouteImport.update({
   path: '/tarefas',
   getParentRoute: () => AppRoute,
 } as any)
+const DevUiRoute = DevUiRouteImport.update({
+  id: '/dev/ui',
+  path: '/dev/ui',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ImprimirIdRoute = ImprimirIdRouteImport.update({
   id: '/imprimir/$id',
   path: '/imprimir/$id',
@@ -150,6 +157,11 @@ const ApiPublicAsaasWebhookRoute = ApiPublicAsaasWebhookRouteImport.update({
   path: '/api/public/asaas-webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBrandLogoRoute = ApiPublicBrandLogoRouteImport.update({
+  id: '/api/public/brand-logo',
+  path: '/api/public/brand-logo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicItineraryRoute = ApiPublicItineraryRouteImport.update({
   id: '/api/public/itinerary',
   path: '/api/public/itinerary',
@@ -182,11 +194,13 @@ export interface FileRoutesByFullPath {
   '/plataforma': typeof AppPlataformaRoute
   '/roteiros': typeof AppRoteirosRouteWithChildren
   '/tarefas': typeof AppTarefasRoute
+  '/dev/ui': typeof DevUiRoute
   '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/brand-logo': typeof ApiPublicBrandLogoRoute
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
@@ -206,12 +220,14 @@ export interface FileRoutesByTo {
   '/perfil': typeof AppPerfilRoute
   '/plataforma': typeof AppPlataformaRoute
   '/tarefas': typeof AppTarefasRoute
+  '/dev/ui': typeof DevUiRoute
   '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/': typeof AppIndexRoute
   '/clientes/$id': typeof AppClientesIdRoute
   '/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/brand-logo': typeof ApiPublicBrandLogoRoute
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
@@ -235,12 +251,14 @@ export interface FileRoutesById {
   '/_app/plataforma': typeof AppPlataformaRoute
   '/_app/roteiros': typeof AppRoteirosRouteWithChildren
   '/_app/tarefas': typeof AppTarefasRoute
+  '/dev/ui': typeof DevUiRoute
   '/imprimir/$id': typeof ImprimirIdRoute
   '/viajante/$id': typeof ViajanteIdRoute
   '/_app/': typeof AppIndexRoute
   '/_app/clientes/$id': typeof AppClientesIdRoute
   '/_app/roteiros/$id': typeof AppRoteirosIdRoute
   '/api/public/asaas-webhook': typeof ApiPublicAsaasWebhookRoute
+  '/api/public/brand-logo': typeof ApiPublicBrandLogoRoute
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
@@ -265,11 +283,13 @@ export interface FileRouteTypes {
     | '/plataforma'
     | '/roteiros'
     | '/tarefas'
+    | '/dev/ui'
     | '/imprimir/$id'
     | '/viajante/$id'
     | '/clientes/$id'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/brand-logo'
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
@@ -289,12 +309,14 @@ export interface FileRouteTypes {
     | '/perfil'
     | '/plataforma'
     | '/tarefas'
+    | '/dev/ui'
     | '/imprimir/$id'
     | '/viajante/$id'
     | '/'
     | '/clientes/$id'
     | '/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/brand-logo'
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
@@ -317,12 +339,14 @@ export interface FileRouteTypes {
     | '/_app/plataforma'
     | '/_app/roteiros'
     | '/_app/tarefas'
+    | '/dev/ui'
     | '/imprimir/$id'
     | '/viajante/$id'
     | '/_app/'
     | '/_app/clientes/$id'
     | '/_app/roteiros/$id'
     | '/api/public/asaas-webhook'
+    | '/api/public/brand-logo'
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
@@ -335,9 +359,11 @@ export interface RootRouteChildren {
   AceitarConviteRoute: typeof AceitarConviteRoute
   AuthRoute: typeof AuthRoute
   IntakeRoute: typeof IntakeRoute
+  DevUiRoute: typeof DevUiRoute
   ImprimirIdRoute: typeof ImprimirIdRoute
   ViajanteIdRoute: typeof ViajanteIdRoute
   ApiPublicAsaasWebhookRoute: typeof ApiPublicAsaasWebhookRoute
+  ApiPublicBrandLogoRoute: typeof ApiPublicBrandLogoRoute
   ApiPublicItineraryRoute: typeof ApiPublicItineraryRoute
   ApiPublicN8nLeadRoute: typeof ApiPublicN8nLeadRoute
   ApiPublicPushDeliveryRoute: typeof ApiPublicPushDeliveryRoute
@@ -457,6 +483,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppTarefasRouteImport
       parentRoute: typeof AppRoute
     }
+    '/dev/ui': {
+      id: '/dev/ui'
+      path: '/dev/ui'
+      fullPath: '/dev/ui'
+      preLoaderRoute: typeof DevUiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/imprimir/$id': {
       id: '/imprimir/$id'
       path: '/imprimir/$id'
@@ -504,6 +537,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/asaas-webhook'
       fullPath: '/api/public/asaas-webhook'
       preLoaderRoute: typeof ApiPublicAsaasWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/brand-logo': {
+      id: '/api/public/brand-logo'
+      path: '/api/public/brand-logo'
+      fullPath: '/api/public/brand-logo'
+      preLoaderRoute: typeof ApiPublicBrandLogoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/itinerary': {
@@ -595,9 +635,11 @@ const rootRouteChildren: RootRouteChildren = {
   AceitarConviteRoute: AceitarConviteRoute,
   AuthRoute: AuthRoute,
   IntakeRoute: IntakeRoute,
+  DevUiRoute: DevUiRoute,
   ImprimirIdRoute: ImprimirIdRoute,
   ViajanteIdRoute: ViajanteIdRoute,
   ApiPublicAsaasWebhookRoute: ApiPublicAsaasWebhookRoute,
+  ApiPublicBrandLogoRoute: ApiPublicBrandLogoRoute,
   ApiPublicItineraryRoute: ApiPublicItineraryRoute,
   ApiPublicN8nLeadRoute: ApiPublicN8nLeadRoute,
   ApiPublicPushDeliveryRoute: ApiPublicPushDeliveryRoute,

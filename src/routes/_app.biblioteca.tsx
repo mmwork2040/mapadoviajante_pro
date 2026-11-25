@@ -76,20 +76,12 @@ export const Route = createFileRoute("/_app/biblioteca")({
   component: LibraryPage,
 });
 
-// Texto do botão de criar em cada aba (o singular não sai de cortar o "s").
-const NEW_LABEL: Partial<Record<TabKey, string>> = {
-  experience: "Nova experiência",
-  package: "Novo pacote",
-  image: "Nova imagem",
-  itinerary: "Novo roteiro modelo",
-};
-
 const TABS: { key: TabKey; label: string; icon: typeof Sparkles; hint: string }[] = [
   { key: "experience", label: "Experiências", icon: Sparkles, hint: "Passeios, tours e atividades." },
   { key: "package", label: "Pacotes", icon: Package, hint: "Pacotes prontos com preço e duração." },
   { key: "image", label: "Imagens", icon: ImageIcon, hint: "Banco de imagens de destinos." },
   { key: "itinerary", label: "Roteiros modelo", icon: Map, hint: "Roteiros reutilizáveis como base." },
-  { key: "documents", label: "Documentos", icon: Files, hint: "Arquivos enviados em leads e roteiros, agrupados por origem." },
+  { key: "documents", label: "Documentos", icon: Files, hint: "Arquivos enviados em viagens e roteiros, agrupados por origem." },
 ];
 
 function LibraryPage() {
@@ -303,7 +295,7 @@ function LibraryPage() {
     const ok = await confirm({
       title: `Excluir ${chosen.length} ${chosen.length === 1 ? "imagem" : "imagens"}?`,
       description:
-        "As imagens serão removidas da biblioteca e dos perfis de leads e roteiros que as utilizam. Esta ação não pode ser desfeita.",
+        "As imagens serão removidas da biblioteca e dos perfis de viagens e roteiros que as utilizam. Esta ação não pode ser desfeita.",
       confirmLabel: "Excluir tudo",
       destructive: true,
     });
@@ -336,7 +328,7 @@ function LibraryPage() {
               }}
               className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
             >
-              <Plus className="h-4 w-4 shrink-0" /> {NEW_LABEL[active.key] ?? "Novo item"}
+              <Plus className="h-4 w-4 shrink-0" /> Novo {active.label.replace(/s$/, "")}
             </button>
           )
         }
@@ -1081,7 +1073,7 @@ function Fld({
 
 const ORIGIN_LABELS: Record<DocumentOrigin, string> = {
   roteiro: "Roteiros",
-  lead: "Leads",
+  lead: "Viagens",
   geral: "Gerais",
 };
 

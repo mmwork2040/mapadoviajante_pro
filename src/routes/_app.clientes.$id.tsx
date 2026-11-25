@@ -63,7 +63,7 @@ import { useConfirm } from "@/components/ConfirmDialog";
 import { formatDate, initials } from "@/lib/ui";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import itineraryPlaceholder from "@/assets/itinerary-placeholder.jpg";
-import { db } from "@/integrations/appwrite/db";
+import { supabase } from "@/integrations/supabase/client";
 import { isImageDoc, isLinkDoc, type LeadDocument } from "@/lib/lead-documents";
 import { DocumentPreviewModal } from "@/components/DocumentPreviewModal";
 import {
@@ -213,7 +213,7 @@ function ClientProfilePage() {
     queryFn: async () => {
       const ctx = getAgencyId() ?? (await loadAgencyContext())?.agency_id ?? null;
       const client = (
-        db as unknown as { from: (t: string) => ReturnType<typeof db.from> }
+        supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }
       ).from("crm_lead_documents");
       const results: LeadDocument[] = [];
       if (tripIds.length > 0) {
@@ -226,7 +226,7 @@ function ClientProfilePage() {
       if (ctx) {
         const prefix = `${ctx}/client/${id}/`;
         const { data } = await (
-          db as unknown as { from: (t: string) => ReturnType<typeof db.from> }
+          supabase as unknown as { from: (t: string) => ReturnType<typeof supabase.from> }
         )
           .from("crm_lead_documents")
           .select("*")
@@ -246,7 +246,7 @@ function ClientProfilePage() {
     queryKey: ["client-tasks", id, tripIds.join(",")],
     enabled: tripIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await db
+      const { data, error } = await supabase
         .from("crm_tasks")
         .select(
           "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name)",
@@ -296,7 +296,7 @@ function ClientProfilePage() {
   const delMut = useMutation({
     mutationFn: () => deleteClient(id),
     onSuccess: () => {
-      toast.success("Cliente removido");
+      toast.success("Viajante removido");
       qc.invalidateQueries({ queryKey: ["clients"] });
       navigate({ to: "/clientes" });
     },
@@ -308,9 +308,9 @@ function ClientProfilePage() {
   if (!client) {
     return (
       <div className="space-y-4 py-16 text-center">
-        <p className="text-sm text-muted-foreground">Cliente não encontrado.</p>
+        <p className="text-sm text-muted-foreground">Viajante não encontrado.</p>
         <Link to="/clientes" className="text-sm font-semibold text-primary hover:underline">
-          Voltar para clientes
+          Voltar para viajantes
         </Link>
       </div>
     );
@@ -362,7 +362,7 @@ function ClientProfilePage() {
                   className="text-destructive focus:text-destructive"
                   onSelect={async () => {
                     const ok = await confirm({
-                      title: "Remover cliente?",
+                      title: "Remover viajante?",
                       description: `Deseja remover ${client.name}? As viagens vinculadas serão desvinculadas.`,
                       confirmLabel: "Remover",
                       destructive: true,
@@ -436,7 +436,7 @@ function ClientProfilePage() {
           <EmptyState
             icon={Users}
             title="Nenhum membro cadastrado"
-            description="Adicione familiares ou companheiros de viagem no cadastro do cliente."
+            description="Adicione familiares ou companheiros de viagem no cadastro do viajante."
             actionLabel="Adicionar membros"
             onAction={() => openEdit("membros")}
           />
@@ -475,7 +475,7 @@ function ClientProfilePage() {
                       type="button"
                       onClick={() => setConvertingMember(m)}
                       className="inline-flex items-center justify-center gap-1 rounded-md border border-input px-2 py-1 text-xs font-semibold text-primary hover:bg-muted"
-                      title="Transformar em cliente"
+                      title="Transformar em viajante"
                     >
                       <UserPlus className="h-3.5 w-3.5" /> Transformar em cliente
                     </button>
@@ -491,7 +491,7 @@ function ClientProfilePage() {
 
 
       {/* Histórico do cliente com múltiplas abas */}
-      <Collapsible icon={FolderOpen} title="Histórico do cliente" defaultOpen>
+      <Collapsible icon={FolderOpen} title="Histórico do viajante" defaultOpen>
         <div className="mb-3 -mx-1 flex snap-x snap-proximity gap-2 overflow-x-auto overscroll-x-contain scroll-smooth rounded-lg border border-border bg-muted/40 p-2 pr-3 pt-3 scrollbar-thin [-webkit-overflow-scrolling:touch]">
           <TabPill active={tab === "viagens"} onClick={() => setTab("viagens")} icon={Plane} count={itineraries.length || trips.length}>Viagens</TabPill>
           <TabPill active={tab === "documentos"} onClick={() => setTab("documentos")} icon={FileText} count={documents.length}>Documentos</TabPill>
@@ -522,7 +522,7 @@ function ClientProfilePage() {
         {tab === "financeiro" && <FinanceiroTab trips={trips} expenses={expenses} onNew={openNew} />}
         {tab === "tarefas" && <TarefasTab tasks={tasks} onOpenLead={(lid) => setOpenLeadId(lid)} onNewTask={() => setOpenNewTask(true)} onToggle={async (t) => {
           const next = !t.completed;
-          const { error } = await db.from("crm_tasks").update({ completed: next, completed_at: next ? new Date().toISOString() : null }).eq("id", t.id);
+          const { error } = await supabase.from("crm_tasks").update({ completed: next, completed_at: next ? new Date().toISOString() : null }).eq("id", t.id);
           if (error) { toast.error("Não foi possível atualizar a tarefa"); return; }
           toast.success(next ? "Tarefa concluída" : "Tarefa reaberta");
           qc.invalidateQueries({ queryKey: ["client-tasks", id] });
@@ -534,14 +534,14 @@ function ClientProfilePage() {
         {tab === "anotacoes" && (
           client.notes?.trim() ? (
             <div>
-              <TabActionBar description="Anotações do cliente." actionLabel="Editar anotação" onAction={() => openEdit("notas")} />
+              <TabActionBar description="Anotações do viajante." actionLabel="Editar anotação" onAction={() => openEdit("notas")} />
               <p className="whitespace-pre-wrap text-sm text-foreground">{client.notes}</p>
             </div>
           ) : (
             <EmptyState
               icon={StickyNote}
               title="Nenhuma anotação registrada"
-              description="Anote preferências, restrições ou observações importantes sobre o cliente."
+              description="Anote preferências, restrições ou observações importantes sobre o viajante."
               actionLabel="Adicionar anotação"
               onAction={() => openEdit("notas")}
             />
@@ -598,7 +598,7 @@ function ClientProfilePage() {
               await updateClient(client.id, payload);
               await qc.invalidateQueries({ queryKey: ["client", id] });
               await qc.invalidateQueries({ queryKey: ["clients"] });
-              toast.success("Cliente atualizado");
+              toast.success("Viajante atualizado");
               setEditOpen(false);
             } catch (e) {
               toast.error(e instanceof Error ? e.message : "Erro ao salvar");
@@ -622,7 +622,7 @@ function ClientProfilePage() {
             try {
               const created = await createClientSvc(payload);
               if (!created) {
-                toast.error("Erro ao criar cliente");
+                toast.error("Erro ao criar viajante");
                 return;
               }
               const prefs =
@@ -638,10 +638,10 @@ function ClientProfilePage() {
               await updateClient(client.id, { preferences: prefs });
               await qc.invalidateQueries({ queryKey: ["client", id] });
               await qc.invalidateQueries({ queryKey: ["clients"] });
-              toast.success("Cliente criado e vinculado como membro");
+              toast.success("Viajante criado e vinculado como membro");
               setConvertingMember(null);
             } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Erro ao criar cliente");
+              toast.error(e instanceof Error ? e.message : "Erro ao criar viajante");
             } finally {
               setConvertSaving(false);
             }
@@ -783,7 +783,7 @@ function TripsCarousel({
         <EmptyState
           icon={Plane}
           title={destinationFilter ? "Nenhuma viagem para este destino" : "Nenhuma viagem registrada"}
-          description={destinationFilter ? "Nenhuma proposta ou roteiro corresponde ao destino selecionado." : "Comece uma nova proposta para este cliente e acompanhe todo o pipeline por aqui."}
+          description={destinationFilter ? "Nenhuma proposta ou roteiro corresponde ao destino selecionado." : "Comece uma nova proposta para este viajante e acompanhe todo o pipeline por aqui."}
           actionLabel={destinationFilter ? "Limpar filtro" : "Nova proposta"}
           onAction={destinationFilter ? (onClearDestinationFilter ?? onNew) : onNew}
         />
@@ -794,7 +794,7 @@ function TripsCarousel({
     return (
       <div>
         {filterBanner}
-        <TabActionBar description="Roteiros e propostas vinculadas ao cliente." actionLabel="Nova proposta" onAction={onNew} />
+        <TabActionBar description="Roteiros e propostas vinculadas ao viajante." actionLabel="Nova proposta" onAction={onNew} />
         <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
         {itineraries.map((it) => (
           <Link
@@ -851,7 +851,7 @@ function TripsCarousel({
   return (
     <div>
       {filterBanner}
-      <TabActionBar description="Propostas e viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <TabActionBar description="Propostas e viagens do viajante." actionLabel="Nova proposta" onAction={onNew} />
       <div className="-mx-1 flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain scroll-smooth px-1 pb-3 pt-1 scrollbar-thin [-webkit-overflow-scrolling:touch]">
       {trips.map((t) => {
         const meta = LEAD_STATUS_META[t.status] ?? { label: t.status, cls: "bg-muted" };
@@ -925,7 +925,7 @@ function DocumentsCarousel({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          Documentos das viagens e arquivos anexados diretamente ao cliente.
+          Documentos das viagens e arquivos anexados diretamente ao viajante.
         </p>
         <input
           ref={inputRef}
@@ -948,7 +948,7 @@ function DocumentsCarousel({
         <EmptyState
           icon={FolderOpen}
           title="Nenhum documento anexado"
-          description="Anexe passaporte, vouchers, contratos ou qualquer arquivo enviado pelo cliente."
+          description="Anexe passaporte, vouchers, contratos ou qualquer arquivo enviado pelo viajante."
           actionLabel={uploading ? "Enviando..." : "Anexar arquivo"}
           onAction={() => inputRef.current?.click()}
         />
@@ -1029,7 +1029,7 @@ function PreferencesView({ prefs, onEdit }: { prefs: unknown; onEdit?: () => voi
   }
   return (
     <div>
-      {onEdit && <TabActionBar description="Preferências registradas no cadastro do cliente." actionLabel="Editar preferências" onAction={onEdit} />}
+      {onEdit && <TabActionBar description="Preferências registradas no cadastro do viajante." actionLabel="Editar preferências" onAction={onEdit} />}
       <dl className="grid gap-2 sm:grid-cols-2">
       {entries.map(([k, v]) => (
         <div key={k} className="rounded-lg border border-border bg-background px-3 py-2">
@@ -1094,7 +1094,7 @@ function FinanceiroTab({ trips, expenses, onNew }: { trips: Lead[]; expenses: Tr
       <EmptyState
         icon={DollarSign}
         title="Sem dados financeiros"
-        description="Vincule orçamentos e despesas a uma viagem para ver o resumo financeiro do cliente."
+        description="Vincule orçamentos e despesas a uma viagem para ver o resumo financeiro do viajante."
         actionLabel="Nova proposta"
         onAction={onNew}
       />
@@ -1102,7 +1102,7 @@ function FinanceiroTab({ trips, expenses, onNew }: { trips: Lead[]; expenses: Tr
   }
   return (
     <div className="space-y-3">
-      <TabActionBar description="Resumo financeiro das viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <TabActionBar description="Resumo financeiro das viagens do viajante." actionLabel="Nova proposta" onAction={onNew} />
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         <StatCard label="Orçado total" value={fmtCurrency(totals.totalOrcado)} />
         <StatCard label="Gasto (viagens)" value={fmtCurrency(totals.totalGasto)} />
@@ -1140,7 +1140,7 @@ function TarefasTab({ tasks, onOpenLead, onNewTask, onToggle }: { tasks: Task[];
       <EmptyState
         icon={ListChecks}
         title="Nenhuma tarefa vinculada"
-        description="Crie tarefas nas viagens do cliente ou na página de Tarefas para acompanhá-las aqui."
+        description="Crie tarefas nas viagens do viajante ou na página de Tarefas para acompanhá-las aqui."
         actionLabel="Nova tarefa"
         onAction={onNewTask}
         secondaryLabel="Abrir tarefas"
@@ -1150,7 +1150,7 @@ function TarefasTab({ tasks, onOpenLead, onNewTask, onToggle }: { tasks: Task[];
   }
   return (
     <div>
-      <TabActionBar description="Tarefas vinculadas às viagens do cliente." actionLabel="Nova tarefa" onAction={onNewTask} />
+      <TabActionBar description="Tarefas vinculadas às viagens do viajante." actionLabel="Nova tarefa" onAction={onNewTask} />
       <ul className="space-y-2">
       {tasks.map((t) => (
         <li key={t.id} className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
@@ -1219,7 +1219,7 @@ function TimelineTab({
       <EmptyState
         icon={ActivityIcon}
         title="Sem atividades registradas"
-        description="Cada contato, e-mail ou mudança de status nas viagens do cliente aparece aqui."
+        description="Cada contato, e-mail ou mudança de status nas viagens do viajante aparece aqui."
         actionLabel="Nova proposta"
         onAction={onNew}
       />
@@ -1227,7 +1227,7 @@ function TimelineTab({
   }
   return (
     <div>
-      <TabActionBar description="Atividades registradas nas viagens do cliente." actionLabel="Nova proposta" onAction={onNew} />
+      <TabActionBar description="Atividades registradas nas viagens do viajante." actionLabel="Nova proposta" onAction={onNew} />
     <ol className="space-y-2">
       {activities.slice(0, 50).map((a) => {
         const trip = a.lead_id ? tripMap.get(a.lead_id) : null;
@@ -1317,7 +1317,7 @@ function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
       <EmptyState
         icon={CalendarClock}
         title="Nenhuma data importante"
-        description="Cadastre a data de nascimento e a validade do passaporte para consultar aqui."
+        description="Cadastre data de nascimento e validade do passaporte para receber lembretes."
         actionLabel="Editar cadastro"
         onAction={onEdit}
       />

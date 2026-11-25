@@ -32,6 +32,4 @@ dist-ssr
 *.sw?
 .vercel
 .env*
-
-# O modelo de variáveis entra no git; os arquivos .env reais, não.
 !.env.example

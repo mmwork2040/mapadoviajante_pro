@@ -1,13 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { base64url, googleAccessToken } from "@/lib/server/google-auth";
 
-import { base64url, getGoogleAccessToken, type GoogleServiceAccount } from "@/lib/server/google-auth";
-
-type ServiceAccount = GoogleServiceAccount & { project_id: string };
-
-/** Linha de `system_settings` como o cliente de dados devolve. */
-type SettingRow = { key: string; value: unknown; updated_at?: string | null };
+interface ServiceAccount {
+  client_email: string;
+  private_key: string;
+  project_id: string;
+}
 
 function randomSecret(): string {
   const bytes = new Uint8Array(24);
@@ -16,10 +16,10 @@ function randomSecret(): string {
 }
 
 function getAccessToken(sa: ServiceAccount): Promise<string> {
-  return getGoogleAccessToken(sa, "https://www.googleapis.com/auth/firebase.messaging");
+  return googleAccessToken(sa, "https://www.googleapis.com/auth/firebase.messaging");
 }
 
-async function resolveFirebaseServiceAccount(db: any, userId?: string): Promise<ServiceAccount | null> {
+async function resolveFirebaseServiceAccount(supabase: any, userId?: string): Promise<ServiceAccount | null> {
   const envRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (envRaw) {
     try {
@@ -32,7 +32,7 @@ async function resolveFirebaseServiceAccount(db: any, userId?: string): Promise<
   let agencyId: string | null = null;
   if (userId) {
     try {
-      const { data: member } = await db
+      const { data: member } = await supabase
         .from("agency_members")
         .select("agency_id")
         .eq("user_id", userId)
@@ -46,15 +46,15 @@ async function resolveFirebaseServiceAccount(db: any, userId?: string): Promise<
   if (!agencyId) return null;
 
   try {
-    const { dbAdmin } = await import("@/integrations/appwrite/db.server");
-    let { data: row } = await dbAdmin
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    let { data: row } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("key", `agency_cfg:${agencyId}:notifications`)
       .maybeSingle();
 
     if (!row?.value) {
-      const { data: fallbackRows } = await dbAdmin
+      const { data: fallbackRows } = await supabaseAdmin
         .from("system_settings")
         .select("value")
         .like("key", "agency_cfg:%:notifications");
@@ -93,9 +93,9 @@ async function resolveFirebaseServiceAccount(db: any, userId?: string): Promise<
 
 /** Indica se a service account do Firebase está configurada e pronta. */
 export const getPushStatus = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const sa = await resolveFirebaseServiceAccount(context.db, context.userId);
+    const sa = await resolveFirebaseServiceAccount(context.supabase, context.userId);
     return {
       configured: Boolean(sa?.project_id && sa?.private_key),
       projectId: sa?.project_id ?? null,
@@ -105,7 +105,7 @@ export const getPushStatus = createServerFn({ method: "GET" })
 
 /** Valida a chave privada (Service Account JSON) do Firebase testando a autorização OAuth2 com a Google. */
 export const validateFirebaseConfig = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -123,7 +123,7 @@ export const validateFirebaseConfig = createServerFn({ method: "POST" })
         return { ok: false, message: `JSON da Service Account inválido: ${err.message}` };
       }
     } else {
-      sa = await resolveFirebaseServiceAccount(context.db, context.userId);
+      sa = await resolveFirebaseServiceAccount(context.supabase, context.userId);
     }
 
     if (!sa) {
@@ -161,7 +161,7 @@ export const validateFirebaseConfig = createServerFn({ method: "POST" })
 
 /** Registra/atualiza o device token de push do usuário logado em system_settings. */
 export const saveDeviceToken = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -172,7 +172,7 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const { data: member } = await context.db
+    const { data: member } = await context.supabase
       .from("agency_members")
       .select("agency_id, name, email")
       .eq("user_id", context.userId)
@@ -180,14 +180,14 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
       .limit(1)
       .maybeSingle();
 
-    const { dbAdmin } = await import("@/integrations/appwrite/db.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const tokenKey = `push_token:${context.userId}:${data.deviceId}`;
-    const { data: existingRows } = await dbAdmin
+    const { data: existingRows } = await supabaseAdmin
       .from("system_settings")
       .select("key, value")
       .like("key", "push_token:%");
-    const staleKeys = ((existingRows ?? []) as SettingRow[])
-      .filter((row) => {
+    const staleKeys = (existingRows ?? [])
+      .filter((row: any) => {
         const value = (row.value ?? {}) as { token?: string; userId?: string; deviceId?: string };
         return (
           row.key === `push_token:${context.userId}` ||
@@ -195,12 +195,12 @@ export const saveDeviceToken = createServerFn({ method: "POST" })
           (value.userId === context.userId && value.deviceId === data.deviceId && row.key !== tokenKey)
         );
       })
-      .map((row) => row.key);
+      .map((row: any) => row.key);
     if (staleKeys.length > 0) {
-      await dbAdmin.from("system_settings").delete().in("key", staleKeys);
+      await supabaseAdmin.from("system_settings").delete().in("key", staleKeys);
     }
 
-    const { error } = await dbAdmin.from("system_settings").upsert(
+    const { error } = await supabaseAdmin.from("system_settings").upsert(
       {
         key: tokenKey,
         value: {
@@ -243,19 +243,19 @@ export interface PushDeliveryStatus {
 
 /** Lista os device tokens salvos dos membros da agência do usuário (admin). */
 export const listDeviceTokens = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<DeviceTokenEntry[]> => {
     // Só admin, e só os aparelhos da própria agência.
     const { requireAdmin } = await import("@/lib/server/authz");
     const { agencyId } = await requireAdmin(context);
 
-    const { data, error } = await context.db
+    const { data, error } = await context.supabase
       .from("system_settings")
       .select("key, value, updated_at")
       .like("key", "push_token:%");
     if (error) throw new Error(error.message);
 
-    return ((data ?? []) as SettingRow[])
+    return ((data ?? []) as any[])
       .map((row) => {
         const v = (row.value ?? {}) as {
           token?: string;
@@ -285,7 +285,7 @@ export const listDeviceTokens = createServerFn({ method: "GET" })
 
 /** Envia uma notificação push de teste para um token de dispositivo via FCM HTTP v1. */
 export const sendTestPush = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -299,7 +299,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
     .handler(async ({ data, context }): Promise<{ ok: boolean; message: string; traceId?: string }> => {
     const { requireAdmin } = await import("@/lib/server/authz");
     await requireAdmin(context);
-    const sa = await resolveFirebaseServiceAccount(context.db, context.userId);
+    const sa = await resolveFirebaseServiceAccount(context.supabase, context.userId);
     if (!sa) {
       return {
         ok: false,
@@ -319,10 +319,10 @@ export const sendTestPush = createServerFn({ method: "POST" })
     const traceId = crypto.randomUUID();
     const ackSecret = randomSecret();
     const sentAt = new Date().toISOString();
-    const { dbAdmin } = await import("@/integrations/appwrite/db.server");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const deliveryKey = `push_delivery:${traceId}`;
 
-    await dbAdmin.from("system_settings").upsert(
+    await supabaseAdmin.from("system_settings").upsert(
       {
         key: deliveryKey,
         value: {
@@ -386,7 +386,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
       if (!res.ok) {
         const text = await res.text();
         console.error("FCM send failed", res.status, text);
-        await dbAdmin
+        await supabaseAdmin
           .from("system_settings")
           .update({
             value: {
@@ -405,7 +405,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
           .eq("key", deliveryKey);
         return { ok: false, message: `FCM recusou o envio (status ${res.status}).`, traceId };
       }
-      await dbAdmin
+      await supabaseAdmin
         .from("system_settings")
         .update({
           value: {
@@ -429,7 +429,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
       };
     } catch (err) {
       console.error("FCM error", err);
-      await dbAdmin
+      await supabaseAdmin
         .from("system_settings")
         .update({
           value: {
@@ -452,11 +452,11 @@ export const sendTestPush = createServerFn({ method: "POST" })
 
 /** Consulta se o dispositivo confirmou recebimento de um teste de push. */
 export const getPushDeliveryStatus = createServerFn({ method: "GET" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((data) => z.object({ traceId: z.string().uuid() }).parse(data))
   .handler(async ({ data }): Promise<PushDeliveryStatus> => {
-    const { dbAdmin } = await import("@/integrations/appwrite/db.server");
-    const { data: row } = await dbAdmin
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
       .from("system_settings")
       .select("value")
       .eq("key", `push_delivery:${data.traceId}`)

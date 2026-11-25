@@ -1,5 +1,5 @@
-import { db } from "@/integrations/appwrite/db";
-import { ACTIVITY_EXTRA_KEYS, decodeActivityRow, encodeActivityColumns } from "@/lib/activity-meta";
+import { setCurrentAgency } from "@/integrations/appwrite/permissions";
+import { supabase } from "@/integrations/supabase/client";
 import type {
   AgencyMember,
   AiConfig,
@@ -43,6 +43,7 @@ export function getMemberRole() {
   return _memberRole;
 }
 export function setAgencyContext(member: AgencyMember | null) {
+  setCurrentAgency(member?.agency_id ?? null);
   _agencyId = member?.agency_id ?? null;
   _memberId = member?.id ?? null;
   _memberRole = member?.role ?? null;
@@ -51,7 +52,7 @@ export function setAgencyContext(member: AgencyMember | null) {
 export async function fetchLeadsMinePref(): Promise<boolean> {
   if (!_memberId) await loadAgencyContext();
   if (!_memberId) return false;
-  const { data } = await db
+  const { data } = await supabase
     .from("agency_members")
     .select("pref_leads_mine")
     .eq("id", _memberId)
@@ -60,23 +61,20 @@ export async function fetchLeadsMinePref(): Promise<boolean> {
 }
 
 export async function setLeadsMinePref(value: boolean): Promise<boolean> {
-  if (!_memberId) await loadAgencyContext();
-  if (!_memberId) return false;
-  const { error } = await db
-    .from("agency_members")
-    .update({ pref_leads_mine: value })
-    .eq("id", _memberId);
-  if (error) {
-    console.error("setLeadsMinePref:", error);
+  try {
+    const { alterarMeuCadastro } = await import("@/lib/equipe.functions");
+    await alterarMeuCadastro({ data: { pref_leads_mine: value } });
+    return true;
+  } catch (err) {
+    console.error("setLeadsMinePref:", err);
     return false;
   }
-  return true;
 }
 
 export async function fetchTasksMinePref(): Promise<boolean> {
   if (!_memberId) await loadAgencyContext();
   if (!_memberId) return false;
-  const { data } = await db
+  const { data } = await supabase
     .from("agency_members")
     .select("pref_tasks_mine" as "id")
     .eq("id", _memberId)
@@ -85,23 +83,20 @@ export async function fetchTasksMinePref(): Promise<boolean> {
 }
 
 export async function setTasksMinePref(value: boolean): Promise<boolean> {
-  if (!_memberId) await loadAgencyContext();
-  if (!_memberId) return false;
-  const { error } = await db
-    .from("agency_members")
-    .update({ pref_tasks_mine: value } as never)
-    .eq("id", _memberId);
-  if (error) {
-    console.error("setTasksMinePref:", error);
+  try {
+    const { alterarMeuCadastro } = await import("@/lib/equipe.functions");
+    await alterarMeuCadastro({ data: { pref_tasks_mine: value } });
+    return true;
+  } catch (err) {
+    console.error("setTasksMinePref:", err);
     return false;
   }
-  return true;
 }
 
 export async function fetchAgendaMinePref(): Promise<boolean> {
   if (!_memberId) await loadAgencyContext();
   if (!_memberId) return false;
-  const { data } = await db
+  const { data } = await supabase
     .from("agency_members")
     .select("pref_agenda_mine" as "id")
     .eq("id", _memberId)
@@ -110,128 +105,38 @@ export async function fetchAgendaMinePref(): Promise<boolean> {
 }
 
 export async function setAgendaMinePref(value: boolean): Promise<boolean> {
-  if (!_memberId) await loadAgencyContext();
-  if (!_memberId) return false;
-  const { error } = await db
-    .from("agency_members")
-    .update({ pref_agenda_mine: value } as never)
-    .eq("id", _memberId);
-  if (error) {
-    console.error("setAgendaMinePref:", error);
+  try {
+    const { alterarMeuCadastro } = await import("@/lib/equipe.functions");
+    await alterarMeuCadastro({ data: { pref_agenda_mine: value } });
+    return true;
+  } catch (err) {
+    console.error("setAgendaMinePref:", err);
     return false;
   }
-  return true;
-}
-
-// Avisa o webhook da agência sem atrasar nem derrubar a ação do usuário. Fica
-// aqui, e não nas telas, para todo caminho que faz a ação disparar o aviso.
-function fireWebhook(event: string, payload: unknown): void {
-  if (typeof window === "undefined") return;
-  void import("@/lib/webhook")
-    .then((m) => m.dispatchWebhook(event as Parameters<typeof m.dispatchWebhook>[0], payload))
-    .catch(() => {});
-}
-
-// Verdadeiro quando a última busca da agência falhou (rede, permissão), o que é
-// diferente de "este usuário não tem agência". Quem cria agência nova confere.
-let _agencyLookupFailed = false;
-export function agencyLookupFailed(): boolean {
-  return _agencyLookupFailed;
 }
 
 export async function loadAgencyContext(): Promise<AgencyMember | null> {
-  _agencyLookupFailed = false;
   const {
     data: { user },
-  } = await db.auth.getUser();
+  } = await supabase.auth.getUser();
   if (!user) return null;
 
-  let { data: members, error } = await db
+  const { data: members, error } = await supabase
     .from("agency_members")
     .select("id, agency_id, name, email, phone, role, avatar_color, is_active, user_id, pref_leads_mine")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .limit(1);
 
-  // Fallback: se não achar por user_id, busca por email para vincular contas migradas
-  if ((!members || members.length === 0) && user.email) {
-    const cleanEmail = user.email.toLowerCase().trim();
-    const { data: membersByEmail } = await db
-      .from("agency_members")
-      .select("id, agency_id, name, email, phone, role, avatar_color, is_active, user_id, pref_leads_mine")
-      .eq("email", cleanEmail)
-      .eq("is_active", true)
-      .limit(1);
-
-    if (membersByEmail && membersByEmail.length > 0) {
-      members = membersByEmail;
-      // Atualiza o user_id no Appwrite para os próximos acessos
-      const foundId = (membersByEmail[0] as any).id;
-      if (foundId) {
-        void db
-          .from("agency_members")
-          .update({ user_id: user.id })
-          .eq("id", foundId);
-      }
-    }
-  }
-
-  if (error) {
-    _agencyLookupFailed = true;
-    console.error("loadAgencyContext:", error);
-    return null;
-  }
-  if (!members || members.length === 0) return null;
+  if (error || !members || members.length === 0) return null;
   setAgencyContext(members[0] as AgencyMember);
   return members[0] as AgencyMember;
-}
-
-// ── Auto provisionamento de agência (novo usuário) ─────────────
-export async function autoProvisionAgency(
-  userId: string,
-  userName: string,
-  userEmail: string,
-): Promise<AgencyMember | null> {
-  const agencyName = `Agência de ${userName || "Novo Usuário"}`;
-  const slug =
-    (userName || "novo-usuario")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") +
-    "-" +
-    Date.now().toString(36);
-
-  // Provisionamento atômico via RPC SECURITY DEFINER (cria agência + membro admin
-  // numa única transação, evitando agências órfãs e escalonamento de privilégio).
-  try {
-    const { data: member, error } = await db
-      .rpc("provision_agency", {
-        _name: agencyName,
-        _slug: slug,
-        _email: userEmail,
-        _user_name: userName || "Novo Usuário",
-        _avatar_color: "#ff7a1a",
-      })
-      .single();
-
-    if (!error && member) {
-      setAgencyContext(member as AgencyMember);
-      return member as AgencyMember;
-    }
-  } catch (rpcErr) {
-    console.error("autoProvisionAgency:", rpcErr);
-  }
-  // Sem segunda tentativa por outro caminho: ela criava uma agência repetida
-  // quando a primeira ficava pela metade.
-  return null;
 }
 
 // ── Team members ───────────────────────────────────────────────
 export async function fetchTeamMembers(): Promise<AgencyMember[]> {
   if (!_agencyId) return [];
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("agency_members")
     .select("id, name, email, phone, role, avatar_color, is_active, user_id, agency_id, status")
     .eq("agency_id", _agencyId)
@@ -244,46 +149,26 @@ export async function fetchTeamMembers(): Promise<AgencyMember[]> {
 }
 
 
-export async function updateMemberRole(id: string, role: string): Promise<boolean> {
-  const { error } = await db.from("agency_members").update({ role }).eq("id", id);
-  if (error) {
-    console.error("updateMemberRole:", error);
-    return false;
+async function acaoNaEquipe(id: string, acao: "cargo" | "bloquear" | "desbloquear" | "revogar" | "remover", role?: string) {
+  try {
+    const { alterarMembro } = await import("@/lib/equipe.functions");
+    return await alterarMembro({ data: { id, acao, role: role as never } });
+  } catch (err) {
+    console.error("alterarMembro:", err);
+    return { ok: false, error: err instanceof Error ? err.message : "Não foi possível salvar." } as { ok: boolean; error?: string; action?: "blocked" | "deleted" };
   }
-  return true;
+}
+
+export async function updateMemberRole(id: string, role: string): Promise<boolean> {
+  return (await acaoNaEquipe(id, "cargo", role)).ok;
 }
 
 /** Revoke a still-pending invite by removing the member row. The person loses
  * access until they are invited again (which creates a fresh row + token). */
 export async function revokeMember(id: string): Promise<boolean> {
-  const { error } = await db
-    .from("agency_members")
-    .delete()
-    .eq("id", id)
-    .eq("status", "pending");
-  if (error) {
-    console.error("revokeMember:", error);
-    return false;
-  }
-  return true;
+  return (await acaoNaEquipe(id, "revogar")).ok;
 }
 
-/** Conta quantos registros de atividade existem em nome de um membro. */
-async function countMemberActivity(id: string): Promise<number> {
-  const checks = [
-    db.from("crm_lead_activities").select("id", { count: "exact", head: true }).eq("author_id", id),
-    db.from("crm_lead_activities").select("id", { count: "exact", head: true }).eq("assigned_to_id", id),
-    db.from("crm_leads").select("id", { count: "exact", head: true }).eq("assigned_to", id),
-    db.from("crm_tasks").select("id", { count: "exact", head: true }).eq("assigned_to", id),
-    db.from("crm_tasks").select("id", { count: "exact", head: true }).eq("created_by", id),
-    db.from("crm_transactions").select("id", { count: "exact", head: true }).eq("created_by", id),
-  ];
-  const results = await Promise.all(checks);
-  // Se alguma contagem falhar (ex.: tabela fechada ao navegador), trata como
-  // "tem histórico": o membro é bloqueado em vez de excluído.
-  if (results.some((r) => r.error)) return 1;
-  return results.reduce((sum, r) => sum + (r.count ?? 0), 0);
-}
 
 /**
  * Remove um membro da equipe. Se houver registros de atividade em seu nome,
@@ -293,44 +178,14 @@ async function countMemberActivity(id: string): Promise<number> {
 export async function removeMember(
   id: string,
 ): Promise<{ ok: boolean; action?: "blocked" | "deleted"; error?: string }> {
-  const activity = await countMemberActivity(id);
-
-  if (activity > 0) {
-    const { error } = await db
-      .from("agency_members")
-      .update({ is_active: false, status: "blocked", invite_token: null })
-      .eq("id", id);
-    if (error) {
-      console.error("removeMember (block):", error);
-      return { ok: false, error: "Não foi possível bloquear o membro." };
-    }
-    return { ok: true, action: "blocked" };
-  }
-
-  const { error } = await db.from("agency_members").delete().eq("id", id);
-  if (error) {
-    console.error("removeMember (delete):", error);
-    return { ok: false, error: "Não foi possível excluir o membro." };
-  }
-  return { ok: true, action: "deleted" };
+  return acaoNaEquipe(id, "remover");
 }
 
 /** Bloqueia ou desbloqueia o acesso de um membro (somente admins, via RLS). */
 export async function setMemberBlocked(id: string, blocked: boolean): Promise<boolean> {
-  const { error } = await db
-    .from("agency_members")
-    .update(
-      blocked
-        ? { is_active: false, status: "blocked", invite_token: null }
-        : { is_active: true, status: "active" },
-    )
-    .eq("id", id);
-  if (error) {
-    console.error("setMemberBlocked:", error);
-    return false;
-  }
-  return true;
+  return (await acaoNaEquipe(id, blocked ? "bloquear" : "desbloquear")).ok;
 }
+
 
 /** Atualiza os dados do próprio perfil (nome, telefone, cor). Não altera cargo. */
 export async function updateMyProfile(updates: {
@@ -338,27 +193,19 @@ export async function updateMyProfile(updates: {
   phone?: string | null;
   avatar_color?: string | null;
 }): Promise<boolean> {
-  const {
-    data: { user },
-  } = await db.auth.getUser();
-  if (!user) return false;
-  const { error } = await db
-    .from("agency_members")
-    .update(updates)
-    .eq("user_id", user.id);
-  if (error) {
-    console.error("updateMyProfile:", error);
+  try {
+    const { alterarMeuCadastro } = await import("@/lib/equipe.functions");
+    await alterarMeuCadastro({ data: updates });
+    return true;
+  } catch (err) {
+    console.error("updateMyProfile:", err);
     return false;
   }
-  return true;
 }
 
 /** Altera a senha do usuário logado. */
-export async function updateMyPassword(
-  newPassword: string,
-  currentPassword?: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await db.auth.updateUser({ password: newPassword, oldPassword: currentPassword });
+export async function updateMyPassword(newPassword: string): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
@@ -370,21 +217,11 @@ export async function updateMyPassword(
 // ── Leads ──────────────────────────────────────────────────────
 const CONTACTED_PROFILE_STATUS_KEY = "__crm_status";
 
-// A coleção de vendas não tem campo próprio para os benefícios (milhas,
-// cortesias). Eles ficam guardados dentro do perfil, nesta chave.
-const BENEFITS_PROFILE_KEY = "__benefits";
-// Chaves do perfil que são do sistema: uma edição do formulário não as apaga.
-const RESERVED_PROFILE_KEYS = [CONTACTED_PROFILE_STATUS_KEY, BENEFITS_PROFILE_KEY];
-
 function normalizeLead(lead: Lead): Lead {
-  if (!lead) return lead;
   const profile = (lead.profile || {}) as Record<string, unknown>;
-  const out: Lead = { ...lead };
-  if (out.benefits == null && profile[BENEFITS_PROFILE_KEY] != null) {
-    out.benefits = profile[BENEFITS_PROFILE_KEY] as Lead["benefits"];
-  }
-  if (profile[CONTACTED_PROFILE_STATUS_KEY] === "contacted") out.status = "contacted";
-  return out;
+  return profile[CONTACTED_PROFILE_STATUS_KEY] === "contacted"
+    ? { ...lead, status: "contacted" }
+    : lead;
 }
 
 export async function fetchLeads(filters: {
@@ -395,7 +232,7 @@ export async function fetchLeads(filters: {
   archived?: "active" | "archived" | "all";
 } = {}): Promise<Lead[]> {
   if (!_agencyId) return [];
-  let query = db
+  let query = supabase
     .from("crm_leads")
     .select("*, assigned_member:agency_members!crm_leads_assigned_to_fkey(name, avatar_color)")
     .eq("agency_id", _agencyId)
@@ -422,7 +259,7 @@ export async function fetchLeads(filters: {
 }
 
 export async function setLeadArchived(leadId: string, archived: boolean): Promise<boolean> {
-  const { error } = await db
+  const { error } = await supabase
     .from("crm_leads")
     .update({ archived_at: archived ? new Date().toISOString() : null })
     .eq("id", leadId);
@@ -435,7 +272,7 @@ export async function setLeadArchived(leadId: string, archived: boolean): Promis
 
 
 export async function fetchLeadById(leadId: string): Promise<Lead | null> {
-  let query = db.from("crm_leads").select("*").eq("id", leadId);
+  let query = supabase.from("crm_leads").select("*").eq("id", leadId);
   if (_agencyId) query = query.eq("agency_id", _agencyId);
   const { data, error } = await query.maybeSingle();
   if (error) {
@@ -494,10 +331,11 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
     notes: leadData.notes || null,
     profile: leadData.profile || {},
     checklists,
+    client_id: leadData.client_id || null,
   };
 
 
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_leads")
     .insert(payload)
     .select()
@@ -506,7 +344,7 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
     if (leadData.status === "contacted" && error.code === "23514") {
       const fallbackProfile = { ...(leadData.profile || {}) } as Record<string, unknown>;
       fallbackProfile[CONTACTED_PROFILE_STATUS_KEY] = "contacted";
-      const { data: fallback, error: fallbackError } = await db
+      const { data: fallback, error: fallbackError } = await supabase
         .from("crm_leads")
         .insert({ ...payload, status: "new", profile: fallbackProfile })
         .select()
@@ -529,14 +367,10 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
 }
 
 export async function updateLead(leadId: string, updates: Partial<Lead>): Promise<Lead | null> {
-  const { benefits, ...restUpdates } = updates;
-  const normalizedUpdates = { ...restUpdates } as Partial<Lead>;
+  const normalizedUpdates = { ...updates } as Partial<Lead>;
 
-  // O perfil guarda também dados do sistema (benefícios, marca de etapa). Toda
-  // gravação que mexe nele parte do que já está gravado.
-  const clearsContacted = Boolean(updates.status && updates.status !== "contacted");
-  if (benefits !== undefined || updates.profile !== undefined || clearsContacted) {
-    const { data: current, error: currentError } = await db
+  if (updates.status && updates.status !== "contacted") {
+    const { data: current, error: currentError } = await supabase
       .from("crm_leads")
       .select("profile")
       .eq("id", leadId)
@@ -547,20 +381,15 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
       return null;
     }
 
-    const stored = ((current?.profile || {}) as Record<string, unknown>) || {};
-    const profile: Record<string, unknown> =
-      updates.profile !== undefined ? { ...(updates.profile as Record<string, unknown>) } : { ...stored };
-    for (const key of RESERVED_PROFILE_KEYS) {
-      if (profile[key] === undefined && stored[key] !== undefined) profile[key] = stored[key];
-    }
-    if (benefits !== undefined) profile[BENEFITS_PROFILE_KEY] = benefits;
+    // Parte do perfil gravado e aplica por cima o que veio na chamada (ex.: motivo da perda).
+    const profile = { ...((current?.profile || {}) as Record<string, unknown>), ...((updates.profile || {}) as Record<string, unknown>) };
     // Valor explícito para limpar também registros antigos marcados pelo
     // fallback de status "contacted" no perfil serializado.
-    if (clearsContacted) profile[CONTACTED_PROFILE_STATUS_KEY] = null;
+    profile[CONTACTED_PROFILE_STATUS_KEY] = null;
     normalizedUpdates.profile = profile;
   }
 
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_leads")
     .update({ ...normalizedUpdates, last_activity_at: new Date().toISOString() })
     .eq("id", leadId)
@@ -568,7 +397,7 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     .single();
   if (error) {
     if (updates.status === "contacted" && error.code === "23514") {
-      const { data: current, error: currentError } = await db
+      const { data: current, error: currentError } = await supabase
         .from("crm_leads")
         .select("profile")
         .eq("id", leadId)
@@ -582,7 +411,7 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
       const profile = { ...((current?.profile || {}) as Record<string, unknown>) };
       profile[CONTACTED_PROFILE_STATUS_KEY] = "contacted";
 
-      const { data: fallback, error: fallbackError } = await db
+      const { data: fallback, error: fallbackError } = await supabase
         .from("crm_leads")
         .update({ ...updates, status: "new", profile, last_activity_at: new Date().toISOString() })
         .eq("id", leadId)
@@ -600,7 +429,6 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     return null;
   }
   const lead = normalizeLead(data as Lead);
-  if (lead && updates.status) fireWebhook("lead.status_changed", { id: leadId, status: updates.status });
   if (lead && !lead.client_id && (updates.name !== undefined || updates.email !== undefined || updates.phone !== undefined)) {
     const clientId = await ensureClientFromLead(lead);
     if (clientId) lead.client_id = clientId;
@@ -621,7 +449,7 @@ async function ensureClientFromLead(lead: Lead): Promise<string | null> {
 
   // Appwrite só permite Query.search em campos com índice fulltext. Comparamos
   // os identificadores da própria agência para não perder vínculos existentes.
-  const { data: clients, error: clientsError } = await db
+  const { data: clients, error: clientsError } = await supabase
     .from("crm_clients")
     .select("id, cpf, email, phone, whatsapp")
     .eq("agency_id", _agencyId);
@@ -647,36 +475,23 @@ async function ensureClientFromLead(lead: Lead): Promise<string | null> {
     existingId = created?.id ?? null;
   }
   if (existingId) {
-    await db.from("crm_leads").update({ client_id: existingId }).eq("id", lead.id);
+    await supabase.from("crm_leads").update({ client_id: existingId }).eq("id", lead.id);
   }
   return existingId;
 }
 
 export async function deleteLead(leadId: string): Promise<boolean> {
-  // O Appwrite não apaga em cascata: os dados ligados à venda saem aqui. Os
-  // roteiros continuam (aparecem como "sem venda vinculada").
-  try {
-    const { fetchLeadDocuments, deleteLeadDocument } = await import("@/lib/lead-documents");
-    for (const doc of await fetchLeadDocuments(leadId)) await deleteLeadDocument(doc);
-  } catch (err) {
-    console.error("deleteLead documentos:", err);
-  }
-  await db.from("crm_lead_activities").delete().eq("lead_id", leadId);
-  await db.from("crm_tasks").delete().eq("lead_id", leadId);
-  await db.from("crm_trip_expenses").delete().eq("lead_id", leadId);
-  await db.from("crm_itineraries").update({ lead_id: null }).eq("lead_id", leadId);
-  const { error } = await db.from("crm_leads").delete().eq("id", leadId);
+  const { error } = await supabase.from("crm_leads").delete().eq("id", leadId);
   if (error) {
     console.error("deleteLead:", error);
     return false;
   }
-  fireWebhook("lead.deleted", { id: leadId });
   return true;
 }
 
 // Captação pública (intake) — sem contexto de agência autenticado.
 export async function createPublicLead(agencyId: string, leadData: Partial<Lead>): Promise<boolean> {
-  const { error } = await db.from("crm_leads").insert({
+  const { error } = await supabase.from("crm_leads").insert({
     agency_id: agencyId,
     name: leadData.name,
     email: leadData.email || null,
@@ -697,7 +512,7 @@ export async function createPublicLead(agencyId: string, leadData: Partial<Lead>
 
 // ── Lead activities ────────────────────────────────────────────
 export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[]> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_lead_activities")
     .select(
       "*, author:agency_members!crm_lead_activities_author_id_fkey(id, name, avatar_color, role), assigned:agency_members!crm_lead_activities_assigned_to_id_fkey(id, name, avatar_color)",
@@ -711,7 +526,7 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
   const activities = (data as LeadActivity[]) || [];
 
   // Enriquece cada atividade com a data de execução e o status da tarefa vinculada.
-  const { data: tasks } = await db
+  const { data: tasks } = await supabase
     .from("crm_tasks")
     .select("id, title, description, due_date, completed, assigned_to, created_by")
     .eq("lead_id", leadId);
@@ -729,7 +544,7 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
   // para aparecerem no histórico do lead.
   const orphanTasks = taskList.filter((t) => !extractLinkedActivityId(t.description));
   for (const t of orphanTasks) {
-    const { data: act, error: actErr } = await db
+    const { data: act, error: actErr } = await supabase
       .from("crm_lead_activities")
       .insert({
         agency_id: _agencyId,
@@ -754,7 +569,7 @@ export async function fetchLeadActivities(leadId: string): Promise<LeadActivity[
     const newDesc = [cleanTaskDescription(t.description), ACTIVITY_TASK_MARK(linkedId)]
       .filter(Boolean)
       .join("\n\n");
-    await db.from("crm_tasks").update({ description: newDesc }).eq("id", t.id);
+    await supabase.from("crm_tasks").update({ description: newDesc }).eq("id", t.id);
     activities.unshift(act as LeadActivity);
   }
 
@@ -792,6 +607,7 @@ export function cleanTaskDescription(desc?: string | null): string {
   return desc
     .replace(/\s*\[atv:[0-9a-f-]+\]\s*/gi, "")
     .replace(/\s*\[chk:[^\]]+\]\s*/gi, "")
+    .replace(/\s*\[tp:[a-z]+\]\s*/gi, "")
     .trim();
 }
 
@@ -805,14 +621,13 @@ export function extractChecklistItemId(desc?: string | null): string | null {
 
 export async function deleteLeadActivity(id: string): Promise<boolean> {
   try {
-    // Primeiro a atividade; só depois a tarefa de agenda ligada a ela. Na ordem
-    // inversa, uma falha deixava a atividade sem a tarefa.
-    const { deleteLeadActivityFn } = await import("@/lib/lead-activities.functions");
-    await deleteLeadActivityFn({ data: { id } });
-    await db
+    // Remove a tarefa de agenda vinculada (se houver), limpando tudo referente.
+    await supabase
       .from("crm_tasks")
       .delete()
       .ilike("description", `%${ACTIVITY_TASK_MARK(id)}%`);
+    const { deleteLeadActivityFn } = await import("@/lib/lead-activities.functions");
+    await deleteLeadActivityFn({ data: { id } });
     return true;
   } catch (error) {
     console.error("deleteLeadActivity:", error);
@@ -827,7 +642,7 @@ export async function setLeadActivityCompleted(
   activityId: string,
   completed: boolean,
 ): Promise<boolean> {
-  const { error } = await db
+  const { error } = await supabase
     .from("crm_tasks")
     .update({
       completed,
@@ -846,7 +661,7 @@ export async function updateLeadActivity(
   activityId: string,
   activityData: Partial<LeadActivity> & { due_date?: string | null },
 ): Promise<boolean> {
-  const { error } = await db
+  const { error } = await supabase
     .from("crm_lead_activities")
     .update({
       type: activityData.type,
@@ -864,7 +679,7 @@ export async function updateLeadActivity(
   const desc = [activityData.details?.trim(), ACTIVITY_TASK_MARK(activityId)]
     .filter(Boolean)
     .join("\n\n");
-  const { error: taskErr } = await db
+  const { error: taskErr } = await supabase
     .from("crm_tasks")
     .update({
       title: activityData.title,
@@ -881,7 +696,7 @@ export async function createLeadActivity(
   leadId: string,
   activityData: Partial<LeadActivity> & { due_date?: string | null },
 ): Promise<LeadActivity | null> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_lead_activities")
     .insert({
       agency_id: _agencyId,
@@ -908,7 +723,7 @@ export async function createLeadActivity(
     const desc = [activityData.details?.trim(), ACTIVITY_TASK_MARK(activity.id)]
       .filter(Boolean)
       .join("\n\n");
-    const { error: taskErr } = await db.from("crm_tasks").insert({
+    const { error: taskErr } = await supabase.from("crm_tasks").insert({
       agency_id: _agencyId,
       created_by: _memberId,
       lead_id: leadId,
@@ -921,14 +736,14 @@ export async function createLeadActivity(
     if (taskErr) console.error("createLeadActivity(task):", taskErr);
   }
 
-  await db
+  await supabase
     .from("crm_leads")
     .update({ last_activity_at: new Date().toISOString() })
     .eq("id", leadId);
 
   // Notifica o membro atribuído (se for diferente do autor).
   if (activityData.assigned_to_id && activityData.assigned_to_id !== _memberId) {
-    const { data: leadRow } = await db.from("crm_leads").select("name").eq("id", leadId).maybeSingle();
+    const { data: leadRow } = await supabase.from("crm_leads").select("name").eq("id", leadId).maybeSingle();
     const leadName = (leadRow as { name?: string } | null)?.name || "um lead";
     await createNotification({
       recipientId: activityData.assigned_to_id,
@@ -947,7 +762,7 @@ export async function fetchTasks(filters: { completed?: boolean; assigned_to?: s
   Task[]
 > {
   if (!_agencyId) return [];
-  let query = db
+  let query = supabase
     .from("crm_tasks")
     .select(
       "*, assigned:agency_members!crm_tasks_assigned_to_fkey(name, avatar_color), lead:crm_leads!crm_tasks_lead_id_fkey(name), itinerary:crm_itineraries!crm_tasks_itinerary_id_fkey(title)",
@@ -970,11 +785,12 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
   let linkedActivityId: string | null = null;
   // Preserva a marca de vínculo com item de checklist (se veio na descrição).
   const chkMark = (description?.match(/\[chk:[^\]]+\]/) ?? [])[0] || "";
+  const tpMark = (description?.match(/\[tp:[a-z]+\]/) ?? [])[0] || "";
 
   // Se a tarefa está vinculada a um lead, cria uma atividade correspondente
   // para aparecer na aba "Atividades" do lead. As duas ficam ligadas por marca.
   if (taskData.lead_id) {
-    const { data: act, error: actErr } = await db
+    const { data: act, error: actErr } = await supabase
       .from("crm_lead_activities")
       .insert({
         agency_id: _agencyId,
@@ -994,6 +810,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
         cleanTaskDescription(description),
         ACTIVITY_TASK_MARK(linkedActivityId),
         chkMark,
+        tpMark,
       ]
         .filter(Boolean)
         .join("\n\n");
@@ -1003,7 +820,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
   }
 
 
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_tasks")
     .insert({
       agency_id: _agencyId,
@@ -1020,12 +837,11 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
     .single();
   if (error) {
     if (linkedActivityId) {
-      await db.from("crm_lead_activities").delete().eq("id", linkedActivityId);
+      await supabase.from("crm_lead_activities").delete().eq("id", linkedActivityId);
     }
     console.error("createTask:", error);
     return null;
   }
-  fireWebhook("task.created", data);
   return data as Task;
 }
 
@@ -1043,7 +859,7 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
   if (patch.completed === true && !patch.completed_at) {
     patch.completed_at = new Date().toISOString();
   }
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_tasks")
     .update(patch)
     .eq("id", taskId)
@@ -1054,7 +870,6 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
     return null;
   }
   const task = data as Task;
-  if (updates.completed === true) fireWebhook("task.completed", task);
   // Propaga alterações relevantes para a atividade vinculada (se houver).
   const linkedId = extractLinkedActivityId(task.description);
   if (linkedId) {
@@ -1066,7 +881,7 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
     const actType = (updates as { activity_type?: string }).activity_type;
     if (actType) actPatch.type = actType;
     if (Object.keys(actPatch).length) {
-      await db.from("crm_lead_activities").update(actPatch).eq("id", linkedId);
+      await supabase.from("crm_lead_activities").update(actPatch).eq("id", linkedId);
     }
   }
   return task;
@@ -1074,19 +889,19 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
 
 export async function deleteTask(taskId: string): Promise<boolean> {
   // Recupera a descrição para remover também a atividade vinculada, se houver.
-  const { data: existing } = await db
+  const { data: existing } = await supabase
     .from("crm_tasks")
     .select("description")
     .eq("id", taskId)
     .maybeSingle();
   const linkedId = extractLinkedActivityId((existing as { description?: string | null } | null)?.description);
-  const { error } = await db.from("crm_tasks").delete().eq("id", taskId);
+  const { error } = await supabase.from("crm_tasks").delete().eq("id", taskId);
   if (error) {
     console.error("deleteTask:", error);
     return false;
   }
   if (linkedId) {
-    await db.from("crm_lead_activities").delete().eq("id", linkedId);
+    await supabase.from("crm_lead_activities").delete().eq("id", linkedId);
   }
   return true;
 }
@@ -1141,7 +956,7 @@ export async function createTransaction(txData: Partial<Transaction>): Promise<T
 export async function fetchDestinations(): Promise<Destination[]> {
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return [];
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_library_destinations")
     .select("*")
     .eq("agency_id", _agencyId)
@@ -1165,7 +980,7 @@ export async function updateDestination(
     patch.name = updates.title;
     delete patch.title;
   }
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_library_destinations")
     .update(patch)
     .eq("id", id)
@@ -1179,7 +994,7 @@ export async function updateDestination(
 }
 
 export async function deleteDestination(id: string): Promise<boolean> {
-  const { error } = await db.from("crm_library_destinations").delete().eq("id", id);
+  const { error } = await supabase.from("crm_library_destinations").delete().eq("id", id);
   if (error) {
     console.error("deleteDestination:", error);
     return false;
@@ -1189,7 +1004,7 @@ export async function deleteDestination(id: string): Promise<boolean> {
 
 export async function createDestination(destData: Partial<Destination>): Promise<Destination | null> {
   if (!_agencyId) await loadAgencyContext();
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_library_destinations")
     .insert({
       agency_id: _agencyId,
@@ -1219,7 +1034,7 @@ function sanitizeFileName(name: string): string {
 export async function fetchLibraryItems(type?: LibraryItemType): Promise<LibraryItem[]> {
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return [];
-  let q = (db as any)
+  let q = (supabase as any)
     .from("crm_library_items")
     .select("*")
     .eq("agency_id", _agencyId)
@@ -1237,7 +1052,7 @@ export async function uploadLibraryAsset(file: File): Promise<{ path: string; na
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return null;
   const path = `${_agencyId}/${crypto.randomUUID()}-${sanitizeFileName(file.name)}`;
-  const { error } = await db.storage.from(LIBRARY_BUCKET).upload(path, file, {
+  const { error } = await supabase.storage.from(LIBRARY_BUCKET).upload(path, file, {
     contentType: file.type || undefined,
     upsert: false,
   });
@@ -1249,7 +1064,7 @@ export async function uploadLibraryAsset(file: File): Promise<{ path: string; na
 }
 
 export async function getLibraryAssetUrl(path: string): Promise<string | null> {
-  const { data, error } = await db.storage.from(LIBRARY_BUCKET).createSignedUrl(path, 3600);
+  const { data, error } = await supabase.storage.from(LIBRARY_BUCKET).createSignedUrl(path, 3600);
   if (error) return null;
   return data?.signedUrl ?? null;
 }
@@ -1257,7 +1072,7 @@ export async function getLibraryAssetUrl(path: string): Promise<string | null> {
 export async function createLibraryItem(item: Partial<LibraryItem>): Promise<LibraryItem | null> {
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId) return null;
-  const { data, error } = await (db as any)
+  const { data, error } = await (supabase as any)
     .from("crm_library_items")
     .insert({
       agency_id: _agencyId,
@@ -1284,7 +1099,7 @@ export async function createLibraryItem(item: Partial<LibraryItem>): Promise<Lib
 }
 
 export async function updateLibraryItem(id: string, updates: Partial<LibraryItem>): Promise<LibraryItem | null> {
-  const { data, error } = await (db as any)
+  const { data, error } = await (supabase as any)
     .from("crm_library_items")
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id)
@@ -1299,9 +1114,9 @@ export async function updateLibraryItem(id: string, updates: Partial<LibraryItem
 
 export async function deleteLibraryItem(item: LibraryItem): Promise<boolean> {
   if (item.file_url) {
-    await db.storage.from(LIBRARY_BUCKET).remove([item.file_url]);
+    await supabase.storage.from(LIBRARY_BUCKET).remove([item.file_url]);
   }
-  const { error } = await (db as any).from("crm_library_items").delete().eq("id", item.id);
+  const { error } = await (supabase as any).from("crm_library_items").delete().eq("id", item.id);
   if (error) {
     console.error("deleteLibraryItem:", error);
     return false;
@@ -1320,7 +1135,7 @@ async function cleanupImageReferences(items: LibraryItem[]): Promise<void> {
     .filter((v): v is string => !!v);
   if (refs.length === 0) return;
   try {
-    const { data: leads } = await (db as any)
+    const { data: leads } = await (supabase as any)
       .from("crm_leads")
       .select("id, profile")
       .eq("agency_id", _agencyId);
@@ -1331,7 +1146,7 @@ async function cleanupImageReferences(items: LibraryItem[]): Promise<void> {
       if (!hit) continue;
       const newProfile = { ...(lead.profile || {}) };
       delete (newProfile as Record<string, unknown>).cover_image;
-      await (db as any).from("crm_leads").update({ profile: newProfile }).eq("id", lead.id);
+      await (supabase as any).from("crm_leads").update({ profile: newProfile }).eq("id", lead.id);
     }
   } catch (e) {
     console.error("cleanupImageReferences:", e);
@@ -1343,10 +1158,10 @@ export async function bulkDeleteLibraryItems(items: LibraryItem[]): Promise<numb
   if (items.length === 0) return 0;
   const paths = items.map((i) => i.file_url).filter((v): v is string => !!v);
   if (paths.length > 0) {
-    await db.storage.from(LIBRARY_BUCKET).remove(paths);
+    await supabase.storage.from(LIBRARY_BUCKET).remove(paths);
   }
   const ids = items.map((i) => i.id);
-  const { error } = await (db as any).from("crm_library_items").delete().in("id", ids);
+  const { error } = await (supabase as any).from("crm_library_items").delete().in("id", ids);
   if (error) {
     console.error("bulkDeleteLibraryItems:", error);
     return 0;
@@ -1372,10 +1187,7 @@ export async function resolveDisplayImageUrl(value?: string | null): Promise<str
   // URLs assinadas do bucket expiram (token). Extrai o caminho e re-assina.
   const assetPath = getLibraryAssetPathFromUrl(value);
   if (assetPath) return (await getLibraryAssetUrl(assetPath)) ?? value;
-  if (/^https?:\/\//i.test(value) || value.startsWith("data:") || value.startsWith("blob:")) return value;
-  // Só caminho de arquivo vai ao bucket. Um valor como "linear-gradient(...)"
-  // (capa em degradê) não é arquivo.
-  if (/[()\s]/.test(value)) return null;
+  if (/^https?:\/\//i.test(value) || value.startsWith("data:")) return value;
   return getLibraryAssetUrl(value);
 }
 
@@ -1739,7 +1551,7 @@ export async function uploadImageToLibraryForDestination(
 
 export async function fetchItineraries(): Promise<Itinerary[]> {
   if (!_agencyId) return [];
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itineraries")
     .select("*, lead:crm_leads!crm_itineraries_lead_id_fkey(id, name, profile, assigned_to, status, client_id, archived_at)")
     .eq("agency_id", _agencyId)
@@ -1787,7 +1599,7 @@ export async function fetchPublicItinerary(id: string, token: string): Promise<I
 }
 
 export async function fetchItineraryById(id: string): Promise<Itinerary | null> {
-  let itQuery = db
+  let itQuery = supabase
     .from("crm_itineraries")
     .select("*, lead:crm_leads!crm_itineraries_lead_id_fkey(profile)")
     .eq("id", id);
@@ -1810,7 +1622,7 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
     itAny.cover_image = await searchLibraryImageForDestination(itAny.destination);
   }
 
-  const { data: days } = await db
+  const { data: days } = await supabase
     .from("crm_itinerary_days")
     .select("*, activities:crm_itinerary_activities(*)")
     .eq("itinerary_id", id)
@@ -1826,7 +1638,7 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
       day.activities.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
     }
   });
-  const { data: vouchers } = await db.from("crm_vouchers").select("*").eq("itinerary_id", id);
+  const { data: vouchers } = await supabase.from("crm_vouchers").select("*").eq("itinerary_id", id);
   const mappedVouchers: Voucher[] = (vouchers || []).map((v: Record<string, unknown>) => ({
     id: v.id as string,
     itinerary_id: v.itinerary_id as string,
@@ -1842,7 +1654,7 @@ export async function fetchItineraryById(id: string): Promise<Itinerary | null> 
 
 export async function createItinerary(d: Partial<Itinerary>): Promise<Itinerary | null> {
   if (!_agencyId) await loadAgencyContext();
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itineraries")
     .insert({
       agency_id: _agencyId,
@@ -1866,12 +1678,11 @@ export async function createItinerary(d: Partial<Itinerary>): Promise<Itinerary 
     console.error("createItinerary:", error);
     return null;
   }
-  fireWebhook("itinerary.created", data);
   return data as Itinerary;
 }
 
 export async function updateItinerary(id: string, updates: Partial<Itinerary>): Promise<Itinerary | null> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itineraries")
     .update(updates)
     .eq("id", id)
@@ -1885,19 +1696,12 @@ export async function updateItinerary(id: string, updates: Partial<Itinerary>): 
 }
 
 export async function deleteItinerary(id: string): Promise<boolean> {
-  // Os anexos saem junto, para não ficarem órfãos nem travados como "em uso".
-  try {
-    const { deleteItineraryDocuments } = await import("@/lib/lead-documents");
-    await deleteItineraryDocuments(id);
-  } catch (err) {
-    console.error("deleteItinerary documentos:", err);
-  }
-  const { data: days } = await db.from("crm_itinerary_days").select("id").eq("itinerary_id", id);
+  const { data: days } = await supabase.from("crm_itinerary_days").select("id").eq("itinerary_id", id);
   const dayIds = (days || []).map((d: { id: string }) => d.id);
-  if (dayIds.length) await db.from("crm_itinerary_activities").delete().in("day_id", dayIds);
-  await db.from("crm_itinerary_days").delete().eq("itinerary_id", id);
-  await db.from("crm_vouchers").delete().eq("itinerary_id", id);
-  const { error } = await db.from("crm_itineraries").delete().eq("id", id);
+  if (dayIds.length) await supabase.from("crm_itinerary_activities").delete().in("day_id", dayIds);
+  await supabase.from("crm_itinerary_days").delete().eq("itinerary_id", id);
+  await supabase.from("crm_vouchers").delete().eq("itinerary_id", id);
+  const { error } = await supabase.from("crm_itineraries").delete().eq("id", id);
   if (error) {
     console.error("deleteItinerary:", error);
     return false;
@@ -1927,12 +1731,21 @@ export async function duplicateItinerary(id: string): Promise<Itinerary | null> 
       itinerary_id: copy.id,
       day_number: day.day_number,
       title: day.title,
-      date: day.date ?? null,
       sort_order: day.sort_order,
     });
     if (!newDay) continue;
     for (const a of day.activities || []) {
-      await createItineraryActivity(copyOfActivity(a, newDay.id));
+      await createItineraryActivity({
+        day_id: newDay.id,
+        title: a.title,
+        type: a.type,
+        time: a.time ?? null,
+        duration: a.duration ?? null,
+        location: a.location ?? null,
+        cost: a.cost ?? null,
+        description: a.description ?? null,
+        sort_order: a.sort_order,
+      });
     }
   }
   return copy;
@@ -1943,7 +1756,7 @@ export async function duplicateItineraryDay(
   dayId: string,
   targetPosition?: number,
 ): Promise<ItineraryDay | null> {
-  const { data: src, error } = await db
+  const { data: src, error } = await supabase
     .from("crm_itinerary_days")
     .select("*, activities:crm_itinerary_activities(*)")
     .eq("id", dayId)
@@ -1955,7 +1768,7 @@ export async function duplicateItineraryDay(
   const source = src as unknown as ItineraryDay & { itinerary_id: string; label?: string | null };
 
   // Carrega todos os dias do roteiro para remanejar a numeração.
-  const { data: allDaysRaw } = await db
+  const { data: allDaysRaw } = await supabase
     .from("crm_itinerary_days")
     .select("id, day_number")
     .eq("itinerary_id", source.itinerary_id)
@@ -1984,7 +1797,18 @@ export async function duplicateItineraryDay(
     (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
   );
   for (const a of activities) {
-    await createItineraryActivity(copyOfActivity(a, newDay.id));
+    const raw = a as unknown as { time_start?: string | null };
+    await createItineraryActivity({
+      day_id: newDay.id,
+      title: a.title,
+      type: a.type,
+      time: raw.time_start ?? a.time ?? null,
+      duration: a.duration ?? null,
+      location: a.location ?? null,
+      cost: a.cost ?? null,
+      description: a.description ?? null,
+      sort_order: a.sort_order,
+    });
   }
   return newDay;
 }
@@ -1997,7 +1821,7 @@ function mapDayPayload(data: Partial<ItineraryDay>): Record<string, unknown> {
 }
 
 export async function createItineraryDay(dayData: Partial<ItineraryDay>): Promise<ItineraryDay | null> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itinerary_days")
     .insert(mapDayPayload(dayData))
     .select()
@@ -2013,7 +1837,7 @@ export async function updateItineraryDay(
   id: string,
   updates: Partial<ItineraryDay>,
 ): Promise<ItineraryDay | null> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itinerary_days")
     .update(mapDayPayload(updates))
     .eq("id", id)
@@ -2027,91 +1851,90 @@ export async function updateItineraryDay(
 }
 
 export async function deleteItineraryDay(id: string): Promise<boolean> {
-  await db.from("crm_itinerary_activities").delete().eq("day_id", id);
-  const { error } = await db.from("crm_itinerary_days").delete().eq("id", id);
+  await supabase.from("crm_itinerary_activities").delete().eq("day_id", id);
+  const { error } = await supabase.from("crm_itinerary_days").delete().eq("id", id);
   return !error;
 }
 
-// Os dados extras do item (moeda, valor em reais, sugestões, valores por
-// pessoa, fotos, "feito") viajam dentro de `description`. Ver activity-meta.ts.
+// A coluna `duration` guarda, além da duração textual, um envelope JSON com
+// metadados extras da atividade (moeda, valor convertido e sugestões de
+// hospedagem), já que o schema não possui colunas dedicadas. Estas funções
+// codificam/decodificam esse envelope de forma retrocompatível.
+type ActivityMeta = {
+  dur?: string | null;
+  cur?: string | null;
+  brl?: number | null;
+  rate?: number | null;
+  hotels?: unknown;
+  sug?: unknown;
+  pax?: unknown;
+  imgs?: unknown;
+};
+
+
 function decodeActivityMeta(a: ItineraryActivity): void {
-  decodeActivityRow(a as unknown as Record<string, unknown>);
+  const raw = a.duration;
+  if (!raw || typeof raw !== "string" || !raw.trim().startsWith("{")) return;
+  try {
+    const m = JSON.parse(raw) as ActivityMeta;
+    if (m && typeof m === "object" && ("cur" in m || "brl" in m || "hotels" in m || "dur" in m || "pax" in m || "sug" in m || "imgs" in m)) {
+      a.duration = m.dur ?? null;
+      a.currency = m.cur ?? null;
+      a.cost_brl = typeof m.brl === "number" ? m.brl : null;
+      a.cost_brl_rate = typeof m.rate === "number" ? m.rate : null;
+      a.hotel_options = Array.isArray(m.hotels)
+        ? (m.hotels as ItineraryActivity["hotel_options"])
+        : null;
+      a.suggestion_options = Array.isArray(m.sug)
+        ? (m.sug as ItineraryActivity["suggestion_options"])
+        : null;
+      a.passenger_costs = Array.isArray(m.pax)
+        ? (m.pax as ItineraryActivity["passenger_costs"])
+        : null;
+      a.images = Array.isArray(m.imgs)
+        ? (m.imgs as ItineraryActivity["images"])
+        : null;
+    }
+
+  } catch {
+    /* mantém como duração textual legada */
+  }
 }
 
-/** Cópia completa de um item para outro dia (sem o "feito"). */
-function copyOfActivity(source: ItineraryActivity, dayId: string): Partial<ItineraryActivity> {
-  const a = decodeActivityRow({ ...(source as unknown as Record<string, unknown>) }) as unknown as ItineraryActivity & {
-    time_start?: string | null;
-  };
-  return {
-    day_id: dayId,
-    title: a.title,
-    type: a.type,
-    time: a.time ?? a.time_start ?? null,
-    duration: a.duration ?? null,
-    location: a.location ?? null,
-    maps_url: a.maps_url ?? null,
-    cost: a.cost ?? null,
-    description: a.description ?? null,
-    currency: a.currency ?? null,
-    cost_brl: a.cost_brl ?? null,
-    cost_brl_rate: a.cost_brl_rate ?? null,
-    hotel_options: a.hotel_options ?? null,
-    suggestion_options: a.suggestion_options ?? null,
-    passenger_costs: a.passenger_costs ?? null,
-    images: a.images ?? null,
-    sort_order: a.sort_order,
-  };
-}
-
-// Monta o que vai para a coleção. `current` é o item como está gravado (já
-// lido), necessário numa edição parcial para não apagar os dados extras.
-function mapActivityPayload(
-  data: Partial<ItineraryActivity>,
-  current?: ItineraryActivity | null,
-): Record<string, unknown> {
-  const { time, currency, cost_brl, cost_brl_rate, hotel_options, suggestion_options, passenger_costs, images, duration, description, done, ...rest } = data;
+// Mapeia o campo de UI `time` para a coluna real `time_start` e empacota os
+// metadados extras dentro de `duration`.
+function mapActivityPayload(data: Partial<ItineraryActivity>): Record<string, unknown> {
+  const { time, currency, cost_brl, cost_brl_rate, hotel_options, suggestion_options, passenger_costs, images, duration, ...rest } = data;
   const payload: Record<string, unknown> = { ...rest };
   if (time !== undefined) payload.time_start = time;
 
-  const extras = { currency, cost_brl, cost_brl_rate, hotel_options, suggestion_options, passenger_costs, images, duration, description, done };
-  const changed = Object.entries(extras).filter(([, v]) => v !== undefined);
-  if (changed.length > 0 || !current) {
-    const merged = { ...(current ?? {}), ...Object.fromEntries(changed) } as ItineraryActivity;
-    Object.assign(payload, encodeActivityColumns(merged));
-  }
-  // Item antigo marcado como feito guardava "done" no lugar do tipo.
-  if (current && (current as { _legacyDone?: boolean })._legacyDone && payload.type === undefined) {
-    payload.type = "activity";
+  const hasMeta =
+    currency !== undefined || cost_brl !== undefined || cost_brl_rate !== undefined || hotel_options !== undefined || suggestion_options !== undefined || passenger_costs !== undefined || images !== undefined;
+  if (hasMeta) {
+    payload.duration = JSON.stringify({
+      dur: duration ?? null,
+      cur: currency ?? null,
+      brl: cost_brl ?? null,
+      rate: cost_brl_rate ?? null,
+      hotels: hotel_options ?? null,
+      sug: suggestion_options ?? null,
+      pax: passenger_costs ?? null,
+      imgs: images ?? null,
+    });
+
+  } else if (duration !== undefined) {
+    payload.duration = duration;
   }
   return payload;
-}
-
-async function readActivity(id: string): Promise<ItineraryActivity | null> {
-  const { data } = await db.from("crm_itinerary_activities").select("*").eq("id", id).maybeSingle();
-  if (!data) return null;
-  const legacyDone = (data as { type?: string }).type === "done";
-  const item = decodeActivityRow(data as Record<string, unknown>) as unknown as ItineraryActivity & {
-    _legacyDone?: boolean;
-  };
-  item._legacyDone = legacyDone;
-  return item;
 }
 
 export async function updateItineraryActivity(
   id: string,
   updates: Partial<ItineraryActivity>,
 ): Promise<ItineraryActivity | null> {
-  // Edição parcial de dado extra precisa do que já está gravado.
-  const touchesExtras = ACTIVITY_EXTRA_KEYS.some((k) => (updates as Record<string, unknown>)[k] !== undefined);
-  const current = touchesExtras ? await readActivity(id) : null;
-  if (touchesExtras && !current) {
-    console.error("updateItineraryActivity: item não encontrado", id);
-    return null;
-  }
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itinerary_activities")
-    .update(mapActivityPayload(updates, current ?? ({} as ItineraryActivity)))
+    .update(mapActivityPayload(updates))
     .eq("id", id)
     .select()
     .maybeSingle();
@@ -2119,13 +1942,13 @@ export async function updateItineraryActivity(
     console.error("updateItineraryActivity:", error);
     return null;
   }
-  return data ? (decodeActivityRow(data as Record<string, unknown>) as unknown as ItineraryActivity) : null;
+  return data as ItineraryActivity;
 }
 
 export async function createItineraryActivity(
   activityData: Partial<ItineraryActivity>,
 ): Promise<ItineraryActivity | null> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itinerary_activities")
     .insert({ type: "activity", ...mapActivityPayload(activityData) })
     .select()
@@ -2135,17 +1958,18 @@ export async function createItineraryActivity(
     throw new Error(error.message || "Erro ao salvar atividade.");
   }
 
-  return decodeActivityRow(data as Record<string, unknown>) as unknown as ItineraryActivity;
+  return data as ItineraryActivity;
 }
 
+
 export async function deleteItineraryActivity(id: string): Promise<boolean> {
-  const { error } = await db.from("crm_itinerary_activities").delete().eq("id", id);
+  const { error } = await supabase.from("crm_itinerary_activities").delete().eq("id", id);
   return !error;
 }
 
 /** Reordena as atividades de um dia por horário (time_start), vazios ao final. */
 export async function reorderDayActivitiesByTime(dayId: string): Promise<void> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itinerary_activities")
     .select("id, time_start")
     .eq("day_id", dayId);
@@ -2160,7 +1984,7 @@ export async function reorderDayActivitiesByTime(dayId: string): Promise<void> {
     return ta.localeCompare(tb);
   });
   await Promise.all(
-    rows.map((r, i) => db.from("crm_itinerary_activities").update({ sort_order: i }).eq("id", r.id)),
+    rows.map((r, i) => supabase.from("crm_itinerary_activities").update({ sort_order: i }).eq("id", r.id)),
   );
 }
 
@@ -2172,7 +1996,7 @@ export async function createVoucher(voucherData: Partial<Voucher>): Promise<Vouc
     confirmation_code: voucherData.code ?? null,
     notes: voucherData.notes ?? null,
   };
-  const { data, error } = await db.from("crm_vouchers").insert(row).select().single();
+  const { data, error } = await supabase.from("crm_vouchers").insert(row).select().single();
   if (error) {
     console.error("createVoucher:", error);
     return null;
@@ -2190,12 +2014,12 @@ export async function createVoucher(voucherData: Partial<Voucher>): Promise<Vouc
 }
 
 export async function deleteVoucher(id: string): Promise<boolean> {
-  const { error } = await db.from("crm_vouchers").delete().eq("id", id);
+  const { error } = await supabase.from("crm_vouchers").delete().eq("id", id);
   return !error;
 }
 
 export async function fetchItinerariesByLead(leadId: string): Promise<Itinerary[]> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itineraries")
     .select("*")
     .eq("lead_id", leadId)
@@ -2223,14 +2047,14 @@ export async function fetchClientTripHistory(
   if (phoneDigits) filters.push(`phone.ilike.%${phoneDigits}%`);
 
   if (filters.length > 0) {
-    const { data: leads } = await db
+    const { data: leads } = await supabase
       .from("crm_leads")
       .select("id")
       .or(filters.join(","));
     for (const l of (leads as { id: string }[]) || []) leadIds.add(l.id);
   }
 
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itineraries")
     .select("*, lead:crm_leads(name)")
     .in("lead_id", Array.from(leadIds))
@@ -2247,7 +2071,7 @@ export async function fetchClientTripHistory(
 
 /** Retorna o status do roteiro mais recente por lead que possui roteiro. */
 export async function fetchLeadItineraryStatuses(): Promise<Record<string, string>> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_itineraries")
     .select("lead_id, status, created_at")
     .order("created_at", { ascending: false });
@@ -2266,7 +2090,7 @@ export async function fetchLeadItineraryStatuses(): Promise<Record<string, strin
 export async function fetchNotifications(): Promise<import("@/lib/types").AppNotification[]> {
   if (!_memberId) await loadAgencyContext();
   if (!_memberId) return [];
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_notifications")
     .select("*, actor:agency_members!crm_notifications_actor_id_fkey(id, name, avatar_color)")
     .eq("recipient_id", _memberId)
@@ -2293,7 +2117,7 @@ export async function fetchNotificationsPage(opts: {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
-  let query = db
+  let query = supabase
     .from("crm_notifications")
     .select("*, actor:agency_members!crm_notifications_actor_id_fkey(id, name, avatar_color)", {
       count: "exact",
@@ -2317,7 +2141,7 @@ export async function fetchNotificationsPage(opts: {
 }
 
 export async function markNotificationRead(id: string, read = true): Promise<boolean> {
-  const { error } = await db.from("crm_notifications").update({ read }).eq("id", id);
+  const { error } = await supabase.from("crm_notifications").update({ read }).eq("id", id);
   if (error) {
     console.error("markNotificationRead:", error);
     return false;
@@ -2327,7 +2151,7 @@ export async function markNotificationRead(id: string, read = true): Promise<boo
 
 export async function markAllNotificationsRead(): Promise<boolean> {
   if (!_memberId) return false;
-  const { error } = await db
+  const { error } = await supabase
     .from("crm_notifications")
     .update({ read: true })
     .eq("recipient_id", _memberId)
@@ -2340,7 +2164,7 @@ export async function markAllNotificationsRead(): Promise<boolean> {
 }
 
 export async function deleteNotification(id: string): Promise<boolean> {
-  const { error } = await db.from("crm_notifications").delete().eq("id", id);
+  const { error } = await supabase.from("crm_notifications").delete().eq("id", id);
   if (error) {
     console.error("deleteNotification:", error);
     return false;
@@ -2360,7 +2184,7 @@ export async function createNotification(input: {
   if (!_agencyId) await loadAgencyContext();
   if (!_agencyId || !input.recipientId) return false;
   if (input.recipientId === _memberId) return false; // não notifica a si mesmo
-  const { error } = await db.from("crm_notifications").insert({
+  const { error } = await supabase.from("crm_notifications").insert({
     agency_id: _agencyId,
     recipient_id: input.recipientId,
     actor_id: _memberId,
@@ -2463,7 +2287,7 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 // ── Clientes / Viajantes ────────────────────────────────────────
 export async function fetchClients(search?: string): Promise<Client[]> {
   if (!_agencyId) await loadAgencyContext();
-  let q = db
+  let q = supabase
     .from("crm_clients")
     .select("*")
     .eq("agency_id", _agencyId!)
@@ -2483,7 +2307,7 @@ export async function fetchClients(search?: string): Promise<Client[]> {
 }
 
 export async function fetchClientById(id: string): Promise<Client | null> {
-  const { data, error } = await db.from("crm_clients").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from("crm_clients").select("*").eq("id", id).maybeSingle();
   if (error) {
     console.error("fetchClientById:", error);
     return null;
@@ -2507,7 +2331,7 @@ export async function createClient(payload: Partial<Client>): Promise<Client | n
     name: payload.name ?? "",
     preferences: payload.preferences ?? {},
   };
-  const { data, error } = await db.from("crm_clients").insert(insert).select().single();
+  const { data, error } = await supabase.from("crm_clients").insert(insert).select().single();
   if (error) {
     console.error("createClient:", error);
     return null;
@@ -2519,7 +2343,7 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
   const patch = { ...updates };
   delete (patch as Partial<Client>).id;
   delete (patch as Partial<Client>).agency_id;
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_clients")
     .update(emptyStringsToNull(patch as Record<string, unknown>))
     .eq("id", id)
@@ -2536,15 +2360,15 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
   if (updates.email !== undefined) leadPatch.email = client.email ?? null;
   if (updates.phone !== undefined) leadPatch.phone = client.phone ?? null;
   if (Object.keys(leadPatch).length > 0) {
-    const { error: leadErr } = await db.from("crm_leads").update(leadPatch).eq("client_id", id);
+    const { error: leadErr } = await supabase.from("crm_leads").update(leadPatch).eq("client_id", id);
     if (leadErr) console.error("updateClient(leads sync):", leadErr);
   }
   if (updates.name !== undefined) {
     // Roteiros usam client_name (texto); atualizamos via leads vinculados.
-    const { data: leadIds } = await db.from("crm_leads").select("id").eq("client_id", id);
+    const { data: leadIds } = await supabase.from("crm_leads").select("id").eq("client_id", id);
     const ids = ((leadIds ?? []) as Array<{ id: string }>).map((lead) => lead.id);
     if (ids.length > 0) {
-      const { error: itErr } = await db
+      const { error: itErr } = await supabase
         .from("crm_itineraries")
         .update({ client_name: client.name })
         .in("lead_id", ids);
@@ -2555,9 +2379,7 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
 }
 
 export async function deleteClient(id: string): Promise<boolean> {
-  // As viagens do cliente continuam; só perdem o vínculo com o cadastro.
-  await db.from("crm_leads").update({ client_id: null }).eq("client_id", id);
-  const { error } = await db.from("crm_clients").delete().eq("id", id);
+  const { error } = await supabase.from("crm_clients").delete().eq("id", id);
   if (error) {
     console.error("deleteClient:", error);
     return false;
@@ -2566,7 +2388,7 @@ export async function deleteClient(id: string): Promise<boolean> {
 }
 
 export async function fetchLeadsByClient(clientId: string): Promise<Lead[]> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_leads")
     .select("*")
     .eq("client_id", clientId)
@@ -2590,14 +2412,14 @@ export async function createLeadFromClient(clientId: string): Promise<Lead | nul
   });
   if (!lead) return null;
   // Vincula o lead ao cliente
-  const { error } = await db.from("crm_leads").update({ client_id: clientId }).eq("id", lead.id);
+  const { error } = await supabase.from("crm_leads").update({ client_id: clientId }).eq("id", lead.id);
   if (error) console.error("createLeadFromClient link:", error);
   return { ...lead, client_id: clientId };
 }
 
 // ── Gastos da viagem (crm_trip_expenses) ────────────────────────
 export async function fetchTripExpenses(leadId: string): Promise<TripExpense[]> {
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_trip_expenses")
     .select("*")
     .eq("lead_id", leadId)
@@ -2627,7 +2449,7 @@ export async function createTripExpense(
     occurred_at: payload.occurred_at ?? new Date().toISOString().slice(0, 10),
     activity_id: payload.activity_id ?? null,
   };
-  const { data, error } = await db.from("crm_trip_expenses").insert(insert).select().single();
+  const { data, error } = await supabase.from("crm_trip_expenses").insert(insert).select().single();
   if (error) {
     console.error("createTripExpense:", error);
     return null;
@@ -2643,7 +2465,7 @@ export async function updateTripExpense(
   delete (patch as Partial<TripExpense>).id;
   delete (patch as Partial<TripExpense>).agency_id;
   delete (patch as Partial<TripExpense>).lead_id;
-  const { data, error } = await db
+  const { data, error } = await supabase
     .from("crm_trip_expenses")
     .update(patch)
     .eq("id", id)
@@ -2657,10 +2479,23 @@ export async function updateTripExpense(
 }
 
 export async function deleteTripExpense(id: string): Promise<boolean> {
-  const { error } = await db.from("crm_trip_expenses").delete().eq("id", id);
+  const { error } = await supabase.from("crm_trip_expenses").delete().eq("id", id);
   if (error) {
     console.error("deleteTripExpense:", error);
     return false;
   }
   return true;
+}
+
+/** Registra que houve contato agora: zera os "dias sem contato" da viagem. */
+export async function marcarContato(leadId: string): Promise<void> {
+  await supabase.from("crm_leads").update({ last_activity_at: new Date().toISOString() }).eq("id", leadId);
+}
+
+/** Tipo de cada atividade ligada a tarefa ("[atv:<id>]" na descrição), para a Agenda. */
+export async function fetchActivityTypes(): Promise<Record<string, string>> {
+  if (!_agencyId) return {};
+  const { data, error } = await supabase.from("crm_lead_activities").select("id, type").eq("agency_id", _agencyId).limit(5000);
+  if (error) return {};
+  return Object.fromEntries(((data as { id: string; type: string }[]) || []).map((a) => [a.id, a.type]));
 }

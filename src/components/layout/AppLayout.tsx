@@ -1,72 +1,106 @@
 import { type ReactNode, useEffect, useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/integrations/appwrite/db";
 import {
-  Home,
-  Plane,
-  Contact,
-  CalendarDays,
-  Images,
-  Wallet,
-  ShieldCheck,
-  Moon,
-  Sun,
-  LogOut,
-  ChevronLeft,
-  UserCog,
+  AddressBook,
+  AirplaneTilt,
+  CalendarBlank,
+  CheckSquare,
   Gauge,
-  Bot,
-} from "lucide-react";
+  House,
+  Images,
+  Kanban,
+  List as ListIcon,
+  Moon,
+  Plus,
+  Robot,
+  ShieldCheck,
+  SignOut,
+  Sun,
+  UserCircle,
+  UsersThree,
+  Wallet,
+  type Icon,
+} from "@phosphor-icons/react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth, isAdminUser, isSuperAdminEmail } from "@/lib/auth";
 import { useFinanceAccess } from "@/lib/finance-access";
-import { useTheme, initials } from "@/lib/ui";
+import { useTheme } from "@/lib/ui";
 import { fetchLeads, fetchTasks } from "@/lib/services";
 import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThayPanel } from "@/components/ThayPanel";
-import logoBranco from "@/assets/osv-logo-branco.svg";
-import logoPreto from "@/assets/osv-logo-preto.svg";
+import { NovoNaAgenda } from "@/components/agenda/NovoNaAgenda";
+import { BrandLogo } from "@/components/BrandLogo";
+import { GlobalSearch } from "@/components/layout/GlobalSearch";
+import { useBrand } from "@/hooks/useBrand";
+import { ActionSheet, Avatar, Button, IconButton, type SheetItem } from "@/components/ds";
+import { NovaViagem } from "@/components/viagens/NovaViagem";
 
-// Menu agrupado (identidade OSV): trabalho do dia, recursos e gestão.
+// Menu agrupado: trabalho do dia, recursos e gestão.
 // Viagens reúne a fase comercial (/leads) e a preparação (/roteiros); Viajantes é a base de pessoas (/clientes).
-type NavItem = { to: string; label: string; icon: typeof Home; match: string[]; group: "Trabalho" | "Recursos" | "Gestão" };
+type Group = "Trabalho" | "Recursos" | "Gestão";
+type NavItem = { to: string; label: string; icon: Icon; match: string[]; group: Group; hash?: string };
 const NAV: NavItem[] = [
-  { to: "/", label: "Hoje", icon: Home, match: ["/"], group: "Trabalho" },
-  { to: "/leads", label: "Viagens", icon: Plane, match: ["/leads", "/roteiros"], group: "Trabalho" },
-  { to: "/clientes", label: "Viajantes", icon: Contact, match: ["/clientes"], group: "Trabalho" },
-  { to: "/tarefas", label: "Agenda", icon: CalendarDays, match: ["/tarefas"], group: "Trabalho" },
+  { to: "/", label: "Hoje", icon: House, match: ["/"], group: "Trabalho" },
+  { to: "/leads", label: "Viagens", icon: AirplaneTilt, match: ["/leads", "/roteiros"], group: "Trabalho" },
+  { to: "/clientes", label: "Viajantes", icon: AddressBook, match: ["/clientes"], group: "Trabalho" },
+  { to: "/tarefas", label: "Agenda", icon: CalendarBlank, match: ["/tarefas"], group: "Trabalho" },
   { to: "/biblioteca", label: "Biblioteca", icon: Images, match: ["/biblioteca"], group: "Recursos" },
   { to: "/financeiro", label: "Financeiro", icon: Wallet, match: ["/financeiro"], group: "Gestão" },
-  { to: "/admin", label: "Equipe e configurações", icon: ShieldCheck, match: ["/admin", "/checklist-templates"], group: "Gestão" },
+  // Equipe e Configurações ainda são a mesma página (/admin); viram telas separadas na fase de Gestão.
+  { to: "/admin", label: "Equipe", icon: UsersThree, match: ["/admin"], group: "Gestão" },
+  { to: "/admin", hash: "configuracoes", label: "Configurações", icon: ShieldCheck, match: ["/admin", "/checklist-templates"], group: "Gestão" },
+  // Só para super admin (liberação de acesso e cota de IA das agências).
   { to: "/plataforma", label: "Plataforma", icon: Gauge, match: ["/plataforma"], group: "Gestão" },
 ];
 
-// Barra inferior (mobile)
-const MOBILE_NAV = NAV.filter((i) => ["/", "/leads", "/clientes", "/tarefas"].includes(i.to));
+// Barra inferior do celular: dois itens, o + no centro, e mais dois.
+const TAB_LEFT = ["/", "/leads"];
+const TAB_RIGHT = ["/clientes", "/tarefas"];
 
-const isActive = (item: NavItem, pathname: string) =>
-  item.match.some((m) => (m === "/" ? pathname === "/" : pathname.startsWith(m)));
+const isActive = (item: NavItem, pathname: string, hash = "") => {
+  if (!item.match.some((m) => (m === "/" ? pathname === "/" : pathname.startsWith(m)))) return false;
+  if (pathname.startsWith("/admin")) return item.hash ? hash === item.hash : hash !== "configuracoes";
+  return !item.hash || pathname.startsWith("/checklist-templates");
+};
+const navKey = (i: NavItem) => i.to + (i.hash ? `#${i.hash}` : "");
+
+const ROLE_LABEL: Record<string, string> = {
+  admin: "Administrador",
+  owner: "Administrador",
+  gerente: "Gerente",
+  consultor: "Consultoria",
+  comercial: "Comercial",
+};
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { session, member, signOut } = useAuth();
   const { theme, toggle } = useTheme();
+  const brand = useBrand();
+  const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileMenu, setMobileMenu] = useState(false);
+  const hash = useRouterState({ select: (s) => s.location.hash });
   const qc = useQueryClient();
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [thayOpen, setThayOpen] = useState(false);
+  const [newTrip, setNewTrip] = useState(false);
+  const [newTask, setNewTask] = useState<null | { activityType?: string }>(null);
+
   const leadsQ = useQuery({ queryKey: ["leads", {}], queryFn: () => fetchLeads({}) });
-  const leadsCount = (leadsQ.data ?? []).filter((l) => l.status === "new").length;
+  const newTrips = (leadsQ.data ?? []).filter((l) => l.status === "new").length;
   const tasksQ = useQuery({ queryKey: ["tasks"], queryFn: () => fetchTasks() });
-  const todayTasksCount = (tasksQ.data ?? []).filter((t) => {
+  const todayItems = (tasksQ.data ?? []).filter((t) => {
     if (!t.due_date || t.completed) return false;
     return new Date(t.due_date).toDateString() === new Date().toDateString();
   }).length;
+  const counts: Record<string, number> = { "/leads": newTrips, "/tarefas": todayItems };
+
   const isAdmin = isAdminUser(member, session?.user?.email);
-  const showAdmin = isAdmin;
-  // Financeiro aparece para quem o admin liberou (Administração → Permissões de acesso).
-  const [thayOpen, setThayOpen] = useState(false);
+  // Financeiro aparece para quem o admin liberou (Equipe e configurações → Permissões de acesso).
   const { canView: showFinance } = useFinanceAccess();
   const nav = NAV.filter((i) => {
     if (i.to === "/admin") return isAdmin;
@@ -74,323 +108,143 @@ export function AppLayout({ children }: { children: ReactNode }) {
     if (i.to === "/financeiro") return showFinance;
     return true;
   });
-  const mobileNav = MOBILE_NAV;
 
   useEffect(() => {
-    const channel = db
+    const channel = supabase
       .channel("leads-badge")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "crm_leads" },
-        () => {
-          qc.invalidateQueries({ queryKey: ["leads"] });
-        },
-      )
+      .on("postgres_changes", { event: "*", schema: "public", table: "crm_leads" }, () => {
+        qc.invalidateQueries({ queryKey: ["leads"] });
+      })
       .subscribe();
     return () => {
-      db.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [qc]);
 
+  const userName = member?.name || session?.user?.email || "Usuário";
+  const role = ROLE_LABEL[member?.role ?? ""] ?? member?.role ?? "";
 
+  const createItems: SheetItem[] = [
+    { id: "viagem", icon: <Kanban aria-hidden />, title: "Nova viagem", hint: "Começa pela negociação comercial", onSelect: () => setNewTrip(true) },
+    { id: "pessoa", icon: <AddressBook aria-hidden />, title: "Nova pessoa", hint: "Viajante, família ou grupo", onSelect: () => navigate({ to: "/clientes", search: { novo: "1" } }) },
+    { id: "tarefa", icon: <CheckSquare aria-hidden />, title: "Nova tarefa", hint: "Com data, viajante e prioridade", onSelect: () => setNewTask({}) },
+    { id: "compromisso", icon: <CalendarBlank aria-hidden />, title: "Novo compromisso", hint: "Ligação, reunião ou retorno", onSelect: () => setNewTask({ activityType: "meeting" }) },
+  ];
+
+  // No celular, o que não cabe na barra inferior fica em "Mais".
+  const moreItems: SheetItem[] = [
+    ...nav
+      .filter((i) => ![...TAB_LEFT, ...TAB_RIGHT].includes(i.to))
+      .map((i) => ({ id: navKey(i), icon: <i.icon aria-hidden />, title: i.label, onSelect: () => navigate({ to: i.to, hash: i.hash }) })),
+    { id: "perfil", icon: <UserCircle aria-hidden />, title: "Minha conta", hint: userName, onSelect: () => navigate({ to: "/perfil" }) },
+    { id: "thay", icon: <Robot aria-hidden />, title: "Thay IA", hint: "Assistente", onSelect: () => setThayOpen(true) },
+    { id: "sair", icon: <SignOut aria-hidden />, title: "Sair", onSelect: () => signOut() },
+  ];
+
+  const tabLink = (to: string) => {
+    const item = NAV.find((i) => i.to === to)!;
+    const n = counts[to] ?? 0;
+    return (
+      <Link key={to} to={to} aria-current={isActive(item, pathname) ? "page" : undefined}>
+        <item.icon aria-hidden />
+        {n > 0 && <span className="ds-badge" aria-label={`${n} ${to === "/leads" ? "novas" : "para hoje"}`}>{n > 9 ? "9+" : n}</span>}
+        {item.label}
+      </Link>
+    );
+  };
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground">
-      {/* Sidebar */}
-      <aside
-        className={`hidden shrink-0 flex-col overflow-hidden border-r border-sidebar-border bg-sidebar transition-[width] duration-300 ease-in-out md:flex ${
-          collapsed ? "w-20" : "w-64"
-        }`}
-      >
-        <div className={`flex items-center gap-3 py-6 ${collapsed ? "justify-center px-2" : "px-6"}`}>
-          <img src={logoBranco} alt="O Segredo do Viajante" className={`hidden dark:block ${collapsed ? "h-6" : "h-9"} w-auto`} />
-          <img src={logoPreto} alt="O Segredo do Viajante" className={`block dark:hidden ${collapsed ? "h-6" : "h-9"} w-auto`} />
-          {!collapsed && (
-            <span className="animate-fade-in border-l border-sidebar-border pl-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
-              Consultoria
-            </span>
-          )}
-        </div>
+    <div className="ds-app">
+      <aside className="ds-side" aria-label="Menu principal">
+        <Link to="/" className="ds-brand" aria-label="Ir para Hoje">
+          <BrandLogo brand={brand} heightClass="h-[38px]" nameClass="text-[15px]" />
+        </Link>
 
-        <nav className="flex-1 space-y-0.5 px-3">
+        <nav className="ds-navlist">
           {nav.map((item, idx) => {
-            const { to, label, icon: Icon } = item;
-            const active = isActive(item, pathname);
-            const header = !collapsed && (idx === 0 || nav[idx - 1].group !== item.group);
+            const active = isActive(item, pathname, hash);
+            const n = item.hash ? 0 : (counts[item.to] ?? 0);
             return (
-              <div key={to}>
-              {header && (
-                <p className="px-3 pb-1.5 pt-4 text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
-                  {item.group}
-                </p>
-              )}
-              <Link
-                key={to}
-                to={to}
-                title={collapsed ? label : undefined}
-                aria-current={active ? "page" : undefined}
-                className={`relative flex items-center gap-3 rounded-full px-3.5 py-2.5 text-sm transition-colors ${
-                  collapsed ? "justify-center" : ""
-                } ${
-                  active
-                    ? "bg-sidebar-accent font-bold text-sidebar-accent-foreground"
-                    : "font-medium text-sidebar-foreground hover:bg-muted"
-                }`}
-              >
-                <Icon className={`h-[18px] w-[18px] shrink-0 ${active ? "text-accent-foreground" : "text-muted-foreground"}`} />
-                {!collapsed && <span className="animate-fade-in whitespace-nowrap">{label}</span>}
-                {to === "/leads" && leadsCount > 0 && (
-                  <span
-                    className={`flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground ${
-                      collapsed ? "absolute right-1.5 top-1.5" : "ml-auto"
-                    }`}
-                  >
-                    {leadsCount}
-                  </span>
-                )}
-                {to === "/tarefas" && todayTasksCount > 0 && (
-                  <span
-                    className={`flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs font-bold text-primary-foreground ${
-                      collapsed ? "absolute right-1.5 top-1.5" : "ml-auto"
-                    }`}
-                  >
-                    {todayTasksCount}
-                  </span>
-                )}
-              </Link>
+              <div key={navKey(item)} style={{ display: "contents" }}>
+                {(idx === 0 || nav[idx - 1].group !== item.group) && <span className="ds-grp">{item.group}</span>}
+                <Link to={item.to} hash={item.hash} className="ds-nav" aria-current={active ? "page" : undefined}>
+                  <item.icon aria-hidden />
+                  {item.label}
+                  {n > 0 && (
+                    <span className={`ds-cnt${item.to === "/leads" ? " ds-acc" : ""}`} aria-label={`${n} ${item.to === "/leads" ? "viagens novas" : "itens para hoje"}`}>
+                      {n}
+                    </span>
+                  )}
+                </Link>
               </div>
             );
           })}
         </nav>
 
-        <div className="space-y-3 px-3 pb-4">
-          <button
-            type="button"
-            onClick={() => setThayOpen(true)}
-            title="Conversar com a Thay"
-            className={`flex w-full items-center gap-2 rounded-xl bg-accent px-3 py-2.5 text-sm font-semibold text-accent-foreground transition hover:opacity-90 ${
-              collapsed ? "justify-center" : ""
-            }`}
-          >
-            <Bot className="h-4 w-4 shrink-0" />
-            {!collapsed && <span className="animate-fade-in whitespace-nowrap">Thay IA</span>}
+        <div className="ds-foot">
+          <button type="button" className="ds-nav" onClick={() => setThayOpen(true)}>
+            <Robot aria-hidden />
+            Thay IA
           </button>
-          {collapsed ? (
-            <Link
-              to="/perfil"
-              className="mx-auto flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: member?.avatar_color || "#ff7a1a" }}
-              title={member?.name || "Minha conta"}
-            >
-              {initials(member?.name)}
-            </Link>
-          ) : (
-            <div className="flex items-center justify-between rounded-xl border border-sidebar-border px-3 py-2.5">
-              <Link to="/perfil" title="Minha conta" className="flex min-w-0 items-center gap-2 overflow-hidden">
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ backgroundColor: member?.avatar_color || "#ff7a1a" }}
-                >
-                  {initials(member?.name)}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold">{member?.name || "Usuário"}</p>
-                  <p className="truncate text-xs capitalize text-muted-foreground">
-                    {member?.role || "agente"}
-                  </p>
-                </div>
-              </Link>
-              <button
-                onClick={toggle}
-                aria-label="Alternar tema"
-                className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted"
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
+          <Link to="/perfil" className="ds-me" title="Minha conta">
+            <Avatar name={member?.name || session?.user?.email} color={member?.avatar_color} />
+            <div>
+              <b>{userName}</b>
+              {role && <span>{role}</span>}
             </div>
-          )}
+          </Link>
+          <button type="button" className="ds-nav" onClick={() => signOut()}>
+            <SignOut aria-hidden />
+            Sair
+          </button>
         </div>
       </aside>
 
-      {/* Main */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-5">
-          {/* Marca no mobile (a navegação fica na barra inferior) */}
-          <div className="flex items-center gap-2 md:hidden">
-            <img src={logoBranco} alt="O Segredo do Viajante" className="hidden h-7 w-auto dark:block" />
-            <img src={logoPreto} alt="O Segredo do Viajante" className="block h-7 w-auto dark:hidden" />
-          </div>
-          <button
-            onClick={() => setCollapsed((c) => !c)}
-            aria-label={collapsed ? "Expandir menu" : "Recolher menu"}
-            className="group hidden rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground md:block"
-          >
-            <ChevronLeft
-              className={`h-5 w-5 transition-transform duration-300 ease-in-out group-hover:scale-110 ${
-                collapsed ? "rotate-180" : "rotate-0"
-              }`}
-            />
-          </button>
+      <main className={`ds-main${pathname.startsWith("/leads") ? " ds-wide" : ""}`}>
+        <div className="ds-top">
+          <GlobalSearch />
+          <span className="ds-top-sp" />
+          <IconButton label={theme === "dark" ? "Usar tema claro" : "Usar tema escuro"} onClick={toggle}>
+            {theme === "dark" ? <Sun aria-hidden /> : <Moon aria-hidden />}
+          </IconButton>
+          <NotificationBell />
+          <Button className="ds-hide-m" icon={<Plus weight="bold" aria-hidden />} onClick={() => setCreateOpen(true)}>
+            Novo
+          </Button>
+          <IconButton label="Mais opções" className="ds-show-m" onClick={() => setMoreOpen(true)}>
+            <ListIcon aria-hidden />
+          </IconButton>
+        </div>
 
-          <div className="flex items-center gap-1">
-            <NotificationBell />
-            <button
-              onClick={toggle}
-              aria-label="Alternar tema"
-              className="rounded-lg p-2 text-muted-foreground hover:bg-muted md:hidden"
-            >
-              {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-            </button>
+        <NotifPrompt />
+        {children}
+      </main>
 
-
-            {/* Menu do usuário (mobile) */}
-            <div className="relative md:hidden">
-              <button
-                onClick={() => setMobileMenu((o) => !o)}
-                aria-label="Menu do usuário"
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted"
-              >
-                <span
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white"
-                  style={{ background: member?.avatar_color || "var(--primary)" }}
-                >
-                  {initials(member?.name || session?.user?.email || "?")}
-                </span>
-                <span className="max-w-[110px] truncate text-sm font-medium">
-                  {member?.name || session?.user?.email}
-                </span>
-              </button>
-              {mobileMenu && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setMobileMenu(false)} />
-                  <div className="absolute right-0 top-full z-50 mt-1 w-52 overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
-                    <div className="border-b border-border px-3 py-2.5">
-                      <p className="truncate text-sm font-semibold">{member?.name || "Usuário"}</p>
-                      <p className="truncate text-xs text-muted-foreground">{session?.user?.email}</p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setMobileMenu(false);
-                        setThayOpen(true);
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm hover:bg-muted"
-                    >
-                      <Bot className="h-4 w-4" />
-                      Thay IA
-                    </button>
-                    <Link
-                      to="/perfil"
-                      onClick={() => setMobileMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
-                    >
-                      <UserCog className="h-4 w-4" />
-                      Meu Perfil
-                    </Link>
-                    <Link
-                      to="/biblioteca"
-                      onClick={() => setMobileMenu(false)}
-                      className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
-                    >
-                      <Images className="h-4 w-4" />
-                      Biblioteca
-                    </Link>
-                    {showFinance && (
-                      <Link
-                        to="/financeiro"
-                        onClick={() => setMobileMenu(false)}
-                        className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
-                      >
-                        <Wallet className="h-4 w-4" />
-                        Financeiro
-                      </Link>
-                    )}
-                    {showAdmin && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setMobileMenu(false)}
-                        className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
-                      >
-                        <ShieldCheck className="h-4 w-4" />
-                        Equipe e configurações
-                      </Link>
-                    )}
-                    {isSuperAdminEmail(session?.user?.email) && (
-                      <Link
-                        to="/plataforma"
-                        onClick={() => setMobileMenu(false)}
-                        className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
-                      >
-                        <Gauge className="h-4 w-4" />
-                        Plataforma
-                      </Link>
-                    )}
-                    <button
-                      onClick={() => {
-                        setMobileMenu(false);
-                        signOut();
-                      }}
-                      className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Sair
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <button
-              onClick={() => signOut()}
-              className="hidden items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground hover:bg-muted md:flex"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Sair</span>
-            </button>
-          </div>
-        </header>
-
-        <main className="mx-auto w-full max-w-[1240px] flex-1 px-4 py-5 pb-24 sm:px-5 sm:py-6 md:pb-6">
-          <NotifPrompt />
-          {children}
-        </main>
-      </div>
-
-      <ThayPanel open={thayOpen} onClose={() => setThayOpen(false)} />
-
-      {/* Barra de navegação inferior (mobile) */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 flex items-stretch justify-around border-t border-border bg-background/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        {mobileNav.map((item) => {
-          const { to, label, icon: Icon } = item;
-          const active = isActive(item, pathname);
-          return (
-            <Link
-              key={to}
-              to={to}
-              aria-label={label}
-              className={`relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
-                active ? "text-primary" : "text-muted-foreground"
-              }`}
-            >
-              <span className="relative">
-                <Icon className="h-5 w-5" />
-                {to === "/leads" && leadsCount > 0 && (
-                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                    {leadsCount}
-                  </span>
-                )}
-                {to === "/tarefas" && todayTasksCount > 0 && (
-                  <span className="absolute -right-2 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
-                    {todayTasksCount}
-                  </span>
-                )}
-              </span>
-              {label}
-            </Link>
-          );
-        })}
+      <nav className="ds-tabbar" aria-label="Menu do celular">
+        {TAB_LEFT.map(tabLink)}
+        <button type="button" className="ds-fab" aria-label="Criar novo" onClick={() => setCreateOpen(true)}>
+          <span>
+            <Plus weight="bold" aria-hidden />
+          </span>
+        </button>
+        {TAB_RIGHT.map(tabLink)}
       </nav>
 
+      <ActionSheet open={createOpen} onOpenChange={setCreateOpen} title="Criar" items={createItems} />
+      <ActionSheet open={moreOpen} onOpenChange={setMoreOpen} title="Mais" items={moreItems} />
+
+      <NovaViagem
+        open={newTrip}
+        onClose={() => setNewTrip(false)}
+        onCriada={(v) => navigate({ to: "/leads", search: { lead: v.id } })}
+      />
+      <NovoNaAgenda
+        aberto={newTask !== null}
+        tipoInicial={newTask?.activityType === "meeting" ? "meeting" : "tarefa"}
+        onFechar={() => setNewTask(null)}
+      />
+
+      <ThayPanel open={thayOpen} onClose={() => setThayOpen(false)} />
       <InstallPWA />
     </div>
   );

@@ -1,13 +1,14 @@
 import { createFileRoute, useLocation } from "@tanstack/react-router";
+import { BrandLogo } from "@/components/BrandLogo";
+import { PRODUCT } from "@/lib/brand";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Route as RouteIcon } from "lucide-react";
-import { db } from "@/integrations/appwrite/db";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { getInviteInfo, acceptInvite, type InviteInfo } from "@/lib/invites";
 
 export const Route = createFileRoute("/aceitar-convite")({
   pendingComponent: InviteLoading,
-  head: () => ({ meta: [{ title: "Aceitar convite — O Segredo do Viajante" }] }),
+  head: () => ({ meta: [{ title: `Aceitar convite — ${PRODUCT.name}` }] }),
   component: AcceptInvitePage,
 });
 
@@ -16,10 +17,7 @@ function InviteLoading() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
         <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <RouteIcon className="h-5 w-5" />
-          </div>
-          <span className="text-xl font-extrabold tracking-tight">O Segredo do Viajante</span>
+          <BrandLogo heightClass="h-10" nameClass="text-xl" />
         </div>
         <p className="text-sm text-muted-foreground">Carregando convite…</p>
       </div>
@@ -103,7 +101,7 @@ function AcceptInvitePage() {
   useEffect(() => {
     if (!wrongUser || autoSignOutStarted.current) return;
     autoSignOutStarted.current = true;
-    void db.auth.signOut().then(() => {
+    void supabase.auth.signOut().then(() => {
       autoAcceptStarted.current = false;
       setError("");
     });
@@ -119,7 +117,7 @@ function AcceptInvitePage() {
     sessionStorage.removeItem("invite_token");
     try {
       if (mode === "signup") {
-        const { data, error: signErr } = await db.auth.signUp({
+        const { data, error: signErr } = await supabase.auth.signUp({
           email: info.email,
           password,
           options: { data: { name }, emailRedirectTo: `${window.location.origin}/aceitar-convite?token=${token}` },
@@ -138,7 +136,7 @@ function AcceptInvitePage() {
           return;
         }
       } else {
-        const { error: signErr } = await db.auth.signInWithPassword({
+        const { error: signErr } = await supabase.auth.signInWithPassword({
           email: info.email,
           password,
         });
@@ -159,10 +157,7 @@ function AcceptInvitePage() {
     <div className="flex min-h-screen items-center justify-center bg-[var(--accent)] px-4">
       <div className="w-full max-w-md rounded-3xl border border-border bg-card p-8 shadow-xl">
         <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <RouteIcon className="h-5 w-5" />
-          </div>
-          <span className="text-xl font-extrabold tracking-tight">O Segredo do Viajante</span>
+          <BrandLogo heightClass="h-10" nameClass="text-xl" />
         </div>
 
         {loadingInfo ? (
@@ -206,7 +201,7 @@ function AcceptInvitePage() {
                     type="button"
                     disabled={busy}
                     onClick={async () => {
-                      await db.auth.signOut();
+                      await supabase.auth.signOut();
                       autoAcceptStarted.current = false;
                       setError("");
                     }}
@@ -256,7 +251,7 @@ function AcceptInvitePage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={8}
+                  minLength={6}
                   placeholder="••••••••"
                 />
               </label>

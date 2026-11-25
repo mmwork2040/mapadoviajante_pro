@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { appwriteServerConfig, getServerBridge } from "@/integrations/appwrite/server";
 
 // Endpoint público para o n8n enviar leads (HTTP Request node).
 //   POST /api/public/n8n-lead
@@ -43,10 +42,15 @@ function text(body: string, init?: ResponseInit) {
   });
 }
 
-/** Cliente do Appwrite com a chave do servidor, ou null se a chave não estiver configurada. */
-function serverDb() {
-  return appwriteServerConfig().key ? (getServerBridge() as any) : null;
+// Cliente de dados do servidor. Devolve null quando a chave de API do Appwrite
+// não está configurada: sem ela o banco recusa a gravação.
+async function loadServerDb(): Promise<any | null> {
+  const { appwriteServerConfig, getServerBridge } = await import("@/integrations/appwrite/server");
+  if (!appwriteServerConfig().key) return null;
+  return getServerBridge();
 }
+
+const NOT_CONFIGURED = "Server not configured: missing APPWRITE_API_KEY";
 
 function splitAgencyIdFromConfigKey(key: unknown): string | undefined {
   const parts = String(key ?? "").split(":");
@@ -69,7 +73,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
       OPTIONS: async () => text(null as unknown as string, { status: 204 }),
       GET: async ({ request }) => {
         // Diagnóstico (protegido pelo segredo): ?diag=1&secret=...
-        // Confirma se a chave do servidor está configurada e lê o banco.
+        // Confirma se o servidor tem a chave de API do Appwrite e lê o banco.
         const url = new URL(request.url);
         if (url.searchParams.get("diag")) {
           const envSecret = s(process.env.N8N_LEAD_WEBHOOK_SECRET);
@@ -79,12 +83,12 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           if (!envSecret || provided !== envSecret) {
             return json({ error: "Unauthorized" }, { status: 401 });
           }
-          const dbAdmin = serverDb();
-          if (!dbAdmin) {
-            return json({ diag: true, serverKey: "missing", error: "APPWRITE_API_KEY não configurada" });
-          }
           try {
-            const { data, error } = await dbAdmin.from("agencies").select("id").limit(5);
+            const db = await loadServerDb();
+            if (!db) {
+              return json({ diag: true, serverKey: "missing", error: NOT_CONFIGURED });
+            }
+            const { data, error } = await db.from("agencies").select("id").limit(5);
             return json({
               diag: true,
               serverKey: "configured",
@@ -94,7 +98,6 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           } catch (e) {
             return json({
               diag: true,
-              serverKey: "configured",
               error: e instanceof Error ? e.message : String(e),
             });
           }
@@ -120,7 +123,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           }
           // O segredo pode vir do env (global) ou da configuração da agência
           // (Administração → Integração n8n). A validação por banco acontece
-          // depois, pois identifica também a agência.
+          // depois de carregar o cliente do servidor, pois identifica também a agência.
           const envMatch = Boolean(envSecret) && provided === envSecret;
 
 
@@ -161,10 +164,10 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             return json({ error: "Missing 'nome'" }, { status: 400 });
           }
 
-          const dbAdmin = serverDb();
-          if (!dbAdmin) {
-            console.error("n8n-lead: APPWRITE_API_KEY não configurada");
-            return json({ error: "Server not configured" }, { status: 503 });
+          const db = await loadServerDb();
+          if (!db) {
+            console.error("n8n-lead:", NOT_CONFIGURED);
+            return json({ error: NOT_CONFIGURED }, { status: 503 });
           }
 
           // Valida o segredo pela configuração da agência, quando não bate com o env.
@@ -172,7 +175,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           // contém { secret }. O segredo também identifica a agência.
           let secretAgencyId: string | undefined;
           if (!envMatch) {
-            const { data: rows, error: cfgErr } = await dbAdmin
+            const { data: rows, error: cfgErr } = await db
               .from("system_settings")
               .select("key,value")
               .like("key", "agency_cfg:%:n8n");
@@ -197,7 +200,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             s(process.env.N8N_DEFAULT_AGENCY_ID);
 
           if (!agencyId) {
-            const { data: rows, error: cfgErr } = await dbAdmin
+            const { data: rows, error: cfgErr } = await db
               .from("system_settings")
               .select("key")
               .like("key", "agency_cfg:%:n8n")
@@ -213,7 +216,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           if (!agencyId) {
             const slug = s(d.agency_slug) ?? s(d.agency);
             if (slug) {
-              const { data: ag, error: agErr } = await dbAdmin
+              const { data: ag, error: agErr } = await db
                 .from("agencies")
                 .select("id")
                 .eq("slug", slug)
@@ -226,7 +229,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
             }
           }
           if (!agencyId) {
-            const { data: ag, error: agErr } = await dbAdmin
+            const { data: ag, error: agErr } = await db
               .from("agencies")
               .select("id")
               .order("created_at", { ascending: true })
@@ -280,8 +283,6 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
 
               .filter(Boolean)
               .join(" | ") || undefined,
-            // A ficha da viagem lê o ponto de partida em `departure`.
-            departure: s(d.aeroporto_partida) ?? s(d.cidade_mora),
             departure_airport: s(d.aeroporto_partida),
             arrival_airport: s(d.aeroporto_chegada),
             home_city: s(d.cidade_mora),
@@ -303,7 +304,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
 
           // Verifica se o lead já existe (mesma agência, mesmo e-mail).
           if (email) {
-            const { data: existing } = await dbAdmin
+            const { data: existing } = await db
               .from("crm_leads")
               .select("id")
               .eq("agency_id", agencyId)
@@ -321,7 +322,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           }
 
           const leadId = crypto.randomUUID();
-          const { error } = await dbAdmin
+          const { error } = await db
             .from("crm_leads")
             .insert({
               id: leadId,
@@ -347,7 +348,7 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
           const readyForItinerary = Boolean(destination && travelDates && passengers);
           let itineraryId: string | null = null;
           if (readyForItinerary) {
-            const { data: it, error: itineraryError } = await dbAdmin
+            const { data: it, error: itineraryError } = await db
               .from("crm_itineraries")
               .insert({
                 agency_id: agencyId,

@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Query } from "appwrite";
-import { publicActivityView } from "@/lib/activity-meta";
 
 type Document = Record<string, unknown> & { $id: string };
 type Page = { documents: Document[]; total: number };
@@ -21,15 +20,18 @@ function config() {
   return { endpoint, project, database, key };
 }
 
-// O que o cliente pode ver de um dia. O título fica no campo `label`.
-function publicDay(day: Document) {
-  return {
-    id: day.$id,
-    day_number: (day.day_number as number | null) ?? null,
-    date: (day.date as string | null) ?? null,
-    title: ((day.title ?? day.label) as string | null) ?? null,
-    sort_order: (day.sort_order as number | null) ?? 0,
-  };
+function clean(doc: Document) {
+  const result: Record<string, unknown> = { ...doc, id: doc.$id };
+  for (const field of ["images", "hotel_options", "suggestion_options", "passenger_costs"]) {
+    if (typeof result[field] === "string") {
+      try {
+        result[field] = JSON.parse(result[field] as string);
+      } catch {
+        /* keep original text */
+      }
+    }
+  }
+  return result;
 }
 
 async function list(
@@ -91,8 +93,18 @@ export const Route = createFileRoute("/api/public/itinerary")({
             byDay.set(key, [...(byDay.get(key) || []), activity]);
           }
 
+          // Marca da agência dona do roteiro (logo e nome no documento do cliente).
+          let brand = null;
+          try {
+            const { readBrand } = await import("@/lib/server/brand");
+            brand = await readBrand(String(itinerary.agency_id || ""));
+          } catch (err) {
+            console.error("public itinerary: brand lookup failed", err);
+          }
+
           return response({
             id: itinerary.$id,
+            brand,
             title: itinerary.title,
             destination: itinerary.destination,
             client_name: itinerary.client_name,
@@ -100,8 +112,7 @@ export const Route = createFileRoute("/api/public/itinerary")({
             end_date: itinerary.end_date,
             passengers: itinerary.passengers,
             status: itinerary.status,
-            // A capa guardada no bucket exige login; só vai se for um endereço público.
-            cover_image: /^https?:\/\//i.test(String(itinerary.cover_image || "")) ? itinerary.cover_image : null,
+            cover_image: itinerary.cover_image,
             days: days
               .sort(
                 (a, b) =>
@@ -109,12 +120,10 @@ export const Route = createFileRoute("/api/public/itinerary")({
                   Number(b.sort_order ?? b.day_number ?? 0),
               )
               .map((day) => ({
-                ...publicDay(day),
-                // Só o que o cliente vê: sugestões, valores por pessoa, fotos
-                // internas e cotação não saem do servidor.
+                ...clean(day),
                 activities: (byDay.get(day.$id) || [])
                   .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
-                  .map((activity) => publicActivityView(activity)),
+                  .map(clean),
               })),
           });
         } catch (error) {

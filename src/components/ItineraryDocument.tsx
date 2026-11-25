@@ -1,4 +1,5 @@
 import type { Itinerary, ItineraryActivity, ItineraryDay } from "@/lib/types";
+import type { Brand } from "@/lib/brand";
 import { formatMoney } from "@/lib/ui";
 import "./itinerary-document.css";
 
@@ -59,7 +60,25 @@ function Activity({ activity }: { activity: ItineraryActivity }) {
   );
 }
 
-function Day({ day, index, count }: { day: ItineraryDay; index: number; count: number }) {
+/** Logo da agência nas páginas do roteiro (fundo escuro). Sem logo, mostra o nome. */
+function DocLogo({ brand, className }: { brand?: Brand | null; className?: string }) {
+  const src = brand?.logoDarkUrl || brand?.logoUrl;
+  if (src) return <img className={className} src={src} alt={brand?.name || ""} />;
+  if (!brand?.name) return null;
+  return <span className={`osv-trip-brand-text ${className ?? ""}`}>{brand.name}</span>;
+}
+
+function Day({
+  day,
+  index,
+  count,
+  brand,
+}: {
+  day: ItineraryDay;
+  index: number;
+  count: number;
+  brand?: Brand | null;
+}) {
   const sortedActivities = [...(day.activities || [])].sort(
     (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0),
   );
@@ -67,7 +86,7 @@ function Day({ day, index, count }: { day: ItineraryDay; index: number; count: n
   return (
     <section className="osv-trip-page osv-trip-day" id={`dia-${index + 1}`}>
       <div className="osv-trip-page-top">
-        <img src="/osv-logo-branco.png" alt="O Segredo do Viajante" />
+        <DocLogo brand={brand} />
         <a href="#sumario">← Sumário</a>
       </div>
       <div className="osv-trip-day-heading">
@@ -95,7 +114,16 @@ function Day({ day, index, count }: { day: ItineraryDay; index: number; count: n
   );
 }
 
-export function ItineraryDocument({ it, coverUrl }: { it: Itinerary; coverUrl?: string | null }) {
+export function ItineraryDocument({
+  it,
+  coverUrl,
+  brand,
+}: {
+  it: Itinerary;
+  coverUrl?: string | null;
+  /** Marca da agência dona do roteiro (white-label). */
+  brand?: Brand | null;
+}) {
   const days = [...(it.days || [])].sort(
     (a, b) => (a.sort_order ?? a.day_number ?? 0) - (b.sort_order ?? b.day_number ?? 0),
   );
@@ -117,7 +145,7 @@ export function ItineraryDocument({ it, coverUrl }: { it: Itinerary; coverUrl?: 
         )}
         <div className="osv-trip-cover-veil" />
         <div className="osv-trip-cover-content">
-          <img className="osv-trip-logo" src="/osv-logo-branco.png" alt="O Segredo do Viajante" />
+          <DocLogo brand={brand} className="osv-trip-logo" />
           <span className="osv-trip-eyebrow">ROTEIRO DE VIAGEM</span>
           <h1>{destination || "Sua viagem"}</h1>
           {it.client_name && <p>Preparado para {it.client_name}</p>}
@@ -133,7 +161,7 @@ export function ItineraryDocument({ it, coverUrl }: { it: Itinerary; coverUrl?: 
 
       <section className="osv-trip-page osv-trip-summary" id="sumario">
         <div className="osv-trip-page-top">
-          <img src="/osv-logo-branco.png" alt="O Segredo do Viajante" />
+          <DocLogo brand={brand} />
         </div>
         <span className="osv-trip-script">Sua viagem</span>
         <h2>O que você encontra aqui</h2>
@@ -186,7 +214,7 @@ export function ItineraryDocument({ it, coverUrl }: { it: Itinerary; coverUrl?: 
       {flights.length > 0 && (
         <section className="osv-trip-page osv-trip-overview" id="voos">
           <div className="osv-trip-page-top">
-            <img src="/osv-logo-branco.png" alt="O Segredo do Viajante" />
+            <DocLogo brand={brand} />
             <a href="#sumario">← Sumário</a>
           </div>
           <span className="osv-trip-script">Como chegar</span>
@@ -202,7 +230,7 @@ export function ItineraryDocument({ it, coverUrl }: { it: Itinerary; coverUrl?: 
       {hotels.length > 0 && (
         <section className="osv-trip-page osv-trip-overview" id="hospedagem">
           <div className="osv-trip-page-top">
-            <img src="/osv-logo-branco.png" alt="O Segredo do Viajante" />
+            <DocLogo brand={brand} />
             <a href="#sumario">← Sumário</a>
           </div>
           <span className="osv-trip-script">Sua base</span>
@@ -217,11 +245,11 @@ export function ItineraryDocument({ it, coverUrl }: { it: Itinerary; coverUrl?: 
       )}
 
       {days.map((day, index) => (
-        <Day key={day.id} day={day} index={index} count={days.length} />
+        <Day key={day.id} day={day} index={index} count={days.length} brand={brand} />
       ))}
 
       <section className="osv-trip-page osv-trip-back-cover">
-        <img src="/osv-logo-branco.png" alt="O Segredo do Viajante" />
+        <DocLogo brand={brand} />
         <h2>
           Boa <em>viagem!</em>
         </h2>

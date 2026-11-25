@@ -6,12 +6,12 @@ import {
   useRouter,
   HeadContent,
   Scripts,
-  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "../lib/auth";
+import { BRAND_PREPAINT_SCRIPT } from "../lib/brand";
 
 // Endereço público do app, usado na imagem de prévia dos links compartilhados.
 const OG_BASE_URL = (
@@ -40,7 +40,7 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
+function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   const router = useRouter();
   useEffect(() => {
     console.error(error);
@@ -87,21 +87,21 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { name: "apple-mobile-web-app-title", content: "MapaPRO" },
-      { title: "Mapa do Viajante PRO — CRM Copilot" },
+      { title: "Mapa do Viajante PRO — CRM para agências de viagem" },
       {
         name: "description",
         content:
-          "CRM Copilot para Agências de Viagem — gerencie leads, crie roteiros e acompanhe vendas em um só lugar.",
+          "CRM para agências de viagem: viagens, viajantes, roteiros e vendas em um só lugar.",
       },
       { name: "author", content: "Mapa do Viajante PRO" },
-      { property: "og:title", content: "Mapa do Viajante PRO — CRM Copilot" },
+      { property: "og:title", content: "Mapa do Viajante PRO — CRM para agências de viagem" },
       {
         property: "og:description",
         content: "Gerencie leads, crie roteiros e acompanhe vendas em um só lugar.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:title", content: "Mapa do Viajante PRO — CRM Copilot" },
+      { name: "twitter:title", content: "Mapa do Viajante PRO — CRM para agências de viagem" },
       {
         name: "twitter:description",
         content: "Gerencie leads, crie roteiros e acompanhe vendas em um só lugar.",
@@ -119,8 +119,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        // League Spartan e Inter são a identidade do app; DM Sans e Ms Madi ficam só no roteiro impresso.
-        href: "https://fonts.googleapis.com/css2?family=League+Spartan:wght@700;800&family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=Ms+Madi&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=League+Spartan:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&family=Ms+Madi&display=swap",
       },
       {
         rel: "stylesheet",
@@ -138,11 +137,12 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        {/* Aplica o tema antes de pintar a tela (escuro é o padrão da marca OSV). */}
+        {/* Aplica o tema e a cor da agência antes de pintar a tela (escuro é o padrão). */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "try{var t=localStorage.getItem('mv-theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark')}catch(e){document.documentElement.classList.add('dark')}",
+              "try{var t=localStorage.getItem('mv-theme')||'dark';if(t==='dark')document.documentElement.classList.add('dark')}catch(e){document.documentElement.classList.add('dark')}" +
+              BRAND_PREPAINT_SCRIPT,
           }}
         />
         <HeadContent />

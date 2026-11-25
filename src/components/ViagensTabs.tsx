@@ -1,32 +1,21 @@
 import { Link } from "@tanstack/react-router";
-import { KanbanSquare, Plane } from "lucide-react";
+import { AirplaneTilt, Kanban } from "@phosphor-icons/react";
 
 /** Viagens é uma área só, com duas fases: comercial (/leads) e preparação e viagem (/roteiros). */
-export function ViagensTabs({ ativo }: { ativo: "comercial" | "preparacao" }) {
+export function ViagensTabs({ ativo, comercial, preparacao }: { ativo: "comercial" | "preparacao"; comercial?: number; preparacao?: number }) {
   const tabs = [
-    { to: "/leads", id: "comercial", label: "Comercial", icon: KanbanSquare },
-    { to: "/roteiros", id: "preparacao", label: "Preparação e viagem", icon: Plane },
+    { to: "/leads", id: "comercial", label: "Comercial", icon: Kanban, n: comercial },
+    { to: "/roteiros", id: "preparacao", label: "Preparação e viagem", icon: AirplaneTilt, n: preparacao },
   ] as const;
   return (
-    <nav className="flex gap-1 overflow-x-auto border-b border-border" aria-label="Fases da viagem">
-      {tabs.map(({ to, id, label, icon: Icon }) => {
-        const on = id === ativo;
-        return (
-          <Link
-            key={id}
-            to={to}
-            aria-current={on ? "page" : undefined}
-            className={`-mb-px flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm transition-colors ${
-              on
-                ? "border-primary font-bold text-foreground"
-                : "border-transparent font-medium text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Icon className={`h-4 w-4 ${on ? "text-accent-foreground" : ""}`} />
-            {label}
-          </Link>
-        );
-      })}
+    <nav className="ds-tabs" aria-label="Fases da viagem" style={{ marginTop: -8 }}>
+      {tabs.map(({ to, id, label, icon: Icon, n }) => (
+        <Link key={id} to={to} role="tab" aria-selected={id === ativo} aria-current={id === ativo ? "page" : undefined}>
+          <Icon aria-hidden />
+          {label}
+          {n !== undefined && <span className="ds-muted">· {n}</span>}
+        </Link>
+      ))}
     </nav>
   );
 }

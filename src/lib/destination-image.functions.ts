@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { loadAiSettings } from "@/lib/server/ai-settings";
-import { requireAuth } from "@/integrations/appwrite/auth-middleware";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type DownloadInput = { destination: string; exclude?: string[] };
 
@@ -126,7 +126,7 @@ async function wikipediaPhoto(lang: string, query: string): Promise<string | nul
 // Baixa (localiza) uma FOTO real do destino usando fontes abertas.
 // Só é permitido quando a IA da agência está configurada e conectada.
 export const downloadDestinationImage = createServerFn({ method: "POST" })
-  .middleware([requireAuth])
+  .middleware([requireSupabaseAuth])
   .inputValidator((d: DownloadInput) => {
     if (!d?.destination?.trim()) throw new Error("Informe o destino.");
     const exclude = Array.isArray(d.exclude)

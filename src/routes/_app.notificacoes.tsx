@@ -12,7 +12,7 @@ import {
 import { PageHeader } from "@/components/PageHeader";
 import { SearchBar } from "@/components/SearchBar";
 
-import { db } from "@/integrations/appwrite/db";
+import { supabase } from "@/integrations/supabase/client";
 import {
   fetchNotificationsPage,
   markNotificationRead,
@@ -70,7 +70,7 @@ function NotificationsPage() {
   useEffect(() => {
     const memberId = getMemberId();
     if (!memberId) return;
-    const channel = db
+    const channel = supabase
       .channel("notifications-page-realtime")
       .on(
         "postgres_changes",
@@ -79,7 +79,7 @@ function NotificationsPage() {
       )
       .subscribe();
     return () => {
-      db.removeChannel(channel);
+      supabase.removeChannel(channel);
     };
   }, [qc]);
 

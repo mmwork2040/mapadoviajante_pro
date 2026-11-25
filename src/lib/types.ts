@@ -1,4 +1,4 @@
-// Tipos centrais das coleções do Appwrite usadas pelo app.
+// Tipos centrais espelhando o schema do Supabase do repositório.
 
 export interface AgencyMember {
   id: string;
@@ -206,6 +206,8 @@ export interface LibraryItem {
 export interface Itinerary {
   id: string;
   agency_id: string;
+  /** Marca da agência (só vem no roteiro compartilhado por link). */
+  brand?: import("@/lib/brand").Brand | null;
   created_by?: string | null;
   lead_id?: string | null;
   title: string;
@@ -268,8 +270,6 @@ export interface ItineraryActivity {
   duration?: string | null;
   maps_url?: string | null;
   sort_order?: number;
-  /** Item marcado como feito. */
-  done?: boolean | null;
 }
 
 export interface ActivityImage {

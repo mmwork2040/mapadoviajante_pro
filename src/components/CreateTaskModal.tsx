@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { db } from "@/integrations/appwrite/db";
+import { supabase } from "@/integrations/supabase/client";
 import { createTask, updateTask, fetchLeads, fetchTeamMembers, fetchItinerariesByLead, cleanTaskDescription, CHECKLIST_ITEM_MARK } from "@/lib/services";
 import type { Task } from "@/lib/types";
 
@@ -112,13 +112,13 @@ export function CreateTaskModal({
       // Se a tarefa está ligada a uma atividade, busca o tipo atual.
       const m = (task.description ?? "").match(/\[atv:([0-9a-f-]+)\]/i);
       if (m) {
-        db
+        supabase
           .from("crm_lead_activities")
           .select("type")
           .eq("id", m[1])
           .maybeSingle()
-          .then(({ data }: { data: { type?: string } | null }) => {
-            const t = data?.type;
+          .then(({ data }: { data: unknown }) => {
+            const t = (data as { type?: string } | null)?.type;
             if (t && ACTIVITY_TYPES.some((a) => a.key === t)) setActivityType(t);
           });
       }
@@ -262,7 +262,7 @@ export function CreateTaskModal({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <FieldLabel>Cliente</FieldLabel>
+              <FieldLabel>Viajante</FieldLabel>
               <Select
                 value={leadId}
                 onValueChange={(v) => {
@@ -272,7 +272,7 @@ export function CreateTaskModal({
                 disabled={fromChecklist}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione cliente" />
+                  <SelectValue placeholder="Selecione viajante" />
                 </SelectTrigger>
                 <SelectContent>
                   {(leadsQ.data ?? []).map((l) => (
@@ -328,7 +328,7 @@ export function CreateTaskModal({
               </Select>
               {!itinerariesQ.isLoading && (itinerariesQ.data ?? []).length === 0 && (
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Este cliente ainda não possui roteiros.
+                  Este viajante ainda não possui roteiros.
                 </p>
               )}
             </div>
