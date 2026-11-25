@@ -958,15 +958,11 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
         const lines: string[] = [];
         for (const a of atts as any[]) {
           try {
-            const { data: signed } = await context.supabase.storage
-              .from("trip-attachments")
-              .createSignedUrl(a.file_path, 600);
-            if (!signed?.signedUrl) continue;
-            const res = await fetch(signed.signedUrl);
-            if (!res.ok) continue;
-            const buf = await res.arrayBuffer();
+            const { data: blob } = await context.supabase.storage.from("trip-attachments").download(a.file_path);
+            if (!blob) continue;
+            const buf = await blob.arrayBuffer();
             const base64 = Buffer.from(buf).toString("base64");
-            const mime = a.mime_type || res.headers.get("content-type") || "application/octet-stream";
+            const mime = a.mime_type || blob.type || "application/octet-stream";
             attachedFiles.push({ base64, mime, name: a.name });
             lines.push(`- "${a.name}"${a.category ? ` [${a.category}]` : ""} → atividade [id:${a.activity_id}]`);
           } catch {

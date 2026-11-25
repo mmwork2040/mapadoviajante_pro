@@ -1,0 +1,435 @@
+# Funções do app atual e o destino de cada uma
+
+Decisão A9 do `PLANO-MESTRE.md`: **nenhuma função se perde.** Tudo o que o app faz hoje entra no desenho novo, adaptado à nova identidade e ao novo formato. Uma função só sai com aprovação registrada aqui.
+
+Como usar:
+
+- Levantamento feito em 25/11/2026 pela leitura do código (`src/`). Nada foi testado com dados reais; o que ficou em dúvida está marcado com "(conferir)".
+- **Destino** é a tela do desenho novo (`ESPECIFICACAO-TELAS.md`) onde a função passa a morar. **Fase** é a fase do plano em que ela é refeita.
+- Ao terminar uma tela, marque a coluna **Feito** de cada linha ligada a ela. A tela só está pronta quando todas as linhas dela estão marcadas.
+- "Nova no desenho" na coluna Destino quer dizer que o protótipo não mostra a função. Ela continua valendo e precisa ser desenhada no mesmo padrão.
+
+Fases citadas: F1 casca do app · F3 Viajantes · F4 Viagens Comercial · F5 Proposta e contrato · F6 Preparação e página da viagem · F7 Agenda · F8 Hoje · F9 Biblioteca · F10 Gestão · F11 Assistente e guia · F12 Cliente final · F13 Segurança e acesso.
+
+---
+
+## 1. Viagens · Preparação (hoje: lista de roteiros, `/roteiros`)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Abas Comercial e Preparação | Alterna entre as vendas e as viagens | Abas da área Viagens | F4 | |
+| Buscar viagem | Filtra por título, destino ou nome do cliente | Busca da barra de filtros | F6 | |
+| Minhas / Todas | Admin e gerente alternam; os outros cargos veem só as suas | Minhas / Toda a equipe | F6 | |
+| Quadro por status | Quatro colunas: Rascunho, Em andamento, Concluído, Cancelado, com contador | Quadro de preparação (Montando roteiro, Com o cliente, Emitindo, Pronta para embarcar, Em viagem). Concluídas e canceladas ficam na Lista | F6 | |
+| Arrastar cartão | Muda o status, com volta em caso de erro | Arrastar no Quadro | F6 | |
+| Mover para (menu) | Muda o status pelo menu do cartão | Menu do cartão e ficha, para o celular | F6 | |
+| Cartão da viagem | Capa, destino, cliente, datas, viajantes e status da venda | Linha da Lista, Capa e cartão do Quadro, com checklist e dias que faltam | F6 | |
+| Capa automática | Usa a capa do roteiro, a da venda, uma imagem da Biblioteca do destino ou a padrão | Mesma regra na foto da viagem | F6 | |
+| Selos "Cópia" e "Sem venda vinculada" | Marcam cópias e viagens sem venda | Selo de situação. Viagem sem negociação nasce direto em Preparação | F6 | |
+| Atalhos Detalhes, Checklist e Financeiro | Abrem a ficha na aba certa | Abas da página da viagem | F6 | |
+| Link para o cliente | Vai ao perfil do cliente | Link para os viajantes | F6 | |
+| Duplicar viagem | Cria cópia em rascunho com dias e itens | Menu da viagem. A cópia passa a levar todos os campos (hoje perde moeda, sugestões, fotos e anexos) | F6 | |
+| Arquivar e desarquivar | Arquiva a venda | Arquivadas (filtro de Viagens) | F4 | |
+| Excluir cliente (venda) | Apaga a venda e os dados ligados, com confirmação | Excluir viagem, só para gerente e administrador | F4 | |
+| Excluir viagem | Apaga roteiro, dias e itens e avisa o webhook | Excluir viagem, apagando também os anexos (hoje ficam órfãos) | F6 | |
+| Estados de carregamento, vazio e erro | Mensagens e "tentar de novo" | Estados padrão do design system | F1 | |
+
+## 2. Nova viagem e edição (hoje: modal Nova / Editar Proposta)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Dados de contato | Nome, e-mail validado, WhatsApp com máscara, orçamento e "Como nos encontrou?" com "Especifique" | Nova viagem: quem vai, WhatsApp, como chegou e orçamento | F4 | |
+| Detalhes da viagem | Ponto de partida com sugestão de aeroportos, destino, período, passageiros, tipo de viagem (escolher ou criar) e expectativas | Nova viagem e "Mais detalhes" | F4 | |
+| Interpretar período | Texto livre ("Jul/2026, 10 dias") vira datas com IA | Campo "Quando" da Nova viagem | F4 | |
+| Imagem do destino | Buscar com IA, escolher da Biblioteca ou enviar. Tudo vai para a Biblioteca | Foto da capa (viagem e proposta) | F5 | |
+| Benefícios e fidelidade | Programas, pontos e milhas, passaporte e preferências | "Mais detalhes" e perfil do viajante | F4 | |
+| Voos e hotel | Classe, companhia, categoria de hotel, tipo de quarto e observações | "Mais detalhes" (perfil da viagem) | F4 | |
+| Avisos ao salvar | Avisa de e-mail já cadastrado e de viagem que já tem roteiro | Busca na base ao digitar quem vai | F4 | |
+
+## 3. Página da viagem (hoje: `/roteiros/$id`)
+
+### 3.1 Cabeçalho
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Voltar e trilha Cliente › Viagem › Roteiro | Navegação para a lista, o cliente e a ficha | Voltar e link para os viajantes | F6 | |
+| Capa do roteiro | Foto com carregamento e nova tentativa quando o link expira | Foto do destino com véu | F6 | |
+| Trocar capa | Enviar imagem nova ou escolher da Biblioteca | Trocar foto no topo da viagem | F6 | |
+| Resumo | Título, cliente, orçamento, status, datas e viajantes | Topo e card de embarque | F6 | |
+| Editar cadastro do cliente | Abre o formulário do cliente | Link para o perfil do viajante | F3 | |
+| Status da viagem | Rascunho, Em andamento, Concluído, Cancelado | Etapas da preparação | F6 | |
+| Limpar roteiro | Apaga todos os dias, itens e anexos, com confirmação | Menu do roteiro | F6 | |
+| Completar com IA | Cria os dias que faltam e os itens por turno, e salva fotos na Biblioteca | Assistente: Completar dias vazios (entra como rascunho) | F11 | |
+| Copiar link e Abrir roteiro | Gera o link público, confere se abre e copia ou abre | Enviar ao cliente | F6 | |
+| Visualizar | Prévia do documento em tela cheia | Ver como cliente | F6 | |
+| PDF | Abre a página de impressão | PDF do card de embarque | F6 | |
+
+### 3.2 Montar o roteiro
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Blocos arrastáveis | Voo, Hospedagem, Atividade, Transfer e Restaurante | "Adicionar ao dia" por tipo, mantendo o arrastar no computador | F6 | |
+| Soltar bloco num dia ou em dia novo | Cria o item e já abre a edição | Adicionar por tipo | F6 | |
+| Reordenar itens | Arrastar muda a ordem dentro do dia | Linha do tempo por horário, com arrastar | F6 | |
+| Mover ou copiar para outro dia | Pergunta Mover, Copiar ou Cancelar | Painel do item: mover ou copiar para outro dia | F6 | |
+| Arrastar no celular | Detecção de alvo pelo toque | Mover pelo painel no celular | F6 | |
+| Carrossel de dias | Dias lado a lado com setas | Dias na lateral; faixa que desliza no celular | F6 | |
+| Adicionar dia | Cria "Dia N" | "+ Dia" | F6 | |
+| Renomear dia | Título editável no cartão | Cabeçalho do dia | F6 | |
+| Duplicar dia | Escolhe a posição e renumera os outros | Incluir e duplicar dia, levando todos os campos | F6 | |
+| Excluir dia | Remove o dia e os itens, com confirmação | Menu do dia | F6 | |
+| Adição rápida | Tipo, hora e título numa linha | Adicionar ao dia | F6 | |
+| Data do dia | Só a IA e a importação preenchem; não dá para editar | Data editável no cabeçalho do dia | F6 | |
+| Dia vazio | Convida a arrastar blocos | "Dia livre" e Sugerir o que fazer | F6 | |
+
+### 3.3 Item do roteiro
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Marcar como feito | Risca o item (hoje apaga o tipo do item) | Situação Reservado ou Pendente, sem perder o tipo | F6 | |
+| Linha do item | Ícone do tipo, hora, título e local | Linha do tempo | F6 | |
+| Detalhes do item | Observação, fotos em carrossel e valor com conversão | Painel de edição do item | F6 | |
+| Tipo, horário e título | Campos básicos, título obrigatório | Painel do item, com os campos próprios de cada tipo | F6 | |
+| Local com autocompletar | Sugere lugares conforme o tipo e gera link de mapa | Campo de local do item | F6 | |
+| Observação | Texto que o cliente vê | Detalhes do item | F6 | |
+| Valor e moeda | 12 moedas (BRL, USD, EUR, GBP, ARS, CLP, UYU, CAD, AUD, CHF, JPY, MXN) | Valor do item, com moeda | F6 | |
+| Converter para R$ | Estimativa de câmbio feita pela IA, marcada como informativa | Valor em R$ no item. Avaliar trocar por cotação de serviço de câmbio | F6 | |
+| Valores por pessoa | Nome, moeda e valor por passageiro, com total em R$ | Painel do item, ligado aos viajantes da viagem | F6 | |
+| Fotos da atração | Do aparelho, da Biblioteca ou buscadas com IA; tudo vai para a Biblioteca | Fotos e anexos do item | F6 | |
+| Remover foto | Pergunta se apaga também da Biblioteca | Fotos do item | F6 | |
+| Sugestões de hospedagem com assistente | Filtros de bairro, quarto, estrelas, diária, sites e quantidade; converte a diária | Assistente: Comparar hospedagens | F11 | |
+| Sugestões de hospedagem manuais | Nome, endereço, quarto, diária e link | Opções dentro do item de hospedagem | F6 | |
+| Sugestões de transfer, restaurante e passeio | Assistente ou manual, com sites por tipo | Assistente e opções no item | F11 | |
+| Regra por tipo ao salvar | Fotos só em Atividade, opções de hotel só em Hospedagem | Campos próprios por tipo (`kindData`) | F6 | |
+| Excluir item | Remove o item e os anexos dele | Excluir no painel | F6 | |
+
+### 3.4 Anexos do item e documentos
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Categorias de anexo | Ingresso, Passagem, Ticket, Voucher, Reserva, Seguro, Imagem e Outro | Tipo do documento | F6 | |
+| Anexar do aparelho | Imagem ou PDF, guardado no item, na viagem e na venda | Aba Documentos e anexos do item | F6 | |
+| Conferência de imagem pela IA | Recusa imagem sem relação com o destino e avisa de imagem repetida | Mesma regra ao enviar foto | F6 | |
+| Anexar da Biblioteca | Busca e copia um documento da agência | Escolher da Biblioteca | F6 | |
+| Anexar link | Nome e endereço, abre em outra aba | Link no item | F6 | |
+| Visualizar e baixar | Prévia de imagem e PDF, e download | Prévia e download em Documentos | F6 | |
+| Excluir anexo | Remove sem pedir confirmação | Excluir com confirmação | F6 | |
+
+### 3.5 Ler documento e montar o roteiro com IA
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Enviar documento | Do aparelho, da Biblioteca ou do Google Drive | Assistente: Ler um documento | F11 | |
+| Importar um documento num dia | A IA cria um item a partir de imagem ou PDF | Assistente: Ler um documento | F11 | |
+| Extração de vários itens | Lê o documento sem repetir o que já está no roteiro | Assistente, com a resposta como rascunho | F11 | |
+| Distribuição por data | Coloca cada item no dia certo e cria os dias que faltam | Mesma regra | F11 | |
+| Regras de voo | Ida e volta sem data usam o início e o fim da viagem | Mesma regra | F11 | |
+| Ordenar por horário | Estima a hora pelo tipo quando falta | Linha do tempo por horário | F6 | |
+| Aviso de datas fora do período | Alerta quando o documento não bate com a viagem | Ponto a conferir na revisão | F11 | |
+| Não duplicar | Ignora itens repetidos ou muito parecidos e o mesmo arquivo duas vezes | Mesma regra | F11 | |
+| Guardar o arquivo lido | Fica anexado ao primeiro item criado | Fica em Documentos da viagem | F11 | |
+| Google Drive: escolher arquivo | Busca na pasta da agência; aceita PDF, imagem, Docs, Slides e planilhas | Integração Google Drive | F10 | |
+| Planilhas: escolher abas e ver prévia | Marca as abas e mostra as primeiras linhas | Mesma função ao ler planilha | F11 | |
+| Revisão antes de inserir | Só no Drive: lista os itens para marcar e inserir | Revisão para toda leitura de documento (A7) | F11 | |
+
+### 3.6 Assistente de roteiro (chat)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Abrir o assistente | Botão flutuante na página | Botão Assistente ao lado das abas | F11 | |
+| Diagnóstico ao abrir | Mostra progresso dos dias, itens incompletos e dados que faltam | Atalho "Revisar o que falta" | F11 | |
+| Conversar | Pergunta livre, Enter envia | Campo de pergunta do Assistente | F11 | |
+| Anexar documentos na conversa | Várias imagens ou PDFs por mensagem | Assistente: Ler um documento | F11 | |
+| Contexto da IA | Usa a venda, outros roteiros, documentos, anexos e a Biblioteca | Briefing da viagem para o Assistente | F11 | |
+| Aplicar resposta | Cria dias e itens e atualiza os existentes | Entra como rascunho para a consultora aprovar | F11 | |
+
+## 4. Ficha da viagem (hoje: gaveta aberta pela lista e pela página)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Cabeçalho | Capa, nome, destino, orçamento e datas | Topo da ficha comercial | F4 | |
+| Tela cheia | Alterna painel e tela cheia, e lembra a escolha | Painel lateral; a preferência fica na conta | F4 | |
+| Fechar | Botão, Esc, clique fora e voltar do celular | Padrão do painel lateral | F1 | |
+| Status da venda | Novo, Contatado, Negociando, Fechado e Perdido, com confirmação e aviso ao responsável | Etapas clicáveis e "Marcar como perdida" com motivo | F4 | |
+| Bloqueio em Fechado ou Perdido | Tudo fica só para leitura; reabrir pede confirmação | Reabrir | F4 | |
+| Resumo | Destino, datas, contagem de dias e observações do cliente | Aba Resumo | F4 | |
+| Vincular cliente | Liga ou desliga o cliente da venda | Quem vai (viajantes da viagem) | F4 | |
+| WhatsApp | Abre a conversa com o telefone | Contato rápido | F4 | |
+| Editar | Abre o formulário da venda | Editar dados na aba Resumo | F4 | |
+| Atribuir a | Troca o responsável e avisa | Responsável comercial e consultora | F4 | |
+| Atividades recentes | Quatro últimas, com atalho | Aba Histórico | F4 | |
+| Histórico de viagens do cliente | Lista com link para cada roteiro | Perfil do viajante: Viagens | F3 | |
+| Valor da consultoria | Só o administrador vê e edita | Aba Orçamento, com a mesma restrição | F4 | |
+| Registrar atividade | Tipo (Ligação, WhatsApp, E-mail, Reunião, Solicitação, Observação, Documento, Outros), título, detalhes, data e responsável | Histórico: registrar. Com data, vira item da Agenda | F4 | |
+| Histórico de atividades | Selos Concluída e Atrasada; editar, concluir, reabrir e excluir | Linha do tempo do Histórico | F4 | |
+| Checklist: aplicar modelo | Escolhe um modelo e aplica | Aba Checklist da viagem | F6 | |
+| Checklist: itens | Seções com progresso; marcar item atualiza a tarefa ligada | Checklist por seções, com contador ao vivo | F6 | |
+| Checklist: trocar e remover | Trocar só sem item marcado; remover tem "Desfazer" | Menu do checklist | F6 | |
+| Checklist: itens extras | Adicionar e remover itens avulsos | "+ Adicionar item" | F6 | |
+| Checklist: virar tarefa | Cria tarefa a partir do item | Item com prazo entra sozinho na Agenda | F7 | |
+| Financeiro: resumo | Orçamento, gasto, saldo e economia, com barra de uso | Aba Financeiro: medidor | F6 | |
+| Financeiro: orçamentos | Total, valor do cliente e valor da OSV, com a diferença | Aba Orçamento da ficha comercial | F4 | |
+| Financeiro: gastos | Categoria, forma de pagamento, descrição, valor, economia e data | Tabela de gastos e Adicionar gasto | F6 | |
+| Benefícios | Milhas e pontos por programa; cortesias e sala VIP, com "usada" | Resumo: milhas e benefícios | F4 | |
+| Notas | Observações e linha do tempo de contatos | Histórico (Observação) | F4 | |
+| Criar ou atualizar roteiro | Cria o roteiro ou copia os dados da venda para ele | Não precisa mais: a viagem é um registro só. Ao fechar, aparece "Abrir viagem" | F4 | |
+
+## 5. Biblioteca (hoje: `/biblioteca`)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Abas com contador | Experiências, Pacotes, Imagens, Roteiros modelo e Documentos | Filtros por tipo com contagem. **Imagens precisa de um filtro próprio** (o protótipo não mostra) | F9 | |
+| Novo item | Formulário por tipo: título, destino, descrição, conteúdo para a IA, etiquetas, imagem e anexo; pacote tem preço e dias | Ficha do item e Editar | F9 | |
+| IA na descrição e no conteúdo | Gera o texto e sugere etiquetas | Criar com IA | F9 | |
+| Cartão do item | Imagem, título, local, descrição, etiquetas, preço e dias | Capas e Lista | F9 | |
+| Ampliar imagem | Abre em tela cheia | Ficha do item | F9 | |
+| Editar e excluir | Com confirmação | Ficha do item | F9 | |
+| Enviar várias imagens | Confere imagem parecida antes de gravar | Envio de fotos na Biblioteca | F9 | |
+| Seleção em massa de imagens | Selecionar todas e excluir várias | Nova no desenho: seleção em massa no modo Lista | F9 | |
+| Imagem "Em uso" | Trava a imagem usada em roteiro e mostra onde está | "Usado em N viagens", com a mesma trava | F9 | |
+| Roteiros modelo por arquivo | Envia PDFs e cria um item por arquivo | Criar a partir de PDF, com revisão | F9 | |
+| Documentos: enviar | PDFs, sem repetir o mesmo arquivo | Tipo Documentos | F9 | |
+| Documentos por origem | Gerais, Roteiros e Leads | Origem do documento na Lista | F9 | |
+| Documentos: ações | Visualizar, baixar, abrir a viagem e excluir | Ficha do documento: Baixar e Enviar ao cliente | F9 | |
+
+## 6. Roteiro do cliente (hoje: link público `/viajante` e impressão)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Acesso por link | Sem login, com código no link. Hoje não dá para revogar | Link com token, revogável | F12 | |
+| Barra superior | Sumário, copiar link e salvar PDF | Página do roteiro do cliente | F12 | |
+| Capa e sumário | Destino, "Preparado para", datas e índice | Guia da viagem | F11 | |
+| Páginas de Voos e de Hospedagem | Reúnem todos os voos e todas as hospedagens | "Voos e reservas" do guia | F11 | |
+| Página de cada dia | Tipo, período, hora, título, observação, local, valor e link do mapa | Roteiro dia a dia do guia | F11 | |
+| Navegação entre dias | Sumário, dia anterior e próximo | Página do cliente | F12 | |
+| O que o cliente não vê | Orçamento, sugestões, valores por pessoa, anexos, checklist e financeiro | Mesma regra, **aplicada também na resposta do servidor** (hoje esses dados vão escondidos na resposta) | F12 | |
+| Impressão em A4 | Abre a impressão sozinha, com capa e sem quebrar itens | PDF do guia | F11 | |
+| Prévia interna | Mostra o documento dentro do app | Ver como cliente | F6 | |
+
+## 7. Casca do app
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Proteção de sessão | Sem login, manda para a tela de entrada | Mantém | F1 | |
+| Agência automática | Quem entra sem convite ganha uma agência e vira administrador | Passa para o servidor, com acesso liberado pela Hotmart (D5) | F13 | |
+| Menu agrupado | Trabalho, Recursos e Gestão, com Viagens ativa nas duas fases | Menu lateral do protótipo (já aplicado na Fase 0) | F1 | |
+| Itens por permissão | Financeiro só com permissão; Equipe e configurações só administrador; Plataforma só super admin | Itens de gestão por cargo (A5) | F1 | |
+| Recolher o menu | Encolhe o menu no computador | Mantém, com a preferência gravada na conta | F1 | |
+| Contador de viagens novas | Selo em Viagens, ao vivo | Contador do menu | F4 | |
+| Contador de hoje | Selo em Agenda com o que vence hoje | Contador do menu | F7 | |
+| Tema claro e escuro | Alterna e lembra a escolha; escuro é o padrão | Botão de tema, gravado na conta | F1 | |
+| Sair | No topo e no menu do usuário | Minha conta | F1 | |
+| Barra inferior no celular | Hoje, Viagens, Viajantes e Agenda | Barra de vidro com o **+** no centro. Biblioteca e Plataforma precisam de acesso no celular (hoje não têm) | F1 | |
+| Menu do usuário no celular | Thay IA, Meu Perfil, Financeiro, Equipe e configurações e Sair | Minha conta e menu de gestão no celular | F1 | |
+| Aviso para ativar notificações | Pede a permissão de push e registra o aparelho | Mantém, no padrão novo | F1 | |
+| Renovar o aparelho de push | Renova sozinho ao entrar e a cada 6 horas | Mantém | F1 | |
+| Instalar como app | Cartão de instalação no celular e no computador | Mantém, com a marca nova | F1 | |
+| Confirmação e avisos | Diálogo de confirmar e avisos curtos | Janela e Aviso curto do design system | F1 | |
+| Voltar do celular fecha painel | O botão voltar fecha a ficha em vez de sair da página | Padrão do painel lateral | F1 | |
+
+## 8. Hoje (hoje: Painel)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Vendas do mês | Receitas confirmadas do mês, só para quem vê o financeiro | Números do mês: vendido no mês | F8 | |
+| Leads ativos | Abertos e quantos são novos | Números do mês: em negociação | F8 | |
+| Pipeline | Valor em negociação | Números do mês: em negociação (valor) | F8 | |
+| Taxa de conversão | Fechados sobre o total | Conversão em 90 dias | F8 | |
+| Tarefas do dia | Pendentes, Concluídas e Todas; Hoje (com atrasadas), Amanhã e Semana | Agenda do dia | F8 | |
+| Minhas tarefas / Todas | Preferência gravada na conta | Minha / Toda a equipe | F8 | |
+| Lista de tarefas | Selo Atrasada, cliente, responsável e hora; abre a ficha | Agenda do dia, com WhatsApp e Concluir na linha | F8 | |
+| Gráfico de 6 meses | Receita ou número de vendas por mês | Financeiro: gráfico de 6 meses | F10 | |
+| Agenda da semana e do mês | Compromissos por dia, com hoje em destaque | Agenda: Semana e Mês | F7 | |
+| Agenda do dia (janela) | Lista o dia e cria compromisso rápido só com o título | Agenda: clicar no dia e "Novo neste dia" | F7 | |
+| Leads recentes | Seis vendas com atividade mais recente | Negociações sem resposta | F8 | |
+
+## 9. Viagens · Comercial (hoje: Vendas, `/leads`)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Funil em cinco etapas | Novo, Contatado, Em negociação, Fechado e Perdido, com contador | Quadro com total e valor por coluna | F4 | |
+| Arrastar cartão | Muda a etapa e desfaz se der erro | Arrastar no Quadro; soltar em Perdido pede o motivo | F4 | |
+| Mover pelo menu | Muda a etapa sem arrastar | Etapas clicáveis na ficha | F4 | |
+| Busca | Nome, e-mail ou destino | Busca por viajante ou destino | F4 | |
+| Minhas vendas / Todas | Só administrador e gerente alternam; a escolha fica na conta | Minhas / Toda a equipe | F4 | |
+| Ativas e Arquivadas | Alterna a lista; arquivar e desarquivar pelo menu | Filtro Arquivadas | F4 | |
+| Excluir venda | Com confirmação que sugere arquivar | Excluir viagem, por cargo | F4 | |
+| Atualização ao vivo | A cada 15 segundos e em tempo real | Tempo real no Quadro | F4 | |
+| Cartão da venda | Foto, nome, destino, valor, situação do roteiro e responsável | Cartão completo, com próximo passo e dias sem contato | F4 | |
+| Link direto para a venda | Abre a ficha a partir de uma notificação | Link direto para a ficha da viagem | F4 | |
+| Sugestão de cliente existente | Ao digitar o nome, sugere quem já está na base | Quem vai viajar: busca na base | F4 | |
+| Familiares como passageiros | Marca os membros do cliente e soma aos passageiros | Planejar viagem: quem vai, com a família já marcada | F3 | |
+| Tipos de viagem da agência | Lista padrão mais os tipos criados pela agência | Tipo de viagem em "Mais detalhes" | F4 | |
+| Regras ao criar | Entra em Novo, com responsável, checklist padrão e cliente criado ou vinculado | Criar viagem em Novo, com pessoa e viajantes | F4 | |
+| Assistente em quatro passos | Pessoal, Viagem, Benefícios, Voos e hotel | Formulário curto com "Mais detalhes" | F4 | |
+
+A ficha da venda está na seção 4.
+
+## 10. Viajantes (hoje: Clientes, `/clientes`)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Lista de clientes | Cartões em ordem alfabética | Modos Pessoas, Famílias e grupos, Lista e perfil | F3 | |
+| Busca | Nome, e-mail, CPF, telefone ou WhatsApp | Busca por nome, família ou destino, mantendo CPF e telefone | F3 | |
+| Filtro pela situação das viagens | Todos, Novo, Contatado, Em negociação, Fechado e Perdido, com contador | Todos, Em negociação, Viajam em breve e Documento pendente | F3 | |
+| Contatos com copiar | E-mail, telefone e WhatsApp com botão de copiar | Perfil: contato rápido | F3 | |
+| Nova proposta pelo cliente | Abre a venda já ligada ao cliente | Planejar viagem | F3 | |
+| Cadastro em seis abas | Contato, Documentos, Endereço, Membros, Preferências e Anotações | Nova pessoa e edição do perfil | F3 | |
+| Endereço pelo CEP | Preenche rua, bairro, cidade e UF | **Nova no desenho:** endereço no perfil (o protótipo não mostra) | F3 | |
+| Membros da família | Cliente existente ou nome livre, com parentesco | Família ou grupo, com relação | F3 | |
+| Membro vira cliente | Transforma o familiar em cadastro próprio | Toda pessoa da família já é uma pessoa da base | F3 | |
+| Preferências | Atalhos por grupo: estilo, hospedagem, voo, alimentação e acessibilidade | Documentos e preferências do perfil | F3 | |
+| Anotações | Texto livre | Observações do perfil | F3 | |
+| Propagar mudanças | Mudar o contato atualiza as viagens ligadas | Não precisa mais: a viagem aponta para a pessoa | F3 | |
+
+### Perfil do viajante (hoje: perfil do cliente)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Viagens | Roteiros e propostas do cliente | Perfil: Viagens, todas, com a fase | F3 | |
+| Documentos | Arquivos do cliente e das viagens, com envio e prévia | Perfil: documentos da pessoa | F3 | |
+| Financeiro do cliente | Orçado, gasto, economia, ticket médio e totais por forma de pagamento | **Nova no desenho:** resumo financeiro no perfil | F3 | |
+| Tarefas do cliente | Pendentes, com concluir e criar | Itens da Agenda ligados à pessoa | F7 | |
+| Linha do tempo | Até 50 atividades de todas as viagens | **Nova no desenho:** histórico da pessoa | F3 | |
+| Destinos | Destinos com contagem, que filtram as viagens | **Nova no desenho:** destinos no perfil | F3 | |
+| Datas | Aniversário e validade do passaporte | Perfil e datas automáticas da Agenda | F7 | |
+| Excluir cliente | Com confirmação | Excluir pessoa, por cargo | F3 | |
+
+## 11. Agenda (hoje: Tarefas, `/tarefas`)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Lista | Pendentes primeiro, depois concluídas | Lista por grupos: Atrasadas, Hoje, Amanhã, Esta semana e Mais adiante | F7 | |
+| Busca | Título, cliente ou descrição | **Nova no desenho:** busca na Agenda | F7 | |
+| Filtros | Situação e período (de, até) | Tudo, Tarefas, Contatos e Datas automáticas; Minha / Toda a equipe | F7 | |
+| Concluir e reabrir | Na linha ou pelo menu | Concluir na linha | F7 | |
+| Linha da tarefa | Vencimento, selos Atrasada e Checklist, cliente, responsável e prioridade | Linha da Agenda | F7 | |
+| Abrir a venda | Abre a ficha na aba certa, com o item do checklist em destaque | Atalho para a viagem | F7 | |
+| Criar e editar tarefa | Título, tipo, cliente, responsável, roteiro, vencimento, prioridade e descrição | Novo na agenda | F7 | |
+| Tarefa ligada a atividade | Atividade com data vira tarefa, e o inverso | Um registro só: o item da Agenda aparece no Histórico da viagem | F7 | |
+| Excluir tarefa | Com confirmação | Menu do item | F7 | |
+
+## 12. Financeiro
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Acesso por cargo | Conferido no servidor; o administrador libera gerente e consultor para ver ou lançar | Financeiro por cargo. **O protótipo mostra só administrador:** manter a liberação por cargo que já existe | F10 | |
+| Ocultar valores | Esconde os valores e lembra a escolha | Ocultar valores | F10 | |
+| Números | Receita, comissões, despesas e lucro líquido | Números com variação e período | F10 | |
+| Gráfico de 6 meses | Receitas e comissões por mês | Gráfico de colunas | F10 | |
+| Histórico | Filtro por tipo e por datas | Lançamentos filtráveis | F10 | |
+| Nova transação | Tipo, categoria, situação, descrição, valor e data | Nova transação, com viagem opcional | F10 | |
+
+## 13. Equipe e configurações (hoje: Administração)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Lista da equipe | Nome, e-mail, cargo e convite pendente | Equipe: tabela | F10 | |
+| Alterar cargo | Administrador, gerente ou consultor | Mudar cargo. Os cargos passam a ser Comercial, Consultoria, Gerente e Administrador (A5) | F10 | |
+| Convidar, reenviar e revogar | Convite por e-mail com link | Convidar pessoa, com o cargo explicado | F10 | |
+| Bloquear, liberar e remover | Com confirmação; quem tem histórico só é bloqueado | Bloquear e remover; passar as viagens para outra pessoa | F10 | |
+| Dados da agência | Nome, telefone, e-mail, CNPJ e endereço pelo CEP | Agência e marca | F10 | |
+| Marca do PDF | Logo, textos da página de abertura e cores | Agência e marca: logo e rodapé do PDF | F10 | |
+| Webhook de saída | Endereço, segredo, eventos e teste | Integrações: Webhook | F10 | |
+| Permissões do financeiro | Quem vê e quem lança, por cargo | Tabela "O que cada cargo pode fazer" | F10 | |
+| Formulário de captação | Cola o código de um formulário externo | Formulário de captação próprio, com perguntas e distribuição | F10 | |
+| Integração n8n | Segredo e endereço de entrada | Integrações: n8n | F10 | |
+| Google Drive | Liga a importação no roteiro e define a pasta | Integrações: Google Drive | F10 | |
+| Pagamentos (Asaas) | Chave, ambiente, preços, teste e carência | Integrações: Asaas, desligado (D4) | F10 | |
+| IA: plataforma e cota | Mostra o modelo e os tokens usados no mês | Assistente de IA | F10 | |
+| IA: chave própria | Provedor, modelo, chave e teste de conexão | Assistente de IA: provedor, modelo e chave no servidor | F10 | |
+| IA: orientações | Texto com o tom e as regras da Thay | Assistente de IA: orientações | F10 | |
+| IA: fontes de conhecimento | Liga Biblioteca, base de vendas e financeiro | Assistente de IA | F10 | |
+| IA: materiais de referência | Envia arquivos para a IA consultar | Biblioteca (documentos que alimentam o Assistente) | F9 | |
+| Push: configuração | Dados do Firebase, validação, aparelhos e teste | Notificações | F10 | |
+| Push: eventos | Sete eventos para avisar | Notificações por evento (app e e-mail) | F10 | |
+| E-mail: provedor | Appwrite ou Gmail, com remetente, assunto e assinatura | Integrações: Gmail | F10 | |
+| E-mail de teste | Envia um teste pelo provedor ativo | Integrações: Gmail | F10 | |
+
+### Modelos de checklist
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Lista de modelos | Marca o padrão e os inativos | Modelos de checklist | F10 | |
+| Criar e editar | Estrutura escrita em texto com símbolos | Editor por seção e item, sem texto com símbolos | F10 | |
+| Duplicar | Cria uma cópia | Menu do modelo | F10 | |
+| Definir como padrão | O padrão entra sozinho nas viagens novas | Definir como padrão | F10 | |
+| Ativar e desativar | Bloqueado se o modelo está em uso | Mantém | F10 | |
+| Excluir | Bloqueado se há viagens usando | Mantém | F10 | |
+| Viagens que usam o modelo | Lista que abre cada viagem | Uso do modelo | F10 | |
+| Gerar com IA | A IA monta a estrutura a partir de uma descrição | Sugerir itens com IA | F10 | |
+
+## 14. Conta, plataforma, notificações e Thay IA
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Meu perfil | Nome, telefone e cor do avatar | Minha conta | F10 | |
+| Alterar senha | Nova senha com confirmação | Minha conta | F10 | |
+| Plataforma: consumo de IA | Tokens por agência no mês | Painel do super admin | F13 | |
+| Plataforma: limites | Limite padrão e limite por agência | Painel do super admin: cota de IA | F13 | |
+| Sino | Contador, lista das 50 mais recentes, ao vivo | Sino com ponto de novidade | F1 | |
+| Página de notificações | Busca, filtro, ordem e páginas | Notificações (lista, lidas e não lidas) | F10 | |
+| O que gera notificação | Viagem atribuída, etapa mudada por outra pessoa e atividade atribuída | Notificações por evento | F10 | |
+| Thay IA: conversa | Painel de conversa geral, com as últimas mensagens | Assistente único (A7). **Decidir:** manter uma conversa geral fora da viagem ou só o Assistente da viagem | F11 | |
+| Thay IA: base de conhecimento | Orientações, materiais e, se ligados, roteiros, vendas e financeiro | Assistente, com a Biblioteca | F11 | |
+| Thay IA: cota | Recusa quando a agência passa do limite do mês | Cota por agência (D2) | F11 | |
+
+## 15. Entrada, convite e captação
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Entrar com e-mail e senha | Login do Appwrite | Login (já no padrão) | F0 | ✓ |
+| Entrar com o Google | Login pelo Google | Login | F0 | ✓ |
+| Criar conta | Nome, e-mail e senha | Criar conta, ligada ao acesso pela Hotmart (D5) | F13 | |
+| Recuperar e criar senha | Link por e-mail | Recuperar senha | F0 | ✓ |
+| Aceitar convite | Página do convite: cria a conta ou entra | Aceitar convite pelo Team do Appwrite | F13 | |
+| Página de captação | Mostra o formulário da agência | "Planejar minha viagem", formulário próprio | F12 | |
+
+## 16. Integrações que rodam sem tela
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Entrada pelo n8n | Recebe a venda, evita repetir o mesmo e-mail e cria o roteiro em rascunho | Function `n8n-entrada`: cria a viagem em Novo, com pessoa e responsável | F13 | |
+| Webhook do Asaas | Confere o código e só registra o evento | Desligado (D4) | F5 | |
+| Confirmação de push | O aparelho confirma que recebeu | Function `notificacoes` | F10 | |
+| Roteiro público | Entrega o roteiro pelo link | Function `links-publicos` | F12 | |
+| Webhook de saída | Avisa outro sistema em 6 eventos | Integrações: Webhook, com todos os eventos da lista funcionando | F10 | |
+
+---
+
+## 17. O que estava quebrado e como ficou
+
+Levantado na leitura do código e conferido contra o inventário real do Appwrite (25/11/2026). As correções foram reaplicadas sobre a `main`, que recebeu em paralelo o design system, as telas novas e a separação por agência. Os itens "Corrigido" foram testados num ambiente que lê os dados reais e simula as gravações, conferindo cada uma contra os campos reais das coleções. **Falta o teste com login de verdade na prévia da Vercel.**
+
+| # | Problema | Efeito para quem usava | Situação |
+|---|---|---|---|
+| 1 | A camada de dados ignorava todo pedido de dados relacionados | O roteiro abria com os dias vazios (os itens existiam no banco), a venda sem o responsável, a tarefa sem a viagem, a notificação sem o autor | **Corrigido** |
+| 2 | Todo arquivo de uma agência recebia o mesmo código no bucket | Só o primeiro envio de arquivo funcionava; os seguintes eram recusados | **Corrigido** |
+| 3 | A Biblioteca enviava arquivos para um bucket que não existe | Nenhuma foto ou PDF da Biblioteca era salvo | **Corrigido** (usa o bucket que existe) |
+| 4 | Dados extras do item do roteiro iam num campo de 50 caracteres | Salvar um item com moeda, valor em reais, sugestões, valores por pessoa ou fotos era recusado | **Corrigido** |
+| 5 | Marcar item como feito trocava o tipo do item | O item perdia o ícone; voo e hotel marcados sumiam do roteiro do cliente | **Corrigido** |
+| 6 | Benefícios da venda eram gravados num campo que a coleção não tem | A aba Benefícios não salvava | **Corrigido** (ficam dentro do perfil) |
+| 7 | Convite de equipe chamava três operações que não existiam | O convite aparecia como inválido, e quem entrava ganhava uma agência nova | **Corrigido:** o convite e a entrada no app passaram para o servidor |
+| 8 | A carga do usuário rodava duas vezes ao entrar | Agências e membros repetidos (8 agências para 5 usuários) | **Corrigido** (uma carga por vez). Os repetidos que já existem ficam para a migração |
+| 9 | Excluir atividade só aceitava um formato de código antigo | Atividades novas não podiam ser excluídas, e a tarefa ligada sumia antes do erro | **Corrigido** |
+| 10 | Modelos de checklist: desativar e excluir usavam um filtro inexistente | As duas ações davam erro | **Corrigido** |
+| 11 | Roteiro do cliente lia campos com outro nome | Dias sem título, itens sem horário, moeda errada | **Corrigido** |
+| 12 | A resposta do roteiro público levava dados internos | Sugestões, valores por pessoa com nomes e fotos iam escondidos na resposta | **Corrigido** (sai só o que o cliente vê) |
+| 13 | Duplicar viagem e duplicar dia copiavam só os campos básicos | A cópia perdia moeda, sugestões, fotos e as datas dos dias | **Corrigido** |
+| 14 | Excluir viagem, venda e cliente não levava os dados ligados | Anexos, atividades, tarefas e gastos ficavam órfãos | **Corrigido** |
+| 15 | Alterar senha não pedia a senha atual, e o mínimo variava entre 6 e 8 | O Appwrite recusava a troca | **Corrigido** |
+| 16 | Quatro eventos do webhook nunca disparavam; mudar a etapa pela ficha não avisava | Integrações externas sem parte dos avisos | **Corrigido** |
+| 17 | O quadro reabria viagem fechada sem perguntar, e a ficha perguntava | Comportamento diferente entre telas | **Conferir** no quadro novo de Viagens |
+| 18 | Ordenação por data usava um campo vazio nos registros novos | Listas "mais recentes primeiro" fora de ordem | **Corrigido** |
+| 19 | Arquivos dependiam de cookie de outro site para abrir | Fotos e PDFs não abriam no Safari e no iPhone | **Corrigido** (abrem com a sessão do usuário) |
+| 20 | Venda vinda do n8n com o ponto de partida no campo errado | A ficha mostrava a partida vazia | **Corrigido**. A venda ainda chega sem responsável (a distribuição é da F10) |
+| 21 | Biblioteca e Plataforma sem acesso no celular | Só dava para abrir no computador | **Conferir** no menu novo do celular |
+| 22 | Documentos da viagem gravavam numa coleção que não existia | Anexos e documentos não eram salvos | **Corrigido:** a coleção `crm_lead_documents` foi criada no Appwrite em 25/11/2026, com aprovação |
+| 23 | Limites de texto pequenos em seis campos | Modelos de checklist grandes, materiais da IA e conteúdo longo da Biblioteca eram recusados | **Corrigido:** os seis limites foram ampliados no Appwrite em 25/11/2026. O app avisa se algum campo passar do limite |
+| 24 | 19 fotos da Biblioteca sem arquivo | Aparecem sem imagem | **Depende de dados:** os arquivos não vieram do sistema anterior. Enviar de novo |
+| 25 | Push por evento não existe: os eventos são salvos, mas nada envia | Só o push de teste chega | **Aberto** (função nova, F10) |
+| 26 | Asaas pela metade | Sem efeito | **Aberto por decisão** (D4, desligado) |
+| 27 | Completar com IA e o chat criam itens sem avisar quando o dia já existia (conferir) | A tela diz que não encontrou dados | **Aberto** (precisa de chave de IA para testar; F11) |
+| 28 | Qualquer usuário logado lia os dados de todas as agências | Risco entre agências | **Corrigido:** um Team do Appwrite por agência e permissão em cada registro e arquivo |
+
+Funções que **não existem** hoje, apesar de às vezes serem lembradas: importar planilha de vendas, exportar listas e marcar pessoas (menção) nas atividades.

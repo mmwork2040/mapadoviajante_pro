@@ -76,6 +76,14 @@ export const Route = createFileRoute("/_app/biblioteca")({
   component: LibraryPage,
 });
 
+// Texto do botão de criar em cada aba (o singular não sai de cortar o "s").
+const NEW_LABEL: Partial<Record<TabKey, string>> = {
+  experience: "Nova experiência",
+  package: "Novo pacote",
+  image: "Nova imagem",
+  itinerary: "Novo roteiro modelo",
+};
+
 const TABS: { key: TabKey; label: string; icon: typeof Sparkles; hint: string }[] = [
   { key: "experience", label: "Experiências", icon: Sparkles, hint: "Passeios, tours e atividades." },
   { key: "package", label: "Pacotes", icon: Package, hint: "Pacotes prontos com preço e duração." },
@@ -328,7 +336,7 @@ function LibraryPage() {
               }}
               className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
             >
-              <Plus className="h-4 w-4 shrink-0" /> Novo {active.label.replace(/s$/, "")}
+              <Plus className="h-4 w-4 shrink-0" /> {NEW_LABEL[active.key] ?? "Novo item"}
             </button>
           )
         }
