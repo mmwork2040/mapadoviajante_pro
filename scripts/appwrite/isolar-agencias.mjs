@@ -94,7 +94,8 @@ for (const c of colecoes) {
   let mudou = 0, semDono = 0;
   for (const d of lista) {
     const ag = dono(c.$id, d);
-    const alvo = ag && idsAgencia.has(ag) ? time(ag) : [];
+    // Linhas da equipe: o time só lê; cargo, bloqueio e preferências mudam pelo servidor.
+    const alvo = ag && idsAgencia.has(ag) ? (c.$id === 'agency_members' ? time(ag).slice(0, 1) : time(ag)) : [];
     if (!alvo.length && !SO_SERVIDOR_DOCS.has(c.$id)) semDono++;
     if (igual(d.$permissions, alvo)) continue;
     mudou++;

@@ -61,17 +61,14 @@ export async function fetchLeadsMinePref(): Promise<boolean> {
 }
 
 export async function setLeadsMinePref(value: boolean): Promise<boolean> {
-  if (!_memberId) await loadAgencyContext();
-  if (!_memberId) return false;
-  const { error } = await supabase
-    .from("agency_members")
-    .update({ pref_leads_mine: value })
-    .eq("id", _memberId);
-  if (error) {
-    console.error("setLeadsMinePref:", error);
+  try {
+    const { alterarMeuCadastro } = await import("@/lib/equipe.functions");
+    await alterarMeuCadastro({ data: { pref_leads_mine: value } });
+    return true;
+  } catch (err) {
+    console.error("setLeadsMinePref:", err);
     return false;
   }
-  return true;
 }
 
 export async function fetchTasksMinePref(): Promise<boolean> {
@@ -86,17 +83,14 @@ export async function fetchTasksMinePref(): Promise<boolean> {
 }
 
 export async function setTasksMinePref(value: boolean): Promise<boolean> {
-  if (!_memberId) await loadAgencyContext();
-  if (!_memberId) return false;
-  const { error } = await supabase
-    .from("agency_members")
-    .update({ pref_tasks_mine: value } as never)
-    .eq("id", _memberId);
-  if (error) {
-    console.error("setTasksMinePref:", error);
+  try {
+    const { alterarMeuCadastro } = await import("@/lib/equipe.functions");
+    await alterarMeuCadastro({ data: { pref_tasks_mine: value } });
+    return true;
+  } catch (err) {
+    console.error("setTasksMinePref:", err);
     return false;
   }
-  return true;
 }
 
 export async function fetchAgendaMinePref(): Promise<boolean> {
@@ -111,17 +105,14 @@ export async function fetchAgendaMinePref(): Promise<boolean> {
 }
 
 export async function setAgendaMinePref(value: boolean): Promise<boolean> {
-  if (!_memberId) await loadAgencyContext();
-  if (!_memberId) return false;
-  const { error } = await supabase
-    .from("agency_members")
-    .update({ pref_agenda_mine: value } as never)
-    .eq("id", _memberId);
-  if (error) {
-    console.error("setAgendaMinePref:", error);
+  try {
+    const { alterarMeuCadastro } = await import("@/lib/equipe.functions");
+    await alterarMeuCadastro({ data: { pref_agenda_mine: value } });
+    return true;
+  } catch (err) {
+    console.error("setAgendaMinePref:", err);
     return false;
   }
-  return true;
 }
 
 export async function loadAgencyContext(): Promise<AgencyMember | null> {
@@ -130,122 +121,16 @@ export async function loadAgencyContext(): Promise<AgencyMember | null> {
   } = await supabase.auth.getUser();
   if (!user) return null;
 
-  let { data: members, error } = await supabase
+  const { data: members, error } = await supabase
     .from("agency_members")
     .select("id, agency_id, name, email, phone, role, avatar_color, is_active, user_id, pref_leads_mine")
     .eq("user_id", user.id)
     .eq("is_active", true)
     .limit(1);
 
-  // Fallback: se não achar por user_id, busca por email para vincular contas migradas do Supabase
-  if ((!members || members.length === 0) && user.email) {
-    const cleanEmail = user.email.toLowerCase().trim();
-    const { data: membersByEmail } = await supabase
-      .from("agency_members")
-      .select("id, agency_id, name, email, phone, role, avatar_color, is_active, user_id, pref_leads_mine")
-      .eq("email", cleanEmail)
-      .eq("is_active", true)
-      .limit(1);
-
-    if (membersByEmail && membersByEmail.length > 0) {
-      members = membersByEmail;
-      // Atualiza o user_id no Appwrite para os próximos acessos
-      const foundId = (membersByEmail[0] as any).id;
-      if (foundId) {
-        void supabase
-          .from("agency_members")
-          .update({ user_id: user.id })
-          .eq("id", foundId);
-      }
-    }
-  }
-
   if (error || !members || members.length === 0) return null;
   setAgencyContext(members[0] as AgencyMember);
   return members[0] as AgencyMember;
-}
-
-// ── Auto provisionamento de agência (novo usuário) ─────────────
-export async function autoProvisionAgency(
-  userId: string,
-  userName: string,
-  userEmail: string,
-): Promise<AgencyMember | null> {
-  const agencyName = `Agência de ${userName || "Novo Usuário"}`;
-  const slug =
-    (userName || "novo-usuario")
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-|-$/g, "") +
-    "-" +
-    Date.now().toString(36);
-
-  // Provisionamento atômico via RPC SECURITY DEFINER (cria agência + membro admin
-  // numa única transação, evitando agências órfãs e escalonamento de privilégio).
-  try {
-    const { data: member, error } = await supabase
-      .rpc("provision_agency", {
-        _name: agencyName,
-        _slug: slug,
-        _email: userEmail,
-        _user_name: userName || "Novo Usuário",
-        _avatar_color: "#ff7a1a",
-      })
-      .single();
-
-    if (!error && member) {
-      setAgencyContext(member as AgencyMember);
-      return member as AgencyMember;
-    }
-  } catch (rpcErr) {
-    console.warn("autoProvisionAgency RPC fallback:", rpcErr);
-  }
-
-  // Fallback direto via Appwrite / Supabase queries
-  try {
-    const { data: newAgencies, error: agencyErr } = await supabase
-      .from("agencies")
-      .insert({
-        name: agencyName,
-        slug,
-        email: userEmail,
-      })
-      .select();
-
-    const createdAgency = Array.isArray(newAgencies) ? newAgencies[0] : newAgencies;
-    if (agencyErr || !createdAgency) {
-      console.error("autoProvisionAgency fallback agency error:", agencyErr);
-      return null;
-    }
-
-    const { data: newMembers, error: memberErr } = await supabase
-      .from("agency_members")
-      .insert({
-        agency_id: createdAgency.id,
-        user_id: userId,
-        name: userName || "Novo Usuário",
-        email: userEmail,
-        role: "admin",
-        status: "active",
-        is_active: true,
-        avatar_color: "#ff7a1a",
-      })
-      .select();
-
-    const createdMember = Array.isArray(newMembers) ? newMembers[0] : newMembers;
-    if (memberErr || !createdMember) {
-      console.error("autoProvisionAgency fallback member error:", memberErr);
-      return null;
-    }
-
-    setAgencyContext(createdMember as AgencyMember);
-    return createdMember as AgencyMember;
-  } catch (fallbackErr) {
-    console.error("autoProvisionAgency fallback error:", fallbackErr);
-    return null;
-  }
 }
 
 // ── Team members ───────────────────────────────────────────────
@@ -264,46 +149,26 @@ export async function fetchTeamMembers(): Promise<AgencyMember[]> {
 }
 
 
-export async function updateMemberRole(id: string, role: string): Promise<boolean> {
-  const { error } = await supabase.from("agency_members").update({ role }).eq("id", id);
-  if (error) {
-    console.error("updateMemberRole:", error);
-    return false;
+async function acaoNaEquipe(id: string, acao: "cargo" | "bloquear" | "desbloquear" | "revogar" | "remover", role?: string) {
+  try {
+    const { alterarMembro } = await import("@/lib/equipe.functions");
+    return await alterarMembro({ data: { id, acao, role: role as never } });
+  } catch (err) {
+    console.error("alterarMembro:", err);
+    return { ok: false, error: err instanceof Error ? err.message : "Não foi possível salvar." } as { ok: boolean; error?: string; action?: "blocked" | "deleted" };
   }
-  return true;
+}
+
+export async function updateMemberRole(id: string, role: string): Promise<boolean> {
+  return (await acaoNaEquipe(id, "cargo", role)).ok;
 }
 
 /** Revoke a still-pending invite by removing the member row. The person loses
  * access until they are invited again (which creates a fresh row + token). */
 export async function revokeMember(id: string): Promise<boolean> {
-  const { error } = await supabase
-    .from("agency_members")
-    .delete()
-    .eq("id", id)
-    .eq("status", "pending");
-  if (error) {
-    console.error("revokeMember:", error);
-    return false;
-  }
-  return true;
+  return (await acaoNaEquipe(id, "revogar")).ok;
 }
 
-/** Conta quantos registros de atividade existem em nome de um membro. */
-async function countMemberActivity(id: string): Promise<number> {
-  const checks = [
-    supabase.from("crm_lead_activities").select("id", { count: "exact", head: true }).eq("author_id", id),
-    supabase.from("crm_lead_activities").select("id", { count: "exact", head: true }).eq("assigned_to_id", id),
-    supabase.from("crm_leads").select("id", { count: "exact", head: true }).eq("assigned_to", id),
-    supabase.from("crm_tasks").select("id", { count: "exact", head: true }).eq("assigned_to", id),
-    supabase.from("crm_tasks").select("id", { count: "exact", head: true }).eq("created_by", id),
-    supabase.from("crm_transactions").select("id", { count: "exact", head: true }).eq("created_by", id),
-  ];
-  const results = await Promise.all(checks);
-  // Se alguma contagem falhar (ex.: tabela fechada ao navegador), trata como
-  // "tem histórico": o membro é bloqueado em vez de excluído.
-  if (results.some((r) => r.error)) return 1;
-  return results.reduce((sum, r) => sum + (r.count ?? 0), 0);
-}
 
 /**
  * Remove um membro da equipe. Se houver registros de atividade em seu nome,
@@ -313,57 +178,14 @@ async function countMemberActivity(id: string): Promise<number> {
 export async function removeMember(
   id: string,
 ): Promise<{ ok: boolean; action?: "blocked" | "deleted"; error?: string }> {
-  const activity = await countMemberActivity(id);
-
-  if (activity > 0) {
-    const { error } = await supabase
-      .from("agency_members")
-      .update({ is_active: false, status: "blocked", invite_token: null })
-      .eq("id", id);
-    if (error) {
-      console.error("removeMember (block):", error);
-      return { ok: false, error: "Não foi possível bloquear o membro." };
-    }
-    await sincronizarTime();
-    return { ok: true, action: "blocked" };
-  }
-
-  const { error } = await supabase.from("agency_members").delete().eq("id", id);
-  if (error) {
-    console.error("removeMember (delete):", error);
-    return { ok: false, error: "Não foi possível excluir o membro." };
-  }
-  await sincronizarTime();
-  return { ok: true, action: "deleted" };
+  return acaoNaEquipe(id, "remover");
 }
 
 /** Bloqueia ou desbloqueia o acesso de um membro (somente admins, via RLS). */
 export async function setMemberBlocked(id: string, blocked: boolean): Promise<boolean> {
-  const { error } = await supabase
-    .from("agency_members")
-    .update(
-      blocked
-        ? { is_active: false, status: "blocked", invite_token: null }
-        : { is_active: true, status: "active" },
-    )
-    .eq("id", id);
-  if (error) {
-    console.error("setMemberBlocked:", error);
-    return false;
-  }
-  await sincronizarTime();
-  return true;
+  return (await acaoNaEquipe(id, blocked ? "bloquear" : "desbloquear")).ok;
 }
 
-/** Bloquear, desbloquear ou remover alguém muda quem está no time da agência (feito no servidor). */
-async function sincronizarTime() {
-  try {
-    const { sincronizarEquipe } = await import("@/lib/access.functions");
-    await sincronizarEquipe();
-  } catch (err) {
-    console.error("sincronizarEquipe:", err);
-  }
-}
 
 /** Atualiza os dados do próprio perfil (nome, telefone, cor). Não altera cargo. */
 export async function updateMyProfile(updates: {
@@ -371,19 +193,14 @@ export async function updateMyProfile(updates: {
   phone?: string | null;
   avatar_color?: string | null;
 }): Promise<boolean> {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
-  const { error } = await supabase
-    .from("agency_members")
-    .update(updates)
-    .eq("user_id", user.id);
-  if (error) {
-    console.error("updateMyProfile:", error);
+  try {
+    const { alterarMeuCadastro } = await import("@/lib/equipe.functions");
+    await alterarMeuCadastro({ data: updates });
+    return true;
+  } catch (err) {
+    console.error("updateMyProfile:", err);
     return false;
   }
-  return true;
 }
 
 /** Altera a senha do usuário logado. */

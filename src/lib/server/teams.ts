@@ -47,6 +47,17 @@ export async function createDoc(collection: string, data: Record<string, unknown
   return res;
 }
 
+export async function apagarDoc(collection: string, id: string) {
+  const { status } = await api('DELETE', `/databases/${DB}/collections/${collection}/documents/${id}`);
+  if (status !== 204 && status !== 404) throw new Error(`apagarDoc ${collection}/${id}: ${status}`);
+}
+
+/** Quantos registros têm `campo = valor` (para decidir entre bloquear e excluir). */
+export async function contar(collection: string, campo: string, valor: string): Promise<number> {
+  const { status, data } = await api('GET', `/databases/${DB}/collections/${collection}/documents?${q('equal', [valor], campo)}&${q('limit', [1])}`);
+  return status === 200 ? Number(data?.total) || 0 : 0;
+}
+
 export async function userExists(userId: string | null | undefined): Promise<boolean> {
   if (!userId) return false;
   const { status } = await api('GET', `/users/${encodeURIComponent(userId)}`);
@@ -85,9 +96,11 @@ export async function syncAgencyTeam(agencyId: string) {
     if (r.status !== 201 && r.status !== 409) throw new Error(`Não foi possível pôr a pessoa no time (${r.status}).`);
   }
 
-  const mesmo = (a: string[]) => a.length === perms.length && perms.every((p) => a.includes(p));
-  if (!mesmo(agency.$permissions)) await updateDoc('agencies', agencyId, {}, perms);
-  for (const m of members) if (!mesmo(m.$permissions)) await updateDoc('agency_members', m.$id, {}, perms);
+  const mesmo = (a: string[], b: string[]) => a.length === b.length && b.every((p) => a.includes(p));
+  if (!mesmo(agency.$permissions, perms)) await updateDoc('agencies', agencyId, {}, perms);
+  // Linhas da equipe: o time só lê. Cargo, bloqueio e preferências mudam pelo servidor.
+  const leitura = [perms[0]];
+  for (const m of members) if (!mesmo(m.$permissions, leitura)) await updateDoc('agency_members', m.$id, {}, leitura);
 }
 
 export { q as query };
