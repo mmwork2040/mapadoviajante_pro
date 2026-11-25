@@ -82,9 +82,9 @@ Recomendação: (a) agora para estancar, (b) ao longo da Fase 2.
   todo usuário no `localStorage`. Só afeta telas, mas engana a interface.
 - Rotas públicas (`/api/public/n8n-lead`, `push-delivery`, `asaas-webhook`)
   ainda seguem o desenho antigo: ver F0-T8, F0-T9 e F0-T12 do plano.
-- Google Drive: deixou de usar o conector do Lovable. Agora lê direto no Google
-  com uma conta de serviço (`GOOGLE_DRIVE_SERVICE_ACCOUNT`, só no servidor); a
-  pasta do Drive precisa ser compartilhada com o e-mail dessa conta.
+- Google Drive: deixou de usar o conector do Lovable. Agora lê direto no Google com
+  o token do login do Google de cada pessoa (OAuth do Appwrite, escopo
+  `drive.readonly`). Não há chave do Drive no servidor nem no navegador.
 - A entrada de leads do n8n (`/api/public/n8n-lead`) e o formulário de captação
   (`/intake`) deixaram de chamar o Supabase e passaram a usar a chave de API do
   Appwrite no servidor. Sem `APPWRITE_API_KEY` os dois respondem com erro.

@@ -26,19 +26,6 @@ function pemToArrayBuffer(pem: string): ArrayBuffer {
   return buf.buffer;
 }
 
-/** Lê o JSON de uma conta de serviço guardado em variável de ambiente. */
-export function parseServiceAccount(raw: string | undefined | null): GoogleServiceAccount | null {
-  if (!raw?.trim()) return null;
-  try {
-    const sa = JSON.parse(raw) as GoogleServiceAccount;
-    if (!sa.client_email || !sa.private_key) return null;
-    sa.private_key = sa.private_key.replace(/\\n/g, "\n");
-    return sa;
-  } catch {
-    return null;
-  }
-}
-
 /** Troca a conta de serviço por um token de acesso válido por 1 hora, no escopo pedido. */
 export async function googleAccessToken(sa: GoogleServiceAccount, scope: string): Promise<string> {
   const now = Math.floor(Date.now() / 1000);

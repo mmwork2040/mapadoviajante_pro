@@ -60,6 +60,7 @@ import {
 import { ClientFormDrawer } from "@/routes/_app.clientes.index";
 import { downloadDestinationImage } from "@/lib/destination-image.functions";
 import { extractDocumentData, extractDocumentActivitiesData, extractActivitiesFromTextData, itineraryPlanner, analyzeImageActivityFn, convertCurrencyFn, searchHotelsFn, searchSuggestionsFn } from "@/lib/ai.functions";
+import { connectGoogleDrive } from "@/lib/google-drive-auth";
 import { checkDriveConnection, listDriveFiles, fetchDriveFileContent, listDriveSheetNames, previewDriveSheets, isMultiSheet, type DriveFile } from "@/lib/gdrive.functions";
 
 // Origem de um documento a importar: arquivo binário (PDF/imagem) ou texto já
@@ -5310,9 +5311,18 @@ function DriveImportModal({
             </p>
           )}
           {conn.data && !conn.data.connected && (
-            <p className="py-8 text-center text-sm text-muted-foreground">
-              Conector do Google Drive indisponível. Verifique a conexão nas configurações do projeto.
-            </p>
+            <div className="py-8 text-center">
+              <p className="text-sm text-muted-foreground">
+                Para importar do Drive, entre com sua conta Google e autorize a leitura dos arquivos.
+              </p>
+              <button
+                type="button"
+                onClick={() => connectGoogleDrive()}
+                className="mt-3 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground"
+              >
+                Conectar Google Drive
+              </button>
+            </div>
           )}
           {conn.data?.connected && filesQ.isLoading && (
             <p className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">

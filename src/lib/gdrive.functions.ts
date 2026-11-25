@@ -1,24 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { googleAccessToken, parseServiceAccount } from "@/lib/server/google-auth";
+import { googleDriveAuth } from "@/lib/google-drive.middleware";
 
-// API do Google Drive, direto no Google. O acesso é de uma conta de serviço
-// (JSON em GOOGLE_DRIVE_SERVICE_ACCOUNT, só no servidor). A agência compartilha
-// a pasta do Drive com o e-mail dessa conta, como leitor.
+// API do Google Drive, direto no Google, com o token do login do Google do
+// próprio usuário (ver google-drive.middleware.ts). Cada pessoa lê os arquivos
+// da conta dela, inclusive as pastas compartilhadas com ela.
 const DRIVE_API = "https://www.googleapis.com/drive/v3";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly";
 
-let cachedToken: { token: string; at: number } | null = null;
+const NOT_CONNECTED = "Google Drive não conectado. Entre com sua conta Google e autorize o acesso ao Drive.";
 
-async function driveHeaders(): Promise<Record<string, string>> {
-  const sa = parseServiceAccount(process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT);
-  if (!sa) throw new Error("Google Drive não está conectado. Peça ao administrador para configurar a integração.");
-  // O token vale 1 hora; reaproveita por 50 minutos.
-  if (!cachedToken || Date.now() - cachedToken.at > 50 * 60 * 1000) {
-    cachedToken = { token: await googleAccessToken(sa, DRIVE_SCOPE), at: Date.now() };
-  }
-  return { Authorization: `Bearer ${cachedToken.token}` };
+function driveHeaders(token: string | null | undefined): Record<string, string> {
+  if (!token) throw new Error(NOT_CONNECTED);
+  return { Authorization: `Bearer ${token}` };
 }
 
 // Tipos de arquivo que a IA consegue interpretar (imagens e PDF diretamente,
@@ -48,12 +42,12 @@ export function isMultiSheet(mime: string): boolean {
 }
 
 // Baixa o binário de uma planilha do Drive (Google Sheets vira xlsx).
-async function downloadSpreadsheetBuffer(fileId: string, mime: string): Promise<Buffer> {
+async function downloadSpreadsheetBuffer(token: string | null, fileId: string, mime: string): Promise<Buffer> {
   const isGoogleSheet = mime === "application/vnd.google-apps.spreadsheet";
   const url = isGoogleSheet
     ? `${DRIVE_API}/files/${fileId}/export?mimeType=application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
     : `${DRIVE_API}/files/${fileId}?alt=media`;
-  const res = await fetch(url, { headers: await driveHeaders() });
+  const res = await fetch(url, { headers: driveHeaders(token) });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`Falha ao baixar planilha do Drive [${res.status}]: ${body}`);
@@ -63,13 +57,13 @@ async function downloadSpreadsheetBuffer(fileId: string, mime: string): Promise<
 
 /** Lista os nomes das abas de uma planilha do Drive, para o usuário escolher. */
 export const listDriveSheetNames = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, googleDriveAuth])
   .inputValidator((data) =>
     z.object({ fileId: z.string().min(1), mimeType: z.string().min(1) }).parse(data),
   )
-  .handler(async ({ data }): Promise<{ sheets: string[] }> => {
+  .handler(async ({ data, context }): Promise<{ sheets: string[] }> => {
     if (!isMultiSheet(data.mimeType)) return { sheets: [] };
-    const buf = await downloadSpreadsheetBuffer(data.fileId, data.mimeType);
+    const buf = await downloadSpreadsheetBuffer(context.googleToken, data.fileId, data.mimeType);
     const XLSX = await import("xlsx");
     const wb = XLSX.read(buf, { type: "buffer", bookSheets: true });
     return { sheets: wb.SheetNames };
@@ -81,7 +75,7 @@ export const listDriveSheetNames = createServerFn({ method: "GET" })
  * iniciar a extração completa pela IA.
  */
 export const previewDriveSheets = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, googleDriveAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -91,9 +85,9 @@ export const previewDriveSheets = createServerFn({ method: "GET" })
       })
       .parse(data),
   )
-  .handler(async ({ data }): Promise<{ previews: { sheet: string; preview: string }[] }> => {
+  .handler(async ({ data, context }): Promise<{ previews: { sheet: string; preview: string }[] }> => {
     if (!isMultiSheet(data.mimeType)) return { previews: [] };
-    const buf = await downloadSpreadsheetBuffer(data.fileId, data.mimeType);
+    const buf = await downloadSpreadsheetBuffer(context.googleToken, data.fileId, data.mimeType);
     const XLSX = await import("xlsx");
     const wb = XLSX.read(buf, { type: "buffer" });
     const wanted = data.sheets?.length ? new Set(data.sheets) : null;
@@ -137,13 +131,14 @@ function isSupported(mime: string): boolean {
 }
 
 
-/** Verifica se o Google Drive está conectado e acessível. */
+/** Verifica se o usuário entrou com o Google e autorizou a leitura do Drive. */
 export const checkDriveConnection = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async (): Promise<{ connected: boolean }> => {
+  .middleware([requireSupabaseAuth, googleDriveAuth])
+  .handler(async ({ context }): Promise<{ connected: boolean }> => {
+    if (!context.googleToken) return { connected: false };
     try {
       const res = await fetch(`${DRIVE_API}/files?pageSize=1&fields=files(id)`, {
-        headers: await driveHeaders(),
+        headers: driveHeaders(context.googleToken),
       });
       return { connected: res.ok };
     } catch {
@@ -160,7 +155,7 @@ export interface DriveFile {
 
 /** Lista arquivos suportados da pasta configurada (ou de todo o Drive). */
 export const listDriveFiles = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, googleDriveAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -169,7 +164,7 @@ export const listDriveFiles = createServerFn({ method: "GET" })
       })
       .parse(data),
   )
-  .handler(async ({ data }): Promise<{ files: DriveFile[] }> => {
+  .handler(async ({ data, context }): Promise<{ files: DriveFile[] }> => {
     const clauses = ["trashed=false"];
     if (data.folderId?.trim()) clauses.push(`'${data.folderId.trim()}' in parents`);
     if (data.search?.trim()) {
@@ -179,7 +174,7 @@ export const listDriveFiles = createServerFn({ method: "GET" })
     const q = encodeURIComponent(clauses.join(" and "));
     const fields = encodeURIComponent("files(id,name,mimeType,modifiedTime)");
     const url = `${DRIVE_API}/files?q=${q}&fields=${fields}&pageSize=100&orderBy=modifiedTime desc`;
-    const res = await fetch(url, { headers: await driveHeaders() });
+    const res = await fetch(url, { headers: driveHeaders(context.googleToken) });
     if (!res.ok) {
       const body = await res.text();
       throw new Error(`Falha ao listar arquivos do Drive [${res.status}]: ${body}`);
@@ -239,7 +234,7 @@ async function docxToText(buf: Buffer, name: string): Promise<string> {
  * base64. Tudo alimenta o mesmo pipeline de "Documento (IA)".
  */
 export const fetchDriveFileContent = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireSupabaseAuth, googleDriveAuth])
   .inputValidator((data) =>
     z
       .object({
@@ -250,7 +245,7 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
       })
       .parse(data),
   )
-  .handler(async ({ data }): Promise<DriveContent> => {
+  .handler(async ({ data, context }): Promise<DriveContent> => {
     if (!isSupported(data.mimeType)) {
       throw new Error("Tipo de arquivo não suportado para leitura pela IA.");
     }
@@ -260,7 +255,7 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
     if (isSpreadsheet(data.mimeType)) {
       if (data.mimeType === "text/csv") {
         const res = await fetch(`${DRIVE_API}/files/${data.fileId}?alt=media`, {
-          headers: await driveHeaders(),
+          headers: driveHeaders(context.googleToken),
         });
         if (!res.ok) {
           const body = await res.text();
@@ -269,7 +264,7 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
         const text = await res.text();
         return { kind: "text", text: `Arquivo: ${baseName}\n${text}`, name: baseName };
       }
-      const buf = await downloadSpreadsheetBuffer(data.fileId, data.mimeType);
+      const buf = await downloadSpreadsheetBuffer(context.googleToken, data.fileId, data.mimeType);
       const text = await workbookToText(buf, baseName, data.sheets);
       return { kind: "text", text, name: baseName };
     }
@@ -277,7 +272,7 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
     // Word (.docx) → texto extraído.
     if (isWord(data.mimeType)) {
       const res = await fetch(`${DRIVE_API}/files/${data.fileId}?alt=media`, {
-        headers: await driveHeaders(),
+        headers: driveHeaders(context.googleToken),
       });
       if (!res.ok) {
         const body = await res.text();
@@ -295,7 +290,7 @@ export const fetchDriveFileContent = createServerFn({ method: "GET" })
     const url = isGoogleNative
       ? `${DRIVE_API}/files/${data.fileId}/export?mimeType=application/pdf`
       : `${DRIVE_API}/files/${data.fileId}?alt=media`;
-    const res = await fetch(url, { headers: await driveHeaders() });
+    const res = await fetch(url, { headers: driveHeaders(context.googleToken) });
     if (!res.ok) {
       const body = await res.text();
       throw new Error(`Falha ao baixar arquivo do Drive [${res.status}]: ${body}`);
