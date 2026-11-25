@@ -206,3 +206,217 @@ Fases citadas: F1 casca do app · F3 Viajantes · F4 Viagens Comercial · F5 Pro
 | Impressão em A4 | Abre a impressão sozinha, com capa e sem quebrar itens | PDF do guia | F11 | |
 | Prévia interna | Mostra o documento dentro do app | Ver como cliente | F6 | |
 
+## 7. Casca do app
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Proteção de sessão | Sem login, manda para a tela de entrada | Mantém | F1 | |
+| Agência automática | Quem entra sem convite ganha uma agência e vira administrador | Passa para o servidor, com acesso liberado pela Hotmart (D5) | F13 | |
+| Menu agrupado | Trabalho, Recursos e Gestão, com Viagens ativa nas duas fases | Menu lateral do protótipo (já aplicado na Fase 0) | F1 | |
+| Itens por permissão | Financeiro só com permissão; Equipe e configurações só administrador; Plataforma só super admin | Itens de gestão por cargo (A5) | F1 | |
+| Recolher o menu | Encolhe o menu no computador | Mantém, com a preferência gravada na conta | F1 | |
+| Contador de viagens novas | Selo em Viagens, ao vivo | Contador do menu | F4 | |
+| Contador de hoje | Selo em Agenda com o que vence hoje | Contador do menu | F7 | |
+| Tema claro e escuro | Alterna e lembra a escolha; escuro é o padrão | Botão de tema, gravado na conta | F1 | |
+| Sair | No topo e no menu do usuário | Minha conta | F1 | |
+| Barra inferior no celular | Hoje, Viagens, Viajantes e Agenda | Barra de vidro com o **+** no centro. Biblioteca e Plataforma precisam de acesso no celular (hoje não têm) | F1 | |
+| Menu do usuário no celular | Thay IA, Meu Perfil, Financeiro, Equipe e configurações e Sair | Minha conta e menu de gestão no celular | F1 | |
+| Aviso para ativar notificações | Pede a permissão de push e registra o aparelho | Mantém, no padrão novo | F1 | |
+| Renovar o aparelho de push | Renova sozinho ao entrar e a cada 6 horas | Mantém | F1 | |
+| Instalar como app | Cartão de instalação no celular e no computador | Mantém, com a marca nova | F1 | |
+| Confirmação e avisos | Diálogo de confirmar e avisos curtos | Janela e Aviso curto do design system | F1 | |
+| Voltar do celular fecha painel | O botão voltar fecha a ficha em vez de sair da página | Padrão do painel lateral | F1 | |
+
+## 8. Hoje (hoje: Painel)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Vendas do mês | Receitas confirmadas do mês, só para quem vê o financeiro | Números do mês: vendido no mês | F8 | |
+| Leads ativos | Abertos e quantos são novos | Números do mês: em negociação | F8 | |
+| Pipeline | Valor em negociação | Números do mês: em negociação (valor) | F8 | |
+| Taxa de conversão | Fechados sobre o total | Conversão em 90 dias | F8 | |
+| Tarefas do dia | Pendentes, Concluídas e Todas; Hoje (com atrasadas), Amanhã e Semana | Agenda do dia | F8 | |
+| Minhas tarefas / Todas | Preferência gravada na conta | Minha / Toda a equipe | F8 | |
+| Lista de tarefas | Selo Atrasada, cliente, responsável e hora; abre a ficha | Agenda do dia, com WhatsApp e Concluir na linha | F8 | |
+| Gráfico de 6 meses | Receita ou número de vendas por mês | Financeiro: gráfico de 6 meses | F10 | |
+| Agenda da semana e do mês | Compromissos por dia, com hoje em destaque | Agenda: Semana e Mês | F7 | |
+| Agenda do dia (janela) | Lista o dia e cria compromisso rápido só com o título | Agenda: clicar no dia e "Novo neste dia" | F7 | |
+| Leads recentes | Seis vendas com atividade mais recente | Negociações sem resposta | F8 | |
+
+## 9. Viagens · Comercial (hoje: Vendas, `/leads`)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Funil em cinco etapas | Novo, Contatado, Em negociação, Fechado e Perdido, com contador | Quadro com total e valor por coluna | F4 | |
+| Arrastar cartão | Muda a etapa e desfaz se der erro | Arrastar no Quadro; soltar em Perdido pede o motivo | F4 | |
+| Mover pelo menu | Muda a etapa sem arrastar | Etapas clicáveis na ficha | F4 | |
+| Busca | Nome, e-mail ou destino | Busca por viajante ou destino | F4 | |
+| Minhas vendas / Todas | Só administrador e gerente alternam; a escolha fica na conta | Minhas / Toda a equipe | F4 | |
+| Ativas e Arquivadas | Alterna a lista; arquivar e desarquivar pelo menu | Filtro Arquivadas | F4 | |
+| Excluir venda | Com confirmação que sugere arquivar | Excluir viagem, por cargo | F4 | |
+| Atualização ao vivo | A cada 15 segundos e em tempo real | Tempo real no Quadro | F4 | |
+| Cartão da venda | Foto, nome, destino, valor, situação do roteiro e responsável | Cartão completo, com próximo passo e dias sem contato | F4 | |
+| Link direto para a venda | Abre a ficha a partir de uma notificação | Link direto para a ficha da viagem | F4 | |
+| Sugestão de cliente existente | Ao digitar o nome, sugere quem já está na base | Quem vai viajar: busca na base | F4 | |
+| Familiares como passageiros | Marca os membros do cliente e soma aos passageiros | Planejar viagem: quem vai, com a família já marcada | F3 | |
+| Tipos de viagem da agência | Lista padrão mais os tipos criados pela agência | Tipo de viagem em "Mais detalhes" | F4 | |
+| Regras ao criar | Entra em Novo, com responsável, checklist padrão e cliente criado ou vinculado | Criar viagem em Novo, com pessoa e viajantes | F4 | |
+| Assistente em quatro passos | Pessoal, Viagem, Benefícios, Voos e hotel | Formulário curto com "Mais detalhes" | F4 | |
+
+A ficha da venda está na seção 4.
+
+## 10. Viajantes (hoje: Clientes, `/clientes`)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Lista de clientes | Cartões em ordem alfabética | Modos Pessoas, Famílias e grupos, Lista e perfil | F3 | |
+| Busca | Nome, e-mail, CPF, telefone ou WhatsApp | Busca por nome, família ou destino, mantendo CPF e telefone | F3 | |
+| Filtro pela situação das viagens | Todos, Novo, Contatado, Em negociação, Fechado e Perdido, com contador | Todos, Em negociação, Viajam em breve e Documento pendente | F3 | |
+| Contatos com copiar | E-mail, telefone e WhatsApp com botão de copiar | Perfil: contato rápido | F3 | |
+| Nova proposta pelo cliente | Abre a venda já ligada ao cliente | Planejar viagem | F3 | |
+| Cadastro em seis abas | Contato, Documentos, Endereço, Membros, Preferências e Anotações | Nova pessoa e edição do perfil | F3 | |
+| Endereço pelo CEP | Preenche rua, bairro, cidade e UF | **Nova no desenho:** endereço no perfil (o protótipo não mostra) | F3 | |
+| Membros da família | Cliente existente ou nome livre, com parentesco | Família ou grupo, com relação | F3 | |
+| Membro vira cliente | Transforma o familiar em cadastro próprio | Toda pessoa da família já é uma pessoa da base | F3 | |
+| Preferências | Atalhos por grupo: estilo, hospedagem, voo, alimentação e acessibilidade | Documentos e preferências do perfil | F3 | |
+| Anotações | Texto livre | Observações do perfil | F3 | |
+| Propagar mudanças | Mudar o contato atualiza as viagens ligadas | Não precisa mais: a viagem aponta para a pessoa | F3 | |
+
+### Perfil do viajante (hoje: perfil do cliente)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Viagens | Roteiros e propostas do cliente | Perfil: Viagens, todas, com a fase | F3 | |
+| Documentos | Arquivos do cliente e das viagens, com envio e prévia | Perfil: documentos da pessoa | F3 | |
+| Financeiro do cliente | Orçado, gasto, economia, ticket médio e totais por forma de pagamento | **Nova no desenho:** resumo financeiro no perfil | F3 | |
+| Tarefas do cliente | Pendentes, com concluir e criar | Itens da Agenda ligados à pessoa | F7 | |
+| Linha do tempo | Até 50 atividades de todas as viagens | **Nova no desenho:** histórico da pessoa | F3 | |
+| Destinos | Destinos com contagem, que filtram as viagens | **Nova no desenho:** destinos no perfil | F3 | |
+| Datas | Aniversário e validade do passaporte | Perfil e datas automáticas da Agenda | F7 | |
+| Excluir cliente | Com confirmação | Excluir pessoa, por cargo | F3 | |
+
+## 11. Agenda (hoje: Tarefas, `/tarefas`)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Lista | Pendentes primeiro, depois concluídas | Lista por grupos: Atrasadas, Hoje, Amanhã, Esta semana e Mais adiante | F7 | |
+| Busca | Título, cliente ou descrição | **Nova no desenho:** busca na Agenda | F7 | |
+| Filtros | Situação e período (de, até) | Tudo, Tarefas, Contatos e Datas automáticas; Minha / Toda a equipe | F7 | |
+| Concluir e reabrir | Na linha ou pelo menu | Concluir na linha | F7 | |
+| Linha da tarefa | Vencimento, selos Atrasada e Checklist, cliente, responsável e prioridade | Linha da Agenda | F7 | |
+| Abrir a venda | Abre a ficha na aba certa, com o item do checklist em destaque | Atalho para a viagem | F7 | |
+| Criar e editar tarefa | Título, tipo, cliente, responsável, roteiro, vencimento, prioridade e descrição | Novo na agenda | F7 | |
+| Tarefa ligada a atividade | Atividade com data vira tarefa, e o inverso | Um registro só: o item da Agenda aparece no Histórico da viagem | F7 | |
+| Excluir tarefa | Com confirmação | Menu do item | F7 | |
+
+## 12. Financeiro
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Acesso por cargo | Conferido no servidor; o administrador libera gerente e consultor para ver ou lançar | Financeiro por cargo. **O protótipo mostra só administrador:** manter a liberação por cargo que já existe | F10 | |
+| Ocultar valores | Esconde os valores e lembra a escolha | Ocultar valores | F10 | |
+| Números | Receita, comissões, despesas e lucro líquido | Números com variação e período | F10 | |
+| Gráfico de 6 meses | Receitas e comissões por mês | Gráfico de colunas | F10 | |
+| Histórico | Filtro por tipo e por datas | Lançamentos filtráveis | F10 | |
+| Nova transação | Tipo, categoria, situação, descrição, valor e data | Nova transação, com viagem opcional | F10 | |
+
+## 13. Equipe e configurações (hoje: Administração)
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Lista da equipe | Nome, e-mail, cargo e convite pendente | Equipe: tabela | F10 | |
+| Alterar cargo | Administrador, gerente ou consultor | Mudar cargo. Os cargos passam a ser Comercial, Consultoria, Gerente e Administrador (A5) | F10 | |
+| Convidar, reenviar e revogar | Convite por e-mail com link | Convidar pessoa, com o cargo explicado | F10 | |
+| Bloquear, liberar e remover | Com confirmação; quem tem histórico só é bloqueado | Bloquear e remover; passar as viagens para outra pessoa | F10 | |
+| Dados da agência | Nome, telefone, e-mail, CNPJ e endereço pelo CEP | Agência e marca | F10 | |
+| Marca do PDF | Logo, textos da página de abertura e cores | Agência e marca: logo e rodapé do PDF | F10 | |
+| Webhook de saída | Endereço, segredo, eventos e teste | Integrações: Webhook | F10 | |
+| Permissões do financeiro | Quem vê e quem lança, por cargo | Tabela "O que cada cargo pode fazer" | F10 | |
+| Formulário de captação | Cola o código de um formulário externo | Formulário de captação próprio, com perguntas e distribuição | F10 | |
+| Integração n8n | Segredo e endereço de entrada | Integrações: n8n | F10 | |
+| Google Drive | Liga a importação no roteiro e define a pasta | Integrações: Google Drive | F10 | |
+| Pagamentos (Asaas) | Chave, ambiente, preços, teste e carência | Integrações: Asaas, desligado (D4) | F10 | |
+| IA: plataforma e cota | Mostra o modelo e os tokens usados no mês | Assistente de IA | F10 | |
+| IA: chave própria | Provedor, modelo, chave e teste de conexão | Assistente de IA: provedor, modelo e chave no servidor | F10 | |
+| IA: orientações | Texto com o tom e as regras da Thay | Assistente de IA: orientações | F10 | |
+| IA: fontes de conhecimento | Liga Biblioteca, base de vendas e financeiro | Assistente de IA | F10 | |
+| IA: materiais de referência | Envia arquivos para a IA consultar | Biblioteca (documentos que alimentam o Assistente) | F9 | |
+| Push: configuração | Dados do Firebase, validação, aparelhos e teste | Notificações | F10 | |
+| Push: eventos | Sete eventos para avisar | Notificações por evento (app e e-mail) | F10 | |
+| E-mail: provedor | Appwrite ou Gmail, com remetente, assunto e assinatura | Integrações: Gmail | F10 | |
+| E-mail de teste | Envia um teste pelo provedor ativo | Integrações: Gmail | F10 | |
+
+### Modelos de checklist
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Lista de modelos | Marca o padrão e os inativos | Modelos de checklist | F10 | |
+| Criar e editar | Estrutura escrita em texto com símbolos | Editor por seção e item, sem texto com símbolos | F10 | |
+| Duplicar | Cria uma cópia | Menu do modelo | F10 | |
+| Definir como padrão | O padrão entra sozinho nas viagens novas | Definir como padrão | F10 | |
+| Ativar e desativar | Bloqueado se o modelo está em uso | Mantém | F10 | |
+| Excluir | Bloqueado se há viagens usando | Mantém | F10 | |
+| Viagens que usam o modelo | Lista que abre cada viagem | Uso do modelo | F10 | |
+| Gerar com IA | A IA monta a estrutura a partir de uma descrição | Sugerir itens com IA | F10 | |
+
+## 14. Conta, plataforma, notificações e Thay IA
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Meu perfil | Nome, telefone e cor do avatar | Minha conta | F10 | |
+| Alterar senha | Nova senha com confirmação | Minha conta | F10 | |
+| Plataforma: consumo de IA | Tokens por agência no mês | Painel do super admin | F13 | |
+| Plataforma: limites | Limite padrão e limite por agência | Painel do super admin: cota de IA | F13 | |
+| Sino | Contador, lista das 50 mais recentes, ao vivo | Sino com ponto de novidade | F1 | |
+| Página de notificações | Busca, filtro, ordem e páginas | Notificações (lista, lidas e não lidas) | F10 | |
+| O que gera notificação | Viagem atribuída, etapa mudada por outra pessoa e atividade atribuída | Notificações por evento | F10 | |
+| Thay IA: conversa | Painel de conversa geral, com as últimas mensagens | Assistente único (A7). **Decidir:** manter uma conversa geral fora da viagem ou só o Assistente da viagem | F11 | |
+| Thay IA: base de conhecimento | Orientações, materiais e, se ligados, roteiros, vendas e financeiro | Assistente, com a Biblioteca | F11 | |
+| Thay IA: cota | Recusa quando a agência passa do limite do mês | Cota por agência (D2) | F11 | |
+
+## 15. Entrada, convite e captação
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Entrar com e-mail e senha | Login do Appwrite | Login (já no padrão) | F0 | ✓ |
+| Entrar com o Google | Login pelo Google | Login | F0 | ✓ |
+| Criar conta | Nome, e-mail e senha | Criar conta, ligada ao acesso pela Hotmart (D5) | F13 | |
+| Recuperar e criar senha | Link por e-mail | Recuperar senha | F0 | ✓ |
+| Aceitar convite | Página do convite: cria a conta ou entra | Aceitar convite pelo Team do Appwrite | F13 | |
+| Página de captação | Mostra o formulário da agência | "Planejar minha viagem", formulário próprio | F12 | |
+
+## 16. Integrações que rodam sem tela
+
+| Função hoje | O que faz | Destino | Fase | Feito |
+|---|---|---|---|---|
+| Entrada pelo n8n | Recebe a venda, evita repetir o mesmo e-mail e cria o roteiro em rascunho | Function `n8n-entrada`: cria a viagem em Novo, com pessoa e responsável | F13 | |
+| Webhook do Asaas | Confere o código e só registra o evento | Desligado (D4) | F5 | |
+| Confirmação de push | O aparelho confirma que recebeu | Function `notificacoes` | F10 | |
+| Roteiro público | Entrega o roteiro pelo link | Function `links-publicos` | F12 | |
+| Webhook de saída | Avisa outro sistema em 6 eventos | Integrações: Webhook, com todos os eventos da lista funcionando | F10 | |
+
+---
+
+## 17. O que hoje parece quebrado ou pela metade
+
+Achado na leitura do código. **Nada disto foi testado com dados reais.** Os três primeiros foram conferidos direto no código nesta fase; os outros precisam de um teste antes de virar tarefa. Tudo aqui tem de funcionar no desenho novo.
+
+| # | Problema | Efeito para quem usa | Onde entra |
+|---|---|---|---|
+| 1 | **Convite de equipe.** A página do convite chama três operações que a camada do Appwrite não tem | O convite aparece como inválido, e quem entra pelo convite ganha uma agência nova em vez de entrar na equipe | F13, antes de convidar mais gente |
+| 2 | **Excluir atividade.** A exclusão só aceita um formato de código que os registros novos do Appwrite não usam | Não dá para excluir atividades novas, e a tarefa ligada já foi apagada antes do erro | F4 |
+| 3 | **Marcar item do roteiro como feito** troca o tipo do item | O item perde o ícone; voo e hotel marcados somem das páginas de Voos e Hospedagem do roteiro do cliente | F6 |
+| 4 | **Documentos da viagem** gravam numa coleção que não existe, e a **Biblioteca** envia arquivos para um bucket que não existe (ver `inventario-appwrite.md`) | Anexos e arquivos da Biblioteca não são salvos | F2 |
+| 5 | Roteiro do cliente pode sair sem o título dos dias, sem os horários e com moeda errada (conferir) | O cliente vê "Dia 1" sem título e valores em dólar como reais | F12 |
+| 6 | A resposta do roteiro público leva dados que a tela esconde: sugestões, valores por pessoa com nomes e fotos (conferir) | Quem inspecionar o link enxerga dados internos | F12, com a F13 |
+| 7 | Duplicar viagem e duplicar dia copiam só os campos básicos | A cópia perde moeda, sugestões, fotos e anexos | F6 |
+| 8 | Excluir viagem não apaga os anexos (conferir) | Arquivos ficam órfãos e travados como "em uso" | F6 |
+| 9 | Completar com IA e o chat criam itens sem avisar quando o dia já existia (conferir) | A tela diz que não encontrou dados, mas os itens foram gravados | F11 |
+| 10 | Push por evento não existe: os eventos são salvos, mas nada envia | Só o push de teste chega | F10 |
+| 11 | Quatro eventos do webhook nunca disparam; mudar a etapa pela ficha não avisa | Integrações externas ficam sem parte dos avisos | F10 |
+| 12 | Asaas pela metade: salva a configuração, mas nenhuma tela cobra | Sem efeito (desligado por decisão D4) | F5 |
+| 13 | Venda vinda do n8n chega sem responsável, sem checklist e sem cliente; o aeroporto vai para o campo errado | Consultores não veem a venda no funil | F13 |
+| 14 | Regras diferentes entre telas: o funil reabre venda fechada sem perguntar; senha mínima de 6 num lugar e 8 em outro; o Painel mostra tudo ao consultor que no funil só vê o seu | Comportamento inconsistente | F4, F8 e F13 |
+| 15 | Textos que prometem o que o código não faz: copiar preferências para cada viagem nova e lembretes de datas | Expectativa sem função | F3 e F7 |
+
+Funções que **não existem** hoje, apesar de às vezes serem lembradas: importar planilha de vendas, exportar listas e marcar pessoas (menção) nas atividades.
