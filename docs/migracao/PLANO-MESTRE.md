@@ -12,6 +12,8 @@ Documentos deste plano:
 | `MODELO-DE-DADOS-APPWRITE.md` | Coleções, atributos, índices, permissões, buckets, funções e a migração dos dados atuais |
 | `ESPECIFICACAO-TELAS.md` | Cada tela do protótipo em forma de requisito, com critérios de aceite |
 | `INICIAR-PROXIMA-SESSAO.md` | O texto para colar ao abrir a próxima sessão, e o que ela faz primeiro |
+| `inventario-appwrite.md` | O que existe hoje no Appwrite e para qual coleção alvo cada coisa vai (Fase 0) |
+| `FUNCOES-ATUAIS.md` | Todas as funções do app atual, com a tela e a fase em que cada uma entra no desenho novo (decisão A9) |
 | `referencias/plano-anterior-2026-11-19-supabase.md` | Plano anterior, feito para o Supabase. Vale pelas decisões e pelos bugs listados; a parte técnica de banco está superada |
 
 Material de referência no repositório:
@@ -97,6 +99,7 @@ Achados da Fase 0 que mudam o plano:
 | A6 | **Modos de visualização** que cada pessoa escolhe e o sistema lembra **na conta**: Viagens Comercial (Quadro/Lista), Preparação (Lista/Capas/Quadro), Viajantes (Pessoas/Famílias e grupos/Lista e perfil), Agenda (Lista/Semana/Mês), Biblioteca (Capas/Lista) | Aprovado |
 | A7 | **IA sempre com revisão:** o que a IA cria (Biblioteca, roteiro, checklist, guia) entra como rascunho e passa pela consultora antes de chegar ao cliente. **Um único Assistente** por viagem substitui as quatro entradas de IA atuais | Aprovado |
 | A8 | **Proposta → Contrato → Pagamento → Roteiro e guia** é a jornada comercial padrão, com termos por tipo de serviço, pré-preenchidos e editáveis por proposta | Aprovado |
+| A9 | **Nenhuma função se perde.** Tudo o que o app atual faz entra no desenho novo, adaptado à nova identidade e ao novo formato (Viajantes, Viagem única, Agenda, Assistente). A lista de funções de hoje e o destino de cada uma está em `FUNCOES-ATUAIS.md`. Uma função só sai com aprovação registrada nessa lista | Decidido pelo dono do produto (25/11/2026) |
 | D1 a D6 | Do plano anterior: skills de guia (D1); IA por gateway com chave só no servidor e cota por agência (D2); Asaas desligado por enquanto (D4); acesso comprado na Hotmart e liberado pelo super admin (D5). D3 está resolvida por A3. D6 (onde roda o servidor) vira P3 | Confirmar em P7 |
 
 ---
@@ -295,6 +298,7 @@ Adaptar ao Appwrite a Fase 0 do plano anterior:
 
 - [ ] Igual ao protótipo na tela correspondente, nos **dois temas** e a **390 px** (comparar lado a lado).
 - [ ] Regras da identidade: um botão laranja por bloco, um destaque por tela, sem itálico, sem pontilhado (só no espaço vazio), títulos em League Spartan 700.
+- [ ] Toda função de `FUNCOES-ATUAIS.md` ligada a esta tela continua funcionando no formato novo, e a linha dela está marcada como feita (A9).
 - [ ] Dados reais do Appwrite pela camada `src/data/`. Nenhum dado inventado na interface, e o que falta aparece como estado vazio.
 - [ ] Estados de carregamento, vazio e erro tratados. Nenhum "sucesso" sem a gravação ter dado certo.
 - [ ] Permissão conferida para cada cargo.
