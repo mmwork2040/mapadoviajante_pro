@@ -7,7 +7,7 @@ import { QueryError } from "@/components/QueryError";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { SearchBar } from "@/components/SearchBar";
 import { ScrollLock } from "@/components/ScrollLock";
-import { ModalField, ModalTextarea, Section, NewLeadModal } from "@/routes/_app.leads";
+import { ModalField, ModalTextarea, Section } from "@/routes/_app.leads";
 
 import {
   DropdownMenu,
@@ -33,6 +33,7 @@ import type { Client, Lead, LeadStatus } from "@/lib/types";
 
 import { lookupCep } from "@/lib/agency";
 import { useConfirm } from "@/components/ConfirmDialog";
+import { ViajantesPage } from "@/components/viajantes/Viajantes";
 
 function maskCep(v: string): string {
   const d = String(v ?? "").replace(/\D/g, "").slice(0, 8);
@@ -40,72 +41,14 @@ function maskCep(v: string): string {
   return `${d.slice(0, 5)}-${d.slice(5)}`;
 }
 
-/**
- * Normaliza telefone para o formato E.164 usado pelo wa.me (só dígitos, com DDI).
- * - Remove qualquer caractere não-numérico.
- * - Descarta prefixo internacional "00".
- * - Se vier sem DDI e tiver 10 ou 11 dígitos (DDD + número), assume Brasil (55).
- * - Retorna string vazia se não houver dígitos suficientes (mín. 10).
- */
-function normalizeWhatsPhone(raw: string | null | undefined): string {
-  let d = String(raw ?? "").replace(/\D/g, "");
-  if (!d) return "";
-  if (d.startsWith("00")) d = d.slice(2);
-  if (d.length === 10 || d.length === 11) d = `55${d}`;
-  if (d.length < 12) return "";
-  return d;
-}
-
-function CopyButton({ value, label }: { value: string; label: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            e.preventDefault();
-            navigator.clipboard.writeText(value).then(() => {
-              setCopied(true);
-              toast.success(`${label} copiado`);
-              setTimeout(() => setCopied(false), 1500);
-            }).catch(() => toast.error("Falha ao copiar"));
-          }}
-          className="shrink-0 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          aria-label={`Copiar ${label}`}
-        >
-          {copied ? <Check className="h-3 w-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-        </button>
-      </TooltipTrigger>
-      <TooltipContent>Copiar {label}</TooltipContent>
-    </Tooltip>
-  );
-}
-
-function waLink(phone: string | null | undefined, name: string | null | undefined): string | null {
-  const p = normalizeWhatsPhone(phone);
-  if (!p) return null;
-  const first = String(name || "").trim().split(/\s+/)[0] || "";
-  const text = encodeURIComponent(`Olá, ${first}! Tudo bem?`);
-  return `https://wa.me/${p}?text=${text}`;
-}
-
 export const Route = createFileRoute("/_app/clientes/")({
   component: ClientesPage,
-  validateSearch: (s: { edit?: unknown; novo?: unknown }): { edit?: string; novo?: string } => ({
+  validateSearch: (s: { edit?: unknown; novo?: unknown; p?: unknown }): { edit?: string; novo?: string; p?: string } => ({
     ...(typeof s.edit === "string" ? { edit: s.edit } : {}),
     ...(s.novo ? { novo: "1" } : {}),
+    ...(typeof s.p === "string" ? { p: s.p } : {}),
   }),
 });
-
-const LEAD_STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
-  new: { label: "Novo", cls: "bg-blue-500/15 text-blue-700 dark:text-blue-300" },
-  contacted: { label: "Contatado", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300" },
-  negotiating: { label: "Em Negociação", cls: "bg-amber-500/20 text-amber-800 dark:text-amber-300" },
-  closed: { label: "Fechado", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" },
-  lost: { label: "Perdido", cls: "bg-red-500/15 text-red-700 dark:text-red-300" },
-};
 
 const EMPTY: Partial<Client> = {
   name: "",
@@ -183,85 +126,29 @@ export function extractMembers(prefs: unknown): ClientMember[] {
 
 function ClientesPage() {
   const qc = useQueryClient();
-  
   const confirm = useConfirm();
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<LeadStatus | "all">(() => {
-    if (typeof window === "undefined") return "all";
-    const saved = window.localStorage.getItem("clientes:statusFilter");
-    const allowed = ["all", "new", "contacted", "negotiating", "closed", "lost"];
-    return (saved && allowed.includes(saved) ? saved : "all") as LeadStatus | "all";
-  });
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    window.localStorage.setItem("clientes:statusFilter", statusFilter);
-  }, [statusFilter]);
-  const [openForm, setOpenForm] = useState(false);
-  const [editing, setEditing] = useState<Client | null>(null);
-  const editParam = Route.useSearch().edit as string | undefined;
-  const novoParam = Route.useSearch().novo as string | undefined;
-
-  const { data: clients = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ["clients", search],
-    queryFn: () => fetchClients(search),
-  });
-
-  const { data: allLeads = [] } = useQuery({
-    queryKey: ["leads", "all-for-clients"],
-    queryFn: () => fetchLeads(),
-  });
-
-  const clientStatuses = new Map<string, Set<LeadStatus>>();
-  for (const l of allLeads as Lead[]) {
-    if (!l.client_id) continue;
-    if (!clientStatuses.has(l.client_id)) clientStatuses.set(l.client_id, new Set());
-    clientStatuses.get(l.client_id)!.add(l.status);
-  }
-
-  const filteredClients =
-    statusFilter === "all"
-      ? clients
-      : clients.filter((c) => clientStatuses.get(c.id)?.has(statusFilter));
-
-
   const navigate = useNavigate();
+  const { edit: editParam, novo: novoParam, p: pessoaParam } = Route.useSearch();
+  const [editing, setEditing] = useState<Client | null>(null);
+
+  // Link antigo ?edit=<id> abre a edição direto.
+  const { data: clients = [] } = useQuery({ queryKey: ["clients", ""], queryFn: () => fetchClients() });
   useEffect(() => {
     if (!editParam) return;
     const c = clients.find((x) => x.id === editParam);
     if (c) {
       setEditing(c);
-      setOpenForm(true);
-      navigate({ to: "/clientes", search: (prev: any) => ({ ...prev, edit: undefined }), replace: true });
+      navigate({ to: "/clientes", search: (prev) => ({ ...prev, edit: undefined, p: c.id }), replace: true });
     }
   }, [editParam, clients, navigate]);
-
-  // Menu Criar → Nova pessoa: chega aqui com ?novo=1 e abre o formulário.
-  useEffect(() => {
-    if (!novoParam) return;
-    setEditing(null);
-    setOpenForm(true);
-    navigate({ to: "/clientes", search: (prev: any) => ({ ...prev, novo: undefined }), replace: true });
-  }, [novoParam, navigate]);
-
-
-  const createMut = useMutation({
-    mutationFn: (payload: Partial<Client>) => createClientSvc(payload),
-    onSuccess: (c) => {
-      if (!c) return toast.error("Erro ao criar viajante");
-      toast.success("Viajante criado");
-      qc.invalidateQueries({ queryKey: ["clients"] });
-      setOpenForm(false);
-      setEditing(null);
-    },
-  });
 
   const updateMut = useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: Partial<Client> }) => updateClient(id, patch),
     onSuccess: (c) => {
-      if (!c) return toast.error("Erro ao salvar");
-      toast.success("Viajante atualizado");
+      if (!c) return toast.error("Não foi possível salvar o cadastro.");
+      toast("Cadastro atualizado");
       qc.invalidateQueries({ queryKey: ["clients"] });
-      setOpenForm(false);
+      qc.invalidateQueries({ queryKey: ["leads"] });
       setEditing(null);
     },
   });
@@ -269,313 +156,43 @@ function ClientesPage() {
   const deleteMut = useMutation({
     mutationFn: (id: string) => deleteClient(id),
     onSuccess: () => {
-      toast.success("Viajante removido");
+      toast("Pessoa removida da base");
       qc.invalidateQueries({ queryKey: ["clients"] });
+      navigate({ to: "/clientes", search: {}, replace: true });
     },
+    onError: () => toast.error("Não foi possível remover."),
   });
 
-  const [newProposalClient, setNewProposalClient] = useState<Client | null>(null);
-
   return (
-    <div className="space-y-6">
-      <PageHeader
-        icon={Users}
-        title="Viajantes"
-        subtitle="A base de pessoas da agência: cada viajante, sua família e todas as suas viagens."
-        actions={
-          <>
-            <SearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="Buscar viajante…"
-              className="w-full sm:w-64"
-            />
-
-            <button
-              onClick={() => {
-                setEditing(null);
-                setOpenForm(true);
-              }}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto"
-            >
-              <Plus className="h-4 w-4" /> Novo cliente
-            </button>
-          </>
-
-        }
+    <>
+      <ViajantesPage
+        selecionada={pessoaParam}
+        onSelecionar={(id) => navigate({ to: "/clientes", search: (prev) => ({ ...prev, p: id }), replace: true })}
+        novo={!!novoParam}
+        onNovoAberto={() => navigate({ to: "/clientes", search: (prev) => ({ ...prev, novo: undefined }), replace: true })}
+        onEditar={setEditing}
+        onRemover={async (c) => {
+          const ok = await confirm({
+            title: `Remover ${c.name} da base?`,
+            description: "As viagens continuam, só deixam de apontar para este cadastro.",
+            confirmLabel: "Remover",
+            destructive: true,
+          });
+          if (ok) deleteMut.mutate(c.id);
+        }}
       />
-
-
-      <div className="flex flex-wrap gap-2">
-        {(
-          [
-            ["all", "Todos", "bg-muted text-foreground"],
-            ["new", "Novo", LEAD_STATUS_META.new.cls],
-            ["contacted", "Contatado", LEAD_STATUS_META.contacted.cls],
-            ["negotiating", "Em Negociação", LEAD_STATUS_META.negotiating.cls],
-            ["closed", "Fechado", LEAD_STATUS_META.closed.cls],
-            ["lost", "Perdido", LEAD_STATUS_META.lost.cls],
-          ] as [LeadStatus | "all", string, string][]
-        ).map(([key, label, cls]) => {
-          const active = statusFilter === key;
-          const count =
-            key === "all"
-              ? clients.length
-              : clients.filter((c) => clientStatuses.get(c.id)?.has(key)).length;
-          return (
-            <button
-              key={key}
-              onClick={() => setStatusFilter(key)}
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition ${cls} ${
-                active ? "ring-2 ring-primary ring-offset-1 ring-offset-background" : "opacity-70 hover:opacity-100"
-              }`}
-            >
-              {label}
-              <span className="rounded-full bg-background/60 px-1.5 py-px text-[10px] font-bold">{count}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {isLoading ? (
-        <div className="py-16 text-center text-sm text-muted-foreground">Carregando...</div>
-      ) : isError ? (
-        <QueryError message="Não foi possível carregar os viajantes." onRetry={() => refetch()} />
-      ) : filteredClients.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border py-16 text-center text-sm text-muted-foreground">
-          {clients.length === 0
-            ? "Nenhum viajante cadastrado ainda."
-            : "Nenhum viajante encontrado para este filtro."}
-        </div>
-      ) : (
-        <div className="grid items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredClients.map((c) => (
-            <ClientCard
-              key={c.id}
-              client={c}
-              onEdit={() => {
-                setEditing(c);
-                setOpenForm(true);
-              }}
-              onDelete={async () => {
-                const ok = await confirm({
-                  title: "Remover viajante?",
-                  description: `Deseja remover ${c.name}? As viagens vinculadas serão desvinculadas.`,
-                  confirmLabel: "Remover",
-                  destructive: true,
-                });
-                if (ok) deleteMut.mutate(c.id);
-              }}
-              onCreateTrip={() => setNewProposalClient(c)}
-              creating={false}
-            />
-          ))}
-        </div>
-      )}
-
-
-
-
-      {newProposalClient && (
-        <NewLeadModal
-          onClose={() => setNewProposalClient(null)}
-          onCreated={() => {
-            setNewProposalClient(null);
-            qc.invalidateQueries({ queryKey: ["leads"] });
-            qc.invalidateQueries({ queryKey: ["client-trips"] });
-            qc.invalidateQueries({ queryKey: ["clients"] });
-          }}
-          clientId={newProposalClient.id}
-          initialForm={{
-            name: newProposalClient.name || "",
-            email: newProposalClient.email || "",
-            phone: newProposalClient.phone || "",
-          }}
-        />
-      )}
-
-      {openForm && (
+      {editing && (
         <ClientFormDrawer
-          initial={editing ?? EMPTY}
-          isEdit={!!editing}
-          saving={createMut.isPending || updateMut.isPending}
-          onClose={() => {
-            setOpenForm(false);
-            setEditing(null);
-          }}
-          onSubmit={(payload) => {
-            if (editing) updateMut.mutate({ id: editing.id, patch: payload });
-            else createMut.mutate(payload);
-          }}
+          initial={editing}
+          isEdit
+          saving={updateMut.isPending}
+          onClose={() => setEditing(null)}
+          onSubmit={(payload) => updateMut.mutate({ id: editing.id, patch: payload })}
         />
       )}
-    </div>
+    </>
   );
 }
-
-function ClientCard({
-  client,
-  onEdit,
-  onDelete,
-  onCreateTrip,
-  creating,
-}: {
-  client: Client;
-  onEdit: () => void;
-  onDelete: () => void;
-  onCreateTrip: () => void;
-  onOpenTrip?: (leadId: string) => void;
-  creating: boolean;
-}) {
-  const tripsQ = useQuery({
-    queryKey: ["client-trips", client.id],
-    queryFn: () => fetchLeadsByClient(client.id),
-  });
-  const tripCount = tripsQ.data?.length ?? 0;
-  const memberCount = extractMembers(client.preferences).length;
-
-
-
-
-  return (
-    <TooltipProvider delayDuration={200}>
-    <div className="rounded-xl border border-border bg-card p-4 shadow-sm transition hover:border-primary/40 hover:shadow-md">
-      <div className="flex items-start justify-between gap-2">
-        <Link to="/clientes/$id" params={{ id: client.id }} className="flex flex-1 items-center gap-3 text-left">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-            <User className="h-5 w-5" />
-          </div>
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="truncate font-semibold">{client.name}</span>
-              {memberCount > 0 && (
-                <span
-                  title={`${memberCount} ${memberCount === 1 ? "membro cadastrado" : "membros cadastrados"}`}
-                  className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary"
-                >
-                  <Users className="h-3 w-3" />+{memberCount}
-                </span>
-              )}
-              {tripCount > 0 && (
-                <span
-                  title={`${tripCount} ${tripCount === 1 ? "viagem" : "viagens"}`}
-                  className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-sky-700 dark:text-sky-300"
-                >
-                  <Plane className="h-3 w-3" />
-                  {tripCount}
-                </span>
-              )}
-            </div>
-            {client.cpf && <div className="truncate text-xs text-muted-foreground">CPF {client.cpf}</div>}
-          </div>
-        </Link>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              title="Mais opções"
-              className="rounded-md p-1.5 text-muted-foreground transition hover:bg-muted hover:text-foreground"
-            >
-              <MoreVertical className="h-4 w-4" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuItem onSelect={onCreateTrip} disabled={creating}>
-              <Plane className="mr-2 h-4 w-4" /> Nova proposta
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={onEdit}>
-              <Pencil className="mr-2 h-4 w-4" /> Editar cadastro
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onSelect={onDelete}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="text-destructive mr-2 h-4 w-4" /> Excluir
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5">
-          {client.email ? (
-            <a
-              href={`mailto:${client.email}`}
-              onClick={(e) => e.stopPropagation()}
-              className="flex items-center gap-1.5 truncate hover:text-primary hover:underline min-w-0 flex-1"
-            >
-              <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
-              <span className="truncate">{client.email}</span>
-            </a>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 cursor-help flex-1" onClick={(e) => e.stopPropagation()}>
-                  <Mail className="h-3.5 w-3.5 shrink-0 text-sky-500" />
-                  <span>—</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>E-mail não informado</TooltipContent>
-            </Tooltip>
-          )}
-          {client.email && <CopyButton value={client.email} label="E-mail" />}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {client.phone ? (
-            <div className="flex items-center gap-1.5 flex-1 min-w-0"><Phone className="h-3.5 w-3.5 text-blue-500" /><span className="truncate">{client.phone}</span></div>
-          ) : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 cursor-help flex-1" onClick={(e) => e.stopPropagation()}>
-                  <Phone className="h-3.5 w-3.5 text-blue-500" />—
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>Telefone não informado</TooltipContent>
-            </Tooltip>
-          )}
-          {client.phone && <CopyButton value={client.phone} label="Telefone" />}
-        </div>
-        <div className="flex items-center gap-1.5">
-          {client.whatsapp ? (() => {
-            const href = waLink(client.whatsapp, client.name);
-            const cls = "flex items-center gap-1.5 flex-1 min-w-0 hover:text-primary hover:underline";
-            return href ? (
-              <a href={href} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className={cls}>
-                <MessageCircle className="h-3.5 w-3.5 text-green-500" /><span className="truncate">{client.whatsapp}</span>
-              </a>
-            ) : (
-              <div className="flex items-center gap-1.5 flex-1 min-w-0"><MessageCircle className="h-3.5 w-3.5 text-green-500" /><span className="truncate">{client.whatsapp}</span></div>
-            );
-          })() : (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 cursor-help flex-1" onClick={(e) => e.stopPropagation()}>
-                  <MessageCircle className="h-3.5 w-3.5 text-green-500" />—
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>WhatsApp não informado</TooltipContent>
-            </Tooltip>
-          )}
-          {client.whatsapp && <CopyButton value={client.whatsapp} label="WhatsApp" />}
-        </div>
-      </div>
-
-
-      <div className="mt-3 flex items-center justify-end border-t border-border pt-3">
-        <Link
-          to="/clientes/$id"
-          params={{ id: client.id }}
-          className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-        >
-          Abrir perfil <ExternalLink className="h-3 w-3" />
-        </Link>
-      </div>
-
-    </div>
-    </TooltipProvider>
-  );
-}
-
 
 export function ClientFormDrawer({
   initial,

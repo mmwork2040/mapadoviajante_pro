@@ -66,7 +66,7 @@ export function GlobalSearch() {
     setTerm("");
     inputRef.current?.blur();
     if (hit.kind === "viagem") navigate({ to: "/leads", search: { lead: hit.id } });
-    else navigate({ to: "/clientes/$id", params: { id: hit.id } });
+    else navigate({ to: "/clientes", search: { p: hit.id } });
   }
 
   const loading = enabled && (leadsQ.isLoading || clientsQ.isLoading);

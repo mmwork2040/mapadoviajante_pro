@@ -263,7 +263,7 @@ function FichaCorpo({ leadId, onMover, onPerder, onClose }: { leadId: string; on
         options={[{ value: "resumo", label: "Resumo" }, { value: "hist", label: "Histórico", count: totalHist }, { value: "orc", label: "Orçamento" }]}
       />
 
-      {aba === "resumo" && <Resumo viagem={v} viajante={viajante ?? null} onAbrirViajante={() => { onClose(); navigate({ to: "/clientes/$id", params: { id: v.client_id! } }); }} />}
+      {aba === "resumo" && <Resumo viagem={v} viajante={viajante ?? null} onAbrirViajante={() => { onClose(); navigate({ to: "/clientes", search: { p: v.client_id! } }); }} />}
       {aba === "hist" && <Historico viagem={v} atividades={atividades} textoRef={registroRef} onRegistrado={atualizar} />}
       {aba === "orc" && <Orcamento viagem={v} />}
     </>
