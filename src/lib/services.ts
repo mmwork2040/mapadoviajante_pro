@@ -548,7 +548,8 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
       return null;
     }
 
-    const profile = { ...((current?.profile || {}) as Record<string, unknown>) };
+    // Parte do perfil gravado e aplica por cima o que veio na chamada (ex.: motivo da perda).
+    const profile = { ...((current?.profile || {}) as Record<string, unknown>), ...((updates.profile || {}) as Record<string, unknown>) };
     // Valor explícito para limpar também registros antigos marcados pelo
     // fallback de status "contacted" no perfil serializado.
     profile[CONTACTED_PROFILE_STATUS_KEY] = null;

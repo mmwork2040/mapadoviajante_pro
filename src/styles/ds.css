@@ -361,3 +361,72 @@ button.ds-chip[aria-pressed="true"] { background: var(--accent); color: var(--ac
   .ds-painel, .ds-janela { animation: none; }
   .ds-app *, .ds-painel *, .ds-janela * { transition: none !important; }
 }
+
+/* ── Tela Hoje ── */
+/* linha de agenda: hora pendurada à esquerda */
+.ds-ag { display: grid; grid-template-columns: 58px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 13px 0; border-bottom: 1px solid var(--border); }
+.ds-ag:last-child { border-bottom: 0; }
+.ds-ag time { font: 700 15px/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--foreground); }
+.ds-ag time small { display: block; font: 500 11px/1.4 var(--font-sans); color: var(--muted-foreground); margin-top: 3px; }
+.ds-ag-bd { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ds-ag-bd b { font-size: 14.5px; font-weight: 600; }
+.ds-ag-bd b.ds-feito { text-decoration: line-through; color: var(--muted-foreground); }
+.ds-ag-bd > span { font-size: 13px; color: var(--muted-foreground); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.ds-ag-bd > span > svg { flex: none; width: 16px; height: 16px; }
+.ds-ag.ds-late time { color: var(--destructive); }
+.ds-ag-acts { display: flex; gap: 6px; }
+/* próxima viagem (linha com miniatura) */
+.ds-trip { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.ds-trip:last-child { border-bottom: 0; }
+.ds-trip-img { width: 64px; height: 48px; object-fit: cover; border-radius: 10px; background: #4e3b31; display: grid; place-items: center; color: #cfc7be; }
+.ds-trip-img > svg { width: 20px; height: 20px; }
+.ds-trip > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ds-trip b { font-size: 14.5px; font-weight: 600; }
+.ds-trip span { font-size: 13px; color: var(--muted-foreground); }
+.ds-trip-d { text-align: right; }
+.ds-trip-d strong { display: block; font: 700 20px/1 var(--font-display); font-variant-numeric: tabular-nums; color: var(--foreground); }
+.ds-trip-d small { font-size: 11.5px; color: var(--muted-foreground); }
+.ds-trip:hover b { color: var(--accent-foreground); }
+/* destaque do dia */
+.ds-focus { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.ds-focus > .ds-ibox { width: 44px; height: 44px; }
+.ds-focus > div { flex: 1; min-width: 220px; display: flex; flex-direction: column; gap: 4px; }
+.ds-focus p { margin: 0; color: var(--foreground-soft); font-size: 14px; }
+@media (max-width: 900px) {
+  .ds-ag { grid-template-columns: 50px minmax(0, 1fr); }
+  .ds-ag-acts { grid-column: 2; }
+}
+
+/* ── Viagens · Comercial: quadro ── */
+.ds-quadro { display: grid; grid-template-columns: repeat(4, minmax(190px, 1fr)) minmax(160px, 0.72fr); gap: 14px; overflow-x: auto; align-items: start; }
+.ds-col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.ds-col-h { display: flex; align-items: center; gap: 8px; padding: 0 4px 10px; border-bottom: 1px solid var(--border); }
+.ds-col-h b { font-size: 14px; font-weight: 700; }
+.ds-col-h small { margin-left: auto; font-size: 12.5px; color: var(--muted-foreground); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ds-col-b { display: flex; flex-direction: column; gap: 10px; min-height: 96px; border-radius: 18px; padding: 2px; transition: background 0.15s, box-shadow 0.15s; }
+.ds-col-b.ds-over { background: var(--accent); box-shadow: 0 0 0 1px var(--accent-line); }
+.ds-col-vazia { display: grid; place-items: center; min-height: 92px; padding: 14px; border: 1px dashed var(--input); border-radius: 16px; text-align: center; font-size: 13px; color: var(--muted-foreground); }
+.ds-vcard { position: relative; display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 16px; background: var(--card); border: 1px solid var(--border); cursor: grab; text-align: left; }
+.ds-vcard:hover { border-color: var(--input); }
+.ds-vcard:focus-visible { outline: 2px solid var(--accent-foreground); outline-offset: 2px; }
+.ds-vcard.ds-drag { opacity: 0.45; }
+.ds-vcard-t { display: flex; align-items: flex-start; gap: 8px; }
+.ds-vcard-t b { flex: 1; font-size: 15px; font-weight: 700; line-height: 1.25; min-width: 0; overflow-wrap: anywhere; }
+.ds-vcard-v { font: 700 17px/1.1 var(--font-display); font-variant-numeric: tabular-nums; }
+.ds-vcard-v.ds-nd { font: 500 13.5px var(--font-sans); color: var(--muted-foreground); }
+.ds-vcard-m { font-size: 13px; color: var(--muted-foreground); }
+.ds-vcard-p { display: flex; align-items: flex-start; gap: 6px; font-size: 13px; color: var(--foreground-soft); padding-top: 8px; border-top: 1px solid var(--border); }
+.ds-vcard-p > svg { flex: none; width: 14px; height: 14px; margin-top: 2px; }
+.ds-vcard-p.ds-bad { color: var(--destructive); }
+.ds-vcard-p.ds-nd { color: var(--muted-foreground); }
+.ds-vcard-f { display: flex; align-items: center; gap: 8px; }
+.ds-vcard-f .ds-av { margin-left: auto; }
+.ds-vcard-menu { display: grid; place-items: center; width: 28px; height: 28px; margin: -4px -6px 0 0; border-radius: 50%; color: var(--muted-foreground); flex: none; }
+.ds-vcard-menu:hover { background: var(--muted); color: var(--foreground); }
+.ds-col.ds-estreita .ds-vcard { padding: 12px; gap: 6px; }
+.ds-col.ds-estreita .ds-vcard-v { font-size: 14px; }
+@media (max-width: 900px) {
+  .ds-quadro { display: flex; overflow-x: auto; gap: 12px; padding-bottom: 8px; scroll-snap-type: x mandatory; margin: 0 -18px; padding-left: 18px; padding-right: 18px; scrollbar-width: none; }
+  .ds-col { flex: 0 0 82%; scroll-snap-align: center; }
+  .ds-vcard { cursor: pointer; }
+}
