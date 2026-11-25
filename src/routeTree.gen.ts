@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AceitarConviteRouteImport } from './routes/aceitar-convite'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ConhecaRouteImport } from './routes/conheca'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
@@ -50,6 +51,11 @@ const AceitarConviteRoute = AceitarConviteRouteImport.update({
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConhecaRoute = ConhecaRouteImport.update({
+  id: '/conheca',
+  path: '/conheca',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IntakeRoute = IntakeRouteImport.update({
@@ -182,6 +188,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/aceitar-convite': typeof AceitarConviteRoute
   '/auth': typeof AuthRoute
+  '/conheca': typeof ConhecaRoute
   '/intake': typeof IntakeRoute
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/aceitar-convite': typeof AceitarConviteRoute
   '/auth': typeof AuthRoute
+  '/conheca': typeof ConhecaRoute
   '/intake': typeof IntakeRoute
   '/admin': typeof AppAdminRoute
   '/biblioteca': typeof AppBibliotecaRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/aceitar-convite': typeof AceitarConviteRoute
   '/auth': typeof AuthRoute
+  '/conheca': typeof ConhecaRoute
   '/intake': typeof IntakeRoute
   '/_app/admin': typeof AppAdminRoute
   '/_app/biblioteca': typeof AppBibliotecaRoute
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/'
     | '/aceitar-convite'
     | '/auth'
+    | '/conheca'
     | '/intake'
     | '/admin'
     | '/biblioteca'
@@ -299,6 +309,7 @@ export interface FileRouteTypes {
   to:
     | '/aceitar-convite'
     | '/auth'
+    | '/conheca'
     | '/intake'
     | '/admin'
     | '/biblioteca'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/aceitar-convite'
     | '/auth'
+    | '/conheca'
     | '/intake'
     | '/_app/admin'
     | '/_app/biblioteca'
@@ -358,6 +370,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AceitarConviteRoute: typeof AceitarConviteRoute
   AuthRoute: typeof AuthRoute
+  ConhecaRoute: typeof ConhecaRoute
   IntakeRoute: typeof IntakeRoute
   DevUiRoute: typeof DevUiRoute
   ImprimirIdRoute: typeof ImprimirIdRoute
@@ -390,6 +403,13 @@ declare module '@tanstack/react-router' {
       path: '/auth'
       fullPath: '/auth'
       preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conheca': {
+      id: '/conheca'
+      path: '/conheca'
+      fullPath: '/conheca'
+      preLoaderRoute: typeof ConhecaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/intake': {
@@ -634,6 +654,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AceitarConviteRoute: AceitarConviteRoute,
   AuthRoute: AuthRoute,
+  ConhecaRoute: ConhecaRoute,
   IntakeRoute: IntakeRoute,
   DevUiRoute: DevUiRoute,
   ImprimirIdRoute: ImprimirIdRoute,

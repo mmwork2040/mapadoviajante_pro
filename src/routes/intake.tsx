@@ -66,7 +66,7 @@ function IntakePage() {
     <div className="flex min-h-screen items-center justify-center px-4 py-10">
       <div className="w-full max-w-2xl rounded-[28px] border border-border bg-card p-6 shadow-xl sm:p-8">
         <div className="mb-6 flex items-center gap-3">
-          <BrandLogo brand={brand} heightClass="h-10" nameClass="text-xl" />
+          <BrandLogo brand={brand} heightClass="h-10" nameClass="text-[30px]" />
         </div>
 
         <h1 className="text-2xl font-bold">Vamos planejar sua viagem</h1>

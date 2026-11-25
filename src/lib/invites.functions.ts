@@ -97,6 +97,8 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
           .pipe(z.enum(ROLES))
           .default("consultor"),
         appUrl: z.string().url().max(300),
+        /** false: só cria o convite e devolve o link, sem mandar e-mail. */
+        enviarEmail: z.boolean().default(true),
       })
       .parse(data),
   )
@@ -173,9 +175,15 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       .eq("user_id", context.userId)
       .maybeSingle();
 
-    // APP_URL no servidor tem prioridade sobre o endereço enviado pelo navegador.
-    const baseUrl = (process.env.APP_URL || data.appUrl).replace(/\/$/, "");
-    const link = `${baseUrl}/aceitar-convite?token=${encodeURIComponent(token)}`;
+    const link = linkDeConvite(data.appUrl, token);
+    const agencyName = (agency as { name?: string })?.name ?? "";
+    // O link volta sempre para quem convidou: dá para copiar ou mandar pelo WhatsApp
+    // mesmo quando o e-mail sai (ou quando não há e-mail configurado).
+    const convite = { inviteUrl: link, agencyName, name: data.name, email };
+
+    if (!data.enviarEmail) {
+      return { ok: true, emailSent: false, ...convite, message: "Convite criado. Envie o link para a pessoa." };
+    }
 
     // Carrega configuração de e-mail da agência
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -196,8 +204,8 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
       return {
         ok: true,
         emailSent: false,
-        inviteUrl: link,
-        message: "Convite registrado! O serviço de e-mail está desabilitado na Administração. Compartilhe o link do convite manualmente.",
+        ...convite,
+        message: "Convite criado. O envio de e-mail não está configurado: envie o link para a pessoa.",
       };
     }
 
@@ -218,13 +226,53 @@ export const sendTeamInvite = createServerFn({ method: "POST" })
     });
 
     if (sendRes.ok) {
-      return { ok: true, emailSent: true, message: "Convite enviado com sucesso por e-mail!" };
-    } else {
-      return {
-        ok: true,
-        emailSent: false,
-        inviteUrl: link,
-        message: `Convite criado, mas falhou o envio do e-mail (${sendRes.message}). Você pode copiar o link do convite.`,
-      };
+      return { ok: true, emailSent: true, ...convite, message: "Convite enviado por e-mail!" };
     }
+    return {
+      ok: true,
+      emailSent: false,
+      ...convite,
+      message: `Convite criado, mas o e-mail não foi enviado (${sendRes.message}). Envie o link para a pessoa.`,
+    };
+  });
+
+/** Endereço de aceite do convite. APP_URL no servidor tem prioridade sobre o do navegador. */
+function linkDeConvite(appUrl: string, token: string) {
+  const baseUrl = (process.env.APP_URL || appUrl).replace(/\/$/, "");
+  return `${baseUrl}/aceitar-convite?token=${encodeURIComponent(token)}`;
+}
+
+/**
+ * Link de um convite que ainda está pendente, sem gerar outro: o link que a pessoa
+ * já recebeu continua valendo. Só o admin da própria agência consegue.
+ */
+export const linkDoConvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data) =>
+    z.object({ memberId: z.string().trim().min(1).max(64), appUrl: z.string().url().max(300) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    const { requireAdmin } = await import("@/lib/server/authz");
+    const { agencyId } = await requireAdmin(context);
+    const { supabase } = context;
+
+    const { data: row } = await supabase
+      .from("agency_members")
+      .select("name, email, status, invite_token")
+      .eq("id", data.memberId)
+      .eq("agency_id", agencyId)
+      .maybeSingle();
+    const m = row as { name?: string; email?: string; status?: string; invite_token?: string | null } | null;
+    if (!m || m.status !== "pending" || !m.invite_token) {
+      return { ok: false as const, message: "Este convite não está mais pendente. Crie um novo convite." };
+    }
+
+    const { data: agency } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+    return {
+      ok: true as const,
+      inviteUrl: linkDeConvite(data.appUrl, m.invite_token),
+      agencyName: (agency as { name?: string })?.name ?? "",
+      name: m.name ?? "",
+      email: m.email ?? "",
+    };
   });

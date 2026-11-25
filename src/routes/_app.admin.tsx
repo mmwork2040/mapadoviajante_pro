@@ -4,7 +4,7 @@ import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw, Smartphone, Ban, LockOpen, Building2, HardDrive, Palette, ListChecks, Shield } from "lucide-react";
+import { Plus, Check, UserPlus, X, Webhook, Sparkles, Loader2, ChevronDown, BookOpen, FileText, Trash2, MessageSquare, Database, FolderOpen, Users, PieChart, Save, UploadCloud, Bell, Mail, Send, CreditCard, AlertTriangle, RefreshCw, Smartphone, Ban, LockOpen, Link2, Building2, HardDrive, Palette, ListChecks, Shield } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 import {
@@ -66,7 +66,8 @@ import {
   setMemberBlocked,
   updateMemberRole,
 } from "@/lib/services";
-import { sendTeamInvite, getEmailConfigStatus } from "@/lib/invites.functions";
+import { sendTeamInvite, getEmailConfigStatus, linkDoConvite } from "@/lib/invites.functions";
+import { ConviteLink, ConviteLinkJanela, type ConviteCriado } from "@/components/admin/ConviteLink";
 import { getAgencyInfo, saveAgencyInfo, lookupCep, type AgencyInfo } from "@/lib/agency";
 import { getAgencyBranding, saveAgencyBranding, DEFAULT_BRANDING, type AgencyBranding } from "@/lib/agency";
 import type { LibraryItem } from "@/lib/types";
@@ -109,6 +110,8 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
   const confirm = useConfirm();
   const isAdmin = member?.role === "admin";
   const [inviteOpen, setInviteOpen] = useState(false);
+  // Link de um convite pendente (botão "Link" ou reenvio sem e-mail).
+  const [linkAberto, setLinkAberto] = useState<ConviteCriado | null>(null);
 
   const teamQ = useQuery({ queryKey: ["team"], queryFn: fetchTeamMembers });
   const team = teamQ.data ?? [];
@@ -131,16 +134,28 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         data: { ...m, appUrl: window.location.origin },
       }),
     onSuccess: (res) => {
-      if (res.ok) toast.success(res.emailSent ? "Convite reenviado por e-mail!" : res.message);
-      else toast.error(res.message || "Erro ao reenviar convite.");
+      if (!res.ok) return toast.error(res.message || "Erro ao reenviar convite.");
+      if (res.emailSent) toast.success("Convite reenviado por e-mail!");
+      else if ("inviteUrl" in res && res.inviteUrl) setLinkAberto({ ...res, emailSent: false });
+      else toast.success(res.message);
+      qc.invalidateQueries({ queryKey: ["team"] });
     },
     onError: () => toast.error("Erro ao reenviar convite."),
+  });
+
+  const verLink = useMutation({
+    mutationFn: (memberId: string) => linkDoConvite({ data: { memberId, appUrl: window.location.origin } }),
+    onSuccess: (res) => {
+      if (res.ok) setLinkAberto(res);
+      else toast.error(res.message);
+    },
+    onError: () => toast.error("Não foi possível pegar o link do convite."),
   });
 
   async function handleResendInvite(m: { name: string; email?: string | null; role: string }) {
     const ok = await confirm({
       title: "Reenviar convite?",
-      description: `Enviar novamente o convite pendente para ${m.email || "este usuário"}?`,
+      description: `Enviar novamente o convite pendente para ${m.email || "este usuário"}? Um link novo é gerado e o anterior deixa de valer.`,
       confirmLabel: "Reenviar",
       cancelLabel: "Cancelar",
     });
@@ -289,6 +304,22 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
                   </select>
                 ) : (
                   <span className="text-xs capitalize text-muted-foreground">{m.role}</span>
+                )}
+                {isAdmin && m.status === "pending" && (
+                  <button
+                    type="button"
+                    title="Copiar ou enviar o link do convite"
+                    disabled={verLink.isPending}
+                    onClick={() => verLink.mutate(m.id)}
+                    className="flex items-center gap-1 rounded-lg border border-input px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+                  >
+                    {verLink.isPending && verLink.variables === m.id ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Link2 className="h-3.5 w-3.5" />
+                    )}
+                    Link
+                  </button>
                 )}
                 {isAdmin && m.status === "pending" && (
                   <button
@@ -520,13 +551,14 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
 
       {inviteOpen && (
         <InviteModal
-          onClose={() => setInviteOpen(false)}
-          onInvited={() => {
+          onClose={() => {
             setInviteOpen(false);
             qc.invalidateQueries({ queryKey: ["team"] });
           }}
+          onInvited={() => qc.invalidateQueries({ queryKey: ["team"] })}
         />
       )}
+      {linkAberto && <ConviteLinkJanela convite={linkAberto} onClose={() => setLinkAberto(null)} />}
     </div>
   );
 }
@@ -727,6 +759,8 @@ function AgencyCard() {
 function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: () => void }) {
   const [form, setForm] = useState({ name: "", email: "", role: "consultor" });
   const [saving, setSaving] = useState(false);
+  // Depois de criado, o modal mostra o link do convite em vez do formulário.
+  const [criado, setCriado] = useState<ConviteCriado | null>(null);
 
   const emailQ = useQuery({ queryKey: ["email-config"], queryFn: () => getEmailConfigStatus() });
   const emailReady = emailQ.data?.configured === true;
@@ -734,20 +768,27 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!emailReady) return;
     setSaving(true);
-    // O link do convite aponta para o mesmo endereço em que o admin está usando o app.
-    const appUrl = window.location.origin;
-    const res = await sendTeamInvite({
-      data: { ...form, appUrl },
-    });
-
-    setSaving(false);
-    if (res.ok) {
+    try {
+      // O link do convite aponta para o mesmo endereço em que o admin está usando o app.
+      const res = await sendTeamInvite({
+        data: { ...form, appUrl: window.location.origin, enviarEmail: emailReady },
+      });
+      if (!res.ok) return void toast.error(res.message || "Erro ao convidar membro.");
       dispatchWebhook("member.invited", { ...form });
-      toast.success(res.emailSent ? "Convite enviado por e-mail!" : res.message);
       onInvited();
-    } else toast.error(res.message || "Erro ao convidar membro.");
+      if ("inviteUrl" in res && res.inviteUrl) {
+        setCriado({ ...res, emailSent: res.emailSent });
+        if (emailReady && !res.emailSent) toast.warning(res.message);
+      } else {
+        toast.success(res.message);
+        onClose();
+      }
+    } catch {
+      toast.error("Erro ao convidar membro.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -757,86 +798,105 @@ function InviteModal({ onClose, onInvited }: { onClose: () => void; onInvited: (
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
-              <UserPlus className="h-5 w-5" />
+              {criado ? <Check className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
             </span>
-            <h2 className="text-lg font-bold">Convidar Membro</h2>
+            <h2 className="text-lg font-bold">{criado ? "Convite criado" : "Convidar Membro"}</h2>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} aria-label="Fechar" className="text-muted-foreground hover:text-foreground">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {emailChecking ? (
-          <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
-            Verificando configuração de e-mail…
-          </div>
-        ) : emailReady ? (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-600 dark:text-emerald-400">
-            <Mail className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>Envio de e-mail ativo. O convite será enviado automaticamente.</span>
-          </div>
+        {criado ? (
+          <>
+            <ConviteLink convite={criado} />
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCriado(null);
+                  setForm({ name: "", email: "", role: form.role });
+                }}
+                className="rounded-lg border border-input py-2.5 text-sm font-semibold hover:bg-muted"
+              >
+                Convidar outra pessoa
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
+                Concluir
+              </button>
+            </div>
+          </>
         ) : (
-          <div className="mb-4 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2.5 text-sm text-destructive">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span>
-              O envio de e-mails não está configurado. Conecte o Gmail nas configurações do sistema
-              antes de convidar membros.
-            </span>
-          </div>
+          <>
+            {emailChecking ? (
+              <div className="mb-4 flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                Verificando configuração de e-mail…
+              </div>
+            ) : emailReady ? (
+              <div className="mb-4 flex items-start gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-600 dark:text-emerald-400">
+                <Mail className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>O convite vai por e-mail, e você também recebe o link para mandar pelo WhatsApp.</span>
+              </div>
+            ) : (
+              <div className="mb-4 flex items-start gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+                <Link2 className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  O envio de e-mail não está configurado. Sem problema: ao criar o convite, você recebe um link para
+                  mandar pelo WhatsApp ou como preferir.
+                </span>
+              </div>
+            )}
+
+            <form onSubmit={submit} className="space-y-3">
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium">Nome</span>
+                <input
+                  required
+                  value={form.name}
+                  onChange={(e) => setForm({ ...form, name: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium">E-mail</span>
+                <input
+                  required
+                  type="email"
+                  value={form.email}
+                  onChange={(e) => setForm({ ...form, email: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                />
+                <span className="mt-1 block text-xs text-muted-foreground">
+                  A pessoa vai criar a conta com este e-mail.
+                </span>
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-sm font-medium">Cargo</span>
+                <select
+                  value={form.role}
+                  onChange={(e) => setForm({ ...form, role: e.target.value })}
+                  className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm capitalize outline-none focus:border-primary"
+                >
+                  {ROLES.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="submit"
+                disabled={saving || emailChecking}
+                className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
+              >
+                {saving ? "Criando convite…" : emailReady ? "Enviar convite" : "Criar convite"}
+              </button>
+            </form>
+          </>
         )}
-
-        <button
-          type="button"
-          onClick={() => emailQ.refetch()}
-          disabled={emailQ.isFetching}
-          className="mb-4 flex w-full items-center justify-center gap-2 rounded-lg border border-input bg-background py-2 text-sm font-medium text-muted-foreground hover:bg-muted disabled:opacity-60"
-        >
-          <RefreshCw className={`h-4 w-4 ${emailQ.isFetching ? "animate-spin" : ""}`} />
-          Atualizar conexão de e-mail
-        </button>
-
-
-        <form onSubmit={submit} className="space-y-3">
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium">Nome</span>
-            <input
-              required
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium">E-mail</span>
-            <input
-              required
-              type="email"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-sm font-medium">Cargo</span>
-            <select
-              value={form.role}
-              onChange={(e) => setForm({ ...form, role: e.target.value })}
-              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm capitalize outline-none focus:border-primary"
-            >
-              {ROLES.map((r) => (
-                <option key={r} value={r}>{r}</option>
-              ))}
-            </select>
-          </label>
-          <button
-            type="submit"
-            disabled={saving || !emailReady}
-            className="w-full rounded-lg bg-primary py-2.5 font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
-          >
-            {saving ? "Salvando…" : !emailReady ? "E-mail não configurado" : "Adicionar"}
-          </button>
-        </form>
       </div>
     </div>
   );

@@ -18,7 +18,11 @@ function ProtectedLayout() {
 
   useEffect(() => {
     if (!loading && !session) {
-      navigate({ to: "/auth", replace: true });
+      // Quem chega pelo endereço principal sem estar logado vê a página de apresentação
+      // (que tem "Entrar" e "Criar conta"). Links internos (/leads, /clientes…) vão
+      // direto para o login, porque quem os abre já é da equipe.
+      if (window.location.pathname === "/") window.location.replace("/conheca.html");
+      else navigate({ to: "/auth", replace: true });
     }
   }, [loading, session, navigate]);
 

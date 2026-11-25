@@ -7,6 +7,9 @@ import { appwriteAuthService } from "@/services/appwriteAuthService";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  // ?mode=signup abre direto no cadastro (vindo da página /conheca).
+  validateSearch: (search: Record<string, unknown>): { mode?: string } =>
+    typeof search.mode === "string" ? { mode: search.mode } : {},
   head: () => ({
     meta: [
       { title: `Entrar — ${PRODUCT.name}` },
@@ -47,6 +50,7 @@ function AuthPage() {
       setRecovery({ userId, secret });
       setMode("reset");
     }
+    if (params.get("mode") === "signup") setMode("signup");
     if (params.get("error") === "oauth_failed") {
       setError("Não foi possível entrar com o Google. Tente novamente.");
     }
@@ -101,7 +105,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-[28px] border border-border bg-card p-8 shadow-xl">
         <div className="mb-8 flex items-center gap-3">
-          <BrandLogo heightClass="h-11" nameClass="text-xl" />
+          <BrandLogo heightClass="h-10" nameClass="text-[30px]" />
         </div>
 
         <h1 className="text-2xl font-bold">
@@ -244,6 +248,11 @@ function AuthPage() {
           </button>
         </p>
         <p className="mt-4 text-center text-xs text-muted-foreground">
+          <a href="/conheca.html" className="font-medium text-primary hover:underline">
+            Conheça o sistema e teste a demonstração
+          </a>
+        </p>
+        <p className="mt-2 text-center text-xs text-muted-foreground">
           <Link to="/intake" className="hover:underline">
             Formulário público de captação →
           </Link>

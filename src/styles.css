@@ -228,6 +228,25 @@
   }
 }
 
+/* Nome do produto no logo: "MapaPRO" em degradê na cor principal. */
+.mapapro-wordmark {
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  padding-top: 0.08em; /* League Spartan senta alto; centraliza com o símbolo */
+  color: transparent;
+  background-image: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--brand) 70%, #fff) 0%,
+    var(--brand) 48%,
+    color-mix(in srgb, var(--brand) 76%, #000) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  white-space: nowrap;
+}
+
 @utility scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: color-mix(in oklch, var(--color-muted-foreground) 35%, transparent) transparent;
