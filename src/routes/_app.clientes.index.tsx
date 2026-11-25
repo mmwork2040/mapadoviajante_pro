@@ -903,7 +903,7 @@ export function ClientFormDrawer({
             <Section icon={Sparkles} title="Preferências">
               <div className="sm:col-span-2 space-y-5">
                 <p className="text-xs text-muted-foreground">
-                  Preferências copiadas automaticamente para cada nova viagem. Clique nas sugestões
+                  Preferências do viajante, para consultar ao montar cada viagem. Clique nas sugestões
                   ou digite a sua própria.
                 </p>
 

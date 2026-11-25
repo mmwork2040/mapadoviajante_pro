@@ -58,6 +58,7 @@ function ProfilePage() {
   const [color, setColor] = useState(member?.avatar_color ?? "#ff7a1a");
   const [savingProfile, setSavingProfile] = useState(false);
 
+  const [currentPw, setCurrentPw] = useState("");
   const [pw, setPw] = useState("");
   const [pw2, setPw2] = useState("");
   const [savingPw, setSavingPw] = useState(false);
@@ -75,12 +76,13 @@ function ProfilePage() {
 
   async function savePassword(e: React.FormEvent) {
     e.preventDefault();
-    if (pw.length < 6) return toast.error("A senha deve ter ao menos 6 caracteres.");
+    if (pw.length < 8) return toast.error("A senha deve ter ao menos 8 caracteres.");
     if (pw !== pw2) return toast.error("As senhas não coincidem.");
     setSavingPw(true);
-    const res = await updateMyPassword(pw);
+    const res = await updateMyPassword(pw, currentPw || undefined);
     setSavingPw(false);
     if (!res.ok) return toast.error(res.error || "Não foi possível alterar a senha.");
+    setCurrentPw("");
     setPw("");
     setPw2("");
     toast.success("Senha alterada com sucesso.");
@@ -161,7 +163,21 @@ function ProfilePage() {
       <CollapsibleCard icon={Lock} title="Alterar senha" subtitle="Escolha uma nova senha de acesso.">
         <form onSubmit={savePassword} className="space-y-4">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium">Nova senha</span>
+            <span className="mb-1 block text-sm font-medium">Senha atual</span>
+            <input
+              type="password"
+              value={currentPw}
+              onChange={(e) => setCurrentPw(e.target.value)}
+              autoComplete="current-password"
+              className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            />
+            <span className="mt-1 block text-xs text-muted-foreground">
+              Deixe em branco se você sempre entrou pelo Google e ainda não tem senha.
+            </span>
+          </label>
+
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium">Nova senha (mínimo de 8 caracteres)</span>
             <input
               type="password"
               value={pw}

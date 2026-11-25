@@ -32,6 +32,16 @@ const tables = () => db as unknown as {
   from: (t: string) => ReturnType<typeof db.from>;
 };
 
+// A coleção `crm_lead_documents` ainda não existe em todo projeto Appwrite.
+// Sem ela, as listas ficam vazias (em vez de derrubar a tela) e o envio explica
+// o motivo.
+function missingCollection(error: unknown): boolean {
+  const e = error as { code?: number; type?: string } | null;
+  return e?.type === "collection_not_found";
+}
+const MISSING_COLLECTION_MESSAGE =
+  "O armazenamento de documentos ainda não foi criado no Appwrite. Peça ao administrador para criar a coleção de documentos.";
+
 function sanitize(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120);
 }
@@ -84,7 +94,7 @@ export async function uploadLeadDocument(params: {
     // rollback the uploaded file to avoid orphans
     await db.storage.from(BUCKET).remove([path]);
     console.error("insert doc", error);
-    throw new Error("Não foi possível salvar o documento.");
+    throw new Error(missingCollection(error) ? MISSING_COLLECTION_MESSAGE : "Não foi possível salvar o documento.");
   }
   return data as unknown as LeadDocument;
 }
@@ -127,7 +137,7 @@ export async function attachLibraryDocumentToActivity(params: {
   if (error) {
     await db.storage.from(BUCKET).remove([path]);
     console.error("insert linked doc", error);
-    throw new Error("Não foi possível anexar o documento.");
+    throw new Error(missingCollection(error) ? MISSING_COLLECTION_MESSAGE : "Não foi possível anexar o documento.");
   }
   return data as unknown as LeadDocument;
 }
@@ -393,6 +403,7 @@ export async function fetchAgencyDocuments(): Promise<AgencyDocument[]> {
     .select("*, lead:crm_leads(name), itinerary:crm_itineraries(title)")
     .eq("agency_id", agencyId)
     .order("created_at", { ascending: false });
+  if (error && missingCollection(error)) return [];
   if (error) {
     console.error("fetchAgencyDocuments", error);
     // Throw instead of returning [] so React Query keeps previous data and

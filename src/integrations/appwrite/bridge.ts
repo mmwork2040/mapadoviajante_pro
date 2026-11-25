@@ -311,6 +311,50 @@ class AppwriteQueryBuilder {
     return this;
   }
 
+  // Filtro genérico. Aceita caminho dentro de um campo JSON guardado como texto
+  // (ex.: "checklists->>templateId"), conferido depois de ler os registros.
+  filter(column: string, operator: string, value: any) {
+    if (!column.includes('->')) {
+      if (operator === 'eq') return this.eq(column, value);
+      if (operator === 'neq') return this.neq(column, value);
+      if (operator === 'gte') return this.gte(column, value);
+      if (operator === 'lte') return this.lte(column, value);
+      if (operator === 'gt') return this.gt(column, value);
+      if (operator === 'lt') return this.lt(column, value);
+      if (operator === 'like') return this.like(column, value);
+      if (operator === 'ilike') return this.ilike(column, value);
+      if (operator === 'is') return this.is(column, value);
+      if (operator === 'in') return this.in(column, value);
+    }
+    const [root, ...path] = column.split(/->>?/);
+    const read = (doc: any) => {
+      let current = doc[root];
+      if (typeof current === 'string') {
+        try {
+          current = JSON.parse(current);
+        } catch {
+          return undefined;
+        }
+      }
+      for (const key of path) {
+        if (current === null || typeof current !== 'object') return undefined;
+        current = current[key];
+      }
+      return current;
+    };
+    this.localFilters.push((doc) => {
+      const found = read(doc);
+      if (operator === 'eq') return found !== undefined && found !== null && String(found) === String(value);
+      if (operator === 'neq') return String(found ?? '') !== String(value);
+      if (operator === 'is') return value === null ? found === null || found === undefined : found === value;
+      if (operator === 'like') return matchesLike(found, String(value), false);
+      if (operator === 'ilike') return matchesLike(found, String(value), true);
+      if (operator === 'in') return Array.isArray(value) && value.map(String).includes(String(found));
+      return false;
+    });
+    return this;
+  }
+
   gte(column: string, value: any) {
     const col = column === 'id' ? '$id' : column;
     this.queries.push(Query.greaterThanEqual(col, value));
@@ -674,15 +718,20 @@ class AppwriteAuthBridge {
     return { error: null };
   }
 
-  async updateUser({ password }: { password?: string }) {
+  async updateUser({ password, oldPassword }: { password?: string; oldPassword?: string }) {
     try {
       if (password) {
-        await account.updatePassword(password);
+        // Conta com senha exige a senha atual; conta que só entra pelo Google, não.
+        await account.updatePassword(password, oldPassword || undefined);
       }
       const user = await appwriteAuthService.getCurrentUser();
       return { data: { user }, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      const wrongPassword = err?.type === 'user_invalid_credentials' || err?.code === 401;
+      return {
+        data: null,
+        error: { message: wrongPassword ? 'Senha atual incorreta.' : err.message, type: err?.type },
+      };
     }
   }
 
@@ -948,23 +997,33 @@ export function createAppwriteBridge(svc: BridgeServices) {
             return { data: normalizeDoc(already.documents[0]), error: null };
           }
 
-          const agencyId = ID.unique();
+          // IDs fixos por usuário: se duas abas ou dois aparelhos tentarem criar ao
+          // mesmo tempo, a segunda tentativa esbarra no mesmo ID em vez de criar
+          // outra agência.
+          const agencyId = fileIdFor(`agencia:${userId}`).replace(/^f/, 'a');
+          const memberId = fileIdFor(`membro:${userId}`).replace(/^f/, 'm');
+          const isConflict = (err: any) => err?.code === 409 || err?.type === 'document_already_exists';
           const now = new Date().toISOString();
 
-          await databases.createDocument(
-            APPWRITE_DATABASE_ID,
-            'agencies',
-            agencyId,
-            {
-              name: args._name || `Agência de ${userName}`,
-              slug: args._slug || `agencia-${Date.now().toString(36)}`,
-              email: userEmail,
-              created_at: now,
-              updated_at: now,
-            }
-          );
+          let createdAgency = false;
+          try {
+            await databases.createDocument(
+              APPWRITE_DATABASE_ID,
+              'agencies',
+              agencyId,
+              {
+                name: args._name || `Agência de ${userName}`,
+                slug: args._slug || `agencia-${Date.now().toString(36)}`,
+                email: userEmail,
+                created_at: now,
+                updated_at: now,
+              }
+            );
+            createdAgency = true;
+          } catch (agencyErr) {
+            if (!isConflict(agencyErr)) throw agencyErr;
+          }
 
-          const memberId = ID.unique();
           let member: any;
           try {
             member = await databases.createDocument(
@@ -988,11 +1047,17 @@ export function createAppwriteBridge(svc: BridgeServices) {
               }
             );
           } catch (memberErr) {
-            // Sem o membro, a agência ficaria órfã: desfaz.
-            try {
-              await databases.deleteDocument(APPWRITE_DATABASE_ID, 'agencies', agencyId);
-            } catch {}
-            throw memberErr;
+            if (isConflict(memberErr)) {
+              member = await databases.getDocument(APPWRITE_DATABASE_ID, 'agency_members', memberId);
+            } else {
+              // Sem o membro, a agência recém-criada ficaria órfã: desfaz.
+              if (createdAgency) {
+                try {
+                  await databases.deleteDocument(APPWRITE_DATABASE_ID, 'agencies', agencyId);
+                } catch {}
+              }
+              throw memberErr;
+            }
           }
 
           const memberObj = {

@@ -280,6 +280,8 @@ export const Route = createFileRoute("/api/public/n8n-lead")({
 
               .filter(Boolean)
               .join(" | ") || undefined,
+            // A ficha da viagem lê o ponto de partida em `departure`.
+            departure: s(d.aeroporto_partida) ?? s(d.cidade_mora),
             departure_airport: s(d.aeroporto_partida),
             arrival_airport: s(d.aeroporto_chegada),
             home_city: s(d.cidade_mora),

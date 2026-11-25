@@ -123,6 +123,15 @@ export async function setAgendaMinePref(value: boolean): Promise<boolean> {
   return true;
 }
 
+// Avisa o webhook da agência sem atrasar nem derrubar a ação do usuário. Fica
+// aqui, e não nas telas, para todo caminho que faz a ação disparar o aviso.
+function fireWebhook(event: string, payload: unknown): void {
+  if (typeof window === "undefined") return;
+  void import("@/lib/webhook")
+    .then((m) => m.dispatchWebhook(event as Parameters<typeof m.dispatchWebhook>[0], payload))
+    .catch(() => {});
+}
+
 // Verdadeiro quando a última busca da agência falhou (rede, permissão), o que é
 // diferente de "este usuário não tem agência". Quem cria agência nova confere.
 let _agencyLookupFailed = false;
@@ -345,8 +354,11 @@ export async function updateMyProfile(updates: {
 }
 
 /** Altera a senha do usuário logado. */
-export async function updateMyPassword(newPassword: string): Promise<{ ok: boolean; error?: string }> {
-  const { error } = await db.auth.updateUser({ password: newPassword });
+export async function updateMyPassword(
+  newPassword: string,
+  currentPassword?: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const { error } = await db.auth.updateUser({ password: newPassword, oldPassword: currentPassword });
   if (error) return { ok: false, error: error.message };
   return { ok: true };
 }
@@ -588,6 +600,7 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
     return null;
   }
   const lead = normalizeLead(data as Lead);
+  if (lead && updates.status) fireWebhook("lead.status_changed", { id: leadId, status: updates.status });
   if (lead && !lead.client_id && (updates.name !== undefined || updates.email !== undefined || updates.phone !== undefined)) {
     const clientId = await ensureClientFromLead(lead);
     if (clientId) lead.client_id = clientId;
@@ -640,11 +653,24 @@ async function ensureClientFromLead(lead: Lead): Promise<string | null> {
 }
 
 export async function deleteLead(leadId: string): Promise<boolean> {
+  // O Appwrite não apaga em cascata: os dados ligados à venda saem aqui. Os
+  // roteiros continuam (aparecem como "sem venda vinculada").
+  try {
+    const { fetchLeadDocuments, deleteLeadDocument } = await import("@/lib/lead-documents");
+    for (const doc of await fetchLeadDocuments(leadId)) await deleteLeadDocument(doc);
+  } catch (err) {
+    console.error("deleteLead documentos:", err);
+  }
+  await db.from("crm_lead_activities").delete().eq("lead_id", leadId);
+  await db.from("crm_tasks").delete().eq("lead_id", leadId);
+  await db.from("crm_trip_expenses").delete().eq("lead_id", leadId);
+  await db.from("crm_itineraries").update({ lead_id: null }).eq("lead_id", leadId);
   const { error } = await db.from("crm_leads").delete().eq("id", leadId);
   if (error) {
     console.error("deleteLead:", error);
     return false;
   }
+  fireWebhook("lead.deleted", { id: leadId });
   return true;
 }
 
@@ -999,6 +1025,7 @@ export async function createTask(taskData: Partial<Task>): Promise<Task | null> 
     console.error("createTask:", error);
     return null;
   }
+  fireWebhook("task.created", data);
   return data as Task;
 }
 
@@ -1027,6 +1054,7 @@ export async function updateTask(taskId: string, updates: Partial<Task>): Promis
     return null;
   }
   const task = data as Task;
+  if (updates.completed === true) fireWebhook("task.completed", task);
   // Propaga alterações relevantes para a atividade vinculada (se houver).
   const linkedId = extractLinkedActivityId(task.description);
   if (linkedId) {
@@ -1344,7 +1372,10 @@ export async function resolveDisplayImageUrl(value?: string | null): Promise<str
   // URLs assinadas do bucket expiram (token). Extrai o caminho e re-assina.
   const assetPath = getLibraryAssetPathFromUrl(value);
   if (assetPath) return (await getLibraryAssetUrl(assetPath)) ?? value;
-  if (/^https?:\/\//i.test(value) || value.startsWith("data:")) return value;
+  if (/^https?:\/\//i.test(value) || value.startsWith("data:") || value.startsWith("blob:")) return value;
+  // Só caminho de arquivo vai ao bucket. Um valor como "linear-gradient(...)"
+  // (capa em degradê) não é arquivo.
+  if (/[()\s]/.test(value)) return null;
   return getLibraryAssetUrl(value);
 }
 
@@ -1835,6 +1866,7 @@ export async function createItinerary(d: Partial<Itinerary>): Promise<Itinerary 
     console.error("createItinerary:", error);
     return null;
   }
+  fireWebhook("itinerary.created", data);
   return data as Itinerary;
 }
 
@@ -2523,6 +2555,8 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
 }
 
 export async function deleteClient(id: string): Promise<boolean> {
+  // As viagens do cliente continuam; só perdem o vínculo com o cadastro.
+  await db.from("crm_leads").update({ client_id: null }).eq("client_id", id);
   const { error } = await db.from("crm_clients").delete().eq("id", id);
   if (error) {
     console.error("deleteClient:", error);

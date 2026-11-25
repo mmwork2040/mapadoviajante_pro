@@ -287,6 +287,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       <UserCog className="h-4 w-4" />
                       Meu Perfil
                     </Link>
+                    <Link
+                      to="/biblioteca"
+                      onClick={() => setMobileMenu(false)}
+                      className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
+                    >
+                      <Images className="h-4 w-4" />
+                      Biblioteca
+                    </Link>
                     {showFinance && (
                       <Link
                         to="/financeiro"
@@ -305,6 +313,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                       >
                         <ShieldCheck className="h-4 w-4" />
                         Equipe e configurações
+                      </Link>
+                    )}
+                    {isSuperAdminEmail(session?.user?.email) && (
+                      <Link
+                        to="/plataforma"
+                        onClick={() => setMobileMenu(false)}
+                        className="flex items-center gap-2 px-3 py-2.5 text-sm hover:bg-muted"
+                      >
+                        <Gauge className="h-4 w-4" />
+                        Plataforma
                       </Link>
                     )}
                     <button

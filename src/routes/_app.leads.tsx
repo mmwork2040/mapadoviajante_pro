@@ -26,6 +26,7 @@ import { formatCurrency, maskCurrency, parseCurrency, maskPhone, maskCpfCnpj, ma
 import type { Itinerary, Lead, LeadStatus, AgencyMember } from "@/lib/types";
 import { QueryError } from "@/components/QueryError";
 import { LeadDetailDrawer } from "@/components/LeadDetailDrawer";
+import { useConfirm } from "@/components/ConfirmDialog";
 import { db } from "@/integrations/appwrite/db";
 import {
   AlertDialog,
@@ -75,6 +76,7 @@ function CoverImage({ value, className, alt }: { value: string; className?: stri
 
 function LeadsPage() {
   const qc = useQueryClient();
+  const confirm = useConfirm();
   const { lead: leadParam } = Route.useSearch();
   const navigate = Route.useNavigate();
   const [open, setOpen] = useState(false);
@@ -168,9 +170,6 @@ function LeadsPage() {
       if (ctx?.prev) qc.setQueryData(["leads", { search, archived: showArchived }], ctx.prev);
       toast.error("Não foi possível mover o lead.");
     },
-    onSuccess: (_res, vars) => {
-      dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
-    },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["leads"] });
     },
@@ -209,10 +208,26 @@ function LeadsPage() {
     setOverCol(null);
     setDragId(null);
     const id = e.dataTransfer.getData("text/plain") || dragId;
-    if (id) {
-      const current = leads.find((l) => l.id === id);
-      if (current && current.status !== status) move.mutate({ id, status });
+    if (id) void requestMove(id, status);
+  }
+
+  // Tirar uma viagem de Fechado ou Perdido reabre a negociação: pede
+  // confirmação, como a ficha da viagem já fazia.
+  async function requestMove(id: string, status: LeadStatus) {
+    const current = leads.find((l) => l.id === id);
+    if (!current || current.status === status) return;
+    if (current.status === "closed" || current.status === "lost") {
+      const from = COLUMNS.find((c) => c.key === current.status)?.label ?? current.status;
+      const to = COLUMNS.find((c) => c.key === status)?.label ?? status;
+      const ok = await confirm({
+        title: "Reabrir viagem?",
+        description: `Esta viagem está em "${from}". Ao mover para "${to}", ela volta a ser editável.`,
+        confirmLabel: "Reabrir",
+        cancelLabel: "Cancelar",
+      });
+      if (!ok) return;
     }
+    move.mutate({ id, status });
   }
 
   return (
@@ -334,7 +349,7 @@ function LeadsPage() {
                           setDragId(null);
                           setOverCol(null);
                         }}
-                        onMove={(status) => move.mutate({ id: l.id, status })}
+                        onMove={(status) => void requestMove(l.id, status)}
                         onOpen={() => setDetailId(l.id)}
                         archived={showArchived}
                         onToggleArchive={() =>
