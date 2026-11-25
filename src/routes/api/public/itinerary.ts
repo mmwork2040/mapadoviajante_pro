@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Query } from "appwrite";
+import { publicActivityView } from "@/lib/activity-meta";
 
 type Document = Record<string, unknown> & { $id: string };
 type Page = { documents: Document[]; total: number };
@@ -20,18 +21,15 @@ function config() {
   return { endpoint, project, database, key };
 }
 
-function clean(doc: Document) {
-  const result: Record<string, unknown> = { ...doc, id: doc.$id };
-  for (const field of ["images", "hotel_options", "suggestion_options", "passenger_costs"]) {
-    if (typeof result[field] === "string") {
-      try {
-        result[field] = JSON.parse(result[field] as string);
-      } catch {
-        /* keep original text */
-      }
-    }
-  }
-  return result;
+// O que o cliente pode ver de um dia. O título fica no campo `label`.
+function publicDay(day: Document) {
+  return {
+    id: day.$id,
+    day_number: (day.day_number as number | null) ?? null,
+    date: (day.date as string | null) ?? null,
+    title: ((day.title ?? day.label) as string | null) ?? null,
+    sort_order: (day.sort_order as number | null) ?? 0,
+  };
 }
 
 async function list(
@@ -102,7 +100,8 @@ export const Route = createFileRoute("/api/public/itinerary")({
             end_date: itinerary.end_date,
             passengers: itinerary.passengers,
             status: itinerary.status,
-            cover_image: itinerary.cover_image,
+            // A capa guardada no bucket exige login; só vai se for um endereço público.
+            cover_image: /^https?:\/\//i.test(String(itinerary.cover_image || "")) ? itinerary.cover_image : null,
             days: days
               .sort(
                 (a, b) =>
@@ -110,10 +109,12 @@ export const Route = createFileRoute("/api/public/itinerary")({
                   Number(b.sort_order ?? b.day_number ?? 0),
               )
               .map((day) => ({
-                ...clean(day),
+                ...publicDay(day),
+                // Só o que o cliente vê: sugestões, valores por pessoa, fotos
+                // internas e cotação não saem do servidor.
                 activities: (byDay.get(day.$id) || [])
                   .sort((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
-                  .map(clean),
+                  .map((activity) => publicActivityView(activity)),
               })),
           });
         } catch (error) {

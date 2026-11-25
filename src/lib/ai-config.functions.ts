@@ -91,22 +91,3 @@ export const saveAiConfigFn = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
-
-/** Resolve a chave para testar/extrair: a digitada agora, a salva ou a da plataforma. */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function resolveProviderForAdmin(context: any, typed: { provider?: string; model?: string; apiKey?: string }) {
-  const { platformAi } = await import("@/lib/server/ai-settings");
-  const typedKey = (typed.apiKey || "").trim();
-  if (typedKey && typedKey !== STORED_KEY_MARKER) {
-    return { provider: typed.provider || "openai", model: typed.model || "", apiKey: typedKey };
-  }
-  const platform = platformAi();
-  if (platform) return { provider: "openai", model: platform.model, apiKey: platform.apiKey };
-  const existing = await readAgencyAiConfig(context.db);
-  if (!existing?.api_key_encrypted) throw new Error("Informe a chave da IA.");
-  return {
-    provider: typed.provider || existing.provider || "openai",
-    model: typed.model || existing.model || "",
-    apiKey: existing.api_key_encrypted as string,
-  };
-}

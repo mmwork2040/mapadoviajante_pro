@@ -1,4 +1,5 @@
 import { db } from "@/integrations/appwrite/db";
+import { ACTIVITY_EXTRA_KEYS, decodeActivityRow, encodeActivityColumns } from "@/lib/activity-meta";
 import type {
   AgencyMember,
   AiConfig,
@@ -122,7 +123,15 @@ export async function setAgendaMinePref(value: boolean): Promise<boolean> {
   return true;
 }
 
+// Verdadeiro quando a última busca da agência falhou (rede, permissão), o que é
+// diferente de "este usuário não tem agência". Quem cria agência nova confere.
+let _agencyLookupFailed = false;
+export function agencyLookupFailed(): boolean {
+  return _agencyLookupFailed;
+}
+
 export async function loadAgencyContext(): Promise<AgencyMember | null> {
+  _agencyLookupFailed = false;
   const {
     data: { user },
   } = await db.auth.getUser();
@@ -158,7 +167,12 @@ export async function loadAgencyContext(): Promise<AgencyMember | null> {
     }
   }
 
-  if (error || !members || members.length === 0) return null;
+  if (error) {
+    _agencyLookupFailed = true;
+    console.error("loadAgencyContext:", error);
+    return null;
+  }
+  if (!members || members.length === 0) return null;
   setAgencyContext(members[0] as AgencyMember);
   return members[0] as AgencyMember;
 }
@@ -198,52 +212,11 @@ export async function autoProvisionAgency(
       return member as AgencyMember;
     }
   } catch (rpcErr) {
-    console.warn("autoProvisionAgency RPC fallback:", rpcErr);
+    console.error("autoProvisionAgency:", rpcErr);
   }
-
-  // Fallback direto por consultas ao Appwrite
-  try {
-    const { data: newAgencies, error: agencyErr } = await db
-      .from("agencies")
-      .insert({
-        name: agencyName,
-        slug,
-        email: userEmail,
-      })
-      .select();
-
-    const createdAgency = Array.isArray(newAgencies) ? newAgencies[0] : newAgencies;
-    if (agencyErr || !createdAgency) {
-      console.error("autoProvisionAgency fallback agency error:", agencyErr);
-      return null;
-    }
-
-    const { data: newMembers, error: memberErr } = await db
-      .from("agency_members")
-      .insert({
-        agency_id: createdAgency.id,
-        user_id: userId,
-        name: userName || "Novo Usuário",
-        email: userEmail,
-        role: "admin",
-        status: "active",
-        is_active: true,
-        avatar_color: "#ff7a1a",
-      })
-      .select();
-
-    const createdMember = Array.isArray(newMembers) ? newMembers[0] : newMembers;
-    if (memberErr || !createdMember) {
-      console.error("autoProvisionAgency fallback member error:", memberErr);
-      return null;
-    }
-
-    setAgencyContext(createdMember as AgencyMember);
-    return createdMember as AgencyMember;
-  } catch (fallbackErr) {
-    console.error("autoProvisionAgency fallback error:", fallbackErr);
-    return null;
-  }
+  // Sem segunda tentativa por outro caminho: ela criava uma agência repetida
+  // quando a primeira ficava pela metade.
+  return null;
 }
 
 // ── Team members ───────────────────────────────────────────────
@@ -385,11 +358,21 @@ export async function updateMyPassword(newPassword: string): Promise<{ ok: boole
 // ── Leads ──────────────────────────────────────────────────────
 const CONTACTED_PROFILE_STATUS_KEY = "__crm_status";
 
+// A coleção de vendas não tem campo próprio para os benefícios (milhas,
+// cortesias). Eles ficam guardados dentro do perfil, nesta chave.
+const BENEFITS_PROFILE_KEY = "__benefits";
+// Chaves do perfil que são do sistema: uma edição do formulário não as apaga.
+const RESERVED_PROFILE_KEYS = [CONTACTED_PROFILE_STATUS_KEY, BENEFITS_PROFILE_KEY];
+
 function normalizeLead(lead: Lead): Lead {
+  if (!lead) return lead;
   const profile = (lead.profile || {}) as Record<string, unknown>;
-  return profile[CONTACTED_PROFILE_STATUS_KEY] === "contacted"
-    ? { ...lead, status: "contacted" }
-    : lead;
+  const out: Lead = { ...lead };
+  if (out.benefits == null && profile[BENEFITS_PROFILE_KEY] != null) {
+    out.benefits = profile[BENEFITS_PROFILE_KEY] as Lead["benefits"];
+  }
+  if (profile[CONTACTED_PROFILE_STATUS_KEY] === "contacted") out.status = "contacted";
+  return out;
 }
 
 export async function fetchLeads(filters: {
@@ -534,9 +517,13 @@ export async function createLead(leadData: Partial<Lead>): Promise<Lead | null> 
 }
 
 export async function updateLead(leadId: string, updates: Partial<Lead>): Promise<Lead | null> {
-  const normalizedUpdates = { ...updates } as Partial<Lead>;
+  const { benefits, ...restUpdates } = updates;
+  const normalizedUpdates = { ...restUpdates } as Partial<Lead>;
 
-  if (updates.status && updates.status !== "contacted") {
+  // O perfil guarda também dados do sistema (benefícios, marca de etapa). Toda
+  // gravação que mexe nele parte do que já está gravado.
+  const clearsContacted = Boolean(updates.status && updates.status !== "contacted");
+  if (benefits !== undefined || updates.profile !== undefined || clearsContacted) {
     const { data: current, error: currentError } = await db
       .from("crm_leads")
       .select("profile")
@@ -548,10 +535,16 @@ export async function updateLead(leadId: string, updates: Partial<Lead>): Promis
       return null;
     }
 
-    const profile = { ...((current?.profile || {}) as Record<string, unknown>) };
+    const stored = ((current?.profile || {}) as Record<string, unknown>) || {};
+    const profile: Record<string, unknown> =
+      updates.profile !== undefined ? { ...(updates.profile as Record<string, unknown>) } : { ...stored };
+    for (const key of RESERVED_PROFILE_KEYS) {
+      if (profile[key] === undefined && stored[key] !== undefined) profile[key] = stored[key];
+    }
+    if (benefits !== undefined) profile[BENEFITS_PROFILE_KEY] = benefits;
     // Valor explícito para limpar também registros antigos marcados pelo
     // fallback de status "contacted" no perfil serializado.
-    profile[CONTACTED_PROFILE_STATUS_KEY] = null;
+    if (clearsContacted) profile[CONTACTED_PROFILE_STATUS_KEY] = null;
     normalizedUpdates.profile = profile;
   }
 
@@ -786,13 +779,14 @@ export function extractChecklistItemId(desc?: string | null): string | null {
 
 export async function deleteLeadActivity(id: string): Promise<boolean> {
   try {
-    // Remove a tarefa de agenda vinculada (se houver), limpando tudo referente.
+    // Primeiro a atividade; só depois a tarefa de agenda ligada a ela. Na ordem
+    // inversa, uma falha deixava a atividade sem a tarefa.
+    const { deleteLeadActivityFn } = await import("@/lib/lead-activities.functions");
+    await deleteLeadActivityFn({ data: { id } });
     await db
       .from("crm_tasks")
       .delete()
       .ilike("description", `%${ACTIVITY_TASK_MARK(id)}%`);
-    const { deleteLeadActivityFn } = await import("@/lib/lead-activities.functions");
-    await deleteLeadActivityFn({ data: { id } });
     return true;
   } catch (error) {
     console.error("deleteLeadActivity:", error);
@@ -1859,6 +1853,13 @@ export async function updateItinerary(id: string, updates: Partial<Itinerary>): 
 }
 
 export async function deleteItinerary(id: string): Promise<boolean> {
+  // Os anexos saem junto, para não ficarem órfãos nem travados como "em uso".
+  try {
+    const { deleteItineraryDocuments } = await import("@/lib/lead-documents");
+    await deleteItineraryDocuments(id);
+  } catch (err) {
+    console.error("deleteItinerary documentos:", err);
+  }
   const { data: days } = await db.from("crm_itinerary_days").select("id").eq("itinerary_id", id);
   const dayIds = (days || []).map((d: { id: string }) => d.id);
   if (dayIds.length) await db.from("crm_itinerary_activities").delete().in("day_id", dayIds);
@@ -1894,21 +1895,12 @@ export async function duplicateItinerary(id: string): Promise<Itinerary | null> 
       itinerary_id: copy.id,
       day_number: day.day_number,
       title: day.title,
+      date: day.date ?? null,
       sort_order: day.sort_order,
     });
     if (!newDay) continue;
     for (const a of day.activities || []) {
-      await createItineraryActivity({
-        day_id: newDay.id,
-        title: a.title,
-        type: a.type,
-        time: a.time ?? null,
-        duration: a.duration ?? null,
-        location: a.location ?? null,
-        cost: a.cost ?? null,
-        description: a.description ?? null,
-        sort_order: a.sort_order,
-      });
+      await createItineraryActivity(copyOfActivity(a, newDay.id));
     }
   }
   return copy;
@@ -1960,18 +1952,7 @@ export async function duplicateItineraryDay(
     (a, b) => (a.sort_order ?? 999) - (b.sort_order ?? 999),
   );
   for (const a of activities) {
-    const raw = a as unknown as { time_start?: string | null };
-    await createItineraryActivity({
-      day_id: newDay.id,
-      title: a.title,
-      type: a.type,
-      time: raw.time_start ?? a.time ?? null,
-      duration: a.duration ?? null,
-      location: a.location ?? null,
-      cost: a.cost ?? null,
-      description: a.description ?? null,
-      sort_order: a.sort_order,
-    });
+    await createItineraryActivity(copyOfActivity(a, newDay.id));
   }
   return newDay;
 }
@@ -2019,85 +2000,86 @@ export async function deleteItineraryDay(id: string): Promise<boolean> {
   return !error;
 }
 
-// A coluna `duration` guarda, além da duração textual, um envelope JSON com
-// metadados extras da atividade (moeda, valor convertido e sugestões de
-// hospedagem), já que o schema não possui colunas dedicadas. Estas funções
-// codificam/decodificam esse envelope de forma retrocompatível.
-type ActivityMeta = {
-  dur?: string | null;
-  cur?: string | null;
-  brl?: number | null;
-  rate?: number | null;
-  hotels?: unknown;
-  sug?: unknown;
-  pax?: unknown;
-  imgs?: unknown;
-};
-
-
+// Os dados extras do item (moeda, valor em reais, sugestões, valores por
+// pessoa, fotos, "feito") viajam dentro de `description`. Ver activity-meta.ts.
 function decodeActivityMeta(a: ItineraryActivity): void {
-  const raw = a.duration;
-  if (!raw || typeof raw !== "string" || !raw.trim().startsWith("{")) return;
-  try {
-    const m = JSON.parse(raw) as ActivityMeta;
-    if (m && typeof m === "object" && ("cur" in m || "brl" in m || "hotels" in m || "dur" in m || "pax" in m || "sug" in m || "imgs" in m)) {
-      a.duration = m.dur ?? null;
-      a.currency = m.cur ?? null;
-      a.cost_brl = typeof m.brl === "number" ? m.brl : null;
-      a.cost_brl_rate = typeof m.rate === "number" ? m.rate : null;
-      a.hotel_options = Array.isArray(m.hotels)
-        ? (m.hotels as ItineraryActivity["hotel_options"])
-        : null;
-      a.suggestion_options = Array.isArray(m.sug)
-        ? (m.sug as ItineraryActivity["suggestion_options"])
-        : null;
-      a.passenger_costs = Array.isArray(m.pax)
-        ? (m.pax as ItineraryActivity["passenger_costs"])
-        : null;
-      a.images = Array.isArray(m.imgs)
-        ? (m.imgs as ItineraryActivity["images"])
-        : null;
-    }
-
-  } catch {
-    /* mantém como duração textual legada */
-  }
+  decodeActivityRow(a as unknown as Record<string, unknown>);
 }
 
-// Mapeia o campo de UI `time` para a coluna real `time_start` e empacota os
-// metadados extras dentro de `duration`.
-function mapActivityPayload(data: Partial<ItineraryActivity>): Record<string, unknown> {
-  const { time, currency, cost_brl, cost_brl_rate, hotel_options, suggestion_options, passenger_costs, images, duration, ...rest } = data;
+/** Cópia completa de um item para outro dia (sem o "feito"). */
+function copyOfActivity(source: ItineraryActivity, dayId: string): Partial<ItineraryActivity> {
+  const a = decodeActivityRow({ ...(source as unknown as Record<string, unknown>) }) as unknown as ItineraryActivity & {
+    time_start?: string | null;
+  };
+  return {
+    day_id: dayId,
+    title: a.title,
+    type: a.type,
+    time: a.time ?? a.time_start ?? null,
+    duration: a.duration ?? null,
+    location: a.location ?? null,
+    maps_url: a.maps_url ?? null,
+    cost: a.cost ?? null,
+    description: a.description ?? null,
+    currency: a.currency ?? null,
+    cost_brl: a.cost_brl ?? null,
+    cost_brl_rate: a.cost_brl_rate ?? null,
+    hotel_options: a.hotel_options ?? null,
+    suggestion_options: a.suggestion_options ?? null,
+    passenger_costs: a.passenger_costs ?? null,
+    images: a.images ?? null,
+    sort_order: a.sort_order,
+  };
+}
+
+// Monta o que vai para a coleção. `current` é o item como está gravado (já
+// lido), necessário numa edição parcial para não apagar os dados extras.
+function mapActivityPayload(
+  data: Partial<ItineraryActivity>,
+  current?: ItineraryActivity | null,
+): Record<string, unknown> {
+  const { time, currency, cost_brl, cost_brl_rate, hotel_options, suggestion_options, passenger_costs, images, duration, description, done, ...rest } = data;
   const payload: Record<string, unknown> = { ...rest };
   if (time !== undefined) payload.time_start = time;
 
-  const hasMeta =
-    currency !== undefined || cost_brl !== undefined || cost_brl_rate !== undefined || hotel_options !== undefined || suggestion_options !== undefined || passenger_costs !== undefined || images !== undefined;
-  if (hasMeta) {
-    payload.duration = JSON.stringify({
-      dur: duration ?? null,
-      cur: currency ?? null,
-      brl: cost_brl ?? null,
-      rate: cost_brl_rate ?? null,
-      hotels: hotel_options ?? null,
-      sug: suggestion_options ?? null,
-      pax: passenger_costs ?? null,
-      imgs: images ?? null,
-    });
-
-  } else if (duration !== undefined) {
-    payload.duration = duration;
+  const extras = { currency, cost_brl, cost_brl_rate, hotel_options, suggestion_options, passenger_costs, images, duration, description, done };
+  const changed = Object.entries(extras).filter(([, v]) => v !== undefined);
+  if (changed.length > 0 || !current) {
+    const merged = { ...(current ?? {}), ...Object.fromEntries(changed) } as ItineraryActivity;
+    Object.assign(payload, encodeActivityColumns(merged));
+  }
+  // Item antigo marcado como feito guardava "done" no lugar do tipo.
+  if (current && (current as { _legacyDone?: boolean })._legacyDone && payload.type === undefined) {
+    payload.type = "activity";
   }
   return payload;
+}
+
+async function readActivity(id: string): Promise<ItineraryActivity | null> {
+  const { data } = await db.from("crm_itinerary_activities").select("*").eq("id", id).maybeSingle();
+  if (!data) return null;
+  const legacyDone = (data as { type?: string }).type === "done";
+  const item = decodeActivityRow(data as Record<string, unknown>) as unknown as ItineraryActivity & {
+    _legacyDone?: boolean;
+  };
+  item._legacyDone = legacyDone;
+  return item;
 }
 
 export async function updateItineraryActivity(
   id: string,
   updates: Partial<ItineraryActivity>,
 ): Promise<ItineraryActivity | null> {
+  // Edição parcial de dado extra precisa do que já está gravado.
+  const touchesExtras = ACTIVITY_EXTRA_KEYS.some((k) => (updates as Record<string, unknown>)[k] !== undefined);
+  const current = touchesExtras ? await readActivity(id) : null;
+  if (touchesExtras && !current) {
+    console.error("updateItineraryActivity: item não encontrado", id);
+    return null;
+  }
   const { data, error } = await db
     .from("crm_itinerary_activities")
-    .update(mapActivityPayload(updates))
+    .update(mapActivityPayload(updates, current ?? ({} as ItineraryActivity)))
     .eq("id", id)
     .select()
     .maybeSingle();
@@ -2105,7 +2087,7 @@ export async function updateItineraryActivity(
     console.error("updateItineraryActivity:", error);
     return null;
   }
-  return data as ItineraryActivity;
+  return data ? (decodeActivityRow(data as Record<string, unknown>) as unknown as ItineraryActivity) : null;
 }
 
 export async function createItineraryActivity(
@@ -2121,9 +2103,8 @@ export async function createItineraryActivity(
     throw new Error(error.message || "Erro ao salvar atividade.");
   }
 
-  return data as ItineraryActivity;
+  return decodeActivityRow(data as Record<string, unknown>) as unknown as ItineraryActivity;
 }
-
 
 export async function deleteItineraryActivity(id: string): Promise<boolean> {
   const { error } = await db.from("crm_itinerary_activities").delete().eq("id", id);

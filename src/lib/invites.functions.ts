@@ -82,6 +82,42 @@ function inviteHtml(opts: { name: string; agency: string; inviter: string; link:
 }
 
 /** Envia um convite por e-mail para um novo membro da agência. */
+/**
+ * Dados de um convite a partir do código do link. Pública: quem abre o link
+ * ainda não tem conta. Devolve só o necessário para a tela (e-mail, nome e
+ * agência) e só de convites ainda pendentes.
+ */
+export const getInviteInfoFn = createServerFn({ method: "POST" })
+  .inputValidator((data) => z.object({ token: z.string().trim().min(8).max(255) }).parse(data))
+  .handler(async ({ data }) => {
+    const invalid = { valid: false, email: null, name: null, agency_name: null } as {
+      valid: boolean;
+      email: string | null;
+      name: string | null;
+      agency_name: string | null;
+    };
+    const { appwriteServerConfig, getServerBridge } = await import("@/integrations/appwrite/server");
+    if (!appwriteServerConfig().key) {
+      console.error("[convite] APPWRITE_API_KEY não configurada: não é possível ler o convite.");
+      return invalid;
+    }
+    const dbAdmin = getServerBridge() as any;
+    const { data: rows, error } = await dbAdmin
+      .from("agency_members")
+      .select("*")
+      .eq("invite_token", data.token)
+      .limit(1);
+    const row = !error && Array.isArray(rows) ? rows[0] : null;
+    if (!row || row.status !== "pending") return invalid;
+    const { data: agency } = await dbAdmin.from("agencies").select("name").eq("id", row.agency_id).maybeSingle();
+    return {
+      valid: true,
+      email: (row.email as string | null) ?? null,
+      name: (row.name as string | null) ?? null,
+      agency_name: (agency?.name as string | null) ?? null,
+    };
+  });
+
 export const sendTeamInvite = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((data) =>

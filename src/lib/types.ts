@@ -268,6 +268,8 @@ export interface ItineraryActivity {
   duration?: string | null;
   maps_url?: string | null;
   sort_order?: number;
+  /** Item marcado como feito. */
+  done?: boolean | null;
 }
 
 export interface ActivityImage {

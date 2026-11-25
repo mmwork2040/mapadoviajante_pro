@@ -3,14 +3,15 @@ import { z } from "zod";
 import { requireAuth } from "@/integrations/appwrite/auth-middleware";
 
 /**
- * Exclui uma atividade de lead usando a sessão autenticada do usuário.
- * A política de RLS no banco restringe a remoção à própria agência.
+ * Exclui uma atividade da viagem. O cliente de dados do servidor já vem
+ * limitado à agência do usuário, então só remove atividade da própria agência.
  */
 export const deleteLeadActivityFn = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator((data) => z.object({ id: z.string().uuid() }).parse(data))
+  // O ID pode ser um UUID (registros migrados) ou o ID curto do Appwrite.
+  .inputValidator((data) => z.object({ id: z.string().trim().regex(/^[A-Za-z0-9._-]{1,36}$/) }).parse(data))
   .handler(async ({ data, context }) => {
-    // Confirma que a atividade é visível para o usuário (mesma agência via RLS).
+    // Confirma que a atividade é da agência do usuário.
     const { data: row, error: selErr } = await context.db
       .from("crm_lead_activities")
       .select("id")

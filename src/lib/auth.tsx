@@ -3,12 +3,14 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import { db } from "@/integrations/appwrite/db";
 import { appwriteAuthService } from "@/services/appwriteAuthService";
 import {
+  agencyLookupFailed,
   autoProvisionAgency,
   loadAgencyContext,
   setAgencyContext,
@@ -63,42 +65,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Uma carga por vez. A sessão inicial chega por dois caminhos quase juntos;
+  // sem esta trava, as duas cargas criavam uma agência cada.
+  const hydrating = useRef<{ userId: string; run: Promise<void> } | null>(null);
+
   const hydrateMember = useCallback(async (sess: Session | null) => {
     if (!sess) {
+      hydrating.current = null;
       setAgencyContext(null);
       setMember(null);
       setPendingInvite(null);
       return;
     }
-    let m = await loadAgencyContext();
+    const userId = sess.user.id;
+    if (hydrating.current?.userId === userId) return hydrating.current.run;
 
-    // 1) Convite via link (token guardado pela página /aceitar-convite)
-    if (!m && typeof window !== "undefined") {
-      const token = sessionStorage.getItem("invite_token");
-      if (token) {
-        await acceptInvite(token);
-        sessionStorage.removeItem("invite_token");
-        m = await loadAgencyContext();
+    const run = (async () => {
+      let m = await loadAgencyContext();
+
+      // 1) Convite via link (token guardado pela página /aceitar-convite)
+      if (!m && !agencyLookupFailed() && typeof window !== "undefined") {
+        const token = sessionStorage.getItem("invite_token");
+        if (token) {
+          await acceptInvite(token);
+          sessionStorage.removeItem("invite_token");
+          m = await loadAgencyContext();
+        }
       }
-    }
 
-    // 2) Existe convite pendente para este e-mail? Não provisiona nova agência.
-    if (!m) {
-      const invite = await getMyPendingInvite();
-      if (invite) {
-        setPendingInvite(invite);
-        setMember(null);
-        return;
+      // 2) Existe convite pendente para este e-mail? Não provisiona nova agência.
+      let lookupOk = !agencyLookupFailed();
+      if (!m && lookupOk) {
+        try {
+          const invite = await getMyPendingInvite();
+          if (invite) {
+            setPendingInvite(invite);
+            setMember(null);
+            return;
+          }
+        } catch (err) {
+          console.error("[auth] não foi possível conferir convites:", err);
+          lookupOk = false;
+        }
       }
-    }
 
-    // 3) Usuário novo, sem convite → provisiona a própria agência.
-    if (!m && sess?.user) {
-      const meta = sess.user.user_metadata as { name?: string } | undefined;
-      m = await autoProvisionAgency(sess.user.id, meta?.name || sess.user.email || "Novo Usuário", sess.user.email || "");
+      // 3) Usuário novo, sem convite → provisiona a própria agência. Só quando as
+      //    consultas acima deram certo: uma falha de rede não pode virar agência nova.
+      if (!m && lookupOk && sess.user) {
+        const meta = sess.user.user_metadata as { name?: string } | undefined;
+        m = await autoProvisionAgency(userId, meta?.name || sess.user.email || "Novo Usuário", sess.user.email || "");
+      }
+      setPendingInvite(null);
+      setMember(m);
+    })();
+
+    hydrating.current = { userId, run };
+    try {
+      await run;
+    } finally {
+      if (hydrating.current?.run === run) hydrating.current = null;
     }
-    setPendingInvite(null);
-    setMember(m);
   }, []);
 
   useEffect(() => {

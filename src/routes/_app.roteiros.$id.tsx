@@ -2299,7 +2299,7 @@ function ActivityRow({
   const qc = useQueryClient();
   const confirm = useConfirm();
 
-  const done = activity.type === "done";
+  const done = activity.done === true;
 
   const [editing, setEditing] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -2658,7 +2658,7 @@ function ActivityRow({
     setETime(activity.time || "");
     setELocation(activity.location || "");
     setEDescription(activity.description || "");
-    setEType(done ? "activity" : activity.type || "activity");
+    setEType(activity.type || "activity");
     setECost(activity.cost != null ? maskAmount(String(Math.round((activity.cost || 0) * 100))) : "");
     setECurrency(activity.currency || "BRL");
     setECostBrl(activity.cost_brl ?? null);
@@ -2850,7 +2850,7 @@ function ActivityRow({
   }
 
   async function toggleDone() {
-    await updateItineraryActivity(activity.id, { type: done ? null : "done" });
+    await updateItineraryActivity(activity.id, { done: !done });
     onChange();
   }
 
