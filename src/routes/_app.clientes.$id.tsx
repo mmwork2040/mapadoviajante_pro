@@ -1317,7 +1317,7 @@ function DatasTab({ client, onEdit }: { client: Client; onEdit: () => void }) {
       <EmptyState
         icon={CalendarClock}
         title="Nenhuma data importante"
-        description="Cadastre data de nascimento e validade do passaporte para receber lembretes."
+        description="Cadastre a data de nascimento e a validade do passaporte para consultar aqui."
         actionLabel="Editar cadastro"
         onAction={onEdit}
       />

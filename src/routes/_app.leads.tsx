@@ -182,9 +182,7 @@ function LeadsPage() {
       if (ctx?.prev) qc.setQueryData(["leads", { search, archived: showArchived }], ctx.prev);
       toast.error("Não foi possível mudar a etapa.");
     },
-    onSuccess: (_res, vars) => {
-      dispatchWebhook("lead.status_changed", { id: vars.id, status: vars.status });
-    },
+    // O aviso de webhook da mudança de etapa sai da camada de serviço (updateLead).
     onSettled: (_r, _e, vars) => {
       qc.invalidateQueries({ queryKey: ["leads"] });
       qc.invalidateQueries({ queryKey: ["lead", vars.id] });
@@ -255,7 +253,6 @@ function LeadsPage() {
     onSuccess: (_r, { v }) => {
       setPerdendo(null);
       toast(`${v.name}: marcada como perdida`);
-      dispatchWebhook("lead.status_changed", { id: v.id, status: "lost" });
       qc.invalidateQueries({ queryKey: ["leads"] });
       qc.invalidateQueries({ queryKey: ["lead", v.id] });
     },

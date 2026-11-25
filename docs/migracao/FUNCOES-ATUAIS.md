@@ -399,7 +399,7 @@ A ficha da venda está na seção 4.
 
 ## 17. O que estava quebrado e como ficou
 
-Levantado na leitura do código e conferido contra o inventário real do Appwrite (25/11/2026). Os itens "Corrigido" foram testados num ambiente que lê os dados reais e simula as gravações, conferindo cada uma contra os campos reais das coleções. **Falta o teste com login de verdade na prévia da Vercel.**
+Levantado na leitura do código e conferido contra o inventário real do Appwrite (25/11/2026). As correções foram reaplicadas sobre a `main`, que recebeu em paralelo o design system, as telas novas e a separação por agência. Os itens "Corrigido" foram testados num ambiente que lê os dados reais e simula as gravações, conferindo cada uma contra os campos reais das coleções. **Falta o teste com login de verdade na prévia da Vercel.**
 
 | # | Problema | Efeito para quem usava | Situação |
 |---|---|---|---|
@@ -409,8 +409,8 @@ Levantado na leitura do código e conferido contra o inventário real do Appwrit
 | 4 | Dados extras do item do roteiro iam num campo de 50 caracteres | Salvar um item com moeda, valor em reais, sugestões, valores por pessoa ou fotos era recusado | **Corrigido** |
 | 5 | Marcar item como feito trocava o tipo do item | O item perdia o ícone; voo e hotel marcados sumiam do roteiro do cliente | **Corrigido** |
 | 6 | Benefícios da venda eram gravados num campo que a coleção não tem | A aba Benefícios não salvava | **Corrigido** (ficam dentro do perfil) |
-| 7 | Convite de equipe chamava três operações que não existiam | O convite aparecia como inválido, e quem entrava ganhava uma agência nova | **Corrigido** e testado de ponta a ponta |
-| 8 | A carga do usuário rodava duas vezes e havia dois caminhos para criar agência | Agências e membros repetidos (8 agências para 5 usuários) | **Corrigido**. Os repetidos que já existem ficam para a migração |
+| 7 | Convite de equipe chamava três operações que não existiam | O convite aparecia como inválido, e quem entrava ganhava uma agência nova | **Corrigido:** o convite e a entrada no app passaram para o servidor |
+| 8 | A carga do usuário rodava duas vezes ao entrar | Agências e membros repetidos (8 agências para 5 usuários) | **Corrigido** (uma carga por vez). Os repetidos que já existem ficam para a migração |
 | 9 | Excluir atividade só aceitava um formato de código antigo | Atividades novas não podiam ser excluídas, e a tarefa ligada sumia antes do erro | **Corrigido** |
 | 10 | Modelos de checklist: desativar e excluir usavam um filtro inexistente | As duas ações davam erro | **Corrigido** |
 | 11 | Roteiro do cliente lia campos com outro nome | Dias sem título, itens sem horário, moeda errada | **Corrigido** |
@@ -419,17 +419,17 @@ Levantado na leitura do código e conferido contra o inventário real do Appwrit
 | 14 | Excluir viagem, venda e cliente não levava os dados ligados | Anexos, atividades, tarefas e gastos ficavam órfãos | **Corrigido** |
 | 15 | Alterar senha não pedia a senha atual, e o mínimo variava entre 6 e 8 | O Appwrite recusava a troca | **Corrigido** |
 | 16 | Quatro eventos do webhook nunca disparavam; mudar a etapa pela ficha não avisava | Integrações externas sem parte dos avisos | **Corrigido** |
-| 17 | O quadro reabria viagem fechada sem perguntar, e a ficha perguntava | Comportamento diferente entre telas | **Corrigido** |
+| 17 | O quadro reabria viagem fechada sem perguntar, e a ficha perguntava | Comportamento diferente entre telas | **Conferir** no quadro novo de Viagens |
 | 18 | Ordenação por data usava um campo vazio nos registros novos | Listas "mais recentes primeiro" fora de ordem | **Corrigido** |
 | 19 | Arquivos dependiam de cookie de outro site para abrir | Fotos e PDFs não abriam no Safari e no iPhone | **Corrigido** (abrem com a sessão do usuário) |
 | 20 | Venda vinda do n8n com o ponto de partida no campo errado | A ficha mostrava a partida vazia | **Corrigido**. A venda ainda chega sem responsável (a distribuição é da F10) |
-| 21 | Biblioteca e Plataforma sem acesso no celular | Só dava para abrir no computador | **Corrigido** |
+| 21 | Biblioteca e Plataforma sem acesso no celular | Só dava para abrir no computador | **Conferir** no menu novo do celular |
 | 22 | Documentos da viagem gravavam numa coleção que não existia | Anexos e documentos não eram salvos | **Corrigido:** a coleção `crm_lead_documents` foi criada no Appwrite em 25/11/2026, com aprovação |
 | 23 | Limites de texto pequenos em seis campos | Modelos de checklist grandes, materiais da IA e conteúdo longo da Biblioteca eram recusados | **Corrigido:** os seis limites foram ampliados no Appwrite em 25/11/2026. O app avisa se algum campo passar do limite |
 | 24 | 19 fotos da Biblioteca sem arquivo | Aparecem sem imagem | **Depende de dados:** os arquivos não vieram do sistema anterior. Enviar de novo |
 | 25 | Push por evento não existe: os eventos são salvos, mas nada envia | Só o push de teste chega | **Aberto** (função nova, F10) |
 | 26 | Asaas pela metade | Sem efeito | **Aberto por decisão** (D4, desligado) |
 | 27 | Completar com IA e o chat criam itens sem avisar quando o dia já existia (conferir) | A tela diz que não encontrou dados | **Aberto** (precisa de chave de IA para testar; F11) |
-| 28 | Qualquer usuário logado lê os dados de todas as agências | Risco entre agências | **Aberto** (F2-T2: um Team por agência) |
+| 28 | Qualquer usuário logado lia os dados de todas as agências | Risco entre agências | **Corrigido:** um Team do Appwrite por agência e permissão em cada registro e arquivo |
 
 Funções que **não existem** hoje, apesar de às vezes serem lembradas: importar planilha de vendas, exportar listas e marcar pessoas (menção) nas atividades.

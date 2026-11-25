@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -55,36 +56,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pendingInvite, setPendingInvite] = useState<PendingInvite | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const hydrating = useRef<{ userId: string; run: Promise<void> } | null>(null);
+
   const hydrateMember = useCallback(async (sess: Session | null) => {
     if (!sess) {
+      hydrating.current = null;
       setAgencyContext(null);
       setMember(null);
       setPendingInvite(null);
       return;
     }
-    // O servidor vincula a conta, aceita convite pelo link ou cria a agência,
-    // e põe a pessoa no time da agência antes de qualquer leitura.
-    const token = typeof window !== "undefined" ? sessionStorage.getItem("invite_token") : null;
-    let m: AgencyMember | null = null;
+    // Uma carga por vez. A sessão inicial chega por dois caminhos quase juntos;
+    // duas cargas ao mesmo tempo criavam uma agência cada para quem acabou de chegar.
+    const userId = sess.user.id;
+    if (hydrating.current?.userId === userId) return hydrating.current.run;
+    const run = (async () => {
+      // O servidor vincula a conta, aceita convite pelo link ou cria a agência,
+      // e põe a pessoa no time da agência antes de qualquer leitura.
+      const token = typeof window !== "undefined" ? sessionStorage.getItem("invite_token") : null;
+      let m: AgencyMember | null = null;
+      try {
+        const meta = sess.user.user_metadata as { name?: string } | undefined;
+        const res = await garantirAcesso({ data: { token: token ?? undefined, provisionar: true, nome: meta?.name || sess.user.email || undefined } });
+        if (token) sessionStorage.removeItem("invite_token");
+        if (res.pendingInvite) {
+          setPendingInvite(res.pendingInvite as PendingInvite);
+          setMember(null);
+          return;
+        }
+        if (res.member) {
+          setAgencyContext(res.member as AgencyMember);
+          m = (await loadAgencyContext()) ?? (res.member as AgencyMember);
+        }
+      } catch (err) {
+        console.error("garantirAcesso:", err);
+        m = await loadAgencyContext();
+      }
+      setPendingInvite(null);
+      setMember(m);
+    })();
+    hydrating.current = { userId, run };
     try {
-      const meta = sess.user.user_metadata as { name?: string } | undefined;
-      const res = await garantirAcesso({ data: { token: token ?? undefined, provisionar: true, nome: meta?.name || sess.user.email || undefined } });
-      if (token) sessionStorage.removeItem("invite_token");
-      if (res.pendingInvite) {
-        setPendingInvite(res.pendingInvite as PendingInvite);
-        setMember(null);
-        return;
-      }
-      if (res.member) {
-        setAgencyContext(res.member as AgencyMember);
-        m = (await loadAgencyContext()) ?? (res.member as AgencyMember);
-      }
-    } catch (err) {
-      console.error("garantirAcesso:", err);
-      m = await loadAgencyContext();
+      await run;
+    } finally {
+      if (hydrating.current?.run === run) hydrating.current = null;
     }
-    setPendingInvite(null);
-    setMember(m);
   }, []);
 
   useEffect(() => {

@@ -11,16 +11,19 @@ Atualizado em 25/11/2026 com leitura direta do servidor. **Única mudança feita
 | Bucket | `trip-attachments` (1 arquivo) |
 | Usuários | 5 |
 | Functions | nenhuma |
-| Teams | nenhum |
-| Índices | nenhum, em nenhuma coleção |
+| Teams | 8 (um por agência) |
+| Índices | criados por `scripts/appwrite/indices.mjs` (1 a 4 por coleção) |
 
 ## 1. Segurança
 
-**Situação hoje:** as 18 coleções e o bucket aceitam só usuários logados, e a segurança por documento está desligada. Visitante sem login não lê nada. `crm_transactions` não tem nenhuma permissão para usuários: só o servidor acessa, como deve ser.
+**Situação hoje (conferida em 25/11/2026, depois da separação por agência):**
 
-No primeiro teste desta fase, feito sem chave, `crm_clients` e o bucket responderam sem login. Na leitura seguinte as permissões já estavam corretas. Para conferir a qualquer momento: `node scripts/appwrite/fechar-banco.mjs` (sem `--aplicar` ele só mostra).
+- Cada agência é um **Team do Appwrite** (8 times). Todo registro e todo arquivo é lido, alterado e apagado só pelo time da agência dona.
+- As 18 coleções e o bucket estão com a segurança por documento ligada. Quem tem conta só pode **criar**; ler e alterar depende do time.
+- `agencies`, `agency_members`, `crm_ai_config`, `crm_transactions` e `system_settings` não dão acesso direto a usuários: só o servidor lê e grava.
+- Visitante sem login não lê nada.
 
-**O que continua aberto:** qualquer pessoa com conta lê e grava os dados de **todas** as agências, porque a permissão é "usuários logados" e não "equipe da agência". O app filtra por agência, mas quem protege de verdade é o Appwrite. Isso é a tarefa F2-T2 do plano (um Team por agência).
+Essa separação foi feita por `scripts/appwrite/isolar-agencias.mjs`. **Não existe mais o script `fechar-banco`:** ele deixava tudo como "qualquer usuário logado" e desligava a segurança por documento, o que hoje desfaria a separação.
 
 ## 2. Coleções
 
@@ -95,7 +98,6 @@ Achados da leitura. **Nenhum foi corrigido nos dados**; a limpeza precisa de apr
 | Roteiro com 47 dias | 1 roteiro tem dias repetidos e a data de fim antes do início | Conferir com a consultora |
 | Venda apontando para cliente que não existe | 1 venda fechada cita um cliente apagado | Revincular na migração |
 | Tarefas, atividades, gastos e transações zerados | 0 registros nas quatro coleções | Normal se ainda não usaram; as gravações foram testadas e funcionam |
-| Sem índices | Nenhuma coleção tem índice. Funciona com o volume de hoje | A Fase 2 cria os índices do modelo novo |
 
 ## 6. Arquivos, tempo real, login e funções
 
@@ -104,16 +106,17 @@ Achados da leitura. **Nenhum foi corrigido nos dados**; a limpeza precisa de apr
 | Bucket `trip-attachments` | Único bucket, 30 MB por arquivo, só usuários logados. Passou a guardar também os arquivos da Biblioteca | `documentos`, `biblioteca`, `capas`, `contratos` e `guias`, privados por agência |
 | Tempo real | 4 inscrições: `crm_leads` (contador do menu e quadro) e `crm_notifications` (sino e página) | Viagens, agenda e notificações (F2-T7) |
 | Login | Conta do Appwrite: e-mail e senha, Google, recuperação de senha | Mantém |
-| Equipe por agência | Coleção `agency_members` (campo `role`). Não usa Teams | Um Team por agência, papéis = cargos (A5) |
-| Criação de agência | Pelo navegador, quando o usuário entra sem agência e sem convite | Pelo servidor, com acesso liberado pela Hotmart (D5) |
+| Equipe por agência | Coleção `agency_members` (campo `role`) e um Team do Appwrite por agência | Papéis do Team = cargos (A5) |
+| Criação de agência | Pelo servidor, quando o usuário entra sem agência e sem convite | Com acesso liberado pela Hotmart (D5) |
 | Functions do Appwrite | Nenhuma. A lógica de servidor roda na Vercel (`src/lib/*.functions.ts`) | Decidir na F2 |
 
 ## 7. Scripts de manutenção
 
-Ficam em `scripts/appwrite/`. Todos pedem `APPWRITE_ADMIN_KEY` e, sem `--aplicar`, só mostram o que fariam.
+Ficam em `scripts/appwrite/`. Sem `--aplicar`, só mostram o que fariam.
 
 | Script | O que faz | Altera o Appwrite? |
 |---|---|---|
-| `fechar-banco.mjs` | Confere e fecha coleções e bucket para visitantes | Só com `--aplicar` |
-| `estrutura-que-falta.mjs` | Cria `crm_lead_documents` e amplia seis limites de texto | Só com `--aplicar` |
-| `gerar-schema.mjs` | Lê os campos reais e reescreve `src/integrations/appwrite/schema.ts` | Não (só lê) |
+| `isolar-agencias.mjs` | Cria o time de cada agência e deixa cada registro visível só para o time | Só com `--aplicar` |
+| `indices.mjs` | Cria os índices das consultas mais usadas | Só com `--aplicar` |
+| `estrutura-que-falta.mjs` | Cria `crm_lead_documents` e amplia seis limites de texto (já aplicado) | Só com `--aplicar` |
+| `gerar-schema.mjs` | Lê os campos reais e reescreve `src/integrations/appwrite/schema.ts`. **Rodar sempre que criar ou mudar um campo** | Não (só lê) |

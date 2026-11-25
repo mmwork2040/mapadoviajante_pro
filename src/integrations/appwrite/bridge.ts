@@ -2,6 +2,8 @@ import { client, databases, storage, account, APPWRITE_DATABASE_ID, APPWRITE_BUC
 import { appwriteAuthService } from '@/services/appwriteAuthService';
 import type { Databases, Storage } from 'appwrite';
 import { SERVER_ONLY, agencyPermissions, getCurrentAgency } from './permissions';
+import { COLLECTION_FIELDS } from './schema';
+import { parseSelect, resolveRelation, type EmbedSpec } from './embed';
 
 export type BridgeServices = { databases: Databases; storage: Storage };
 
@@ -11,17 +13,30 @@ export type AppSession = {
   user: { id: string; email: string; user_metadata: { name?: string } };
 };
 
-// Normaliza o documento do Appwrite para ser 100% compatível com a interface do Supabase
-function normalizeDoc(doc: any): any {
+// Campos guardados como texto no Appwrite que as telas usam como objeto.
+const JSON_FIELDS = ['settings', 'preferences', 'profile', 'benefits', 'checklists', 'knowledge_sources', 'value'];
+
+// Nomes que as telas usam para campos que no Appwrite têm outro nome.
+const FIELD_ALIASES: Record<string, Record<string, string>> = {
+  crm_itinerary_days: { title: 'label' },
+  crm_itinerary_activities: { time: 'time_start' },
+};
+
+// Normaliza o documento do Appwrite para o formato que as telas esperam (id, created_at, updated_at)
+function normalizeDoc(doc: any, collectionId?: string): any {
   if (!doc || typeof doc !== 'object') return doc;
   const normalized = { ...doc };
+  const aliases = collectionId ? FIELD_ALIASES[collectionId] : undefined;
+  if (aliases) {
+    for (const [uiName, column] of Object.entries(aliases)) {
+      if (normalized[uiName] == null && normalized[column] != null) normalized[uiName] = normalized[column];
+    }
+  }
   normalized.id = doc.id || doc.$id;
   normalized.created_at = doc.created_at || doc.$createdAt;
   normalized.updated_at = doc.updated_at || doc.$updatedAt;
 
-  // Tratar campos JSON que foram serializados como string
-  const jsonFields = ['settings', 'preferences', 'profile', 'benefits', 'checklists', 'knowledge_sources', 'value'];
-  for (const field of jsonFields) {
+  for (const field of JSON_FIELDS) {
     if (typeof normalized[field] === 'string') {
       try {
         normalized[field] = JSON.parse(normalized[field]);
@@ -34,24 +49,89 @@ function normalizeDoc(doc: any): any {
   return normalized;
 }
 
-// Prepara o payload para escrita no Appwrite, serializando objetos e removendo metadados $
-function preparePayload(data: any): any {
-  if (!data || typeof data !== 'object') return data;
+class PayloadError extends Error {}
+
+// Campos que o Appwrite já recusou nesta sessão, por coleção: não são mais enviados.
+const REJECTED_FIELDS = new Map<string, Set<string>>();
+
+// Prepara o payload para gravar no Appwrite, usando o mapa real dos campos
+// (schema.ts): objetos viram texto JSON, números e booleanos são convertidos, e
+// texto maior que o limite vira um erro claro em vez de uma recusa sem explicação.
+//
+// Campo que o mapa não conhece é enviado mesmo assim (o mapa pode estar atrás do
+// banco), a não ser que `dropUnknown` peça para tirar. `unknown` devolve quais
+// foram junto, para a nova tentativa se o Appwrite recusar. Ver writeChecked.
+function preparePayload(
+  collectionId: string,
+  data: any,
+  dropUnknown = false,
+): { payload: any; unknown: string[] } {
+  if (!data || typeof data !== 'object') return { payload: data, unknown: [] };
+  const fields = COLLECTION_FIELDS[collectionId];
+  const aliases = FIELD_ALIASES[collectionId] ?? {};
+  const rejected = REJECTED_FIELDS.get(collectionId);
   const payload: Record<string, any> = {};
+  const unknown: string[] = [];
 
-  for (const [k, v] of Object.entries(data)) {
-    // Ignorar campos de sistema
-    if (k.startsWith('$')) continue;
-    if (k === 'id') continue; // ID do documento é passado como documentId no Appwrite
+  for (const [key, raw] of Object.entries(data)) {
+    if (key.startsWith('$')) continue; // campos de sistema
+    if (key === 'id') continue; // o ID vai como documentId
+    if (raw === undefined) continue;
+    // Nome de tela → nome real do campo (sem sobrescrever o real, se veio junto).
+    const k = aliases[key] && (data as any)[aliases[key]] === undefined ? aliases[key] : key;
+    if (k === key && aliases[key]) continue;
 
-    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
-      payload[k] = JSON.stringify(v);
-    } else {
-      payload[k] = v;
+    const spec = fields?.[k];
+    if (fields && !spec) {
+      if (dropUnknown || rejected?.has(k)) continue;
+      unknown.push(k);
     }
+
+    let v: any = raw;
+    if (v !== null && spec) {
+      if (spec.array) {
+        v = (Array.isArray(v) ? v : [v]).filter((x) => x !== null && x !== undefined).map((x) => String(x));
+      } else if (spec.type === 's') {
+        if (typeof v === 'object') v = JSON.stringify(v);
+        else if (typeof v !== 'string') v = String(v);
+        if (spec.size && v.length > spec.size) {
+          throw new PayloadError(`O campo "${k}" passou do limite de ${spec.size} caracteres (${v.length}).`);
+        }
+      } else if (spec.type === 'n' || spec.type === 'i') {
+        if (v === '') v = null;
+        else {
+          const n = typeof v === 'number' ? v : Number(v);
+          if (!Number.isFinite(n)) throw new PayloadError(`O campo "${k}" precisa ser um número.`);
+          v = spec.type === 'i' ? Math.round(n) : n;
+        }
+      } else if (spec.type === 'b') {
+        v = v === true || v === 'true' || v === 1;
+      }
+    } else if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
+      v = JSON.stringify(v);
+    }
+    payload[k] = v;
   }
 
-  return payload;
+  return { payload, unknown };
+}
+
+// Grava e, se o Appwrite recusar a estrutura do registro, tenta de novo sem os
+// campos que o mapa não conhece (objetos juntados à leitura, campos que só
+// existiam no banco antigo). Antes, um campo assim derrubava a gravação inteira.
+async function writeChecked<T>(collectionId: string, data: any, send: (payload: any) => Promise<T>): Promise<T> {
+  const first = preparePayload(collectionId, data);
+  try {
+    return await send(first.payload);
+  } catch (err: any) {
+    const structure = err?.type === 'document_invalid_structure' || err?.code === 400;
+    if (!structure || first.unknown.length === 0) throw err;
+    const set = REJECTED_FIELDS.get(collectionId) ?? new Set<string>();
+    first.unknown.forEach((k) => set.add(k));
+    REJECTED_FIELDS.set(collectionId, set);
+    console.warn(`[dados] "${collectionId}" não aceitou ${first.unknown.map((k) => `"${k}"`).join(', ')}; gravado sem ${first.unknown.length > 1 ? 'esses campos' : 'esse campo'}.`);
+    return send(preparePayload(collectionId, data, true).payload);
+  }
 }
 
 // Valida ou gera um ID de documento compatível com Appwrite
@@ -73,6 +153,84 @@ function matchesLike(value: unknown, pattern: string, caseInsensitive: boolean):
   return new RegExp(`^${expression}$`, caseInsensitive ? 'i' : '').test(String(value));
 }
 
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+async function listAll(svc: BridgeServices, collectionId: string, queries: string[]): Promise<any[]> {
+  const documents: any[] = [];
+  let cursor: string | null = null;
+  do {
+    const page: { documents: any[]; total: number } = await svc.databases.listDocuments(
+      APPWRITE_DATABASE_ID,
+      collectionId,
+      [...queries, Query.limit(100), ...(cursor ? [Query.cursorAfter(cursor)] : [])],
+    );
+    documents.push(...page.documents);
+    cursor = page.documents.length === 100 ? page.documents[page.documents.length - 1].$id : null;
+  } while (cursor);
+  return documents;
+}
+
+// Carrega os registros relacionados pedidos no select (ex.: os itens de cada
+// dia, o responsável de cada venda) e pendura em cada documento. O Appwrite não
+// faz essa junção sozinho, então ela é feita aqui, em lotes.
+async function hydrateEmbeds(
+  svc: BridgeServices,
+  parentTable: string,
+  docs: any[],
+  embeds: EmbedSpec[],
+  scopeAgencyId: string | null,
+): Promise<void> {
+  if (!docs.length || !embeds.length) return;
+  for (const embed of embeds) {
+    const rel = resolveRelation(parentTable, embed);
+    if (!rel) {
+      console.warn(`[dados] relação desconhecida: ${parentTable} → ${embed.table}`);
+      for (const d of docs) d[embed.alias] = null;
+      continue;
+    }
+    const scoped =
+      scopeAgencyId && COLLECTION_FIELDS[embed.table]?.agency_id ? [Query.equal('agency_id', scopeAgencyId)] : [];
+    let related: any[] = [];
+    try {
+      if (rel.kind === 'one') {
+        const ids = Array.from(new Set(docs.map((d) => d[rel.column]).filter((v) => typeof v === 'string' && v)));
+        for (const part of chunk(ids, 100)) {
+          related.push(...(await listAll(svc, embed.table, [Query.equal('$id', part), ...scoped])));
+        }
+        related = related.map((r) => normalizeDoc(r, embed.table));
+        await hydrateEmbeds(svc, embed.table, related, embed.embeds, scopeAgencyId);
+        const byId = new Map(related.map((r) => [r.id, r]));
+        for (const d of docs) d[embed.alias] = byId.get(d[rel.column]) ?? null;
+      } else {
+        const ids = Array.from(new Set(docs.map((d) => d.id).filter(Boolean)));
+        for (const part of chunk(ids, 100)) {
+          related.push(...(await listAll(svc, embed.table, [Query.equal(rel.column, part), ...scoped])));
+        }
+        related = related.map((r) => normalizeDoc(r, embed.table));
+        related.sort(
+          (x, y) =>
+            (x.sort_order ?? 0) - (y.sort_order ?? 0) || String(x.created_at).localeCompare(String(y.created_at)),
+        );
+        await hydrateEmbeds(svc, embed.table, related, embed.embeds, scopeAgencyId);
+        const groups = new Map<string, any[]>();
+        for (const r of related) {
+          const key = r[rel.column];
+          if (!groups.has(key)) groups.set(key, []);
+          groups.get(key)!.push(r);
+        }
+        for (const d of docs) d[embed.alias] = groups.get(d.id) ?? [];
+      }
+    } catch (err) {
+      console.error(`[dados] falha ao carregar ${embed.table} de ${parentTable}:`, err);
+      for (const d of docs) d[embed.alias] = rel.kind === 'one' ? null : [];
+    }
+  }
+}
+
 class AppwriteQueryBuilder {
   private onConflictCol: string | null = null;
   private collectionId: string;
@@ -86,22 +244,26 @@ class AppwriteQueryBuilder {
   private writePayload: any = null;
   private scopeAgencyId: string | null = null;
   private scopeApplied = false;
+  private embeds: EmbedSpec[] = [];
+  private headOnly = false;
+  private localSorts: Array<{ column: string; ascending: boolean }> = [];
 
   constructor(collectionId: string, private svc: BridgeServices) {
     this.collectionId = collectionId;
   }
 
-  select(_columns?: string, _options?: { count?: string; head?: boolean }) {
-    // Em Supabase, `.insert(...).select()` e `.update(...).select()` mantêm a
-    // escrita e apenas pedem o registro resultante. A ponte precisa preservar
-    // a operação que já foi definida.
+  select(columns?: string, options?: { count?: string; head?: boolean }) {
+    // `.insert(...).select()` e `.update(...).select()` mantêm a escrita e
+    // apenas pedem o registro resultante: a operação já definida é preservada.
+    if (columns) this.embeds = parseSelect(columns).embeds;
+    if (options?.head) this.headOnly = true;
     return this;
   }
 
   /**
    * Restringe a operação a uma agência (uso no servidor, que tem acesso total
    * pela chave de API): filtra leituras, edições e exclusões por `agency_id` e
-   * grava `agency_id` nas inserções. Faz o papel que o RLS fazia no Supabase.
+   * grava `agency_id` nas inserções. É a separação entre agências no servidor.
    */
   withAgencyScope(agencyId: string) {
     this.scopeAgencyId = agencyId;
@@ -185,6 +347,50 @@ class AppwriteQueryBuilder {
     return this;
   }
 
+  // Filtro genérico. Aceita caminho dentro de um campo JSON guardado como texto
+  // (ex.: "checklists->>templateId"), conferido depois de ler os registros.
+  filter(column: string, operator: string, value: any) {
+    if (!column.includes('->')) {
+      if (operator === 'eq') return this.eq(column, value);
+      if (operator === 'neq') return this.neq(column, value);
+      if (operator === 'gte') return this.gte(column, value);
+      if (operator === 'lte') return this.lte(column, value);
+      if (operator === 'gt') return this.gt(column, value);
+      if (operator === 'lt') return this.lt(column, value);
+      if (operator === 'like') return this.like(column, value);
+      if (operator === 'ilike') return this.ilike(column, value);
+      if (operator === 'is') return this.is(column, value);
+      if (operator === 'in') return this.in(column, value);
+    }
+    const [root, ...path] = column.split(/->>?/);
+    const read = (doc: any) => {
+      let current = doc[root];
+      if (typeof current === 'string') {
+        try {
+          current = JSON.parse(current);
+        } catch {
+          return undefined;
+        }
+      }
+      for (const key of path) {
+        if (current === null || typeof current !== 'object') return undefined;
+        current = current[key];
+      }
+      return current;
+    };
+    this.localFilters.push((doc) => {
+      const found = read(doc);
+      if (operator === 'eq') return found !== undefined && found !== null && String(found) === String(value);
+      if (operator === 'neq') return String(found ?? '') !== String(value);
+      if (operator === 'is') return value === null ? found === null || found === undefined : found === value;
+      if (operator === 'like') return matchesLike(found, String(value), false);
+      if (operator === 'ilike') return matchesLike(found, String(value), true);
+      if (operator === 'in') return Array.isArray(value) && value.map(String).includes(String(found));
+      return false;
+    });
+    return this;
+  }
+
   gte(column: string, value: any) {
     const col = column === 'id' ? '$id' : column;
     this.queries.push(Query.greaterThanEqual(col, value));
@@ -232,6 +438,12 @@ class AppwriteQueryBuilder {
 
   order(column: string, options?: { ascending?: boolean }) {
     const ascending = options?.ascending ?? true;
+    // Registros migrados trazem a data no campo; os novos só têm a data do
+    // Appwrite. Ordenar depois de ler usa a data certa nos dois casos.
+    if (column === 'created_at' || column === 'updated_at') {
+      this.localSorts.push({ column, ascending });
+      return this;
+    }
     const col = column === 'id' ? '$createdAt' : column;
     if (ascending) {
       this.queries.push(Query.orderAsc(col));
@@ -254,18 +466,19 @@ class AppwriteQueryBuilder {
 
   single() {
     this.isSingle = true;
-    this.windowCount = 1;
+    // Numa leitura basta um registro; numa escrita o filtro decide o alcance.
+    if (this.action === 'select') this.windowCount = 1;
     return this;
   }
 
   maybeSingle() {
     this.isMaybeSingle = true;
-    this.windowCount = 1;
+    if (this.action === 'select') this.windowCount = 1;
     return this;
   }
 
   private async listMatchingDocuments() {
-    if (this.windowCount !== null && this.localFilters.length === 0) {
+    if (this.windowCount !== null && this.localFilters.length === 0 && this.localSorts.length === 0) {
       return this.svc.databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, [
         ...this.queries,
         ...(this.windowStart ? [Query.offset(this.windowStart)] : []),
@@ -274,24 +487,22 @@ class AppwriteQueryBuilder {
     }
 
     // Appwrite devolve apenas 25 documentos sem paginação. As telas e as
-    // atualizações em lote desta ponte esperam todos os registros da consulta.
-    const documents: any[] = [];
-    let total = 0;
-    let cursor: string | null = null;
-    do {
-      const page: { documents: Array<{ $id: string; [key: string]: any }>; total: number } = await this.svc.databases.listDocuments(
-        APPWRITE_DATABASE_ID,
-        this.collectionId,
-        [...this.queries, Query.limit(100), ...(cursor ? [Query.cursorAfter(cursor)] : [])],
-      );
-      total = page.total;
-      documents.push(...page.documents);
-      cursor = page.documents.length === 100 && documents.length < total
-        ? page.documents[page.documents.length - 1].$id
-        : null;
-    } while (cursor);
-    if (this.localFilters.length === 0) return { documents, total };
+    // atualizações em lote esperam todos os registros da consulta.
+    const documents = await listAll(this.svc, this.collectionId, this.queries);
+    const total = documents.length;
+    if (this.localFilters.length === 0 && this.localSorts.length === 0) return { documents, total };
     const matching = documents.filter((doc) => this.localFilters.every((filter) => filter(doc)));
+    if (this.localSorts.length > 0) {
+      const dateOf = (doc: any, column: string) =>
+        String(doc[column] || (column === 'created_at' ? doc.$createdAt : doc.$updatedAt) || '');
+      matching.sort((x, y) => {
+        for (const { column, ascending } of this.localSorts) {
+          const diff = dateOf(x, column).localeCompare(dateOf(y, column));
+          if (diff !== 0) return ascending ? diff : -diff;
+        }
+        return 0;
+      });
+    }
     return {
       documents: this.windowCount === null
         ? matching
@@ -308,8 +519,18 @@ class AppwriteQueryBuilder {
         this.scopeApplied = true;
       }
       if (this.action === 'select') {
+        if (this.headOnly && this.localFilters.length === 0) {
+          // Só a contagem: uma página mínima já traz o total.
+          const res = await this.svc.databases.listDocuments(APPWRITE_DATABASE_ID, this.collectionId, [
+            ...this.queries,
+            Query.limit(1),
+          ]);
+          return { data: null, error: null, count: res.total };
+        }
         const res = await this.listMatchingDocuments();
-        const docs = res.documents.map(normalizeDoc);
+        if (this.headOnly) return { data: null, error: null, count: res.total };
+        const docs = res.documents.map((d: any) => normalizeDoc(d, this.collectionId));
+        await hydrateEmbeds(this.svc, this.collectionId, docs, this.embeds, scope);
 
         if (this.isSingle) {
           if (docs.length === 0) {
@@ -331,7 +552,6 @@ class AppwriteQueryBuilder {
 
         for (const rawItem of items) {
           const item = scope ? { ...rawItem, agency_id: scope } : rawItem;
-          const payload = preparePayload(item);
           let targetId: string | null = null;
 
           // Se há onConflict (ex: 'key' em system_settings)
@@ -363,30 +583,30 @@ class AppwriteQueryBuilder {
             }
           }
 
-          let doc;
-          if (targetId) {
-            doc = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, targetId, payload);
-          } else {
-            const docId = getValidDocId(item.id);
-            // Registro novo nasce visível só para o time da agência dona.
-            // Configurações, financeiro e pagamentos são só do servidor: sem permissão no documento.
-            const owner = SERVER_ONLY.has(this.collectionId)
-              ? null
-              : (item.agency_id as string | undefined) || scope || getCurrentAgency();
+          const docId = targetId ? null : getValidDocId(item.id);
+          // Registro novo nasce visível só para o time da agência dona.
+          // Configurações, financeiro e pagamentos são só do servidor: sem permissão no documento.
+          const owner = SERVER_ONLY.has(this.collectionId)
+            ? null
+            : (item.agency_id as string | undefined) || scope || getCurrentAgency();
+          const doc = await writeChecked(this.collectionId, item, async (payload) => {
+            if (targetId) {
+              return this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, targetId, payload);
+            }
             try {
-              doc = await this.svc.databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload, agencyPermissions(owner));
+              return await this.svc.databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId!, payload, agencyPermissions(owner));
             } catch (createErr: any) {
               if ((createErr.code === 409 || createErr.type === 'document_already_exists') && !scope) {
-                doc = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
-              } else {
-                throw createErr;
+                return this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, docId!, payload);
               }
+              throw createErr;
             }
-          }
-          results.push(normalizeDoc(doc));
+          });
+          results.push(normalizeDoc(doc, this.collectionId));
         }
 
-        const data = Array.isArray(this.writePayload) ? results : results[0];
+        await hydrateEmbeds(this.svc, this.collectionId, results, this.embeds, scope);
+        const data = Array.isArray(this.writePayload) && !this.isSingle && !this.isMaybeSingle ? results : results[0];
         return { data, error: null };
       }
 
@@ -397,14 +617,17 @@ class AppwriteQueryBuilder {
           return { data: null, error: null };
         }
 
-        const payload = preparePayload(this.writePayload);
         const updatedDocs = [];
         for (const target of list.documents) {
-          const updated = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, target.$id, payload);
-          updatedDocs.push(normalizeDoc(updated));
+          const updated = await writeChecked(this.collectionId, this.writePayload, (payload) =>
+            this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, target.$id, payload),
+          );
+          updatedDocs.push(normalizeDoc(updated, this.collectionId));
         }
 
-        return { data: updatedDocs.length === 1 ? updatedDocs[0] : updatedDocs, error: null };
+        await hydrateEmbeds(this.svc, this.collectionId, updatedDocs, this.embeds, scope);
+        const one = updatedDocs.length === 1 || this.isSingle || this.isMaybeSingle;
+        return { data: one ? updatedDocs[0] : updatedDocs, error: null };
       }
 
       if (this.action === 'delete') {
@@ -418,11 +641,14 @@ class AppwriteQueryBuilder {
       return { data: null, error: null };
     } catch (err: any) {
       console.error(`[Appwrite Bridge Error on ${this.collectionId}]:`, err);
-      return { data: null, error: { message: err.message || 'Erro na operação do banco', ...err } };
+      return {
+        data: null,
+        error: { ...err, message: err.message || 'Erro na operação do banco', code: err.code, type: err.type },
+      };
     }
   }
 
-  // Permite uso com await direto: const { data } = await supabase.from('...').select()
+  // Permite uso com await direto: const { data } = await db.from('...').select()
   then<TResult1 = any, TResult2 = never>(
     onfulfilled?: ((value: { data: any; error: any; count?: number }) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | null
@@ -532,15 +758,20 @@ class AppwriteAuthBridge {
     return { error: null };
   }
 
-  async updateUser({ password }: { password?: string }) {
+  async updateUser({ password, oldPassword }: { password?: string; oldPassword?: string }) {
     try {
       if (password) {
-        await account.updatePassword(password);
+        // Conta com senha exige a senha atual; conta que só entra pelo Google, não.
+        await account.updatePassword(password, oldPassword || undefined);
       }
       const user = await appwriteAuthService.getCurrentUser();
       return { data: { user }, error: null };
     } catch (err: any) {
-      return { data: null, error: { message: err.message } };
+      const wrongPassword = err?.type === 'user_invalid_credentials' || err?.code === 401;
+      return {
+        data: null,
+        error: { message: wrongPassword ? 'Senha atual incorreta.' : err.message, type: err?.type },
+      };
     }
   }
 
@@ -563,51 +794,174 @@ class AppwriteAuthBridge {
   }
 }
 
-// ── Bridge Storage ────────────────────────────────────────────────
+// ── Arquivos ──────────────────────────────────────────────────────
+// As telas identificam cada arquivo por um caminho ("agência/viagem/nome.pdf").
+// O Appwrite só aceita IDs curtos, então cada caminho vira um ID fixo de 33
+// caracteres. Antes o ID era o começo do caminho, e todos os arquivos de uma
+// agência disputavam o mesmo ID: só o primeiro envio dava certo.
+function fileIdFor(path: string): string {
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0; i < path.length; i++) {
+    const k = path.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+  h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+  const hex = (n: number) => (n >>> 0).toString(16).padStart(8, '0');
+  return `f${hex(h1 ^ h2 ^ h3 ^ h4)}${hex(h2 ^ h1)}${hex(h3 ^ h1)}${hex(h4 ^ h1)}`;
+}
+
+// ID que os envios antigos usavam (para continuar abrindo o que já existe).
+function legacyFileIdFor(path: string): string {
+  return getValidDocId(path.replace(/[^a-zA-Z0-9]/g, '-'));
+}
+
+// O projeto tem um bucket só. Os nomes que o código usa apontam para ele.
+function resolveBucket(bucketId: string): string {
+  return bucketId === 'library-assets' ? APPWRITE_BUCKET_ID : bucketId;
+}
+
+const isBrowser = typeof window !== 'undefined';
+
 class AppwriteStorageBridge {
+  private urlCache = new Map<string, Promise<string | null>>();
+
   constructor(private svc: BridgeServices) {}
 
-  from(bucketId: string = APPWRITE_BUCKET_ID) {
+  // Cabeçalhos de quem está pedindo: sessão do usuário no navegador, chave de
+  // API no servidor.
+  private authHeaders(): Record<string, string> {
+    const source = (this.svc.storage.client.headers ?? {}) as Record<string, string>;
+    const headers: Record<string, string> = {};
+    for (const name of ['X-Appwrite-Project', 'X-Appwrite-Key', 'X-Appwrite-JWT']) {
+      if (source[name]) headers[name] = source[name];
+    }
+    if (isBrowser) {
+      try {
+        const fallback = window.localStorage.getItem('cookieFallback');
+        if (fallback) headers['X-Fallback-Cookies'] = fallback;
+      } catch {}
+    }
+    return headers;
+  }
+
+  // Baixa o conteúdo do arquivo. Tenta o ID novo e, se não existir, o antigo.
+  private async fetchFile(bucketId: string, path: string): Promise<Blob | null> {
+    for (const fileId of [fileIdFor(path), legacyFileIdFor(path)]) {
+      try {
+        const url = this.svc.storage.getFileView(bucketId, fileId);
+        const res = await fetch(url, {
+          headers: this.authHeaders(),
+          ...(isBrowser ? { credentials: 'include' as const } : {}),
+        });
+        if (res.ok) return await res.blob();
+        if (res.status !== 404) return null;
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  from(rawBucketId: string = APPWRITE_BUCKET_ID) {
+    const bucketId = resolveBucket(rawBucketId);
     const storage = this.svc.storage;
-    return {
-      async upload(path: string, file: File) {
+    const self = this;
+    const cacheKey = (path: string) => `${bucketId}/${path}`;
+
+    const api = {
+      async upload(
+        path: string,
+        content: File | Blob | ArrayBuffer | Uint8Array,
+        options?: { contentType?: string; upsert?: boolean },
+      ) {
         try {
-          const fileId = getValidDocId(path.replace(/[^a-zA-Z0-9]/g, '-'));
-          const created = await storage.createFile(bucketId, fileId, file, agencyPermissions(getCurrentAgency()));
-          return { data: { path: created.$id }, error: null };
+          const name = path.split('/').pop() || 'arquivo';
+          const type = options?.contentType || (content as Blob).type || 'application/octet-stream';
+          const file =
+            content instanceof File && content.name
+              ? content
+              : new File([content as BlobPart], name, { type });
+          const fileId = fileIdFor(path);
+          // O arquivo nasce visível só para o time da agência dona. No servidor não
+          // há agência ativa: ela vem do começo do caminho ("agência/...").
+          const permissions = agencyPermissions(getCurrentAgency() || path.split('/')[0]);
+          try {
+            await storage.createFile(bucketId, fileId, file, permissions);
+          } catch (err: any) {
+            if (!(options?.upsert && (err?.code === 409 || err?.type === 'storage_file_already_exists'))) throw err;
+            await storage.deleteFile(bucketId, fileId);
+            await storage.createFile(bucketId, fileId, file, permissions);
+          }
+          self.urlCache.delete(cacheKey(path));
+          return { data: { path }, error: null };
         } catch (err: any) {
-          return { data: null, error: err };
+          console.error('[arquivos] falha ao enviar:', err);
+          return { data: null, error: { message: err?.message || 'Falha ao enviar o arquivo.', ...err } };
         }
       },
-      getPublicUrl(fileId: string) {
+
+      /** Conteúdo do arquivo (uso no servidor e para cópias). */
+      async download(path: string) {
+        const blob = await self.fetchFile(bucketId, path);
+        if (!blob) return { data: null, error: { message: 'Arquivo não encontrado.' } };
+        return { data: blob, error: null };
+      },
+
+      async copy(fromPath: string, toPath: string) {
+        const { data: blob, error } = await api.download(fromPath);
+        if (error || !blob) return { data: null, error: error ?? { message: 'Arquivo não encontrado.' } };
+        return api.upload(toPath, blob, { contentType: blob.type || undefined });
+      },
+
+      getPublicUrl(path: string) {
         try {
-          const url = storage.getFileView(bucketId, fileId);
-          return { data: { publicUrl: url.toString() } };
+          return { data: { publicUrl: String(storage.getFileView(bucketId, fileIdFor(path))) } };
         } catch {
           return { data: { publicUrl: '' } };
         }
       },
-      async createSignedUrl(path: string, _expiresIn: number = 3600) {
-        try {
-          const url = storage.getFileView(bucketId, path);
-          return { data: { signedUrl: url.toString() }, error: null };
-        } catch (err: any) {
-          return { data: null, error: err };
+
+      // Endereço para mostrar ou baixar o arquivo. No navegador, o arquivo é
+      // lido com a sessão do usuário e entregue como endereço local: um link
+      // direto para o Appwrite depende de cookie de terceiros, que o Safari e o
+      // iPhone bloqueiam. No servidor, quem precisa do conteúdo usa download().
+      async createSignedUrl(path: string, _expiresIn: number = 3600, _options?: { download?: string | boolean }) {
+        if (!isBrowser) {
+          return { data: { signedUrl: String(storage.getFileView(bucketId, fileIdFor(path))) }, error: null };
         }
+        const key = cacheKey(path);
+        if (!self.urlCache.has(key)) {
+          self.urlCache.set(
+            key,
+            self.fetchFile(bucketId, path).then((blob) => (blob ? URL.createObjectURL(blob) : null)),
+          );
+        }
+        const signedUrl = await self.urlCache.get(key)!;
+        if (!signedUrl) return { data: null, error: { message: 'Arquivo não encontrado.' } };
+        return { data: { signedUrl }, error: null };
       },
+
       async remove(paths: string[]) {
-        try {
-          for (const path of paths) {
+        for (const path of paths) {
+          self.urlCache.delete(cacheKey(path));
+          try {
+            await storage.deleteFile(bucketId, fileIdFor(path));
+          } catch {
             try {
-              await storage.deleteFile(bucketId, path);
+              await storage.deleteFile(bucketId, legacyFileIdFor(path));
             } catch {}
           }
-          return { data: paths, error: null };
-        } catch (err: any) {
-          return { data: null, error: err };
         }
+        return { data: paths, error: null };
       },
     };
+    return api;
   }
 }
 
@@ -648,7 +1002,7 @@ class AppwriteChannelBridge {
   }
 }
 
-// Cliente compatível com Supabase. O mesmo código atende o navegador (sessão do
+// Cliente de dados (consultas encadeadas). O mesmo código atende o navegador (sessão do
 // usuário) e o servidor (chave de API), mudando só os serviços do Appwrite.
 export function createAppwriteBridge(svc: BridgeServices) {
   const databases = svc.databases;
@@ -671,47 +1025,83 @@ export function createAppwriteBridge(svc: BridgeServices) {
       try {
         if (fnName === 'provision_agency') {
           const currentUser = await appwriteAuthService.getCurrentUser();
-          const userId = currentUser?.id || ID.unique();
-          const userEmail = args._email || currentUser?.email || '';
-          const userName = args._user_name || currentUser?.name || 'Administrador';
+          if (!currentUser) return { data: null, error: { message: 'Sessão expirada. Faça login novamente.' } };
+          const userId = currentUser.id;
+          const userEmail = args._email || currentUser.email || '';
+          const userName = args._user_name || currentUser.name || 'Administrador';
 
-          const agencyId = ID.unique();
+          // Nunca cria uma segunda agência para quem já tem uma (duas abas ou
+          // dois carregamentos ao mesmo tempo criavam agências repetidas).
+          const already = await databases.listDocuments(APPWRITE_DATABASE_ID, 'agency_members', [
+            Query.equal('user_id', userId),
+            Query.limit(1),
+          ]);
+          if (already.documents.length > 0) {
+            return { data: normalizeDoc(already.documents[0]), error: null };
+          }
+
+          // IDs fixos por usuário: se duas abas ou dois aparelhos tentarem criar ao
+          // mesmo tempo, a segunda tentativa esbarra no mesmo ID em vez de criar
+          // outra agência.
+          const agencyId = fileIdFor(`agencia:${userId}`).replace(/^f/, 'a');
+          const memberId = fileIdFor(`membro:${userId}`).replace(/^f/, 'm');
+          const isConflict = (err: any) => err?.code === 409 || err?.type === 'document_already_exists';
           const now = new Date().toISOString();
 
-          await databases.createDocument(
-            APPWRITE_DATABASE_ID,
-            'agencies',
-            agencyId,
-            {
-              name: args._name || `Agência de ${userName}`,
-              slug: args._slug || `agencia-${Date.now().toString(36)}`,
-              email: userEmail,
-              created_at: now,
-              updated_at: now,
-            }
-          );
+          let createdAgency = false;
+          try {
+            await databases.createDocument(
+              APPWRITE_DATABASE_ID,
+              'agencies',
+              agencyId,
+              {
+                name: args._name || `Agência de ${userName}`,
+                slug: args._slug || `agencia-${Date.now().toString(36)}`,
+                email: userEmail,
+                created_at: now,
+                updated_at: now,
+              }
+            );
+            createdAgency = true;
+          } catch (agencyErr) {
+            if (!isConflict(agencyErr)) throw agencyErr;
+          }
 
-          const memberId = ID.unique();
-          const member = await databases.createDocument(
-            APPWRITE_DATABASE_ID,
-            'agency_members',
-            memberId,
-            {
-              agency_id: agencyId,
-              user_id: userId,
-              name: userName,
-              email: userEmail,
-              role: 'admin',
-              status: 'active',
-              is_active: true,
-              avatar_color: args._avatar_color || '#ff7a1a',
-              pref_leads_mine: false,
-              pref_tasks_mine: false,
-              pref_agenda_mine: false,
-              created_at: now,
-              updated_at: now,
+          let member: any;
+          try {
+            member = await databases.createDocument(
+              APPWRITE_DATABASE_ID,
+              'agency_members',
+              memberId,
+              {
+                agency_id: agencyId,
+                user_id: userId,
+                name: userName,
+                email: userEmail,
+                role: 'admin',
+                status: 'active',
+                is_active: true,
+                avatar_color: args._avatar_color || '#ff7a1a',
+                pref_leads_mine: false,
+                pref_tasks_mine: false,
+                pref_agenda_mine: false,
+                created_at: now,
+                updated_at: now,
+              }
+            );
+          } catch (memberErr) {
+            if (isConflict(memberErr)) {
+              member = await databases.getDocument(APPWRITE_DATABASE_ID, 'agency_members', memberId);
+            } else {
+              // Sem o membro, a agência recém-criada ficaria órfã: desfaz.
+              if (createdAgency) {
+                try {
+                  await databases.deleteDocument(APPWRITE_DATABASE_ID, 'agencies', agencyId);
+                } catch {}
+              }
+              throw memberErr;
             }
-          );
+          }
 
           const memberObj = {
             id: member.$id,
@@ -749,7 +1139,15 @@ export function createAppwriteBridge(svc: BridgeServices) {
         }
 
         if (fnName === 'has_role') {
-          return { data: true, error: null };
+          const currentUser = await appwriteAuthService.getCurrentUser();
+          if (!currentUser) return { data: false, error: null };
+          const wanted = String(args._role || args.role || '').toLowerCase();
+          const res = await databases.listDocuments(APPWRITE_DATABASE_ID, 'agency_members', [
+            Query.equal('user_id', currentUser.id),
+            Query.limit(5),
+          ]);
+          const roles = res.documents.filter((m: any) => m.is_active !== false).map((m: any) => String(m.role || '').toLowerCase());
+          return { data: wanted ? roles.includes(wanted) : roles.length > 0, error: null };
         }
 
         if (fnName === 'get_shared_itinerary') {
@@ -761,7 +1159,8 @@ export function createAppwriteBridge(svc: BridgeServices) {
           return { data: { ...doc, id: doc.$id }, error: null };
         }
 
-        return { data: null, error: null };
+        console.warn(`[dados] operação "${fnName}" não existe no Appwrite.`);
+        return { data: null, error: { message: `Operação indisponível: ${fnName}` } };
       } catch (err: any) {
         console.error(`[RPC ${fnName} error]:`, err);
         return { data: null, error: { message: err.message || `Erro ao executar ${fnName}` } };
