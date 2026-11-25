@@ -1,6 +1,7 @@
 import { client, databases, storage, account, APPWRITE_DATABASE_ID, APPWRITE_BUCKET_ID, Query, ID } from './client';
 import { appwriteAuthService } from '@/services/appwriteAuthService';
 import type { Databases, Storage } from 'appwrite';
+import { SERVER_ONLY, agencyPermissions, getCurrentAgency } from './permissions';
 
 export type BridgeServices = { databases: Databases; storage: Storage };
 
@@ -367,8 +368,13 @@ class AppwriteQueryBuilder {
             doc = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, targetId, payload);
           } else {
             const docId = getValidDocId(item.id);
+            // Registro novo nasce visível só para o time da agência dona.
+            // Configurações, financeiro e pagamentos são só do servidor: sem permissão no documento.
+            const owner = SERVER_ONLY.has(this.collectionId)
+              ? null
+              : (item.agency_id as string | undefined) || scope || getCurrentAgency();
             try {
-              doc = await this.svc.databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
+              doc = await this.svc.databases.createDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload, agencyPermissions(owner));
             } catch (createErr: any) {
               if ((createErr.code === 409 || createErr.type === 'document_already_exists') && !scope) {
                 doc = await this.svc.databases.updateDocument(APPWRITE_DATABASE_ID, this.collectionId, docId, payload);
@@ -567,7 +573,7 @@ class AppwriteStorageBridge {
       async upload(path: string, file: File) {
         try {
           const fileId = getValidDocId(path.replace(/[^a-zA-Z0-9]/g, '-'));
-          const created = await storage.createFile(bucketId, fileId, file);
+          const created = await storage.createFile(bucketId, fileId, file, agencyPermissions(getCurrentAgency()));
           return { data: { path: created.$id }, error: null };
         } catch (err: any) {
           return { data: null, error: err };

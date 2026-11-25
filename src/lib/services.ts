@@ -1,3 +1,4 @@
+import { setCurrentAgency } from "@/integrations/appwrite/permissions";
 import { supabase } from "@/integrations/supabase/client";
 import type {
   AgencyMember,
@@ -42,6 +43,7 @@ export function getMemberRole() {
   return _memberRole;
 }
 export function setAgencyContext(member: AgencyMember | null) {
+  setCurrentAgency(member?.agency_id ?? null);
   _agencyId = member?.agency_id ?? null;
   _memberId = member?.id ?? null;
   _memberRole = member?.role ?? null;
@@ -322,6 +324,7 @@ export async function removeMember(
       console.error("removeMember (block):", error);
       return { ok: false, error: "Não foi possível bloquear o membro." };
     }
+    await sincronizarTime();
     return { ok: true, action: "blocked" };
   }
 
@@ -330,6 +333,7 @@ export async function removeMember(
     console.error("removeMember (delete):", error);
     return { ok: false, error: "Não foi possível excluir o membro." };
   }
+  await sincronizarTime();
   return { ok: true, action: "deleted" };
 }
 
@@ -347,7 +351,18 @@ export async function setMemberBlocked(id: string, blocked: boolean): Promise<bo
     console.error("setMemberBlocked:", error);
     return false;
   }
+  await sincronizarTime();
   return true;
+}
+
+/** Bloquear, desbloquear ou remover alguém muda quem está no time da agência (feito no servidor). */
+async function sincronizarTime() {
+  try {
+    const { sincronizarEquipe } = await import("@/lib/access.functions");
+    await sincronizarEquipe();
+  } catch (err) {
+    console.error("sincronizarEquipe:", err);
+  }
 }
 
 /** Atualiza os dados do próprio perfil (nome, telefone, cor). Não altera cargo. */

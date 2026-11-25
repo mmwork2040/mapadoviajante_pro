@@ -10,11 +10,11 @@ import type { AppSession as Session } from "@/integrations/appwrite/bridge";
 import { supabase } from "@/integrations/supabase/client";
 import { appwriteAuthService } from "@/services/appwriteAuthService";
 import {
-  autoProvisionAgency,
   loadAgencyContext,
   setAgencyContext,
 } from "@/lib/services";
-import { acceptInvite, getMyPendingInvite, type PendingInvite } from "@/lib/invites";
+import { type PendingInvite } from "@/lib/invites";
+import { aceitarConviteDoEmail, garantirAcesso } from "@/lib/access.functions";
 import { captureDeviceTokenOnLogin } from "@/lib/notifications";
 import type { AgencyMember } from "@/lib/types";
 import { clearBrand } from "@/lib/brand";
@@ -62,32 +62,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPendingInvite(null);
       return;
     }
-    let m = await loadAgencyContext();
-
-    // 1) Convite via link (token guardado pela página /aceitar-convite)
-    if (!m && typeof window !== "undefined") {
-      const token = sessionStorage.getItem("invite_token");
-      if (token) {
-        await acceptInvite(token);
-        sessionStorage.removeItem("invite_token");
-        m = await loadAgencyContext();
-      }
-    }
-
-    // 2) Existe convite pendente para este e-mail? Não provisiona nova agência.
-    if (!m) {
-      const invite = await getMyPendingInvite();
-      if (invite) {
-        setPendingInvite(invite);
+    // O servidor vincula a conta, aceita convite pelo link ou cria a agência,
+    // e põe a pessoa no time da agência antes de qualquer leitura.
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("invite_token") : null;
+    let m: AgencyMember | null = null;
+    try {
+      const meta = sess.user.user_metadata as { name?: string } | undefined;
+      const res = await garantirAcesso({ data: { token: token ?? undefined, provisionar: true, nome: meta?.name || sess.user.email || undefined } });
+      if (token) sessionStorage.removeItem("invite_token");
+      if (res.pendingInvite) {
+        setPendingInvite(res.pendingInvite as PendingInvite);
         setMember(null);
         return;
       }
-    }
-
-    // 3) Usuário novo, sem convite → provisiona a própria agência.
-    if (!m && sess?.user) {
-      const meta = sess.user.user_metadata as { name?: string } | undefined;
-      m = await autoProvisionAgency(sess.user.id, meta?.name || sess.user.email || "Novo Usuário", sess.user.email || "");
+      if (res.member) {
+        setAgencyContext(res.member as AgencyMember);
+        m = (await loadAgencyContext()) ?? (res.member as AgencyMember);
+      }
+    } catch (err) {
+      console.error("garantirAcesso:", err);
+      m = await loadAgencyContext();
     }
     setPendingInvite(null);
     setMember(m);
@@ -166,7 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const acceptPendingInvite = useCallback(async () => {
     if (!pendingInvite) return { ok: false, error: "Nenhum convite pendente." };
-    const res = await acceptInvite("");
+    const res = await aceitarConviteDoEmail();
     if (!res.ok) return res;
     const { data } = await supabase.auth.getSession();
     await hydrateMember(data.session);
