@@ -4,10 +4,11 @@ A Fase 0 foi feita em 25/11/2026, na branch `claude/epic-sagan-g4n8l2` do reposi
 
 ## Antes de abrir a sessão
 
-1. **Fechar o banco** (`inventario-appwrite.md`, seção 1): aprovar o plano e rodar o script com uma chave temporária.
-2. **Chave de leitura do Appwrite** no ambiente da sessão, para o host `appwrite.agenc-ia.net`, no cabeçalho `X-Appwrite-Key` (escopos na seção 6 do inventário). A chave anterior foi recusada pelo servidor.
-3. **Juntar a branch da Fase 0 na `main`** depois de conferir a prévia da Vercel.
-4. Responder o que ficou aberto: P6 (multiagência e Hotmart), P7 (decisões D1 e D5), P8 (arquivos de referência das skills) e P9 (modelo de contrato e termos).
+1. **Testar a prévia da Vercel com login de verdade.** As correções da camada de dados foram testadas lendo os dados reais e simulando as gravações; falta o teste logado. Roteiro do teste: abrir uma viagem e ver os itens nos dias, editar um item com moeda, marcar como feito, enviar duas fotos na Biblioteca, criar uma tarefa, convidar uma pessoa e aceitar o convite.
+2. **Rodar `scripts/appwrite/estrutura-que-falta.mjs`** (primeiro sem `--aplicar`) para criar a coleção de documentos e ampliar os limites de texto. Depois, `gerar-schema.mjs`.
+3. **Conferir na Vercel** as variáveis `APPWRITE_API_KEY` (as funções de servidor, o link do roteiro e o convite dependem dela) e `APP_URL`.
+4. **Juntar a branch da Fase 0 na `main`** depois do teste.
+5. Responder o que ficou aberto: P6 (multiagência e Hotmart), P7 (decisões D1 e D5), P8 (arquivos de referência das skills) e P9 (modelo de contrato e termos).
 
 ## Texto para colar ao abrir a sessão
 
@@ -17,14 +18,15 @@ Vamos continuar a migração do CRM OSV para o desenho novo, rodando só no Appw
 Leia primeiro, neste repositório (mmwork2040/mapadoviajante_pro):
 - docs/migracao/PLANO-MESTRE.md (fases, decisões, respostas da Fase 0 e definição de pronto)
 - docs/migracao/inventario-appwrite.md
+- docs/migracao/FUNCOES-ATUAIS.md (toda função de hoje e o destino dela; decisão A9)
 - docs/migracao/MODELO-DE-DADOS-APPWRITE.md
 - docs/migracao/ESPECIFICACAO-TELAS.md
 - docs/prototipo-crm/ (o protótipo aprovado; abra index.html e use como gabarito)
 - docs/identidade/ e docs/skills/
 
-A Fase 0 está feita. Comece completando o inventário do Appwrite com a chave de leitura
-(somente leitura) e depois faça a Fase 1 (Design system): os componentes e a casca do app
-iguais ao protótipo, com a página /dev/ui nos dois temas e a 390 px.
+A Fase 0 está feita, com o inventário real do Appwrite e as correções da camada de dados.
+Faça a Fase 1 (Design system): os componentes e a casca do app iguais ao protótipo, com a
+página /dev/ui nos dois temas e a 390 px.
 
 Respostas que faltavam: P6 <...>, P7 <...>, P8 <...>, P9 <...>.
 

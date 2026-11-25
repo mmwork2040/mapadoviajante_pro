@@ -1,79 +1,66 @@
-# Inventário do Appwrite · Fase 0 (F0-T2)
+# Inventário do Appwrite
 
-Feito em 25/11/2026, **somente leitura**. Nada foi criado, alterado ou apagado no Appwrite.
+Atualizado em 25/11/2026 com leitura direta do servidor (chave de leitura). **Somente leitura:** nada foi criado, alterado ou apagado no Appwrite.
 
 | Item | Valor |
 |---|---|
 | Servidor | `https://appwrite.agenc-ia.net/v1` (próprio, versão 2.3.0) |
 | Projeto | `6abdb8190017d98565f5` ("Mapa do Viajante PRO") |
-| Banco | `6abdb82f002c563b2ad3` |
-| Bucket em uso | `trip-attachments` |
+| Banco | `6abdb82f002c563b2ad3` (`mapa_viajante_pro`) |
+| Coleções | 17 |
+| Bucket | `trip-attachments` (1 arquivo) |
+| Usuários | 5 |
+| Functions | nenhuma |
+| Teams | nenhum |
+| Índices | nenhum, em nenhuma coleção |
 
-## Como este inventário foi feito, e o que ainda falta
+## 1. Segurança
 
-A chave do Appwrite guardada no ambiente da sessão ("Appwrite - chave de configuração") **foi recusada pelo servidor**. Sem uma chave válida, não dá para listar atributos, índices, permissões, functions, teams nem contar documentos.
+**Situação hoje:** as 17 coleções e o bucket aceitam só usuários logados, e a segurança por documento está desligada. Visitante sem login não lê nada. `crm_transactions` não tem nenhuma permissão para usuários: só o servidor acessa, como deve ser.
 
-Por isso este inventário vem de duas fontes:
+No primeiro teste desta fase, feito sem chave, `crm_clients` e o bucket responderam sem login. Na leitura seguinte as permissões já estavam corretas. Para conferir a qualquer momento: `node scripts/appwrite/fechar-banco.mjs` (sem `--aplicar` ele só mostra).
 
-1. **O código do app** (`src/`): toda coleção, bucket e canal de tempo real que o app usa, e os campos que ele lê e grava.
-2. **Testes sem login** no servidor: uma leitura de 1 registro por coleção, que mostra se a coleção existe (404 quando não existe) e se está aberta para visitantes.
+**O que continua aberto:** qualquer pessoa com conta lê e grava os dados de **todas** as agências, porque a permissão é "usuários logados" e não "equipe da agência". O app filtra por agência, mas quem protege de verdade é o Appwrite. Isso é a tarefa F2-T2 do plano (um Team por agência).
 
-**Falta confirmar com uma chave de leitura** (seção 6): atributos e tipos reais, índices, permissões de cada coleção, quantidade de documentos, functions, teams e usuários.
+## 2. Coleções
 
-## 1. Alerta de segurança (resolver antes de qualquer outra coisa)
+`*` marca campo obrigatório. O número entre colchetes é o limite de caracteres dos campos pequenos.
 
-Dois recursos respondem **sem login**, para qualquer pessoa na internet que tenha o ID do projeto (ele está no código do site):
-
-| Recurso | O que o teste mostrou | Risco |
-|---|---|---|
-| Coleção `crm_clients` | Lista os 5 clientes cadastrados sem login. A coleção tem leitura para `any`. Três documentos também têm `update("any")` e `delete("any")` | Dados pessoais (CPF, passaporte, endereço, telefone) expostos. Se a segurança por documento estiver ligada, esses três também podem ser alterados ou apagados por qualquer pessoa |
-| Bucket `trip-attachments` | Lista o arquivo guardado (um PDF) sem login. O bucket tem leitura para `any` | Anexos de viagem (vouchers, documentos) expostos |
-
-No teste só foram lidos o ID, as permissões e a agência de cada registro. Nenhum dado pessoal foi baixado.
-
-As outras 15 coleções testadas recusam o visitante (401), como devem.
-
-**Plano proposto para fechar (aguardando aprovação, nada foi aplicado):**
-
-1. Criar no console do Appwrite uma chave temporária com os escopos `collections.read`, `collections.write`, `buckets.read` e `buckets.write`.
-2. Rodar `node scripts/fechar-banco-appwrite.mjs` **sem** `--aplicar`. Ele só mostra o que mudaria em cada coleção e no bucket.
-3. Conferir a lista. Rodar de novo com `--aplicar`: cada coleção e o bucket passam a aceitar só usuários logados, e a segurança por documento é desligada (para as permissões `any` gravadas nos registros antigos deixarem de valer).
-4. Repetir o teste sem login. Tudo deve responder 401.
-5. Apagar a chave temporária.
-
-Isso estanca o vazamento para fora. A separação **entre agências** (um usuário logado de uma agência não ler os dados de outra) continua pendente e é a tarefa F2-T2 do plano.
-
-## 2. Coleções: o que existe hoje e para onde vai
-
-"Existe" vem do teste no servidor. "Campos" vem do código, e precisa ser conferido com a chave de leitura.
-
-| Coleção atual | Existe | Visitante lê | Campos que o app usa | Coleção alvo (`MODELO-DE-DADOS-APPWRITE.md`) |
+| Coleção | Registros | Quem acessa | Campos | Coleção alvo |
 |---|---|---|---|---|
-| `agencies` | sim | não | name, slug, email, phone, cnpj, logo_url, settings (JSON) | `agencies` + um Team por agência |
-| `agency_members` | sim | não | agency_id, user_id, name, email, phone, role, status, is_active, avatar_color, invite_token, pref_leads_mine, pref_tasks_mine, pref_agenda_mine | `members` + participação no Team. `invite_token` vira `invites` (ou convite do próprio Team) |
-| `crm_clients` | sim | **sim** | agency_id, created_by, name, email, phone, whatsapp, cpf, birth_date, passport_number, passport_expiry, passport_country, address_*, preferences (JSON, **guarda também os familiares**), notes | `people` (titular). Os familiares dentro de `preferences` viram `people` da mesma `households` |
-| `crm_leads` | sim | não | agency_id, assigned_to, client_id, name, email, phone, destination, value, status, origin, notes, profile (JSON), checklists (JSON), benefits (JSON), budget_total, budget_client, budget_osv, last_activity_at, archived_at | `trips` (fase comercial) + `trip_travelers`. `checklists` vira `checklist_items`; `profile` e `benefits` vão para `trips.profile` |
-| `crm_lead_activities` | sim | não | agency_id, lead_id, author_id, assigned_to_id, type, title, details, mentions, due_date, completed_at | `history`. Atividade com `due_date` também vira `agenda_items` |
-| `crm_lead_documents` | **não existe** | — | agency_id, lead_id, itinerary_id, activity_id, name, file_path, mime_type, size, category, content | `trip_documents`. **Hoje a tela de documentos da viagem não tem onde gravar** |
-| `crm_itineraries` | sim | não | agency_id, lead_id, created_by, title, client_name, destination, start_date, end_date, passengers, budget, spent, status, cover_image, share_token | A **mesma** `trips` da venda (fase preparação). `share_token` vira `share_links` |
-| `crm_itinerary_days` | sim | não | itinerary_id, day_number, date, label/title, sort_order | `trip_days` |
-| `crm_itinerary_activities` | sim | não | day_id, type, title, description, location, maps_url, time_start, duration, cost, sort_order, images, hotel_options, suggestion_options, passenger_costs | `trip_items` |
-| `crm_vouchers` | sim | não | itinerary_id, name, category, confirmation_code, file_url, notes | `trip_documents` |
-| `crm_trip_expenses` | sim | não | agency_id, lead_id, activity_id, category, description, amount, paid_with, savings, occurred_at, created_by | `trip_expenses` |
-| `crm_transactions` | sim | não | agency_id, lead_id, itinerary_id, type, category, description, amount, status, transaction_date, created_by | `transactions` |
-| `crm_tasks` | sim | não | agency_id, assigned_to, created_by, lead_id, itinerary_id, title, description, due_date, priority, completed, completed_at | `agenda_items` |
-| `crm_notifications` | sim | não | agency_id, recipient_id, actor_id, lead_id, type, title, body, link, read | `notifications` |
-| `crm_library_destinations` | sim | não | agency_id, name, country, category, description, attractions, best_season, climate, currency, avg_budget, visa_required, timezone, tags, image_url, operational_notes | `destination_catalog` (e `library_items` quando for conteúdo pronto) |
-| `crm_library_items` | sim | não | agency_id, created_by, type, title, description, content, days, location, price, tags, file_name, file_url, image_url | `library_items` |
-| `crm_ai_config` | sim | não | agency_id, provider, model, system_prompt, max_tokens, knowledge_sources, api_key_encrypted | `settings` (Assistente). A chave sai da coleção e fica só no servidor |
-| `system_settings` | sim | não | key, value (JSON) | Ver seção 3 |
-| `agency_payment_settings` | **não existe** | — | agency_id, asaas_api_key, asaas_webhook_token, … | Nenhuma por enquanto (Asaas desligado, D4). O webhook do Asaas responde "token desconhecido" |
+| `agencies` | 8 | usuários logados | name*, slug*, cnpj, phone, email, logo_url, settings, created_at, updated_at | `agencies` + um Team por agência |
+| `agency_members` | 13 | usuários logados | agency_id*, user_id, name*, email, phone, role*, status*, avatar_color, invite_token, is_active, pref_agenda_mine, pref_leads_mine, pref_tasks_mine, created_at, updated_at | `members` + participação no Team |
+| `crm_clients` | 5 | usuários logados | agency_id*, name*, email, phone, whatsapp, cpf, birth_date, passport_number, passport_country, passport_expiry, address_zip, address_street, address_number, address_complement, address_neighborhood, address_city, address_state, address_country, notes [10000], created_by, created_at, updated_at, preferences | `people` (titular); familiares em `preferences` viram `people` da mesma `households` |
+| `crm_leads` | 8 | usuários logados | agency_id*, name*, email, phone, status*, origin, destination, value, budget_total, budget_client, budget_osv, assigned_to, client_id, notes [4000], last_activity_at, archived_at, created_at, updated_at, checklists [8000], profile | `trips` (fase comercial) + `trip_travelers`; `checklists` vira `checklist_items` |
+| `crm_lead_activities` | 0 | usuários logados | agency_id*, lead_id*, author_id*, type*, title*, details, due_date, completed_at, assigned_to_id, mentions, created_at | `history`; com data, também `agenda_items` |
+| `crm_itineraries` | 6 | usuários logados | agency_id*, title*, destination, client_name, lead_id, status, start_date, end_date, passengers, budget, spent, cover_image, share_token, created_by, created_at, updated_at | a mesma `trips` da venda (fase preparação); `share_token` vira `share_links` |
+| `crm_itinerary_days` | 83 | usuários logados | itinerary_id*, day_number*, date, label, sort_order, created_at | `trip_days` |
+| `crm_itinerary_activities` | 45 | usuários logados | day_id*, title*, type*, time_start, duration [50], location, maps_url, description, cost, sort_order, created_at | `trip_items` (os dados extras ganham campo próprio, `kindData`) |
+| `crm_vouchers` | 1 | usuários logados | itinerary_id*, name*, category, confirmation_code, file_url, notes [5000], created_at | `trip_documents` |
+| `crm_trip_expenses` | 0 | usuários logados | agency_id*, lead_id*, activity_id, category*, description, amount*, paid_with*, savings, occurred_at, created_by, created_at | `trip_expenses` |
+| `crm_transactions` | 0 | só o servidor | agency_id*, type*, amount*, category, description, transaction_date*, status, lead_id, itinerary_id, created_by, created_at, updated_at | `transactions` |
+| `crm_tasks` | 0 | usuários logados | agency_id*, title*, description, due_date, priority, completed, completed_at, assigned_to, lead_id, itinerary_id, created_by, created_at, updated_at | `agenda_items` |
+| `crm_notifications` | 1 | usuários logados | agency_id*, recipient_id*, title*, body, type*, link, lead_id, actor_id, read, created_at | `notifications` |
+| `crm_library_destinations` | 7 | usuários logados | agency_id*, name*, country, category, climate, currency, timezone, best_season, visa_required, description, avg_budget, image_url, attractions, tags, created_at, updated_at, operational_notes | `destination_catalog` |
+| `crm_library_items` | 19 | usuários logados | agency_id*, title*, type*, location, price, days, description, file_url, file_name, image_url, tags, created_by, created_at, updated_at, content [1500] | `library_items` |
+| `crm_ai_config` | 1 | usuários logados | agency_id*, provider, model, api_key_encrypted, system_prompt [10000], max_tokens, created_at, updated_at, knowledge_sources [3000] | `settings` (Assistente); a chave sai da coleção |
+| `system_settings` | 33 | usuários logados | key*, value [10000], created_at, updated_at | ver seção 4 |
 
-Nenhuma coleção do modelo alvo existe ainda (testadas: `people`, `households`, `trips`, `trip_travelers`, `trip_days`, `trip_items`, `checklist_items`, `trip_documents`, `history`, `agenda_items`, `proposals`, `proposal_options`, `proposal_templates`, `contracts`, `contract_templates`, `payments`, `library_items`, `library_imports`, `checklist_templates`, `skills`, `destination_catalog`, `partner_links`, `guides`, `ai_usage`, `transactions`, `integrations`, `notifications`, `share_links`, `intake_submissions`, `members`, `invites`). A Fase 2 cria todas do zero, sem conflito de nomes.
+Nenhuma coleção do modelo alvo existe ainda. A Fase 2 cria todas do zero, sem conflito de nomes.
 
-## 3. O que está guardado em `system_settings`
+## 3. O que o app usa e não existe no Appwrite
 
-Uma coleção de chave e valor que faz o papel de várias. Na Fase 2, cada grupo vai para o seu lugar.
+| O que falta | Efeito | Como resolver |
+|---|---|---|
+| Coleção `crm_lead_documents` | Anexos dos itens do roteiro, documentos da viagem e do cliente e a aba Documentos da Biblioteca não gravam. As listas aparecem vazias e o envio explica o motivo | `node scripts/appwrite/estrutura-que-falta.mjs` cria a coleção. Só acrescenta |
+| Bucket `library-assets` | Não é mais necessário: o app passou a usar o bucket `trip-attachments` para a Biblioteca também | Nada a fazer |
+| Limites de texto pequenos | Modelos de checklist acima de 10 mil caracteres, materiais de referência da IA acima de 3 mil e conteúdo da Biblioteca acima de 1.500 são recusados. O app agora avisa qual campo passou do limite | O mesmo script amplia os seis campos |
+| Campos para os dados extras do item do roteiro | Resolvido no código: moeda, valor em reais, sugestões, valores por pessoa, fotos e "feito" vão junto da observação (`description`) | Na Fase 2 ganham campo próprio |
+| Campo `benefits` em `crm_leads` | Resolvido no código: os benefícios ficam dentro de `profile` | Na Fase 2 ganham campo próprio |
+
+## 4. O que está guardado em `system_settings`
+
+Uma coleção de chave e valor (33 registros) que faz o papel de várias.
 
 | Chave | Conteúdo | Destino |
 |---|---|---|
@@ -89,41 +76,44 @@ Uma coleção de chave e valor que faz o papel de várias. Na Fase 2, cada grupo
 | `agency_cfg:{agência}:payments` | Configuração de pagamento | `settings` (Asaas desligado) |
 | `ai_usage:{agência}:{AAAA-MM}` | Tokens de IA usados no mês | `ai_usage` |
 | `platform_cfg:ai_quota` | Cota padrão de IA | `agencies.aiQuota` |
-| `push_token:{usuário}:{aparelho}` | Aparelhos que recebem push | Coleção própria de aparelhos (ou Appwrite Messaging) |
+| `push_token:{usuário}:{aparelho}` | Aparelhos que recebem push | Coleção própria de aparelhos |
 | `push_delivery:{id}` | Confirmação de entrega de push | Descartar depois de migrar |
+| `free_plan_*`, `trial_config`, `ai_models_config`, `flight_apis_config`, `feature_settings`, `ai_token_limits` | Configurações de um sistema anterior; o app atual não lê | Conferir e descartar na migração |
 
-Atenção: há **segredos dentro de documentos** (senha do Gmail, conta de serviço do Firebase, segredo do n8n, chave de IA em `crm_ai_config`). Hoje só o servidor os lê, mas quem protege é a permissão da coleção. Regra 1 da arquitetura: passam para variáveis do servidor ou coleção sem leitura para usuários.
+Há **segredos dentro de documentos** (senha do Gmail, conta de serviço do Firebase, segredo do n8n, chave de IA em `crm_ai_config`), e a coleção é legível por qualquer usuário logado. Regra 1 da arquitetura: passam para variáveis do servidor ou para coleção sem leitura para usuários (F2 e F13).
 
-## 4. Arquivos, tempo real, login e funções
+## 5. O que os dados mostram
+
+Achados da leitura. **Nenhum foi corrigido nos dados**; a limpeza precisa de aprovação e entra na migração da Fase 2.
+
+| Achado | Detalhe | O que fazer |
+|---|---|---|
+| Uma agência concentra tudo | A agência da OSV tem todos os clientes, vendas, roteiros e a Biblioteca, com 2 administradores | É a agência a migrar |
+| Agências e membros repetidos | 8 agências e 13 membros para 5 usuários. Contas de teste ganharam 2 a 4 agências cada | Causa corrigida no código. Apagar as repetidas na migração |
+| Fotos da Biblioteca sem arquivo | 19 imagens cadastradas apontam para arquivos que não estão no bucket (não vieram do sistema anterior). Aparecem sem foto | Enviar as fotos de novo, ou recuperar do sistema anterior se ainda houver cópia |
+| Capa apontando para fora | 1 roteiro tem a capa num endereço do Supabase, que não existe mais | Trocar a capa |
+| Roteiro com 47 dias | 1 roteiro tem dias repetidos e a data de fim antes do início | Conferir com a consultora |
+| Venda apontando para cliente que não existe | 1 venda fechada cita um cliente apagado | Revincular na migração |
+| Tarefas, atividades, gastos e transações zerados | 0 registros nas quatro coleções | Normal se ainda não usaram; as gravações foram testadas e funcionam |
+| Sem índices | Nenhuma coleção tem índice. Funciona com o volume de hoje | A Fase 2 cria os índices do modelo novo |
+
+## 6. Arquivos, tempo real, login e funções
 
 | Tema | Hoje | Alvo |
 |---|---|---|
-| Bucket `trip-attachments` | Existe. **Aberto para visitantes.** Guarda os anexos da viagem | `documentos`, privado por agência |
-| Bucket `library-assets` | **Não existe**, mas o código da Biblioteca grava nele. Envio de arquivo e de foto na Biblioteca falha | `biblioteca` (criar na F2-T3) |
+| Bucket `trip-attachments` | Único bucket, 30 MB por arquivo, só usuários logados. Passou a guardar também os arquivos da Biblioteca | `documentos`, `biblioteca`, `capas`, `contratos` e `guias`, privados por agência |
 | Tempo real | 4 inscrições: `crm_leads` (contador do menu e quadro) e `crm_notifications` (sino e página) | Viagens, agenda e notificações (F2-T7) |
 | Login | Conta do Appwrite: e-mail e senha, Google, recuperação de senha | Mantém |
-| Equipe por agência | Coleção `agency_members` (campo `role`). **Não usa Teams do Appwrite.** O login marca todo usuário como admin no navegador (só afeta o que a tela mostra) e `has_role` sempre responde verdadeiro | Um Team por agência, papéis = cargos (A5), permissão no documento |
-| Criação de agência | Feita pelo navegador quando o usuário não tem agência (`provision_agency`) | Pelo servidor, com acesso liberado pela Hotmart (D5) |
-| Functions do Appwrite | O app não chama nenhuma. Toda lógica de servidor roda na Vercel (`src/lib/*.functions.ts`) | Decidir na F2: manter na Vercel ou mover para Functions (ver P3 no plano) |
-| Super admin | Lista de e-mails no código e em `SUPER_ADMIN_EMAILS` | Painel próprio (F13) |
+| Equipe por agência | Coleção `agency_members` (campo `role`). Não usa Teams | Um Team por agência, papéis = cargos (A5) |
+| Criação de agência | Pelo navegador, quando o usuário entra sem agência e sem convite | Pelo servidor, com acesso liberado pela Hotmart (D5) |
+| Functions do Appwrite | Nenhuma. A lógica de servidor roda na Vercel (`src/lib/*.functions.ts`) | Decidir na F2 |
 
-## 5. O que ainda aponta para fora do Appwrite
+## 7. Scripts de manutenção
 
-Depois da limpeza desta fase, não há mais nenhuma referência a Supabase ou Lovable no código. O que continua falando com outros serviços, por desenho:
+Ficam em `scripts/appwrite/`. Todos pedem `APPWRITE_ADMIN_KEY` e, sem `--aplicar`, só mostram o que fariam.
 
-| Serviço | Para quê | Situação |
+| Script | O que faz | Altera o Appwrite? |
 |---|---|---|
-| Vercel | Hospedagem e funções de servidor | Mantém (P3) |
-| Provedores de IA (gateway da Vercel, OpenAI, Anthropic, Google) | Thay IA, roteiro, checklist | Chave só no servidor (D2) |
-| Firebase Cloud Messaging | Push no celular | Mantém. O Appwrite Messaging também usa o FCM por baixo |
-| Google Drive | Importar documentos no roteiro | Reescrito para a API do Google com conta de serviço. **Falta configurar e testar** |
-| Gmail (SMTP) | Convites e e-mails | Mantém |
-| Asaas | Pagamento | Desligado (D4) |
-| n8n | Entrada de viagens | Agora grava no Appwrite. **Falta testar com um envio real** |
-| Fontes do Google, Wikimedia, Nominatim, ViaCEP, IBGE | Fontes, fotos, mapas, CEP | Serviços públicos, sem conta |
-
-## 6. Para completar o inventário
-
-Criar no console do Appwrite uma chave **só de leitura** com os escopos `databases.read`, `collections.read`, `attributes.read`, `indexes.read`, `documents.read`, `buckets.read`, `files.read`, `functions.read`, `teams.read` e `users.read`, e guardar no ambiente da sessão para o host `appwrite.agenc-ia.net`, **no cabeçalho `X-Appwrite-Key`** (sem a palavra `Bearer`).
-
-Com ela, a próxima rodada preenche: tipo e tamanho de cada atributo, índices, permissões exatas, quantidade de documentos por coleção e por agência, e se existem functions, teams ou usuários órfãos.
+| `fechar-banco.mjs` | Confere e fecha coleções e bucket para visitantes | Só com `--aplicar` |
+| `estrutura-que-falta.mjs` | Cria `crm_lead_documents` e amplia seis limites de texto | Só com `--aplicar` |
+| `gerar-schema.mjs` | Lê os campos reais e reescreve `src/integrations/appwrite/schema.ts` | Não (só lê) |

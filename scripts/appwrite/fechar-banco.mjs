@@ -7,8 +7,8 @@
 //     permissão "any" dentro deles e continuariam abertos com ela ligada)
 //
 // Uso (Node 18 ou mais novo):
-//   APPWRITE_ADMIN_KEY=<chave> node scripts/fechar-banco-appwrite.mjs          -> só mostra o que vai mudar
-//   APPWRITE_ADMIN_KEY=<chave> node scripts/fechar-banco-appwrite.mjs --aplicar -> aplica
+//   APPWRITE_ADMIN_KEY=<chave> node scripts/appwrite/fechar-banco.mjs          -> só mostra o que vai mudar
+//   APPWRITE_ADMIN_KEY=<chave> node scripts/appwrite/fechar-banco.mjs --aplicar -> aplica
 //
 // A chave precisa dos escopos: collections.read, collections.write,
 // buckets.read, buckets.write. Crie uma chave temporária e apague depois.
@@ -82,6 +82,14 @@ async function main() {
   console.log(`Coleções encontradas: ${collections.length}\n`);
   for (const c of collections) {
     const open = isOpen(c.$permissions);
+    // Coleção sem nenhuma permissão só é acessada pelo servidor (ex.: o
+    // financeiro). Já está mais fechada do que "usuários logados": não mexer.
+    const serverOnly = (c.$permissions || []).length === 0 && !c.documentSecurity;
+    if (serverOnly) {
+      console.log(`- ${c.$id}`);
+      console.log("    só o servidor acessa (sem permissão para usuários); nada a mudar");
+      continue;
+    }
     const needs = open || c.documentSecurity || describe(c.$permissions) !== describe(LOGGED_IN);
     console.log(`- ${c.$id}${open ? "  [ABERTA PARA QUALQUER PESSOA]" : ""}`);
     console.log(`    permissões: ${describe(c.$permissions)}`);

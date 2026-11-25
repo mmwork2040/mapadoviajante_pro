@@ -72,17 +72,19 @@ Verificado no repositório `mmwork2040/mapadoviajante_pro` e no servidor. Detalh
 | P1 | **Sim, é o `mmwork2040/mapadoviajante_pro`**, branch `main`. Ele já roda no Appwrite por uma camada de consultas (`src/integrations/appwrite/`). Toda a execução acontece nele; este plano, o protótipo, a identidade e as skills foram copiados para `docs/` | Respondida |
 | P2 | Servidor próprio `https://appwrite.agenc-ia.net/v1` (versão 2.3.0). Projeto `6abdb8190017d98565f5`, banco `6abdb82f002c563b2ad3`, bucket `trip-attachments` | Respondida |
 | P3 | **Vercel**, publicação automática pela branch `main` do GitHub. Domínio atual: `https://mapadoviajante-pro.vercel.app`. As funções de servidor rodam na Vercel, não em Functions do Appwrite | Respondida. Falta decidir se haverá domínio próprio |
-| P4 | Os dados já estão no Appwrite, nas coleções `crm_*`, `agencies`, `agency_members` e `system_settings` (17 existem; `crm_lead_documents` e `agency_payment_settings` não existem). A Fase 2 é reorganizar dentro do Appwrite, sem importar de fora | Respondida. Falta a contagem de documentos (precisa de chave de leitura) |
+| P4 | Os dados já estão no Appwrite, nas coleções `crm_*`, `agencies`, `agency_members` e `system_settings` (17 existem; `crm_lead_documents` e `agency_payment_settings` não existem). A Fase 2 é reorganizar dentro do Appwrite, sem importar de fora. Contagens em `inventario-appwrite.md` | Respondida |
 | P5 | Login por conta do Appwrite: e-mail e senha, Google e recuperação de senha. **Não há Teams.** A equipe fica na coleção `agency_members`, com o campo `role` | Respondida |
 | P6 | O código é multiagência (toda coleção tem `agency_id`, há tela de Plataforma para o super admin e cota de IA por agência). Falta o dono do produto confirmar se o produto continua multiagência e com acesso pela Hotmart | **Aberta** |
 | P7 | D2 (chave de IA só no servidor, cota por agência) e D4 (Asaas desligado) já estão no código. D1 e D5 dependem de confirmação | **Aberta** |
 | P8 | Só as duas skills de `docs/skills/` estão no repositório. Os arquivos de referência citados não estão | **Aberta** |
 | P9 | Não há modelo de contrato nem textos jurídicos no repositório | **Aberta** |
 
-Achados da Fase 0 que mudam o plano:
+Achados da Fase 0 que mudam o plano (detalhes em `inventario-appwrite.md` e na seção 17 de `FUNCOES-ATUAIS.md`):
 
-- **Segurança:** a coleção `crm_clients` e o bucket `trip-attachments` respondem sem login. Fechar antes de tudo (plano em `inventario-appwrite.md`, seção 1).
-- O código da Biblioteca grava no bucket `library-assets` e os documentos da viagem gravam em `crm_lead_documents`. **Nenhum dos dois existe no Appwrite**, então essas duas funções não gravam hoje. Entram na F2 com os nomes novos (`biblioteca` e `trip_documents`).
+- **O app atual tinha falhas de base na camada de dados** (relações ignoradas, arquivos com o mesmo código, campos que não cabiam). Foram corrigidas na Fase 0, antes de redesenhar as telas, e a lista está em `FUNCOES-ATUAIS.md`.
+- **Segurança:** as coleções e o bucket estão fechados para visitantes. Continua aberto que qualquer usuário logado lê os dados de todas as agências (F2-T2).
+- **Falta no Appwrite** a coleção `crm_lead_documents` e mais espaço em seis campos de texto. O script `scripts/appwrite/estrutura-que-falta.mjs` faz as duas coisas e só acrescenta.
+- **Dados:** agências e membros repetidos, 19 fotos da Biblioteca sem arquivo e um roteiro com dias repetidos. A limpeza entra na migração da F2.
 - O app usava a marca "MapaPRO" no menu e no login. A fase visual trocou pelo logo OSV com o rótulo "Consultoria", como no protótipo. Se o produto for vendido a outras agências (P6), a marca por agência vira tarefa da F10.
 
 ---

@@ -397,26 +397,39 @@ A ficha da venda está na seção 4.
 
 ---
 
-## 17. O que hoje parece quebrado ou pela metade
+## 17. O que estava quebrado e como ficou
 
-Achado na leitura do código. **Nada disto foi testado com dados reais.** Os três primeiros foram conferidos direto no código nesta fase; os outros precisam de um teste antes de virar tarefa. Tudo aqui tem de funcionar no desenho novo.
+Levantado na leitura do código e conferido contra o inventário real do Appwrite (25/11/2026). Os itens "Corrigido" foram testados num ambiente que lê os dados reais e simula as gravações, conferindo cada uma contra os campos reais das coleções. **Falta o teste com login de verdade na prévia da Vercel.**
 
-| # | Problema | Efeito para quem usa | Onde entra |
+| # | Problema | Efeito para quem usava | Situação |
 |---|---|---|---|
-| 1 | **Convite de equipe.** A página do convite chama três operações que a camada do Appwrite não tem | O convite aparece como inválido, e quem entra pelo convite ganha uma agência nova em vez de entrar na equipe | F13, antes de convidar mais gente |
-| 2 | **Excluir atividade.** A exclusão só aceita um formato de código que os registros novos do Appwrite não usam | Não dá para excluir atividades novas, e a tarefa ligada já foi apagada antes do erro | F4 |
-| 3 | **Marcar item do roteiro como feito** troca o tipo do item | O item perde o ícone; voo e hotel marcados somem das páginas de Voos e Hospedagem do roteiro do cliente | F6 |
-| 4 | **Documentos da viagem** gravam numa coleção que não existe, e a **Biblioteca** envia arquivos para um bucket que não existe (ver `inventario-appwrite.md`) | Anexos e arquivos da Biblioteca não são salvos | F2 |
-| 5 | Roteiro do cliente pode sair sem o título dos dias, sem os horários e com moeda errada (conferir) | O cliente vê "Dia 1" sem título e valores em dólar como reais | F12 |
-| 6 | A resposta do roteiro público leva dados que a tela esconde: sugestões, valores por pessoa com nomes e fotos (conferir) | Quem inspecionar o link enxerga dados internos | F12, com a F13 |
-| 7 | Duplicar viagem e duplicar dia copiam só os campos básicos | A cópia perde moeda, sugestões, fotos e anexos | F6 |
-| 8 | Excluir viagem não apaga os anexos (conferir) | Arquivos ficam órfãos e travados como "em uso" | F6 |
-| 9 | Completar com IA e o chat criam itens sem avisar quando o dia já existia (conferir) | A tela diz que não encontrou dados, mas os itens foram gravados | F11 |
-| 10 | Push por evento não existe: os eventos são salvos, mas nada envia | Só o push de teste chega | F10 |
-| 11 | Quatro eventos do webhook nunca disparam; mudar a etapa pela ficha não avisa | Integrações externas ficam sem parte dos avisos | F10 |
-| 12 | Asaas pela metade: salva a configuração, mas nenhuma tela cobra | Sem efeito (desligado por decisão D4) | F5 |
-| 13 | Venda vinda do n8n chega sem responsável, sem checklist e sem cliente; o aeroporto vai para o campo errado | Consultores não veem a venda no funil | F13 |
-| 14 | Regras diferentes entre telas: o funil reabre venda fechada sem perguntar; senha mínima de 6 num lugar e 8 em outro; o Painel mostra tudo ao consultor que no funil só vê o seu | Comportamento inconsistente | F4, F8 e F13 |
-| 15 | Textos que prometem o que o código não faz: copiar preferências para cada viagem nova e lembretes de datas | Expectativa sem função | F3 e F7 |
+| 1 | A camada de dados ignorava todo pedido de dados relacionados | O roteiro abria com os dias vazios (os itens existiam no banco), a venda sem o responsável, a tarefa sem a viagem, a notificação sem o autor | **Corrigido** |
+| 2 | Todo arquivo de uma agência recebia o mesmo código no bucket | Só o primeiro envio de arquivo funcionava; os seguintes eram recusados | **Corrigido** |
+| 3 | A Biblioteca enviava arquivos para um bucket que não existe | Nenhuma foto ou PDF da Biblioteca era salvo | **Corrigido** (usa o bucket que existe) |
+| 4 | Dados extras do item do roteiro iam num campo de 50 caracteres | Salvar um item com moeda, valor em reais, sugestões, valores por pessoa ou fotos era recusado | **Corrigido** |
+| 5 | Marcar item como feito trocava o tipo do item | O item perdia o ícone; voo e hotel marcados sumiam do roteiro do cliente | **Corrigido** |
+| 6 | Benefícios da venda eram gravados num campo que a coleção não tem | A aba Benefícios não salvava | **Corrigido** (ficam dentro do perfil) |
+| 7 | Convite de equipe chamava três operações que não existiam | O convite aparecia como inválido, e quem entrava ganhava uma agência nova | **Corrigido** e testado de ponta a ponta |
+| 8 | A carga do usuário rodava duas vezes e havia dois caminhos para criar agência | Agências e membros repetidos (8 agências para 5 usuários) | **Corrigido**. Os repetidos que já existem ficam para a migração |
+| 9 | Excluir atividade só aceitava um formato de código antigo | Atividades novas não podiam ser excluídas, e a tarefa ligada sumia antes do erro | **Corrigido** |
+| 10 | Modelos de checklist: desativar e excluir usavam um filtro inexistente | As duas ações davam erro | **Corrigido** |
+| 11 | Roteiro do cliente lia campos com outro nome | Dias sem título, itens sem horário, moeda errada | **Corrigido** |
+| 12 | A resposta do roteiro público levava dados internos | Sugestões, valores por pessoa com nomes e fotos iam escondidos na resposta | **Corrigido** (sai só o que o cliente vê) |
+| 13 | Duplicar viagem e duplicar dia copiavam só os campos básicos | A cópia perdia moeda, sugestões, fotos e as datas dos dias | **Corrigido** |
+| 14 | Excluir viagem, venda e cliente não levava os dados ligados | Anexos, atividades, tarefas e gastos ficavam órfãos | **Corrigido** |
+| 15 | Alterar senha não pedia a senha atual, e o mínimo variava entre 6 e 8 | O Appwrite recusava a troca | **Corrigido** |
+| 16 | Quatro eventos do webhook nunca disparavam; mudar a etapa pela ficha não avisava | Integrações externas sem parte dos avisos | **Corrigido** |
+| 17 | O quadro reabria viagem fechada sem perguntar, e a ficha perguntava | Comportamento diferente entre telas | **Corrigido** |
+| 18 | Ordenação por data usava um campo vazio nos registros novos | Listas "mais recentes primeiro" fora de ordem | **Corrigido** |
+| 19 | Arquivos dependiam de cookie de outro site para abrir | Fotos e PDFs não abriam no Safari e no iPhone | **Corrigido** (abrem com a sessão do usuário) |
+| 20 | Venda vinda do n8n com o ponto de partida no campo errado | A ficha mostrava a partida vazia | **Corrigido**. A venda ainda chega sem responsável (a distribuição é da F10) |
+| 21 | Biblioteca e Plataforma sem acesso no celular | Só dava para abrir no computador | **Corrigido** |
+| 22 | Documentos da viagem gravam numa coleção que não existe | Anexos e documentos não são salvos | **Depende do Appwrite:** `scripts/appwrite/estrutura-que-falta.mjs` cria a coleção. O código já está pronto e testado contra ela |
+| 23 | Limites de texto pequenos em seis campos | Modelos de checklist grandes, materiais da IA e conteúdo longo da Biblioteca são recusados | **Depende do Appwrite:** o mesmo script amplia. O app já avisa qual campo passou do limite |
+| 24 | 19 fotos da Biblioteca sem arquivo | Aparecem sem imagem | **Depende de dados:** os arquivos não vieram do sistema anterior. Enviar de novo |
+| 25 | Push por evento não existe: os eventos são salvos, mas nada envia | Só o push de teste chega | **Aberto** (função nova, F10) |
+| 26 | Asaas pela metade | Sem efeito | **Aberto por decisão** (D4, desligado) |
+| 27 | Completar com IA e o chat criam itens sem avisar quando o dia já existia (conferir) | A tela diz que não encontrou dados | **Aberto** (precisa de chave de IA para testar; F11) |
+| 28 | Qualquer usuário logado lê os dados de todas as agências | Risco entre agências | **Aberto** (F2-T2: um Team por agência) |
 
 Funções que **não existem** hoje, apesar de às vezes serem lembradas: importar planilha de vendas, exportar listas e marcar pessoas (menção) nas atividades.

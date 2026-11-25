@@ -43,9 +43,10 @@ A lista completa está em `.env.example`.
 
 ## O que falta — e precisa do console do Appwrite
 
-**Situação em 25/11/2026:** o teste sem login mostrou `crm_clients` e o bucket
-`trip-attachments` abertos para qualquer pessoa; as outras coleções recusam o
-visitante. O plano para fechar está em `docs/migracao/inventario-appwrite.md`.
+**Situação em 25/11/2026:** lidas direto no servidor, as 17 coleções e o bucket
+aceitam só usuários logados (`crm_transactions`, só o servidor). Visitante não lê
+nada. Para conferir de novo: `node scripts/appwrite/fechar-banco.mjs`. Continua
+aberto o item 2 abaixo (separação por agência).
 
 **1. Permissões das coleções (urgente).** As server functions agora estão
 protegidas, mas o navegador continua lendo e gravando direto no Appwrite. Quem
@@ -81,7 +82,8 @@ Recomendação: (a) agora para estancar, (b) ao longo da Fase 2.
 
 **3. Outros pontos encontrados (próximas tarefas):**
 
-- `rpc("has_role")` na ponte **sempre devolve verdadeiro**.
+- `rpc("has_role")` devolvia sempre verdadeiro. Agora confere o cargo do usuário
+  (ainda no navegador; a conferência que vale é a do servidor).
 - A criação de agência (`provision_agency`) roda no navegador, sem controle.
   Com a decisão de liberar acesso pela Hotmart (F0-T7/F0-T11 do plano), isso
   passa para o servidor.
