@@ -43,6 +43,10 @@ A lista completa está em `.env.example`.
 
 ## O que falta — e precisa do console do Appwrite
 
+**Situação em 25/11/2026:** o teste sem login mostrou `crm_clients` e o bucket
+`trip-attachments` abertos para qualquer pessoa; as outras coleções recusam o
+visitante. O plano para fechar está em `docs/migracao/inventario-appwrite.md`.
+
 **1. Permissões das coleções (urgente).** As server functions agora estão
 protegidas, mas o navegador continua lendo e gravando direto no Appwrite. Quem
 protege isso são as permissões de cada coleção. Conferir em

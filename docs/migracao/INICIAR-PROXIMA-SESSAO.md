@@ -1,42 +1,42 @@
 # Como iniciar a próxima sessão
 
+A Fase 0 foi feita em 25/11/2026, na branch `claude/epic-sagan-g4n8l2` do repositório `mmwork2040/mapadoviajante_pro`. Tudo o que o plano precisa (este plano, o protótipo, a identidade e as skills) agora está em `docs/` deste repositório. Não é mais preciso abrir a sessão com o `crmosegredodoviajante`.
+
 ## Antes de abrir a sessão
 
-Ter em mãos (perguntas P1 a P9 do `PLANO-MESTRE.md`):
-
-1. **O repositório e a branch do app que já usa o Appwrite** (provavelmente `mmwork2040/mapadoviajante_pro`). A sessão precisa ser aberta **com esse repositório** e também com este (`mmwork2040/crmosegredodoviajante`, branch `claude/relaxed-mendel-k8rfnz`), onde estão o protótipo, a identidade e este plano.
-2. **O ID do projeto Appwrite** e o ID do banco. O servidor é `https://appwrite.agenc-ia.net`. A conexão com ele já existe no ambiente; só falta o projeto.
-3. Onde o app é publicado e o domínio.
-4. Se os dados antigos já estão no Appwrite, e em quais coleções.
-5. Se as decisões D1 a D6 do plano anterior continuam valendo (acesso pela Hotmart, Asaas desligado, IA com chave no servidor, skills de guia).
-6. Os arquivos de referência das skills de guia e o modelo de contrato, se já existirem.
+1. **Fechar o banco** (`inventario-appwrite.md`, seção 1): aprovar o plano e rodar o script com uma chave temporária.
+2. **Chave de leitura do Appwrite** no ambiente da sessão, para o host `appwrite.agenc-ia.net`, no cabeçalho `X-Appwrite-Key` (escopos na seção 6 do inventário). A chave anterior foi recusada pelo servidor.
+3. **Juntar a branch da Fase 0 na `main`** depois de conferir a prévia da Vercel.
+4. Responder o que ficou aberto: P6 (multiagência e Hotmart), P7 (decisões D1 e D5), P8 (arquivos de referência das skills) e P9 (modelo de contrato e termos).
 
 ## Texto para colar ao abrir a sessão
 
 ```
-Vamos executar a migração do CRM OSV para o desenho novo, rodando só no Appwrite.
+Vamos continuar a migração do CRM OSV para o desenho novo, rodando só no Appwrite.
 
-Leia primeiro, no repositório mmwork2040/crmosegredodoviajante (branch claude/relaxed-mendel-k8rfnz):
-- docs/migracao/PLANO-MESTRE.md (fases, decisões e definição de pronto)
+Leia primeiro, neste repositório (mmwork2040/mapadoviajante_pro):
+- docs/migracao/PLANO-MESTRE.md (fases, decisões, respostas da Fase 0 e definição de pronto)
+- docs/migracao/inventario-appwrite.md
 - docs/migracao/MODELO-DE-DADOS-APPWRITE.md
 - docs/migracao/ESPECIFICACAO-TELAS.md
 - docs/prototipo-crm/ (o protótipo aprovado; abra index.html e use como gabarito)
 - docs/identidade/ e docs/skills/
 
-O app que roda no Appwrite está em: <REPOSITÓRIO E BRANCH>.
-Projeto Appwrite: <ID DO PROJETO>, banco: <ID DO BANCO>, servidor https://appwrite.agenc-ia.net.
-Publicação: <ONDE E DOMÍNIO>.
-Dados antigos: <ONDE ESTÃO>.
-Decisões D1 a D6: <CONFIRMADAS OU AJUSTES>.
+A Fase 0 está feita. Comece completando o inventário do Appwrite com a chave de leitura
+(somente leitura) e depois faça a Fase 1 (Design system): os componentes e a casca do app
+iguais ao protótipo, com a página /dev/ui nos dois temas e a 390 px.
 
-Comece pela Fase 0 (Descoberta e base): responda as perguntas abertas com o que eu passei, faça o inventário do Appwrite (somente leitura), liste e corrija tudo que ainda aponta para Supabase ou Lovable, e traga a fase visual já feita (commit 9befff1). Não altere dados nem estrutura do Appwrite sem me mostrar o plano da mudança antes. Trabalhe em branch e me mostre prints a cada tela.
+Respostas que faltavam: P6 <...>, P7 <...>, P8 <...>, P9 <...>.
+
+Não altere dados nem estrutura do Appwrite sem me mostrar o plano da mudança antes.
+Trabalhe em branch e me mostre prints a cada tela.
 ```
 
 ## Ordem sugerida das sessões
 
 | Sessão | Fase | Resultado esperado |
 |---|---|---|
-| 1 | F0 Descoberta e base | Inventário do Appwrite, app rodando só no Appwrite, fase visual aplicada |
+| 1 (feita) | F0 Descoberta e base | Inventário do Appwrite, app rodando só no Appwrite, fase visual aplicada |
 | 2 | F1 Design system | Componentes e casca do app iguais ao protótipo, com a página `/dev/ui` |
 | 3 e 4 | F2 Dados | Coleções, permissões, camada `src/data/`, migração ensaiada numa cópia |
 | 5 | F3 Viajantes | Tela completa com os três modos e Planejar viagem |
@@ -50,4 +50,4 @@ Comece pela Fase 0 (Descoberta e base): responda as perguntas abertas com o que 
 | 22 e 23 | F12 Cliente final | Páginas públicas, captação e app do viajante |
 | 24 | F14 Lançamento | Testes, migração final e treinamento |
 
-A Fase 13 (segurança e acesso) entra aos poucos: permissões na F2, links públicos na F5 e F12, Hotmart e super admin numa sessão própria quando P6 e P7 estiverem respondidas.
+A Fase 13 (segurança e acesso) entra aos poucos: fechar o banco agora, permissões por agência na F2, links públicos na F5 e F12, Hotmart e super admin numa sessão própria quando P6 e P7 estiverem respondidas.

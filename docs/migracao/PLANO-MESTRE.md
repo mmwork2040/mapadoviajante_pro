@@ -47,7 +47,7 @@ Material de referência no repositório:
 - O aplicativo usa o código do **Appwrite**, e toda a estrutura e as conexões apontam para lá.
 - **O que ainda aponta para outro lugar está fora e precisa ser corrigido.**
 
-### 1.3 Perguntas abertas (responder na Fase 0, antes de qualquer código)
+### 1.3 Perguntas abertas (as respostas estão na seção 1.4)
 
 | # | Pergunta | Por que importa |
 |---|---|---|
@@ -60,6 +60,28 @@ Material de referência no repositório:
 | P7 | As decisões D1 a D6 do plano anterior continuam valendo? (skills de guia; IA por gateway com chave no servidor; Asaas desligado; acesso pela Hotmart) | Este plano supõe que sim (seção 2) |
 | P8 | Os arquivos de referência das skills (`METODO-OSV.md`, `REGRAS-GUIA-GENERICO.md`, `REGRAS-DE-CONTEUDO.md`, skill `roteiro-osv` com `site.py`, `parceiros.json`, `CONTEXTO-OSV.md`) | Sem eles a geração do guia (Fase 11) não fecha |
 | P9 | Modelo de contrato e textos reais de termos (incluso, não incluso, responsabilidades, assistência) | Os textos do protótipo são ponto de partida e precisam de revisão jurídica |
+
+### 1.4 Respostas da Fase 0 (25/11/2026)
+
+Verificado no repositório `mmwork2040/mapadoviajante_pro` e no servidor. Detalhes em `inventario-appwrite.md`.
+
+| # | Resposta | Situação |
+|---|---|---|
+| P1 | **Sim, é o `mmwork2040/mapadoviajante_pro`**, branch `main`. Ele já roda no Appwrite por uma camada de consultas (`src/integrations/appwrite/`). Toda a execução acontece nele; este plano, o protótipo, a identidade e as skills foram copiados para `docs/` | Respondida |
+| P2 | Servidor próprio `https://appwrite.agenc-ia.net/v1` (versão 2.3.0). Projeto `6abdb8190017d98565f5`, banco `6abdb82f002c563b2ad3`, bucket `trip-attachments` | Respondida |
+| P3 | **Vercel**, publicação automática pela branch `main` do GitHub. Domínio atual: `https://mapadoviajante-pro.vercel.app`. As funções de servidor rodam na Vercel, não em Functions do Appwrite | Respondida. Falta decidir se haverá domínio próprio |
+| P4 | Os dados já estão no Appwrite, nas coleções `crm_*`, `agencies`, `agency_members` e `system_settings` (17 existem; `crm_lead_documents` e `agency_payment_settings` não existem). A Fase 2 é reorganizar dentro do Appwrite, sem importar de fora | Respondida. Falta a contagem de documentos (precisa de chave de leitura) |
+| P5 | Login por conta do Appwrite: e-mail e senha, Google e recuperação de senha. **Não há Teams.** A equipe fica na coleção `agency_members`, com o campo `role` | Respondida |
+| P6 | O código é multiagência (toda coleção tem `agency_id`, há tela de Plataforma para o super admin e cota de IA por agência). Falta o dono do produto confirmar se o produto continua multiagência e com acesso pela Hotmart | **Aberta** |
+| P7 | D2 (chave de IA só no servidor, cota por agência) e D4 (Asaas desligado) já estão no código. D1 e D5 dependem de confirmação | **Aberta** |
+| P8 | Só as duas skills de `docs/skills/` estão no repositório. Os arquivos de referência citados não estão | **Aberta** |
+| P9 | Não há modelo de contrato nem textos jurídicos no repositório | **Aberta** |
+
+Achados da Fase 0 que mudam o plano:
+
+- **Segurança:** a coleção `crm_clients` e o bucket `trip-attachments` respondem sem login. Fechar antes de tudo (plano em `inventario-appwrite.md`, seção 1).
+- O código da Biblioteca grava no bucket `library-assets` e os documentos da viagem gravam em `crm_lead_documents`. **Nenhum dos dois existe no Appwrite**, então essas duas funções não gravam hoje. Entram na F2 com os nomes novos (`biblioteca` e `trip_documents`).
+- O app usava a marca "MapaPRO" no menu e no login. A fase visual trocou pelo logo OSV com o rótulo "Consultoria", como no protótipo. Se o produto for vendido a outras agências (P6), a marca por agência vira tarefa da F10.
 
 ---
 
