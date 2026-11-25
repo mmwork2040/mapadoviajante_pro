@@ -1646,7 +1646,7 @@ function normalizeChecklist(raw: unknown): LeadChecklistState {
   return { items, extras };
 }
 
-function ChecklistTab({
+export function ChecklistTab({
   leadId,
   checklists,
   onSave,
@@ -2346,7 +2346,7 @@ const PAID_WITH = [
   { key: "beneficio", label: "Benefício/Cortesia" },
 ];
 
-function FinanceiroTab({
+export function FinanceiroTab({
   lead,
   isAdmin,
   onUpdate,
