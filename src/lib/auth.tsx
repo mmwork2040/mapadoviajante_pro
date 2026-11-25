@@ -17,6 +17,7 @@ import {
 import { acceptInvite, getMyPendingInvite, type PendingInvite } from "@/lib/invites";
 import { captureDeviceTokenOnLogin } from "@/lib/notifications";
 import type { AgencyMember } from "@/lib/types";
+import { clearBrand } from "@/lib/brand";
 
 interface AuthContextValue {
   session: Session | null;
@@ -153,6 +154,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAgencyContext(null);
     setMember(null);
     setPendingInvite(null);
+    // A tela de login é do produto, não da agência que acabou de sair.
+    clearBrand();
     window.location.href = "/auth";
   }, []);
 

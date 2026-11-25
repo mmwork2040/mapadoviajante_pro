@@ -93,8 +93,18 @@ export const Route = createFileRoute("/api/public/itinerary")({
             byDay.set(key, [...(byDay.get(key) || []), activity]);
           }
 
+          // Marca da agência dona do roteiro (logo e nome no documento do cliente).
+          let brand = null;
+          try {
+            const { readBrand } = await import("@/lib/server/brand");
+            brand = await readBrand(String(itinerary.agency_id || ""));
+          } catch (err) {
+            console.error("public itinerary: brand lookup failed", err);
+          }
+
           return response({
             id: itinerary.$id,
+            brand,
             title: itinerary.title,
             destination: itinerary.destination,
             client_name: itinerary.client_name,

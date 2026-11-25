@@ -1,7 +1,7 @@
 {
   "name": "Mapa do Viajante PRO",
   "short_name": "MapaPRO",
-  "description": "CRM Copilot para Agências de Viagem — leads, roteiros e vendas em um só lugar.",
+  "description": "CRM para agências de viagem: viagens, viajantes, roteiros e vendas em um só lugar.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

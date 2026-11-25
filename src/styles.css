@@ -62,7 +62,12 @@
 }
 
 :root {
-  /* Identidade OSV · linha de sistema (plataforma v24). Tema claro. */
+  /* Identidade do produto · tema claro.
+     White-label: a agência troca só a cor principal. `--brand` e
+     `--brand-foreground` são definidas por src/lib/brand.ts; as outras cores de
+     marca saem delas. */
+  --brand: #f58e26;
+  --brand-foreground: #1a0f05;
   --radius: 0.875rem;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-display: "League Spartan", "Inter", system-ui, sans-serif;
@@ -73,14 +78,14 @@
   --card-foreground: #17130f;
   --popover: #ffffff;
   --popover-foreground: #17130f;
-  --primary: #f58e26;
-  --primary-foreground: #1a0f05;
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
   --secondary: #f0ede9;
   --secondary-foreground: #17130f;
   --muted: #f0ede9;
   --muted-foreground: #6b645d;
-  --accent: rgba(245, 142, 38, 0.12);
-  --accent-foreground: #a3560a;
+  --accent: color-mix(in srgb, var(--brand) 12%, transparent);
+  --accent-foreground: color-mix(in srgb, var(--brand) 62%, #000);
   --destructive: #d13438;
   --destructive-foreground: #ffffff;
   --success: #177a44;
@@ -88,38 +93,38 @@
   --info: #2a78d6;
   --border: rgba(23, 19, 15, 0.1);
   --input: rgba(23, 19, 15, 0.18);
-  --ring: #c4700f;
-  --chart-1: #c4700f;
+  --ring: color-mix(in srgb, var(--brand) 78%, #000);
+  --chart-1: color-mix(in srgb, var(--brand) 78%, #000);
   --chart-2: #2a78d6;
   --chart-3: #d55181;
   --chart-4: #6250d6;
   --chart-5: #b4ada6;
   --sidebar: #f3f1ee;
   --sidebar-foreground: #3d3731;
-  --sidebar-primary: #f58e26;
-  --sidebar-primary-foreground: #1a0f05;
-  --sidebar-accent: rgba(245, 142, 38, 0.12);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-foreground);
+  --sidebar-accent: color-mix(in srgb, var(--brand) 12%, transparent);
   --sidebar-accent-foreground: #17130f;
   --sidebar-border: rgba(23, 19, 15, 0.1);
-  --sidebar-ring: #c4700f;
+  --sidebar-ring: color-mix(in srgb, var(--brand) 78%, #000);
 }
 
 .dark {
-  /* Tema escuro (padrão da marca): Noite quente. */
+  /* Tema escuro (padrão do produto): Noite quente. */
   --background: #0a0807;
   --foreground: #fafaf9;
   --card: #17130f;
   --card-foreground: #fafaf9;
   --popover: #17130f;
   --popover-foreground: #fafaf9;
-  --primary: #f58e26;
-  --primary-foreground: #1a0f05;
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
   --secondary: #241e19;
   --secondary-foreground: #fafaf9;
   --muted: #241e19;
   --muted-foreground: #a39a90;
-  --accent: rgba(245, 142, 38, 0.12);
-  --accent-foreground: #f9a84a;
+  --accent: color-mix(in srgb, var(--brand) 12%, transparent);
+  --accent-foreground: color-mix(in srgb, var(--brand) 78%, #fff);
   --destructive: #f0595c;
   --destructive-foreground: #1a0505;
   --success: #2fb36b;
@@ -127,20 +132,20 @@
   --info: #3987e5;
   --border: rgba(255, 255, 255, 0.09);
   --input: rgba(255, 255, 255, 0.16);
-  --ring: #f58e26;
-  --chart-1: #d2700f;
+  --ring: var(--brand);
+  --chart-1: color-mix(in srgb, var(--brand) 85%, #000);
   --chart-2: #3987e5;
   --chart-3: #d55181;
   --chart-4: #9085e9;
   --chart-5: #5a524b;
   --sidebar: #0f0c0a;
   --sidebar-foreground: #cfc7be;
-  --sidebar-primary: #f58e26;
-  --sidebar-primary-foreground: #1a0f05;
-  --sidebar-accent: rgba(245, 142, 38, 0.12);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-foreground);
+  --sidebar-accent: color-mix(in srgb, var(--brand) 12%, transparent);
   --sidebar-accent-foreground: #fafaf9;
   --sidebar-border: rgba(255, 255, 255, 0.09);
-  --sidebar-ring: #f58e26;
+  --sidebar-ring: var(--brand);
 }
 
 @theme inline {
@@ -162,7 +167,7 @@
     font-family: var(--font-sans);
   }
 
-  /* Títulos em League Spartan 700 (identidade OSV). Sem itálico na interface. */
+  /* Títulos em League Spartan 700. Sem itálico na interface. */
   h1,
   h2,
   h3 {
@@ -174,11 +179,11 @@
     letter-spacing: -0.025em;
   }
 
-  /* Fundo com as duas luzes da plataforma: fria no topo, laranja subindo da base. */
+  /* Fundo com as duas luzes da plataforma: fria no topo, a cor principal subindo da base. */
   .dark body {
     background-image:
       radial-gradient(110% 70% at 22% -12%, rgba(200, 169, 110, 0.05), transparent 58%),
-      radial-gradient(90% 60% at 65% 118%, rgba(245, 142, 38, 0.09), transparent 70%),
+      radial-gradient(90% 60% at 65% 118%, color-mix(in srgb, var(--brand) 9%, transparent), transparent 70%),
       linear-gradient(#120e0b 0, #0a0807 46%);
     background-attachment: fixed;
   }

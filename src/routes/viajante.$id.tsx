@@ -4,6 +4,7 @@ import { Download, Link2, List } from "lucide-react";
 import { toast } from "sonner";
 import { fetchPublicItinerary } from "@/lib/services";
 import { ItineraryDocument } from "@/components/ItineraryDocument";
+import { docBrandStyle } from "@/lib/brand";
 
 export const Route = createFileRoute("/viajante/$id")({
   ssr: false,
@@ -46,10 +47,10 @@ function TravelerView() {
   }
 
   return (
-    <div className="osv-share-view">
+    <div className="osv-share-view" style={docBrandStyle(it.brand)}>
       <header className="osv-share-toolbar">
         <a href="#sumario" className="osv-share-brand">
-          <img src="/osv-logo-preto.png" alt="O Segredo do Viajante" />
+          {it.brand?.logoUrl && <img src={it.brand.logoUrl} alt={it.brand.name} />}
           <span>Seu roteiro</span>
         </a>
         <nav aria-label="Ações do roteiro">
@@ -65,7 +66,7 @@ function TravelerView() {
         </nav>
       </header>
       <main>
-        <ItineraryDocument it={it} />
+        <ItineraryDocument it={it} brand={it.brand} />
       </main>
     </div>
   );

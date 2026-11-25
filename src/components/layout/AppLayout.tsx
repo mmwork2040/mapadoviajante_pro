@@ -26,10 +26,10 @@ import { InstallPWA } from "@/components/InstallPWA";
 import { NotifPrompt } from "@/components/NotifPrompt";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ThayPanel } from "@/components/ThayPanel";
-import logoBranco from "@/assets/osv-logo-branco.svg";
-import logoPreto from "@/assets/osv-logo-preto.svg";
+import { BrandLogo } from "@/components/BrandLogo";
+import { useBrand } from "@/hooks/useBrand";
 
-// Menu agrupado (identidade OSV): trabalho do dia, recursos e gestão.
+// Menu agrupado: trabalho do dia, recursos e gestão.
 // Viagens reúne a fase comercial (/leads) e a preparação (/roteiros); Viajantes é a base de pessoas (/clientes).
 type NavItem = { to: string; label: string; icon: typeof Home; match: string[]; group: "Trabalho" | "Recursos" | "Gestão" };
 const NAV: NavItem[] = [
@@ -53,6 +53,7 @@ const isActive = (item: NavItem, pathname: string) =>
 export function AppLayout({ children }: { children: ReactNode }) {
   const { session, member, signOut } = useAuth();
   const { theme, toggle } = useTheme();
+  const brand = useBrand();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [collapsed, setCollapsed] = useState(false);
   const [mobileMenu, setMobileMenu] = useState(false);
@@ -104,13 +105,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         }`}
       >
         <div className={`flex items-center gap-3 py-6 ${collapsed ? "justify-center px-2" : "px-6"}`}>
-          <img src={logoBranco} alt="O Segredo do Viajante" className={`hidden dark:block ${collapsed ? "h-6" : "h-9"} w-auto`} />
-          <img src={logoPreto} alt="O Segredo do Viajante" className={`block dark:hidden ${collapsed ? "h-6" : "h-9"} w-auto`} />
-          {!collapsed && (
-            <span className="animate-fade-in border-l border-sidebar-border pl-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
-              Consultoria
-            </span>
-          )}
+          <BrandLogo brand={brand} compact={collapsed} heightClass={collapsed ? "h-8" : "h-9"} />
         </div>
 
         <nav className="flex-1 space-y-0.5 px-3">
@@ -219,8 +214,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/80 px-4 backdrop-blur sm:px-5">
           {/* Marca no mobile (a navegação fica na barra inferior) */}
           <div className="flex items-center gap-2 md:hidden">
-            <img src={logoBranco} alt="O Segredo do Viajante" className="hidden h-7 w-auto dark:block" />
-            <img src={logoPreto} alt="O Segredo do Viajante" className="block h-7 w-auto dark:hidden" />
+            <BrandLogo brand={brand} heightClass="h-7" nameClass="text-sm" />
           </div>
           <button
             onClick={() => setCollapsed((c) => !c)}

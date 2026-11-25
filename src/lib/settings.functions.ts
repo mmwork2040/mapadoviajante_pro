@@ -6,7 +6,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 // chave `agency_cfg:{agencyId}:{scope}`. Leitura e escrita passam pelo
 // servidor: a agência vem da sessão (nunca do navegador) e senhas não voltam.
 
-const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive", "payments", "permissions"] as const;
+const SCOPES = ["webhook", "notifications", "gmail", "form", "n8n", "gdrive", "payments", "permissions", "brand"] as const;
 type Scope = (typeof SCOPES)[number];
 
 /**

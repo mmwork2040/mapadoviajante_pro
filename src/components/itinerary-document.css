@@ -1,6 +1,7 @@
 .osv-trip-document {
   --trip-night: #0c0a08;
-  --trip-orange: #f58e26;
+  /* Cor de destaque do documento: a cor principal da agência, quando houver. */
+  --trip-orange: var(--doc-brand, #f58e26);
   --trip-cream: #f2e7da;
   --trip-paper: #fffdf9;
   --trip-ink: #1d1d1b;
@@ -370,8 +371,9 @@
   cursor: pointer;
 }
 .osv-share-toolbar nav > .osv-share-print {
-  border-color: #f58e26;
-  background: #f58e26;
+  border-color: var(--doc-brand, #f58e26);
+  background: var(--doc-brand, #f58e26);
+  color: var(--doc-brand-fg, #1d1d1b);
 }
 .osv-share-state {
   display: grid;
@@ -456,4 +458,18 @@
   .osv-trip-activity {
     break-inside: avoid;
   }
+}
+
+/* White-label: sem logo configurada, o nome da agência ocupa o lugar dela. */
+.osv-trip-brand-text {
+  color: #fff;
+  font:
+    700 15px "League Spartan",
+    system-ui,
+    sans-serif;
+  letter-spacing: -0.01em;
+}
+.osv-trip-logo.osv-trip-brand-text {
+  width: auto;
+  font-size: 26px;
 }

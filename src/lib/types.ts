@@ -206,6 +206,8 @@ export interface LibraryItem {
 export interface Itinerary {
   id: string;
   agency_id: string;
+  /** Marca da agência (só vem no roteiro compartilhado por link). */
+  brand?: import("@/lib/brand").Brand | null;
   created_by?: string | null;
   lead_id?: string | null;
   title: string;

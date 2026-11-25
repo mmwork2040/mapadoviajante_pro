@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import logoBranco from "@/assets/osv-logo-branco.svg";
-import logoPreto from "@/assets/osv-logo-preto.svg";
+import { BrandLogo } from "@/components/BrandLogo";
+import { applyBrandColor, PRODUCT } from "@/lib/brand";
 import { useAuth } from "@/lib/auth";
 import { appwriteAuthService } from "@/services/appwriteAuthService";
 
@@ -9,8 +9,8 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Entrar — Mapa do Viajante PRO" },
-      { name: "description", content: "Acesse o CRM Copilot para agências de viagem." },
+      { title: `Entrar — ${PRODUCT.name}` },
+      { name: "description", content: `Acesse o ${PRODUCT.name}, o CRM para agências de viagem.` },
     ],
   }),
   component: AuthPage,
@@ -28,6 +28,11 @@ function AuthPage() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // A tela de login é do produto: tira a cor da agência que estava em cache.
+  useEffect(() => {
+    applyBrandColor(null);
+  }, []);
 
   useEffect(() => {
     if (session && mode !== "reset") navigate({ to: "/", replace: true });
@@ -96,11 +101,7 @@ function AuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-md rounded-[28px] border border-border bg-card p-8 shadow-xl">
         <div className="mb-8 flex items-center gap-3">
-          <img src={logoBranco} alt="O Segredo do Viajante" className="hidden h-11 w-auto dark:block" />
-          <img src={logoPreto} alt="O Segredo do Viajante" className="block h-11 w-auto dark:hidden" />
-          <span className="border-l border-border pl-3 text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
-            Consultoria
-          </span>
+          <BrandLogo heightClass="h-11" nameClass="text-xl" />
         </div>
 
         <h1 className="text-2xl font-bold">
@@ -116,7 +117,7 @@ function AuthPage() {
           {mode === "login"
             ? "Entre para cuidar das viagens e dos viajantes."
             : mode === "signup"
-              ? "Comece a usar o CRM Copilot para sua agência."
+              ? `Comece a usar o ${PRODUCT.name} na sua agência.`
               : mode === "forgot"
                 ? "Informe o e-mail da sua conta. Vale também para quem sempre entrou pelo Google e quer uma senha."
                 : "Escolha uma senha com pelo menos 8 caracteres."}

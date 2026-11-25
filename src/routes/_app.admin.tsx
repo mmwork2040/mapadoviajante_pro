@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { AppBrandCard } from "@/components/admin/AppBrandCard";
 import { ScrollLock } from "@/components/ScrollLock";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -52,6 +53,7 @@ import {
 } from "@/lib/n8n-config";
 import { getGDriveConfig, saveGDriveConfig, DEFAULT_GDRIVE_CONFIG, type GDriveConfig } from "@/lib/gdrive-config";
 import { checkDriveConnection } from "@/lib/gdrive.functions";
+import { connectGoogleDrive } from "@/lib/google-drive-auth";
 import { sendTestPush, getPushStatus, listDeviceTokens, getPushDeliveryStatus, validateFirebaseConfig, type DeviceTokenEntry } from "@/lib/push.functions";
 import {
   fetchAiConfig,
@@ -367,10 +369,13 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
         <CollapsibleSection
           icon={Palette}
           color="#b8965a"
-          title="Marca & PDF do roteiro"
-          subtitle="Logo, textos da página de abertura e cores usados no PDF"
+          title="Marca da agência"
+          subtitle="Logo e cor principal do sistema, e os textos do PDF do roteiro"
         >
-          <BrandingCard />
+          <AppBrandCard />
+          <div className="mt-8 border-t border-border pt-6">
+            <BrandingCard />
+          </div>
         </CollapsibleSection>
       )}
 
@@ -2283,14 +2288,23 @@ function GoogleDriveCard() {
             {connQ.isLoading
               ? "Verificando conexão…"
               : connected
-                ? "Conta do Google Drive conectada."
-                : "Google Drive não conectado."}
+                ? "Sua conta Google está conectada ao Drive."
+                : "Sua conta Google ainda não está conectada ao Drive."}
           </span>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Para trocar a conta, conecte/reconecte o conector do Google Drive nas configurações do
-          projeto (Conectores). Os consultores leem documentos desta conta compartilhada.
+          Cada pessoa da equipe conecta a própria conta Google e lê os arquivos dela, inclusive as pastas
+          compartilhadas com ela. A conexão vale enquanto a pessoa estiver logada pelo Google.
         </p>
+        {!connQ.isLoading && !connected && (
+          <button
+            type="button"
+            onClick={() => connectGoogleDrive()}
+            className="mt-3 inline-flex items-center gap-2 rounded-full border border-input bg-background px-3.5 py-2 text-sm font-medium hover:bg-muted"
+          >
+            Conectar minha conta Google
+          </button>
+        )}
       </div>
 
       <label className="flex items-center gap-3 text-sm font-medium">

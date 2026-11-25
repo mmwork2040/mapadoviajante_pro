@@ -5,6 +5,8 @@ import { Download, List } from "lucide-react";
 import { fetchItineraryById } from "@/lib/services";
 import { useResolvedImageUrl } from "@/hooks/useResolvedImageUrl";
 import { ItineraryDocument } from "@/components/ItineraryDocument";
+import { useBrand } from "@/hooks/useBrand";
+import { docBrandStyle } from "@/lib/brand";
 
 export const Route = createFileRoute("/imprimir/$id")({ ssr: false, component: PrintItinerary });
 
@@ -21,6 +23,7 @@ function PrintItinerary() {
   });
   const { url: coverUrl } = useResolvedImageUrl(it?.cover_image);
   const printed = useRef(false);
+  const brand = useBrand();
 
   useEffect(() => {
     if (!it || printed.current) return;
@@ -50,10 +53,10 @@ function PrintItinerary() {
     return <div className="osv-share-state">Não foi possível carregar este roteiro.</div>;
 
   return (
-    <div className="osv-share-view osv-print-view">
+    <div className="osv-share-view osv-print-view" style={docBrandStyle(brand)}>
       <header className="osv-share-toolbar">
         <a href="#sumario" className="osv-share-brand">
-          <img src="/osv-logo-preto.png" alt="O Segredo do Viajante" />
+          {brand?.logoUrl && <img src={brand.logoUrl} alt={brand.name} />}
           <span>Prévia para PDF</span>
         </a>
         <nav aria-label="Ações do roteiro">
@@ -66,7 +69,7 @@ function PrintItinerary() {
         </nav>
       </header>
       <main>
-        <ItineraryDocument it={it} coverUrl={coverUrl} />
+        <ItineraryDocument it={it} coverUrl={coverUrl} brand={brand} />
       </main>
     </div>
   );
