@@ -248,9 +248,9 @@ function AuthPage() {
           </button>
         </p>
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          <Link to="/conheca" className="font-medium text-primary hover:underline">
+          <a href="/conheca.html" className="font-medium text-primary hover:underline">
             Conheça o sistema e teste a demonstração
-          </Link>
+          </a>
         </p>
         <p className="mt-2 text-center text-xs text-muted-foreground">
           <Link to="/intake" className="hover:underline">
