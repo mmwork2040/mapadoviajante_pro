@@ -582,3 +582,45 @@ a.ds-trip, button.ds-trip { color: inherit; text-decoration: none; width: 100%; 
 }
 .ds-mes-pts { font-style: normal; }
 @media (max-width: 760px) { .ds-so-desk { display: none; } }
+
+/* ── Viagens · Preparação ──────────────────────────────────────────── */
+.ds-vrow { display: grid; grid-template-columns: 96px minmax(0, 1fr) 170px 150px 80px; gap: 18px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); color: var(--foreground); text-decoration: none; }
+.ds-vrow:last-child { border-bottom: 0; }
+.ds-vrow:hover .ds-vrow-b b { color: var(--accent-foreground); }
+.ds-vrow:focus-visible, .ds-vcapa:focus-visible { outline: 2px solid var(--accent-foreground); outline-offset: 4px; border-radius: 12px; }
+.ds-capa-img { width: 96px; height: 64px; object-fit: cover; border-radius: 12px; background: #4e3b31; display: grid; place-items: center; color: rgba(250, 250, 249, 0.55); }
+.ds-capa-img > svg { width: 22px; height: 22px; }
+.ds-vrow-b { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ds-vrow-b b { font-size: 15.5px; font-weight: 600; transition: color 0.2s; }
+.ds-vrow-b > span { font-size: 13px; color: var(--muted-foreground); display: flex; align-items: center; gap: 6px; }
+.ds-vrow-b > span.ds-late, .ds-vcapa-t > span.ds-late, .ds-vcard-p.ds-late { color: var(--destructive); }
+.ds-vrow-p { display: flex; flex-direction: column; gap: 6px; }
+.ds-vrow-p small { font-size: 12px; color: var(--muted-foreground); }
+.ds-vrow-d { text-align: right; display: flex; flex-direction: column; }
+.ds-vrow-d b { font: 700 24px/1 var(--font-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ds-vrow-d b.ds-ok { font-size: 15px; color: var(--success); }
+.ds-vrow-d small { font-size: 11.5px; color: var(--muted-foreground); }
+.ds-capas { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 22px; }
+.ds-vcapa { display: flex; flex-direction: column; gap: 12px; color: var(--foreground); text-decoration: none; }
+.ds-vcapa-m { position: relative; aspect-ratio: 4 / 3; border-radius: 16px; overflow: hidden; background: #4e3b31; transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.5s; }
+.ds-vcapa:hover .ds-vcapa-m { transform: translateY(-6px); box-shadow: 0 24px 40px -24px rgba(0, 0, 0, 0.8); }
+.ds-vcapa-m > img, .ds-vcapa-m > .ds-capa-vazia { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: grid; place-items: center; color: rgba(250, 250, 249, 0.45); }
+.ds-vcapa-m > .ds-capa-vazia svg { width: 40px; height: 40px; }
+.ds-vcapa-sombra { position: absolute; inset: 0; background: linear-gradient(transparent 45%, rgba(10, 8, 6, 0.75)); }
+.ds-selo { position: absolute; top: 12px; left: 12px; padding: 5px 10px; border-radius: var(--pill); background: rgba(10, 8, 6, 0.78); color: #fafaf9; font: 600 9.5px/14px var(--font-sans); letter-spacing: 0.09em; text-transform: uppercase; }
+.ds-vcapa-n { position: absolute; right: 14px; bottom: 14px; color: #fafaf9; display: flex; align-items: baseline; gap: 4px; }
+.ds-vcapa-n b { font: 700 30px/1 var(--font-display); }
+.ds-vcapa-n small { font-size: 12px; opacity: 0.85; font-weight: 600; }
+.ds-vcapa-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: rgba(255, 255, 255, 0.15); }
+.ds-vcapa-bar i { display: block; height: 100%; background: var(--primary); box-shadow: 0 0 12px color-mix(in srgb, var(--primary) 70%, transparent); }
+.ds-vcapa-bar i.ds-ok { background: var(--success); box-shadow: none; }
+.ds-vcapa-t { display: flex; flex-direction: column; gap: 3px; }
+.ds-vcapa-t b { font-size: 15.5px; font-weight: 600; }
+.ds-vcapa-t > span { font-size: 13px; color: var(--muted-foreground); display: flex; align-items: center; gap: 6px; }
+.ds-quadro.ds-q5 { grid-template-columns: repeat(5, minmax(200px, 1fr)); }
+.ds-vcard-img { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; margin-bottom: 4px; }
+@media (max-width: 900px) {
+  .ds-vrow { grid-template-columns: 72px minmax(0, 1fr) 64px; gap: 12px; }
+  .ds-vrow .ds-capa-img { width: 72px; height: 54px; }
+  .ds-vrow-c, .ds-vrow-p { display: none; }
+}
