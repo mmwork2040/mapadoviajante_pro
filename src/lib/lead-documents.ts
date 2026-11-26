@@ -16,6 +16,8 @@ export interface LeadDocument {
 }
 
 export const DOCUMENT_CATEGORIES = [
+  { value: "proposta", label: "Proposta" },
+  { value: "contrato", label: "Contrato" },
   { value: "ingresso", label: "Ingresso" },
   { value: "passagem", label: "Passagem" },
   { value: "ticket", label: "Ticket" },

@@ -2358,7 +2358,8 @@ export async function updateClient(id: string, updates: Partial<Client>): Promis
   const leadPatch: Record<string, unknown> = {};
   if (updates.name !== undefined) leadPatch.name = client.name;
   if (updates.email !== undefined) leadPatch.email = client.email ?? null;
-  if (updates.phone !== undefined) leadPatch.phone = client.phone ?? null;
+  // O telefone da viagem é o WhatsApp do viajante (é o que a Nova viagem grava).
+  if (updates.phone !== undefined || updates.whatsapp !== undefined) leadPatch.phone = client.whatsapp || client.phone || null;
   if (Object.keys(leadPatch).length > 0) {
     const { error: leadErr } = await supabase.from("crm_leads").update(leadPatch).eq("client_id", id);
     if (leadErr) console.error("updateClient(leads sync):", leadErr);

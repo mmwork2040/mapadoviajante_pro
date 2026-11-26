@@ -1,6 +1,8 @@
 // Ficha da viagem, fase comercial: painel lateral com etapa, próximo passo,
-// contato rápido e as abas Resumo, Histórico e Orçamento. Edição completa,
-// documentos e checklist continuam na ficha completa (botão no rodapé).
+// orçamento, contrato e pagamento, contato rápido e as abas Resumo, Orçamento,
+// Contrato e Histórico. Os dados da viagem e do viajante podem ser editados
+// aqui em qualquer etapa. Checklist e demais documentos continuam na ficha
+// completa (botão no rodapé).
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
@@ -10,19 +12,23 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import {
-  Button, Card, Chip, Field, HBars, HighlightCard, History, JourneySteps, KpiRow, Meter, Seg, SidePanel, Skeleton, Tabs, TextField,
-  type HistoryEntry, type JourneyStep,
+  Button, Card, Chip, Field, HBars, HighlightCard, History, Seg, SidePanel, Skeleton, Tabs, TextField,
+  type HistoryEntry,
 } from "@/components/ds";
 import {
-  ETAPAS, campoDoPerfil, diaMes, dataDoPasso, dinheiro, dinheiroCurto, origemTexto, parseData, passageirosTexto,
+  ETAPAS, campoDoPerfil, diaMes, dataDoPasso, dinheiro, origemTexto, parseData, passageirosTexto,
   proximosPassos, quandoPasso, quandoTexto, situacaoPassaporte, valorDe, whatsappLink, type Etapa, type ProximoPasso,
 } from "@/data/viagens";
 import {
   createItinerary, createLeadActivity, createTask, fetchClientById, fetchItinerariesByLead, fetchLeadActivities, fetchLeadById,
-  fetchTasks, fetchTripExpenses, getMemberId, marcarContato, updateLead, updateTask,
+  fetchTasks, getMemberId, marcarContato, updateLead, updateTask,
 } from "@/lib/services";
 import type { Lead, LeadActivity } from "@/lib/types";
+import { isAdminUser, useAuth } from "@/lib/auth";
+import { lerOrcamento, totalOrcamento } from "@/data/documentos";
 import { motivoDaPerda } from "./Comercial";
+import { AbaContrato, AbaOrcamento, OQueFalta } from "./Documentos";
+import { EditarViagem, EditarViajante } from "./EditarDados";
 
 const TIPOS_REGISTRO = [
   { value: "whatsapp", label: "WhatsApp", icon: <WhatsappLogo aria-hidden /> },
@@ -42,9 +48,6 @@ const NOME_ATIVIDADE: Record<string, string> = {
   whatsapp: "WhatsApp", call: "Ligação", email: "E-mail", meeting: "Reunião", note: "Observação", request: "Solicitação", document: "Documento",
 };
 
-const CATEGORIA: Record<string, string> = { passagem: "Passagens", hospedagem: "Hospedagem", seguro: "Seguro", alimentacao: "Alimentação", transporte: "Transporte", extra: "Extra", outro: "Outro" };
-const PAGO_COM: Record<string, string> = { dinheiro: "Dinheiro ou Pix", cartao: "Cartão", milhas: "Milhas e pontos", beneficio: "Benefício ou cortesia" };
-
 /** Sugestão de próximo passo para cada etapa. */
 const SUGESTAO: Record<string, string> = { new: "Primeiro contato", contacted: "Montar proposta", negotiating: "Cobrar retorno da proposta" };
 
@@ -57,7 +60,7 @@ const dataHora = (iso?: string | null) => {
   return mesmoDia ? `Hoje, ${d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}` : dataCurta(iso);
 };
 
-type Aba = "resumo" | "hist" | "orc";
+type Aba = "resumo" | "orc" | "contrato" | "hist";
 
 export function FichaComercial({ leadId, onClose, onMover, onPerder, onFichaCompleta }: {
   leadId: string | null;
@@ -105,11 +108,15 @@ function FichaCorpo({ leadId, onMover, onPerder, onClose }: { leadId: string; on
   const { data: viajante } = useQuery({ queryKey: ["client", clientId], queryFn: () => fetchClientById(clientId!), enabled: !!clientId });
 
   const [aba, setAba] = useState<Aba>("resumo");
+  const [editandoViagem, setEditandoViagem] = useState(false);
+  const [editandoViajante, setEditandoViajante] = useState<null | "contato" | "documentos" | "endereco">(null);
+  const { member, session } = useAuth();
+  const isAdmin = isAdminUser(member, session?.user?.email);
   const registroRef = useRef<HTMLTextAreaElement>(null);
   const passo = useMemo(() => proximosPassos(tarefas).get(leadId), [tarefas, leadId]);
 
   const atualizar = () => {
-    for (const k of [["lead", leadId], ["leads"], ["tasks"], ["lead-activities", leadId], ["dashboard"], ["lead-itineraries", leadId], ["lead-itinerary-statuses"]]) {
+    for (const k of [["lead", leadId], ["leads"], ["tasks"], ["lead-activities", leadId], ["dashboard"], ["lead-itineraries", leadId], ["lead-itinerary-statuses"], ["client", clientId], ["clients"]]) {
       qc.invalidateQueries({ queryKey: k });
     }
   };
@@ -159,6 +166,7 @@ function FichaCorpo({ leadId, onMover, onPerder, onClose }: { leadId: string; on
 
   const idx = ETAPAS.findIndex((e) => e.id === v.status);
   const valor = valorDe(v);
+  const totalOrc = totalOrcamento(lerOrcamento(v));
   const sub = [v.destination || "Destino a definir", quandoTexto(v), passageirosTexto(v)].filter(Boolean).join(" · ");
   const tel = (v.phone || viajante?.whatsapp || viajante?.phone || "").trim();
   const email = (v.email || viajante?.email || "").trim();
@@ -175,8 +183,17 @@ function FichaCorpo({ leadId, onMover, onPerder, onClose }: { leadId: string; on
       <div className="ds-stack" style={{ gap: 8 }}>
         <p className="ds-ficha-sub">{sub}</p>
         <div className="ds-row" style={{ gap: 10, flexWrap: "wrap" }}>
-          <b className={`ds-ficha-valor${valor ? "" : " ds-nd"}`}>{valor ? dinheiro(valor) : "Valor a definir"}</b>
-          {valor > 0 && <span className="ds-muted">orçamento do cliente</span>}
+          {totalOrc > 0 ? (
+            <>
+              <b className="ds-ficha-valor">{dinheiro(totalOrc)}</b>
+              <span className="ds-muted">orçamento da agência{valor ? ` · cliente trouxe ${dinheiro(valor)}` : ""}</span>
+            </>
+          ) : (
+            <>
+              <b className={`ds-ficha-valor${valor ? "" : " ds-nd"}`}>{valor ? dinheiro(valor) : "Valor a definir"}</b>
+              {valor > 0 && <span className="ds-muted">orçamento do cliente</span>}
+            </>
+          )}
         </div>
       </div>
 
@@ -233,12 +250,7 @@ function FichaCorpo({ leadId, onMover, onPerder, onClose }: { leadId: string; on
       ) : null}
 
       {v.status !== "lost" && (
-        <section className="ds-stack" style={{ gap: 10 }}>
-          <div className="ds-row" style={{ justifyContent: "space-between" }}>
-            <span className="ds-mono">Proposta, contrato e guia</span>
-          </div>
-          <JourneySteps steps={jornada(v, roteiros.length > 0)} />
-        </section>
+        <OQueFalta viagem={v} temRoteiro={roteiros.length > 0} onIr={setAba} onMover={onMover} />
       )}
 
       <div className="ds-acoes" role="group" aria-label="Contato">
@@ -260,24 +272,51 @@ function FichaCorpo({ leadId, onMover, onPerder, onClose }: { leadId: string; on
         label="Seções da ficha"
         value={aba}
         onChange={setAba}
-        options={[{ value: "resumo", label: "Resumo" }, { value: "hist", label: "Histórico", count: totalHist }, { value: "orc", label: "Orçamento" }]}
+        options={[
+          { value: "resumo", label: "Resumo" },
+          { value: "orc", label: "Orçamento" },
+          { value: "contrato", label: "Contrato" },
+          { value: "hist", label: "Histórico", count: totalHist },
+        ]}
       />
 
-      {aba === "resumo" && <Resumo viagem={v} viajante={viajante ?? null} onAbrirViajante={() => { onClose(); navigate({ to: "/clientes", search: { p: v.client_id! } }); }} />}
+      {aba === "resumo" && (
+        editandoViagem ? (
+          <EditarViagem viagem={v} roteiros={roteiros} onPronto={() => { setEditandoViagem(false); atualizar(); }} onCancelar={() => setEditandoViagem(false)} />
+        ) : (
+          <Resumo
+            viagem={v}
+            viajante={viajante ?? null}
+            onEditarViagem={() => setEditandoViagem(true)}
+            onEditarViajante={() => setEditandoViajante("contato")}
+            onAbrirViajante={() => { onClose(); navigate({ to: "/clientes", search: { p: v.client_id! } }); }}
+          />
+        )
+      )}
+      {aba === "orc" && <AbaOrcamento key={`${v.id}-orc`} viagem={v} viajante={viajante ?? null} onSalvo={atualizar} />}
+      {aba === "contrato" && (
+        <AbaContrato
+          viagem={v}
+          viajante={viajante ?? null}
+          isAdmin={isAdmin}
+          onEditarCliente={() => setEditandoViajante(viajante?.cpf ? "endereco" : "documentos")}
+          onIrOrcamento={() => setAba("orc")}
+          onSalvo={atualizar}
+        />
+      )}
       {aba === "hist" && <Historico viagem={v} atividades={atividades} textoRef={registroRef} onRegistrado={atualizar} />}
-      {aba === "orc" && <Orcamento viagem={v} />}
+
+      {editandoViajante && (
+        <EditarViajante
+          viagem={v}
+          viajante={viajante ?? null}
+          abaInicial={editandoViajante}
+          onPronto={atualizar}
+          onFechar={() => setEditandoViajante(null)}
+        />
+      )}
     </>
   );
-}
-
-function jornada(v: Lead, temRoteiro: boolean): JourneyStep[] {
-  const fechada = v.status === "closed";
-  return [
-    { title: "Proposta", state: fechada ? "done" : v.status === "negotiating" ? "current" : "todo", note: fechada ? "Aceita" : v.status === "negotiating" ? "Em negociação" : "Ainda não enviada" },
-    { title: "Contrato", state: fechada ? "current" : "todo", note: fechada ? "Pronto para enviar" : "Depois do aceite" },
-    { title: "Pagamento", state: "todo", note: "Depois do contrato" },
-    { title: "Roteiro e guia", state: temRoteiro ? "current" : "todo", note: temRoteiro ? "Roteiro em montagem" : "Depois do pagamento" },
-  ];
 }
 
 // ── Próximo passo ──────────────────────────────────────────────────
@@ -415,7 +454,13 @@ function Linha({ termo, children, vazio = "Não informado" }: { termo: string; c
   );
 }
 
-function Resumo({ viagem: v, viajante, onAbrirViajante }: { viagem: Lead; viajante: import("@/lib/types").Client | null; onAbrirViajante: () => void }) {
+function Resumo({ viagem: v, viajante, onEditarViagem, onEditarViajante, onAbrirViajante }: {
+  viagem: Lead;
+  viajante: import("@/lib/types").Client | null;
+  onEditarViagem: () => void;
+  onEditarViajante: () => void;
+  onAbrirViajante: () => void;
+}) {
   const prefs = [campoDoPerfil(v, "flight_class"), campoDoPerfil(v, "hotel_category"), campoDoPerfil(v, "room_type"), campoDoPerfil(v, "preferences")].filter(Boolean).join(" · ");
   const passaporte = situacaoPassaporte(viajante?.passport_expiry);
   const temPassaporte = campoDoPerfil(v, "has_passport");
@@ -427,7 +472,10 @@ function Resumo({ viagem: v, viajante, onAbrirViajante }: { viagem: Lead; viajan
   return (
     <div className="ds-stack" style={{ gap: 24 }}>
       <section className="ds-stack" style={{ gap: 10 }}>
-        <span className="ds-mono">Viagem</span>
+        <div className="ds-row" style={{ justifyContent: "space-between" }}>
+          <span className="ds-mono">Viagem</span>
+          <Button variant="link" icon={<PencilSimple aria-hidden />} onClick={onEditarViagem}>Editar</Button>
+        </div>
         <dl className="ds-dados">
           <Linha termo="Destino" vazio="A definir">{v.destination}</Linha>
           <Linha termo="Saída de">{campoDoPerfil(v, "departure")}</Linha>
@@ -440,10 +488,16 @@ function Resumo({ viagem: v, viajante, onAbrirViajante }: { viagem: Lead; viajan
       </section>
 
       <section className="ds-stack" style={{ gap: 10 }}>
-        <span className="ds-mono">Viajante</span>
+        <div className="ds-row" style={{ justifyContent: "space-between" }}>
+          <span className="ds-mono">Viajante</span>
+          <Button variant="link" icon={<PencilSimple aria-hidden />} onClick={onEditarViajante}>Editar</Button>
+        </div>
         <dl className="ds-dados">
-          <Linha termo="WhatsApp">{v.phone || viajante?.whatsapp || viajante?.phone}</Linha>
-          <Linha termo="E-mail">{v.email || viajante?.email}</Linha>
+          <Linha termo="Nome">{viajante?.name || v.name}</Linha>
+          <Linha termo="WhatsApp">{viajante?.whatsapp || viajante?.phone || v.phone}</Linha>
+          <Linha termo="E-mail">{viajante?.email || v.email}</Linha>
+          <Linha termo="CPF">{viajante?.cpf}</Linha>
+          <Linha termo="Cidade">{[viajante?.address_city, viajante?.address_state].filter(Boolean).join(" - ")}</Linha>
           <Linha termo="Passaporte">
             {passaporte ? (
               <>{passaporte.texto} <Chip tone={passaporte.tom}>{passaporte.tom === "ok" ? "OK" : passaporte.tom === "warn" ? "Renovar" : "Vencido"}</Chip></>
@@ -527,56 +581,3 @@ function Historico({ viagem: v, atividades, textoRef, onRegistrado }: { viagem: 
     </div>
   );
 }
-
-// ── Orçamento ──────────────────────────────────────────────────────
-function Orcamento({ viagem: v }: { viagem: Lead }) {
-  const { data: itens = [], isLoading } = useQuery({ queryKey: ["trip-expenses", v.id], queryFn: () => fetchTripExpenses(v.id) });
-  const trouxe = Number(v.budget_client) || valorDe(v);
-  const proposta = Number(v.budget_osv) || itens.reduce((s, i) => s + (Number(i.amount) || 0), 0);
-  const economia = trouxe && proposta ? trouxe - proposta : 0;
-  const pct = trouxe && proposta ? Math.round((proposta / trouxe) * 100) : null;
-
-  return (
-    <div className="ds-stack" style={{ gap: 22 }}>
-      <KpiRow
-        items={[
-          { label: "Cliente trouxe", value: trouxe ? dinheiroCurto(trouxe) : "A definir", delta: { text: "Orçamento que ele pesquisou", direction: "flat" } },
-          {
-            label: "Proposta da agência",
-            value: proposta ? dinheiroCurto(proposta) : "Ainda não montada",
-            delta: economia > 0 ? { text: `${dinheiroCurto(economia)} de economia`, direction: "up" } : economia < 0 ? { text: `${dinheiroCurto(-economia)} acima do orçamento`, direction: "down" } : undefined,
-          },
-        ]}
-      />
-      {pct !== null && (
-        <Meter
-          label="Uso do orçamento"
-          value={proposta}
-          max={trouxe}
-          display={`${pct}%`}
-          state={pct <= 100 ? "ok" : pct <= 110 ? "warn" : "bad"}
-          status={pct <= 100 ? "Proposta dentro do orçamento" : "Proposta acima do orçamento"}
-        />
-      )}
-      {isLoading ? (
-        <Skeleton height={120} radius={16} />
-      ) : itens.length ? (
-        <table className="ds-tbl">
-          <thead><tr><th>Item</th><th>Pago com</th><th style={{ textAlign: "right" }}>Valor</th></tr></thead>
-          <tbody>
-            {itens.map((i) => (
-              <tr key={i.id}>
-                <td>{CATEGORIA[i.category] ?? i.category}{i.description ? <small className="ds-muted" style={{ display: "block" }}>{i.description}</small> : null}</td>
-                <td>{PAGO_COM[i.paid_with] ?? i.paid_with}</td>
-                <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>{dinheiro(Number(i.amount) || 0)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p className="ds-muted" style={{ margin: 0 }}>Os itens aparecem aqui quando a proposta for montada, com a forma de pagamento de cada um.</p>
-      )}
-    </div>
-  );
-}
-

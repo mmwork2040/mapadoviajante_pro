@@ -1365,6 +1365,7 @@ function ItineraryDetailPage() {
           <>
             <DsButton icon={<ImageIcon className="h-4 w-4" />} onClick={() => setCoverPickerOpen(true)}>Capa</DsButton>
             {leadIdForClient && <DsButton onClick={() => setTripDetailOpen("perfil")}>Dados da viagem</DsButton>}
+            {clientForEdit && <DsButton onClick={() => setClientEditOpen(true)}>Editar viajante</DsButton>}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button type="button" disabled={advanceStatus.isPending || mudarEtapa.isPending} className="ds-btn">

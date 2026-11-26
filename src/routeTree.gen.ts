@@ -38,6 +38,7 @@ import { Route as ApiPublicBrandLogoRouteImport } from './routes/api/public/bran
 import { Route as ApiPublicItineraryRouteImport } from './routes/api/public/itinerary'
 import { Route as ApiPublicN8nLeadRouteImport } from './routes/api/public/n8n-lead'
 import { Route as ApiPublicPushDeliveryRouteImport } from './routes/api/public/push-delivery'
+import { Route as DocumentoTipoIdRouteImport } from './routes/documento.$tipo.$id'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -183,6 +184,11 @@ const ApiPublicPushDeliveryRoute = ApiPublicPushDeliveryRouteImport.update({
   path: '/api/public/push-delivery',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocumentoTipoIdRoute = DocumentoTipoIdRouteImport.update({
+  id: '/documento/$tipo/$id',
+  path: '/documento/$tipo/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -211,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/documento/$tipo/$id': typeof DocumentoTipoIdRoute
   '/clientes/': typeof AppClientesIndexRoute
   '/roteiros/': typeof AppRoteirosIndexRoute
 }
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/documento/$tipo/$id': typeof DocumentoTipoIdRoute
   '/clientes': typeof AppClientesIndexRoute
   '/roteiros': typeof AppRoteirosIndexRoute
 }
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/api/public/itinerary': typeof ApiPublicItineraryRoute
   '/api/public/n8n-lead': typeof ApiPublicN8nLeadRoute
   '/api/public/push-delivery': typeof ApiPublicPushDeliveryRoute
+  '/documento/$tipo/$id': typeof DocumentoTipoIdRoute
   '/_app/clientes/': typeof AppClientesIndexRoute
   '/_app/roteiros/': typeof AppRoteirosIndexRoute
 }
@@ -303,6 +312,7 @@ export interface FileRouteTypes {
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/documento/$tipo/$id'
     | '/clientes/'
     | '/roteiros/'
   fileRoutesByTo: FileRoutesByTo
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/documento/$tipo/$id'
     | '/clientes'
     | '/roteiros'
   id:
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/api/public/itinerary'
     | '/api/public/n8n-lead'
     | '/api/public/push-delivery'
+    | '/documento/$tipo/$id'
     | '/_app/clientes/'
     | '/_app/roteiros/'
   fileRoutesById: FileRoutesById
@@ -380,6 +392,7 @@ export interface RootRouteChildren {
   ApiPublicItineraryRoute: typeof ApiPublicItineraryRoute
   ApiPublicN8nLeadRoute: typeof ApiPublicN8nLeadRoute
   ApiPublicPushDeliveryRoute: typeof ApiPublicPushDeliveryRoute
+  DocumentoTipoIdRoute: typeof DocumentoTipoIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -587,6 +600,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPushDeliveryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/documento/$tipo/$id': {
+      id: '/documento/$tipo/$id'
+      path: '/documento/$tipo/$id'
+      fullPath: '/documento/$tipo/$id'
+      preLoaderRoute: typeof DocumentoTipoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -664,6 +684,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicItineraryRoute: ApiPublicItineraryRoute,
   ApiPublicN8nLeadRoute: ApiPublicN8nLeadRoute,
   ApiPublicPushDeliveryRoute: ApiPublicPushDeliveryRoute,
+  DocumentoTipoIdRoute: DocumentoTipoIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

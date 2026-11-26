@@ -388,37 +388,9 @@ export function LeadDetailDrawer({
       return;
     }
 
-    if (linked.status === "draft") {
-      const ok = await confirm({
-        title: "Roteiro em rascunho",
-        description:
-          "Este viajante possui um roteiro em rascunho. As alterações feitas aqui podem afetar o rascunho diretamente. Deseja continuar?",
-        confirmLabel: "Continuar",
-        cancelLabel: "Cancelar",
-      });
-      if (!ok) return;
-      setLinkedItinerary(linked);
-      setEditOpen(true);
-      return;
-    }
-
-    // Roteiro em outro status: precisa voltar para rascunho antes de editar.
-    const ok = await confirm({
-      title: "Roteiro não editável",
-      description: `Este viajante possui um roteiro em "${
-        ITINERARY_STATUS_LABELS[linked.status] || linked.status
-      }". Para editar o viajante, o roteiro será movido para Rascunho. Deseja continuar?`,
-      confirmLabel: "Mover para Rascunho",
-      cancelLabel: "Cancelar",
-    });
-    if (!ok) return;
-    const moved = await updateItinerary(linked.id, { status: "draft" });
-    if (!moved) {
-      toast.error("Erro ao mover o roteiro para rascunho.");
-      return;
-    }
-    toast.success("Roteiro movido para rascunho.");
-    setLinkedItinerary(moved);
+    // Os dados do viajante e da viagem podem ser corrigidos a qualquer momento,
+    // em qualquer etapa. O roteiro vinculado recebe as mudanças, sem mudar de status.
+    setLinkedItinerary(linked);
     setEditOpen(true);
   }
 
@@ -572,8 +544,7 @@ export function LeadDetailDrawer({
                     </button>
                     <button
                       onClick={handleEdit}
-                      disabled={lead.status === "closed" || lead.status === "lost"}
-                      title={lead.status === "closed" || lead.status === "lost" ? "Viagem bloqueada — altere o status para editar" : undefined}
+                      title="Editar os dados do viajante e da viagem"
                       className="flex items-center justify-center gap-1.5 rounded-lg border border-border bg-background py-2 text-xs font-semibold hover:bg-muted disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       <Pencil className="h-4 w-4" /> Editar
@@ -607,7 +578,7 @@ export function LeadDetailDrawer({
             {(lead.status === "closed" || lead.status === "lost") && (
               <div className="flex items-center gap-2 bg-red-600 px-5 py-2 text-xs font-medium text-white">
                 <Lock className="h-3.5 w-3.5" />
-                Viagem {lead.status === "closed" ? "fechada" : "perdida"} — somente leitura. Altere o status no topo para editar.
+                Viagem {lead.status === "closed" ? "fechada" : "perdida"}. Os dados do viajante e da viagem continuam editáveis pelo botão Editar.
               </div>
             )}
 

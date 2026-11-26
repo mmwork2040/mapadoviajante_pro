@@ -68,6 +68,7 @@ import {
 } from "@/lib/services";
 import { sendTeamInvite, getEmailConfigStatus, linkDoConvite } from "@/lib/invites.functions";
 import { ConviteLink, ConviteLinkJanela, type ConviteCriado } from "@/components/admin/ConviteLink";
+import { ModeloContratoCard } from "@/components/admin/ModeloContratoCard";
 import { getAgencyInfo, saveAgencyInfo, lookupCep, type AgencyInfo } from "@/lib/agency";
 import { getAgencyBranding, saveAgencyBranding, DEFAULT_BRANDING, type AgencyBranding } from "@/lib/agency";
 import type { LibraryItem } from "@/lib/types";
@@ -396,6 +397,20 @@ function AdminContent({ member }: { member: ReturnType<typeof useAuth>["member"]
           subtitle="Nome, contato e endereço usados nos convites e documentos"
         >
           <AgencyCard />
+        </CollapsibleSection>
+      )}
+
+      {/* Âncora usada pelo link "Modelo de contrato" na ficha da viagem. */}
+      <div id="contrato" style={{ scrollMarginTop: 24 }} />
+      {isAdmin && (
+        <CollapsibleSection
+          icon={FileText}
+          color="#7c3aed"
+          title="Modelo de contrato"
+          subtitle="Texto do contrato que a ficha da viagem preenche com os dados do cliente e do orçamento"
+          defaultOpen={typeof window !== "undefined" && window.location.hash === "#contrato"}
+        >
+          <ModeloContratoCard />
         </CollapsibleSection>
       )}
 
