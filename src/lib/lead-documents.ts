@@ -12,6 +12,8 @@ export interface LeadDocument {
   file_path: string;
   mime_type: string | null;
   size: number | null;
+  /** Texto lido do arquivo (PDF) para a IA consultar. */
+  content?: string | null;
   created_at?: string;
 }
 

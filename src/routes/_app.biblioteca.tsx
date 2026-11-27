@@ -47,6 +47,7 @@ import {
   resolveDisplayImageUrl,
 } from "@/lib/services";
 import { generateLibraryContent } from "@/lib/ai.functions";
+import { indexLibraryFile } from "@/lib/library-index.functions";
 import { visibleTags, computeImagePHashFromFile, phashToTag } from "@/lib/image-hash";
 
 import {
@@ -83,6 +84,32 @@ const TABS: { key: TabKey; label: string; icon: typeof Sparkles; hint: string }[
   { key: "itinerary", label: "Roteiros modelo", icon: Map, hint: "Roteiros reutilizáveis como base." },
   { key: "documents", label: "Documentos", icon: Files, hint: "Arquivos enviados em viagens e roteiros, agrupados por origem." },
 ];
+
+function isPdfFile(f: File): boolean {
+  return f.type === "application/pdf" || /\.pdf$/i.test(f.name);
+}
+
+/**
+ * Lê o texto de um PDF já enviado e guarda no item, para a IA consultar.
+ * Se a leitura falhar o arquivo continua salvo; só avisa o motivo.
+ */
+function usePdfReader() {
+  const index = useServerFn(indexLibraryFile);
+  return async (source: "library" | "document", id: string, name: string): Promise<boolean> => {
+    try {
+      const res = await index({ data: { source, id } });
+      if (res.ok) return true;
+      toast.warning(`"${name}" foi salvo, mas a IA não conseguiu ler o conteúdo. ${res.message}`);
+    } catch (err) {
+      toast.warning(
+        `"${name}" foi salvo, mas a IA não conseguiu ler o conteúdo. ${
+          err instanceof Error ? err.message : ""
+        }`.trim(),
+      );
+    }
+    return false;
+  };
+}
 
 function LibraryPage() {
   const qc = useQueryClient();
@@ -151,6 +178,7 @@ function LibraryPage() {
   const [itinDest, setItinDest] = useState("");
   const [uploadingItin, setUploadingItin] = useState(false);
   const itinInputRef = useRef<HTMLInputElement>(null);
+  const readPdf = usePdfReader();
 
   function handleSelectItinFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files || []);
@@ -171,21 +199,24 @@ function LibraryPage() {
       return;
     }
     setUploadingItin(true);
+    let read = 0;
     try {
       for (const file of itinFiles) {
         const up = await uploadLibraryAsset(file);
         if (!up) continue;
         const title = file.name.replace(/\.[^.]+$/, "");
-        await createLibraryItem({
+        const created = await createLibraryItem({
           type: "itinerary",
           title,
           location: dest,
           file_url: up.path,
           file_name: up.name,
         });
+        if (created?.id && (await readPdf("library", created.id, file.name))) read++;
       }
       toast.success(
-        itinFiles.length === 1 ? "Roteiro modelo enviado." : `${itinFiles.length} roteiros modelo enviados.`,
+        (itinFiles.length === 1 ? "Roteiro modelo enviado" : `${itinFiles.length} roteiros modelo enviados`) +
+          (read > 0 ? " e lido pela IA." : "."),
       );
       qc.invalidateQueries({ queryKey: ["library"] });
       setItinFiles([]);
@@ -796,6 +827,7 @@ function LibraryModal({
   const aiActive =
     aiConfig?.knowledge_sources?.status === "connected" && !!aiConfig?.api_key_encrypted;
   const genContent = useServerFn(generateLibraryContent);
+  const readPdf = usePdfReader();
 
   async function aiAssist(field: "description" | "content") {
     if (!aiActive) return;
@@ -867,6 +899,8 @@ function LibraryModal({
       }
       const res = item ? await updateLibraryItem(item.id, patch) : await createLibraryItem(patch);
       if (res) {
+        const savedId = (res as LibraryItem).id ?? item?.id;
+        if (file && isPdfFile(file) && savedId) await readPdf("library", savedId, file.name);
         toast.success(item ? "Item atualizado!" : "Item adicionado!");
         onSaved();
       } else toast.error("Erro ao salvar item.");
@@ -1082,6 +1116,7 @@ function DocumentsPanel() {
   const confirm = useConfirm();
   const [preview, setPreview] = useState<AgencyDocument | null>(null);
   const [uploading, setUploading] = useState(false);
+  const readPdf = usePdfReader();
   const { data: docs = [], isLoading, isError, refetch } = useQuery({
     queryKey: ["library", "documents"],
     queryFn: fetchAgencyDocuments,
@@ -1111,9 +1146,11 @@ function DocumentsPanel() {
       let sent = 0;
       let dupes = 0;
       for (const f of files) {
-        const { duplicate } = await uploadGeneralDocument(f);
+        const { document, duplicate } = await uploadGeneralDocument(f);
         if (duplicate) dupes++;
         else sent++;
+        // Arquivo repetido sem texto (enviado antes desta leitura existir) também é lido.
+        if (document?.id && (!duplicate || !document.content)) await readPdf("document", document.id, f.name);
       }
       if (sent > 0) toast.success(sent > 1 ? "Arquivos enviados." : "Arquivo enviado.");
       if (dupes > 0)

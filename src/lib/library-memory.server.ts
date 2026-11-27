@@ -4,7 +4,8 @@
 // Cliente de dados do servidor (ponte do Appwrite), já limitado à agência.
 type DataClient = any;
 
-const LIBRARY_BUCKET = "library-assets";
+// Mesmo bucket dos arquivos enviados pela tela da biblioteca (ver services.ts).
+const LIBRARY_BUCKET = "trip-attachments";
 
 const BAD_TERMS = [
   "flag", "bandeira", "coat", "brasao", "brasão", "escudo", "map", "mapa",

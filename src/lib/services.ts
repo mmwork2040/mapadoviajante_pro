@@ -1025,7 +1025,10 @@ export async function createDestination(destData: Partial<Destination>): Promise
 }
 
 // ── Biblioteca (repositório de conhecimento) ───────────────────
-const LIBRARY_BUCKET = "library-assets";
+// Os arquivos da biblioteca ficam no mesmo bucket dos documentos. O bucket
+// "library-assets" do Supabase antigo não existe no Appwrite: os envios para ele
+// falhavam com "Não foi possível enviar o arquivo".
+const LIBRARY_BUCKET = "trip-attachments";
 
 function sanitizeFileName(name: string): string {
   return name.replace(/[^\w.\-]+/g, "_").slice(0, 120);
