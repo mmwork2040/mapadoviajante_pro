@@ -13,6 +13,7 @@ import {
   Sparkles,
   Package,
   Image as ImageIcon,
+  ImageOff,
   Map,
   Upload,
   FileText,
@@ -569,7 +570,12 @@ function LibraryCard({
   onToggleSelect?: () => void;
   lockedIn?: ItineraryAttachment[];
 }) {
-  const img = useAssetUrl(item);
+  const assetUrl = useAssetUrl(item);
+  // Arquivo que não existe mais no bucket (ex.: fotos que não vieram do sistema
+  // anterior): em vez da imagem quebrada, mostra o aviso para enviar de novo.
+  const [broken, setBroken] = useState(false);
+  useEffect(() => setBroken(false), [assetUrl]);
+  const img = broken ? null : assetUrl;
   const [zoom, setZoom] = useState(false);
   const [info, setInfo] = useState(false);
   const locked = lockedIn.length > 0;
@@ -590,6 +596,7 @@ function LibraryCard({
           <img
             src={img}
             alt={item.title}
+            onError={() => setBroken(true)}
             className={`h-36 w-full object-cover ${!selectable ? "cursor-zoom-in" : ""}`}
             onClick={
               !selectable
@@ -600,6 +607,28 @@ function LibraryCard({
                 : undefined
             }
           />
+        ) : broken ? (
+          <div
+            className="flex h-36 flex-col items-center justify-center gap-1 bg-muted px-4 text-center text-muted-foreground"
+            title="O arquivo desta imagem não foi encontrado. Edite o item e envie a imagem de novo."
+          >
+            <ImageOff className="h-7 w-7" />
+            <span className="text-sm font-medium text-foreground">
+              Imagem precisa ser reenviada
+            </span>
+            {!selectable && !locked && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="text-xs font-medium text-primary hover:underline"
+              >
+                Enviar de novo
+              </button>
+            )}
+          </div>
         ) : (
           <div className="flex h-36 items-center justify-center bg-accent text-accent-foreground">
             <Globe className="h-8 w-8" />
