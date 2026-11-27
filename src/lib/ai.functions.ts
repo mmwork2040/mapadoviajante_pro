@@ -809,6 +809,30 @@ function parsePlannerJson(text: string): PlannerResult {
   };
 }
 
+// Quanto texto dos PDFs do destino vai para a IA ao montar um roteiro.
+const DEST_MATERIAL_BUDGET = 45_000;
+const DEST_MATERIAL_PER_ITEM = 20_000;
+
+function normalizeForMatch(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
+const DEST_STOPWORDS = new Set(["de", "do", "da", "dos", "das", "e", "the", "and", "em", "para", "com"]);
+
+/** "Xangai, Pequim e Hong Kong - China" → ["xangai, pequim e hong kong - china", "xangai", "pequim", "hong kong", "china"]. */
+function destinationTerms(destination: string): string[] {
+  const full = normalizeForMatch(destination).trim();
+  if (!full) return [];
+  const pieces = full
+    .split(/[,;/|()–—]+|\s+-\s+|\s+e\s+|\s+and\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 3 && !DEST_STOPWORDS.has(t));
+  return Array.from(new Set([full, ...pieces]));
+}
+
 export const itineraryPlanner = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: PlannerInput) => {
@@ -1028,6 +1052,35 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
       }
     }
 
+    // Destino da viagem: do lead ou, sem lead, do próprio roteiro.
+    let tripDestination = leadDestination;
+    if (!tripDestination && data.itineraryId) {
+      const { data: itin } = await (context.supabase as any)
+        .from("crm_itineraries")
+        .select("destination")
+        .eq("id", data.itineraryId)
+        .maybeSingle();
+      if (typeof itin?.destination === "string") tripDestination = itin.destination.trim();
+    }
+    const destTerms = destinationTerms(tripDestination);
+    const matchesDest = (...texts: unknown[]) => {
+      if (!destTerms.length) return false;
+      const hay = normalizeForMatch(texts.filter((t) => typeof t === "string").join(" "));
+      return destTerms.some((t) => hay.includes(t));
+    };
+
+    // Texto completo dos PDFs do destino (guias, roteiros modelo, documentos),
+    // dentro de um limite para não estourar o tamanho do pedido à IA.
+    let destinationMaterial = "";
+    let materialBudget = DEST_MATERIAL_BUDGET;
+    const takeMaterial = (label: string, text: string) => {
+      if (materialBudget < 500) return false;
+      const chunk = text.slice(0, Math.min(DEST_MATERIAL_PER_ITEM, materialBudget));
+      materialBudget -= chunk.length;
+      destinationMaterial += `\n\n### ${label}\n${chunk}${chunk.length < text.length ? "\n[… continua]" : ""}`;
+      return true;
+    };
+
     let library = "";
     {
       const { data: libItems } = await (context.supabase as any)
@@ -1043,24 +1096,51 @@ export const itineraryPlanner = createServerFn({ method: "POST" })
           itinerary: "Roteiro modelo",
         };
         const ctxLower = (data.context || "").toLowerCase();
-        const destLower = leadDestination.toLowerCase();
+        const isDest = (l: any) => matchesDest(l.location, l.title, Array.isArray(l.tags) ? l.tags.join(" ") : "");
         // Prioriza itens do destino do lead; mantém os demais como conhecimento geral.
-        const ranked = (libItems as any[]).slice().sort((a, b) => {
-          const am = destLower && `${a.location ?? ""} ${a.title ?? ""}`.toLowerCase().includes(destLower) ? 1 : 0;
-          const bm = destLower && `${b.location ?? ""} ${b.title ?? ""}`.toLowerCase().includes(destLower) ? 1 : 0;
-          return bm - am;
-        });
+        const ranked = (libItems as any[]).slice().sort((a, b) => Number(isDest(b)) - Number(isDest(a)));
         const parts = ranked.map((l) => {
           const used = l.title && ctxLower.includes(String(l.title).toLowerCase()) ? " (JÁ NO ROTEIRO — não repetir)" : "";
           const head = `- [${typeLabel[l.type] || l.type}] ${l.title}${l.location ? ` (${l.location})` : ""}${l.type === "package" && l.price ? ` — ${l.price}${l.days ? `/${l.days}d` : ""}` : ""}${used}`;
           const tags = Array.isArray(l.tags) && l.tags.length ? ` [tags: ${l.tags.join(", ")}]` : "";
-          const body = [l.description, l.content].filter(Boolean).join(" ").slice(0, 600);
+          const content = typeof l.content === "string" ? l.content.trim() : "";
+          // Itens do destino com texto longo (ex.: PDF lido) vão inteiros mais abaixo.
+          if (isDest(l) && l.type !== "image" && content.length > 600) {
+            const label = `${typeLabel[l.type] || l.type}: ${l.title}${l.location ? ` (${l.location})` : ""}`;
+            if (takeMaterial(label, [l.description, content].filter(Boolean).join("\n"))) {
+              return `${head}${tags}\n    (texto completo em MATERIAL DA AGÊNCIA SOBRE O DESTINO)`;
+            }
+          }
+          const body = [l.description, content].filter(Boolean).join(" ").slice(0, 600);
           return `${head}${tags}${body ? `\n    ${body}` : ""}`;
         });
         library = `\n\nBIBLIOTECA DA AGÊNCIA — ACERVO DE MEMÓRIA (experiências, pacotes, imagens e roteiros modelo reutilizáveis). Priorize itens relacionados ao destino do lead e NÃO repita itens já marcados como "(JÁ NO ROTEIRO)":\n${parts.join("\n")}${libraryMemoryNote}`;
       } else {
         library = libraryMemoryNote;
       }
+    }
+
+    // Documentos gerais da agência (aba Documentos da biblioteca) sobre o destino.
+    if (destTerms.length && materialBudget >= 500) {
+      try {
+        const { data: generalDocs } = await (context.supabase as any)
+          .from("crm_lead_documents")
+          .select("name,content")
+          .is("lead_id", null)
+          .is("itinerary_id", null)
+          .order("created_at", { ascending: false })
+          .limit(25);
+        for (const d of (generalDocs as { name?: string; content?: string | null }[] | null) ?? []) {
+          const content = typeof d.content === "string" ? d.content.trim() : "";
+          if (!content || !matchesDest(d.name, content.slice(0, 20000))) continue;
+          if (!takeMaterial(`Documento: ${d.name || "sem nome"}`, content)) break;
+        }
+      } catch {
+        /* sem documentos gerais: segue só com a biblioteca */
+      }
+    }
+    if (destinationMaterial) {
+      library += `\n\nMATERIAL DA AGÊNCIA SOBRE O DESTINO (texto de guias, roteiros modelo e documentos enviados à biblioteca). É conhecimento da própria agência: use como fonte principal para a ordem dos dias, épocas, documentos exigidos, deslocamentos e dicas práticas. Não copie trechos longos e não repita o que já está no roteiro.${destinationMaterial}`;
     }
 
 
